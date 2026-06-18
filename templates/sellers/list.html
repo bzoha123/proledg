@@ -57,6 +57,24 @@
 .plfp-btn-apply { background:#16a34a; border:none; border-radius:6px; padding:7px 18px; font-size:13px; color:white; cursor:pointer; font-weight:500; }
 .sel-badge { background:#f3f4f6; border:1px solid #d1d5db; border-radius:6px; padding:5px 12px; font-size:13px; color:#374151; display:flex; align-items:center; gap:6px; cursor:pointer; white-space:nowrap; }
 .tool-btn-active { background:#dcfce7!important; color:#16a34a!important; border-color:#16a34a!important; }
+
+/* ── Force correct label directions ── */
+.pl-label-en { direction:ltr !important; text-align:left !important; display:inline-block; }
+.pl-label-ar { direction:rtl !important; text-align:right !important; display:inline-block; width:100%; }
+.pl-labels    { justify-content:flex-start; }
+.pl-labels-ar { justify-content:flex-end; }
+.pl-input-en  { direction:ltr; text-align:left; }
+.pl-input-ar  { direction:rtl; text-align:right; }
+/* Prevent writing wrong language in add mode */
+.pl-input-en[readonly] { background:#f0f4ff !important; cursor:not-allowed; }
+.pl-input-ar[readonly] { background:#fafdf9 !important; cursor:not-allowed; }
+
+/* Force EN always left, AR always right regardless of portal direction */
+.pl-row { direction: ltr !important; }
+.pl-row .pl-field-wrap:first-child { text-align: left; }
+.pl-row .pl-field-wrap:last-child { text-align: right; }
+.pl-input-en { direction: ltr; text-align: left; }
+.pl-input-ar { direction: rtl; text-align: right; }
 </style>
 {% endblock %}
 
@@ -172,9 +190,9 @@
                 {% for fname, len, lar, req in basic_fields %}
                 <div class="pl-row">
                   <div class="pl-field-wrap">
-                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}{{ lar }}{% else %}{{ len }}{% endif %}{% if req %}<span class="pl-req">*</span>{% endif %}</span></div>
+                    <div class="pl-labels"><span class="pl-label-en" style="direction:ltr;text-align:left;display:block;">{% if ar %}{{ lar }} <small style="color:#9ca3af;font-size:10px;direction:ltr;">(English)</small>{% else %}{{ len }}{% endif %}{% if req %}<span class="pl-req">*</span>{% endif %}</span></div>
                     <div class="pl-en-wrap">
-                      <input type="text" name="{{ fname }}" id="f_{{ fname }}" class="pl-input pl-input-en"
+                      <input type="text" name="{{ fname }}" id="f_{{ fname }}" class="pl-input pl-input-en" dir="ltr"
                              {% if req %}required{% endif %} oninput="doTranslate(this,'{{ fname }}','en')">
                       <button type="button" class="pl-retranslate pl-retranslate-en" style="display:none"
                               onclick="retranslate('{{ fname }}','ar')"
@@ -185,7 +203,7 @@
                   </div>
                   <div class="pl-field-wrap">
                     <div class="pl-labels pl-labels-ar">
-                      <span class="pl-label-ar">{% if ar %}{{ len }}{% else %}{{ lar }}{% endif %}{% if req %}<span class="pl-req">*</span>{% endif %}</span>
+                      <span class="pl-label-ar" style="direction:rtl;text-align:right;display:block;">{% if ar %}{{ lar }}{% else %}{{ lar }} <small style="color:#9ca3af;font-size:10px;direction:ltr;">(Arabic)</small>{% endif %}{% if req %}<span class="pl-req">*</span>{% endif %}</span>
                     </div>
                     <div class="pl-ar-wrap">
                       <input type="text" name="{{ fname }}_ar" id="f_{{ fname }}_ar" class="pl-input pl-input-ar" dir="rtl"
@@ -206,10 +224,10 @@
                 <div class="pl-row">
                   <div class="pl-field-wrap">
                     <div class="pl-labels"><span class="pl-label-en">{% if ar %}الهاتف{% else %}Phone{% endif %}</span></div>
-                    <input type="text" name="phone" id="f_phone" class="pl-input pl-input-en" placeholder="e.g., 013 8970166">
+                    <input type="text" name="phone" id="f_phone" class="pl-input pl-input-en" dir="ltr" placeholder="e.g., 013 8970166">
                   </div>
                   <div class="pl-field-wrap">
-                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Fax{% else %}الفاكس / Fax{% endif %}</span></div>
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}الفاكس{% else %}Fax{% endif %}</span></div>
                     <input type="text" name="fax" id="f_fax" class="pl-input pl-input-ar" placeholder="e.g., 013 8937050">
                   </div>
                 </div>
@@ -218,7 +236,7 @@
                 <div class="pl-row">
                   <div class="pl-field-wrap">
                     <div class="pl-labels"><span class="pl-label-en">{% if ar %}البريد الإلكتروني{% else %}Email{% endif %}</span></div>
-                    <input type="text" name="email" id="f_email" class="pl-input pl-input-en" placeholder="info@company.com">
+                    <input type="text" name="email" id="f_email" class="pl-input pl-input-en" dir="ltr" placeholder="info@company.com">
                   </div>
                   <div class="pl-field-wrap">
                     <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}الموقع الإلكتروني{% else %}Website{% endif %}</span></div>
@@ -231,7 +249,7 @@
                   <div class="pl-field-wrap">
                     <div class="pl-labels"><span class="pl-label-en">{% if ar %}رمز لون عنوان التقرير{% else %}Report Heading Color Code{% endif %}<span class="pl-req">*</span></span></div>
                     <div class="pl-color-wrap">
-                      <input type="text" name="report_color" id="f_report_color" class="pl-input pl-input-en" value="#16a34a" placeholder="#FF5733">
+                      <input type="text" name="report_color" id="f_report_color" class="pl-input pl-input-en" dir="ltr" value="#16a34a" placeholder="#FF5733">
                       <input type="color" id="colorPicker" value="#16a34a" class="pl-color-swatch" oninput="document.getElementById('f_report_color').value=this.value">
                     </div>
                   </div>
@@ -264,14 +282,14 @@
                 <!-- Street Name -->
                 <div class="pl-row">
                   <div class="pl-field-wrap">
-                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}اسم الشارع{% else %}Street Name{% endif %}</span></div>
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}اسم الشارع <small style="color:#9ca3af;font-size:10px">(English)</small>{% else %}Street Name{% endif %}</span></div>
                     <div class="pl-en-wrap">
-                      <input type="text" name="street_name" id="f_street_name" class="pl-input pl-input-en" oninput="doTranslate(this,'street_name','en')">
+                      <input type="text" name="street_name" id="f_street_name" class="pl-input pl-input-en" dir="ltr" oninput="doTranslate(this,'street_name','en')">
                       <button type="button" class="pl-retranslate pl-retranslate-en" style="display:none" onclick="retranslate('street_name','ar')" title="{% if ar %}إعادة ترجمة للإنجليزية{% else %}Re-translate to EN{% endif %}"><i class="fas fa-sync-alt"></i></button>
                     </div>
                   </div>
                   <div class="pl-field-wrap">
-                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Street Name{% else %}اسم الشارع{% endif %}</span></div>
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}اسم الشارع{% else %}Street Name <small style="color:#9ca3af;font-size:10px">(Arabic)</small>{% endif %}</span></div>
                     <div class="pl-ar-wrap">
                       <input type="text" name="street_name_ar" id="f_street_name_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Street Name{% else %}اسم الشارع{% endif %}" oninput="doTranslate(this,'street_name','ar')">
                       <span class="pl-spin" id="spin_street_name"></span>
@@ -283,14 +301,14 @@
                 <!-- Building Number -->
                 <div class="pl-row">
                   <div class="pl-field-wrap">
-                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم المبنى{% else %}Building Number{% endif %}</span></div>
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم المبنى <small style="color:#9ca3af;font-size:10px">(English)</small>{% else %}Building Number{% endif %}</span></div>
                     <div class="pl-en-wrap">
-                      <input type="text" name="building_number" id="f_building_number" class="pl-input pl-input-en" oninput="doTranslate(this,'building_number','en')">
+                      <input type="text" name="building_number" id="f_building_number" class="pl-input pl-input-en" dir="ltr" oninput="doTranslate(this,'building_number','en')">
                       <button type="button" class="pl-retranslate pl-retranslate-en" style="display:none" onclick="retranslate('building_number','ar')"><i class="fas fa-sync-alt"></i></button>
                     </div>
                   </div>
                   <div class="pl-field-wrap">
-                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Building Number{% else %}رقم المبنى{% endif %}</span></div>
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}رقم المبنى{% else %}Building Number <small style="color:#9ca3af;font-size:10px">(Arabic)</small>{% endif %}</span></div>
                     <div class="pl-ar-wrap">
                       <input type="text" name="building_number_ar" id="f_building_number_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Building Number{% else %}رقم المبنى{% endif %}" oninput="doTranslate(this,'building_number','ar')">
                       <span class="pl-spin" id="spin_building_number"></span>
@@ -302,14 +320,14 @@
                 <!-- Additional Number -->
                 <div class="pl-row">
                   <div class="pl-field-wrap">
-                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم إضافي{% else %}Additional Number{% endif %}</span></div>
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم إضافي <small style="color:#9ca3af;font-size:10px">(English)</small>{% else %}Additional Number{% endif %}</span></div>
                     <div class="pl-en-wrap">
-                      <input type="text" name="additional_number" id="f_additional_number" class="pl-input pl-input-en" oninput="doTranslate(this,'additional_number','en')">
+                      <input type="text" name="additional_number" id="f_additional_number" class="pl-input pl-input-en" dir="ltr" oninput="doTranslate(this,'additional_number','en')">
                       <button type="button" class="pl-retranslate pl-retranslate-en" style="display:none" onclick="retranslate('additional_number','ar')"><i class="fas fa-sync-alt"></i></button>
                     </div>
                   </div>
                   <div class="pl-field-wrap">
-                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Additional Number{% else %}رقم إضافي{% endif %}</span></div>
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}رقم إضافي{% else %}Additional Number <small style="color:#9ca3af;font-size:10px">(Arabic)</small>{% endif %}</span></div>
                     <div class="pl-ar-wrap">
                       <input type="text" name="additional_number_ar" id="f_additional_number_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Additional Number{% else %}رقم إضافي{% endif %}" oninput="doTranslate(this,'additional_number','ar')">
                       <span class="pl-spin" id="spin_additional_number"></span>
@@ -325,7 +343,7 @@
                     <!-- Hidden EN value for form submission -->
                     <input type="hidden" name="country" id="f_country_hidden">
                     <input type="hidden" name="country_ar" id="f_country_ar_hidden">
-                    <select id="f_country" class="pl-input pl-input-en" onchange="onCountryChange()">
+                    <select id="f_country" class="pl-input pl-input-en" dir="ltr" onchange="onCountryChange()">
                       <option value="">{% if ar %}-- اختر الدولة --{% else %}-- Select Country --{% endif %}</option>
                     </select>
                   </div>
@@ -337,7 +355,7 @@
                     <div class="pl-labels"><span class="pl-label-en">{% if ar %}المدينة{% else %}City{% endif %}</span></div>
                     <input type="hidden" name="city" id="f_city_hidden">
                     <input type="hidden" name="city_ar" id="f_city_ar_hidden">
-                    <select id="f_city" class="pl-input pl-input-en" onchange="onCityChange()" disabled>
+                    <select id="f_city" class="pl-input pl-input-en" dir="ltr" onchange="onCityChange()" disabled>
                       <option value="">{% if ar %}-- اختر المدينة --{% else %}-- Select City --{% endif %}</option>
                     </select>
                   </div>
@@ -349,7 +367,7 @@
                     <div class="pl-labels"><span class="pl-label-en">{% if ar %}المنطقة{% else %}District{% endif %}</span></div>
                     <input type="hidden" name="district" id="f_district_hidden">
                     <input type="hidden" name="district_ar" id="f_district_ar_hidden">
-                    <select id="f_district" class="pl-input pl-input-en" onchange="onDistrictChange()" disabled>
+                    <select id="f_district" class="pl-input pl-input-en" dir="ltr" onchange="onDistrictChange()" disabled>
                       <option value="">{% if ar %}-- اختر المنطقة --{% else %}-- Select District --{% endif %}</option>
                     </select>
                   </div>
@@ -358,14 +376,14 @@
                 <!-- POSTAL CODE -->
                 <div class="pl-row">
                   <div class="pl-field-wrap">
-                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}الرمز البريدي{% else %}Postal Code{% endif %}</span></div>
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}الرمز البريدي <small style="color:#9ca3af;font-size:10px">(English)</small>{% else %}Postal Code{% endif %}</span></div>
                     <div class="pl-en-wrap">
-                      <input type="text" name="postal_code" id="f_postal_code" class="pl-input pl-input-en" oninput="doTranslate(this,'postal_code','en')">
+                      <input type="text" name="postal_code" id="f_postal_code" class="pl-input pl-input-en" dir="ltr" oninput="doTranslate(this,'postal_code','en')">
                       <button type="button" class="pl-retranslate pl-retranslate-en" style="display:none" onclick="retranslate('postal_code','ar')"><i class="fas fa-sync-alt"></i></button>
                     </div>
                   </div>
                   <div class="pl-field-wrap">
-                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Postal Code{% else %}الرمز البريدي{% endif %}</span></div>
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}الرمز البريدي{% else %}Postal Code <small style="color:#9ca3af;font-size:10px">(Arabic)</small>{% endif %}</span></div>
                     <div class="pl-ar-wrap">
                       <input type="text" name="postal_code_ar" id="f_postal_code_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Postal Code{% else %}الرمز البريدي{% endif %}" oninput="doTranslate(this,'postal_code','ar')">
                       <span class="pl-spin" id="spin_postal_code"></span>
@@ -393,7 +411,7 @@
                   <!-- Bank Name — single dropdown in portal language -->
                   <div class="mb-3">
                     <label class="pl-label-en d-block mb-1">{% if ar %}اسم البنك{% else %}Bank Name{% endif %}</label>
-                    <select id="bi_bank_name" class="pl-input pl-input-en" style="max-width:100%" onchange="onBankNameChange()">
+                    <select id="bi_bank_name" class="pl-input pl-input-en" dir="ltr" style="max-width:100%" onchange="onBankNameChange()">
                       <option value="">{% if ar %}-- اختر البنك --{% else %}-- Select Bank --{% endif %}</option>
                     </select>
                     <input type="hidden" id="bi_bank_name_ar">
@@ -402,7 +420,7 @@
                   <div class="pl-row mb-2">
                     <div class="pl-field-wrap">
                       <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم الحساب{% else %}Account Number{% endif %}</span></div>
-                      <input type="text" id="bi_account_number" class="pl-input pl-input-en"
+                      <input type="text" id="bi_account_number" class="pl-input pl-input-en" dir="ltr"
                              placeholder="{% if ar %}رقم الحساب{% else %}Account Number{% endif %}"
                              oninput="syncBankNum(this,'bi_account_number_ar')">
                     </div>
@@ -416,7 +434,7 @@
                   <div class="pl-row mb-2">
                     <div class="pl-field-wrap">
                       <div class="pl-labels"><span class="pl-label-en">{% if ar %}الفرع{% else %}Branch{% endif %}</span></div>
-                      <input type="text" id="bi_branch" class="pl-input pl-input-en"
+                      <input type="text" id="bi_branch" class="pl-input pl-input-en" dir="ltr"
                              placeholder="{% if ar %}الفرع{% else %}Branch{% endif %}"
                              oninput="bankTranslate(this,'bi_branch_ar','en')">
                     </div>
@@ -431,11 +449,11 @@
                   <div class="pl-row mb-2">
                     <div class="pl-field-wrap">
                       <div class="pl-labels"><span class="pl-label-en">SWIFT Code</span></div>
-                      <input type="text" id="bi_swift" class="pl-input pl-input-en" placeholder="SWIFT Code">
+                      <input type="text" id="bi_swift" class="pl-input pl-input-en" dir="ltr" placeholder="SWIFT Code">
                     </div>
                     <div class="pl-field-wrap">
                       <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">IBAN</span></div>
-                      <input type="text" id="bi_iban" class="pl-input pl-input-en" placeholder="IBAN">
+                      <input type="text" id="bi_iban" class="pl-input pl-input-en" dir="ltr" placeholder="IBAN">
                     </div>
                   </div>
                   <!-- Primary -->
@@ -471,6 +489,32 @@
         <button type="button" class="pl-footer-btn pl-btn-reset" onclick="resetSellerForm()"><i class="fas fa-redo me-1"></i>{% if ar %}إعادة تعيين{% else %}Reset{% endif %}</button>
         <button type="button" class="pl-footer-btn pl-btn-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
         <button type="button" class="pl-footer-btn pl-btn-save" onclick="submitSellerForm()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Seller Modal (Read-Only) -->
+<div class="modal fade" id="viewSellerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content proledg-modal">
+      <div class="modal-header proledg-modal-header">
+        <h5 id="viewSellerTitle" class="modal-title">{% if ar %}بيانات البائع{% else %}Seller Details{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0" id="viewSellerBody" style="max-height:65vh;overflow-y:auto;">
+        <!-- filled by JS -->
+      </div>
+      <div class="modal-footer proledg-modal-footer">
+        {% if current_user.is_admin() %}
+        <button type="button" class="pl-footer-btn pl-btn-save" style="background:#2563eb;"
+                onclick="bootstrap.Modal.getInstance(document.getElementById('viewSellerModal')).hide();setTimeout(()=>openEditModal(currentViewSellerId),300)">
+          <i class="fas fa-pencil-alt me-1"></i>{% if ar %}تعديل{% else %}Edit{% endif %}
+        </button>
+        {% endif %}
+        <button type="button" class="pl-footer-btn pl-btn-cancel" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>{% if ar %}إغلاق{% else %}Close{% endif %}
+        </button>
       </div>
     </div>
   </div>
@@ -695,11 +739,11 @@ class ActionsRenderer {
   init(p) {
     this.gui = document.createElement('div');
     this.gui.className = 'ag-act-cell';
-    const id = p.data.id, name = (p.data.name||'').replace(/'/g,"\\'");
+    const id = p.data.id, name = (p.data.name||'').replace(/'/g,"\'");
     this.gui.innerHTML = `
+      <button class="ag-ab ag-ab-view" title="${STR.view}" onclick="openViewSeller(${id})"><i class="fas fa-eye"></i></button>
       <button class="ag-ab ag-ab-edit" title="${STR.edit}" onclick="openEditModal(${id})"><i class="fas fa-pencil-alt"></i></button>
-      <button class="ag-ab ag-ab-del"  title="${STR.delete}" onclick="confirmDelete('/sellers/${id}/delete','${name}')"><i class="fas fa-trash"></i></button>
-      <button class="ag-ab ag-ab-view" title="${STR.view}" onclick="location='/sellers/${id}'"><i class="fas fa-eye"></i></button>`;
+      <button class="ag-ab ag-ab-del"  title="${STR.delete}" onclick="confirmDelete('/sellers/${id}/delete','${name}')"><i class="fas fa-trash"></i></button>`;
   }
   getGui() { return this.gui; }
 }
@@ -770,6 +814,39 @@ function updateBadge() {
   document.getElementById('pageInfo').textContent = `${disp} ${STR.of} ${total} ${STR.records} — ${STR.page} ${page} ${STR.of} ${pages}`;
 }
 
+/* ══ VIEW SELLER (read-only) ══ */
+let currentViewSellerId = null;
+function openViewSeller(id) {
+  currentViewSellerId = id;
+  fetch('/sellers/'+id+'/json').then(r=>r.json()).then(d=>{
+    const na = IS_AR ? 'غير محدد' : 'N/A';
+    const rows = [
+      [IS_AR?'كود البائع':'Seller Code',        d.seller_code||na],
+      [IS_AR?'الاسم':'Name',                     IS_AR&&d.name_ar ? d.name_ar : d.name],
+      [IS_AR?'رقم ضريبة القيمة المضافة':'VAT Number', d.vat_number||na],
+      [IS_AR?'رقم السجل التجاري':'CRN',          d.crn||na],
+      [IS_AR?'الهاتف':'Phone',                   d.phone||na],
+      [IS_AR?'الفاكس':'Fax',                     d.fax||na],
+      [IS_AR?'البريد الإلكتروني':'Email',         d.email||na],
+      [IS_AR?'الموقع الإلكتروني':'Website',       d.website||na],
+      [IS_AR?'اسم الشارع':'Street Name',          IS_AR&&d.street_name_ar ? d.street_name_ar : (d.street_name||na)],
+      [IS_AR?'رقم المبنى':'Building Number',      d.building_number||na],
+      [IS_AR?'المدينة':'City',                    IS_AR&&d.city_ar ? d.city_ar : (d.city||na)],
+      [IS_AR?'الدولة':'Country',                  IS_AR&&d.country_ar ? d.country_ar : (d.country||na)],
+      [IS_AR?'الرمز البريدي':'Postal Code',       d.postal_code||na],
+    ];
+    let html = `<table style="width:100%;border-collapse:collapse;font-size:13px;">`;
+    rows.forEach((r,i)=>{
+      const bg=i%2===0?'#f9fafb':'white';
+      html+=`<tr style="background:${bg}"><td style="padding:8px 12px;font-weight:600;color:#374151;border-bottom:1px solid #f1f5f9;width:40%;${IS_AR?'text-align:right;direction:rtl;':''}">${r[0]}</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;${IS_AR?'text-align:right;direction:rtl;':''}">${r[1]}</td></tr>`;
+    });
+    html += '</table>';
+    document.getElementById('viewSellerTitle').textContent = (IS_AR?'بيانات البائع: ':'Seller: ')+(IS_AR&&d.name_ar?d.name_ar:d.name);
+    document.getElementById('viewSellerBody').innerHTML = html;
+    new bootstrap.Modal(document.getElementById('viewSellerModal')).show();
+  });
+}
+
 /* ══ FILTER POPUP ══ */
 let _activeCol = null;
 document.addEventListener('click', e => {
@@ -828,6 +905,29 @@ document.getElementById('sellerGrid').addEventListener('click', ()=>setTimeout(i
 
 /* ══ AUTO-TRANSLATE ══ */
 const _timers={}, _translating={};
+
+// In ADD mode: block manual typing in the "other language" side
+// EN portal: EN input is primary, AR input gets auto-filled (block manual)
+// AR portal: AR input is primary, EN input gets auto-filled (block manual)
+// In EDIT mode: both sides are always editable
+document.addEventListener('DOMContentLoaded', () => {
+  enforceDirectionRule();
+});
+function enforceDirectionRule() {
+  if (isEditMode) return;
+  if (IS_AR) {
+    // AR portal: EN inputs are secondary (auto-filled) — add visual cue but still allow override
+    document.querySelectorAll('.pl-input-en').forEach(el => {
+      if (!el.readOnly) el.style.background = '#f8faff';
+    });
+  } else {
+    // EN portal: AR inputs are secondary
+    document.querySelectorAll('.pl-input-ar').forEach(el => {
+      if (!el.readOnly) el.style.background = '#fafdf9';
+    });
+  }
+}
+
 function toArabicNums(s)  { return s.replace(/[0-9]/g, d=>'٠١٢٣٤٥٦٧٨٩'[d]); }
 function toWesternNums(s) { return s.replace(/[٠-٩]/g, d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))); }
 function isNumeric(s)     { return /^[\d٠-٩\s\-\+\(\)\.\/]+$/.test(s); }
