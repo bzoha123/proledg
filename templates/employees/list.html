@@ -1,0 +1,1271 @@
+{% extends "base.html" %}
+{% set ar = current_locale == 'ar' %}
+{% block title %}{% if ar %}الموظفون{% else %}Employees{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
+<style>
+.ag-theme-alpine{--ag-font-family:'Segoe UI',Tahoma,sans-serif;--ag-font-size:13px;--ag-header-background-color:#f8f9fa;--ag-border-color:#e2e8f0;--ag-row-border-color:#f1f5f9;--ag-row-hover-color:#f0f7ff;--ag-selected-row-background-color:#eff6ff;--ag-header-height:42px;--ag-row-height:42px;--ag-checkbox-checked-color:#16a34a;}
+.ag-theme-alpine .ag-header-cell-label{font-weight:600;font-size:12px;}
+.ag-theme-alpine .ag-header-cell,.ag-theme-alpine .ag-cell{border-right:1px solid #e8ecf0!important;}
+.ag-theme-alpine .ag-paging-panel{border-top:1px solid #e2e8f0;background:#f8f9fa;font-size:12px;}
+.code-badge{background:#eff6ff;color:#1d4ed8;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;}
+.st-active{background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;}
+.st-inactive{background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;}
+.ag-act-cell{display:flex;align-items:center;gap:4px;}
+.ag-ab{width:26px;height:26px;border-radius:4px;border:none;display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;}
+.ag-ab-edit{background:#eff6ff;color:#2563eb;}.ag-ab-edit:hover{background:#dbeafe;}
+.ag-ab-del{background:#fef2f2;color:#dc2626;}.ag-ab-del:hover{background:#fee2e2;}
+/* MCQ radio buttons */
+.mcq-group{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;}
+.mcq-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid #d1d5db;border-radius:20px;cursor:pointer;font-size:12px;font-weight:500;color:#374151;transition:all .15s;background:white;}
+.mcq-btn:hover{border-color:#16a34a;color:#16a34a;}
+.mcq-btn input[type=radio]{display:none;}
+.mcq-btn.active{background:#16a34a;color:white;border-color:#16a34a;}
+/* Document upload box */
+.doc-upload-box{border:1.5px dashed #d1d5db;border-radius:8px;padding:16px 20px;background:#fafafa;}
+/* Allowance row */
+.allowance-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.allowance-row .pl-input{flex:1;}
+.allowance-row .btn-remove{background:#fef2f2;color:#dc2626;border:none;border-radius:4px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+/* filter popup */
+.pl-filter-popup{display:none;position:fixed;z-index:9999;background:white;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);min-width:280px;overflow:hidden;}
+.pl-filter-popup.open{display:block;}
+.plfp-row{padding:10px 14px;border-bottom:1px solid #f1f5f9;}
+.plfp-select,.plfp-input{width:100%;border:1px solid #d1d5db;border-radius:7px;padding:8px 10px;font-size:13px;}
+.plfp-input{padding-left:30px;}.plfp-search-wrap{position:relative;}
+.plfp-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:12px;}
+.plfp-footer{display:flex;justify-content:flex-end;gap:8px;padding:10px 14px;border-top:1px solid #f1f5f9;}
+.plfp-btn-clear{background:white;border:1px solid #d1d5db;border-radius:6px;padding:7px 16px;font-size:13px;cursor:pointer;}
+.plfp-btn-apply{background:#16a34a;border:none;border-radius:6px;padding:7px 18px;font-size:13px;color:white;cursor:pointer;font-weight:500;}
+.plfp-add-rule{width:100%;background:none;border:none;padding:10px 14px;color:#16a34a;font-size:13px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;}
+.plfp-add-rule:hover{background:#f0fdf4;}
+.sel-badge{background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;padding:5px 12px;font-size:13px;color:#374151;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+/* salary single-language */
+.salary-en{} .salary-ar{direction:rtl;}
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
+<li class="breadcrumb-item active">{% if ar %}الموظفون{% else %}Employees{% endif %}</li>
+{% endblock %}
+
+{% block content %}
+<div class="proledg-page">
+  <h2 class="page-heading">{% if ar %}الموظفون{% else %}Employees{% endif %}</h2>
+  <div class="toolbar">
+    <div class="toolbar-left">
+      {% if current_user.is_admin() %}
+      <button class="tool-btn tool-btn-green" data-bs-toggle="modal" data-bs-target="#empModal" onclick="openAddEmp()"><i class="fas fa-plus"></i></button>
+      {% endif %}
+      <button class="tool-btn tool-btn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
+      <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'employees.csv'})"><i class="fas fa-file-export"></i></button>
+      <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null)"><i class="fas fa-times-circle"></i></button>
+      <!-- Lookup links -->
+      <a href="{{ url_for('lookups.list_professions') }}" class="tool-btn" title="{% if ar %}المهن{% else %}Professions{% endif %}"><i class="fas fa-briefcase"></i></a>
+      <a href="{{ url_for('lookups.list_buyers') }}" class="tool-btn" title="{% if ar %}المشترون{% else %}Buyers{% endif %}"><i class="fas fa-shopping-cart"></i></a>
+    </div>
+    <div class="toolbar-right d-flex align-items-center gap-3">
+      <div class="sel-badge"><span id="selText">0 {% if ar %}سجل{% else %}records{% endif %}</span><i class="fas fa-chevron-down"></i></div>
+      <div class="search-form">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="globalSearch" class="search-input" style="width:220px"
+               placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"
+               oninput="gridApi&&gridApi.setGridOption('quickFilterText',this.value)">
+      </div>
+    </div>
+  </div>
+  <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;overflow:hidden;">
+    <div id="empGrid" class="ag-theme-alpine" style="width:100%;height:530px;"></div>
+  </div>
+  <div class="proledg-pagination">
+    <span class="page-count" id="pageInfo">–</span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="small text-muted">{% if ar %}صفوف:{% else %}Rows:{% endif %}</span>
+      <select class="form-select form-select-sm" style="width:72px" onchange="gridApi&&gridApi.setGridOption('paginationPageSize',+this.value)">
+        <option value="10">10</option><option value="20" selected>20</option><option value="50">50</option><option value="100">100</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Popup -->
+<div class="pl-filter-popup" id="plFilterPopup">
+  <div class="plfp-row"><select class="plfp-select" id="plfpMatch"><option value="AND">{% if ar %}يطابق مع الكل{% else %}Match All{% endif %}</option><option value="OR">{% if ar %}يطابق أي{% else %}Match Any{% endif %}</option></select></div>
+  <div class="plfp-row"><select class="plfp-select" id="plfpCondition">
+    <option value="contains">{% if ar %}يحتوي{% else %}Contains{% endif %}</option>
+    <option value="equals">{% if ar %}يساوي{% else %}Equals{% endif %}</option>
+    <option value="startsWith">{% if ar %}يبدأ بـ{% else %}Starts With{% endif %}</option>
+    <option value="notContains">{% if ar %}لا يحتوي{% else %}Not Contains{% endif %}</option>
+  </select></div>
+  <div class="plfp-row"><div class="plfp-search-wrap"><i class="fas fa-search plfp-search-icon"></i><input type="text" class="plfp-input" id="plfpValue" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"></div></div>
+  <button type="button" class="plfp-add-rule"><i class="fas fa-plus"></i> {% if ar %}إضافة قاعدة{% else %}Add Rule{% endif %}</button>
+  <div class="plfp-footer">
+    <button class="plfp-btn-clear" onclick="clearCurrentFilter()">{% if ar %}مسح{% else %}Clear{% endif %}</button>
+    <button class="plfp-btn-apply" onclick="applyCurrentFilter()">{% if ar %}تطبيق{% else %}Apply{% endif %}</button>
+  </div>
+</div>
+
+<!-- ══ EMPLOYEE MODAL ══════════════════════════════════════════════ -->
+<div class="modal fade" id="empModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content proledg-modal">
+      <div class="modal-header proledg-modal-header">
+        <h5 class="modal-title" id="empModalTitle">{% if ar %}تفاصيل الموظف{% else %}Employee Details{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <form id="empForm" method="POST" action="{{ url_for('employees.add_employee') }}" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" id="empFormId" name="_emp_id">
+
+          <!-- Top bar -->
+          <div class="d-flex align-items-center gap-4 px-4 py-3 border-bottom bg-light flex-wrap">
+            <!-- Employee Code — always auto -->
+            <div class="d-flex align-items-center gap-3">
+              <input type="hidden" name="auto_code" value="on">
+              <div>
+                <span class="text-muted small">{% if ar %}كود الموظف{% else %}Employee Code{% endif %}</span>
+                <div id="empCodeDisplay" class="fw-bold text-primary code-badge">{% if ar %}(تلقائي){% else %}(Auto){% endif %}</div>
+              </div>
+            </div>
+            <div class="form-check form-switch mb-0 ms-auto">
+              <input type="checkbox" name="is_active" id="f_is_active" class="form-check-input" checked>
+              <label for="f_is_active" class="form-check-label fw-semibold">{% if ar %}نشيط / Active{% else %}Active / نشيط{% endif %}</label>
+            </div>
+            <div class="form-check form-switch mb-0">
+              <input type="checkbox" name="is_muslim" id="f_is_muslim" class="form-check-input">
+              <label for="f_is_muslim" class="form-check-label fw-semibold">{% if ar %}مسلم / Is Muslim{% else %}Is Muslim / مسلم{% endif %}</label>
+            </div>
+          </div>
+
+          <!-- ══ 1. PERSONAL INFORMATION ══ -->
+          <div class="pl-accordion">
+            <button type="button" class="pl-acc-header" onclick="toggleAcc('personal')">
+              <span><i class="fas fa-user-circle me-2 text-muted"></i>Personal Information / <span class="ar-label">المعلومات الشخصية</span></span>
+              <i class="fas fa-chevron-up pl-acc-icon" id="icon-personal"></i>
+            </button>
+            <div class="pl-acc-body" id="body-personal">
+              <div class="px-4 py-3">
+
+                {% macro bilingual_field(fname, label_en, label_ar, required=False) %}
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}{{ label_ar }}{% else %}{{ label_en }}{% endif %}{% if required %}<span class="pl-req">*</span>{% endif %}</span></div>
+                    <div class="pl-en-wrap">
+                      <input type="text" name="{{ fname }}" id="f_{{ fname }}" class="pl-input pl-input-en"
+                             {% if required %}required{% endif %}
+                             oninput="eT(this,'f_{{ fname }}_ar','en')">
+                      <button type="button" class="pl-retranslate pl-retranslate-en emp-rt" style="display:none" onclick="eR('f_{{ fname }}_ar','f_{{ fname }}','ar')"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}{{ label_en }}{% else %}{{ label_ar }}{% endif %}{% if required %}<span class="pl-req">*</span>{% endif %}</span></div>
+                    <div class="pl-ar-wrap">
+                      <input type="text" name="{{ fname }}_ar" id="f_{{ fname }}_ar" class="pl-input pl-input-ar" dir="rtl"
+                             placeholder="{% if ar %}{{ label_en }}{% else %}{{ label_ar }}{% endif %}"
+                             oninput="eT(this,'f_{{ fname }}','ar')">
+                      <span class="pl-spin" id="spin_{{ fname }}"></span>
+                      <button type="button" class="pl-retranslate pl-retranslate-ar emp-rt" style="display:none" onclick="eR('f_{{ fname }}','f_{{ fname }}_ar','en')"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                  </div>
+                </div>
+                {% endmacro %}
+
+                {{ bilingual_field('name','Name','الاسم',True) }}
+
+                <!-- Kafeel Name -->
+                {{ bilingual_field('kafeel_name','Kafeel Name','اسم الكفيل') }}
+
+                <!-- Kafeel Reference -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}المرجع{% else %}Kafeel Reference{% endif %}</span></div>
+                    <input type="text" name="kafeel_reference" id="f_kafeel_reference" class="pl-input pl-input-en">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Kafeel Reference{% else %}المرجع{% endif %}</span></div>
+                    <div class="pl-ar-wrap">
+                      <input type="text" name="kafeel_reference_ar" id="f_kafeel_reference_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Kafeel Reference{% else %}المرجع{% endif %}" oninput="eT(this,'f_kafeel_reference','ar')">
+                      <span class="pl-spin" id="spin_kafeel_reference"></span>
+                      <button type="button" class="pl-retranslate pl-retranslate-ar emp-rt" style="display:none" onclick="eR('f_kafeel_reference','f_kafeel_reference_ar','en')"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Nationality — EN dropdown left, AR auto-fill right -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}الجنسية{% else %}Nationality{% endif %}</span></div>
+                    <select name="nationality" id="f_nationality" class="pl-input pl-input-en" onchange="onNationalityChange()">
+                      <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
+                    </select>
+                    <input type="hidden" name="nationality_ar" id="f_nationality_ar">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Nationality{% else %}الجنسية{% endif %}</span></div>
+                    <input type="text" id="f_nationality_ar_display" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly placeholder="{% if ar %}Nationality{% else %}الجنسية{% endif %}">
+                  </div>
+                </div>
+
+                <!-- Arrival Date -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}تاريخ الوصول{% else %}Arrival Date{% endif %}</span></div>
+                    <input type="date" name="arrival_date" id="f_arrival_date" class="pl-input pl-input-en" oninput="mirrorDate(this,'f_arrival_date_ar')">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Arrival Date{% else %}تاريخ الوصول{% endif %}</span></div>
+                    <input type="text" id="f_arrival_date_ar" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly>
+                  </div>
+                </div>
+
+                <!-- Birth Date + Age -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}تاريخ الميلاد{% else %}Birth Date{% endif %}</span></div>
+                    <input type="date" name="birth_date" id="f_birth_date" class="pl-input pl-input-en" oninput="calcAge()">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Birth Date{% else %}تاريخ الميلاد{% endif %} &nbsp;|&nbsp; {% if ar %}العمر{% else %}Age{% endif %}</span></div>
+                    <input type="text" id="f_age_display" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly placeholder="{% if ar %}يُحسب تلقائياً{% else %}Auto-calculated{% endif %}">
+                  </div>
+                </div>
+
+                <!-- Passport Number -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم جواز السفر{% else %}Passport Number{% endif %}</span></div>
+                    <input type="text" name="passport_number" id="f_passport_number" class="pl-input pl-input-en" oninput="mirrorNum(this,'f_passport_number_ar')">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Passport Number{% else %}رقم جواز السفر{% endif %}</span></div>
+                    <input type="text" id="f_passport_number_ar" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly>
+                  </div>
+                </div>
+
+                <!-- Passport Expiry Date -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}تاريخ انتهاء الجواز{% else %}Passport Expiry Date{% endif %}</span></div>
+                    <input type="date" name="passport_expiry" id="f_passport_expiry" class="pl-input pl-input-en" oninput="mirrorDate(this,'f_passport_expiry_ar')">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Passport Expiry Date{% else %}تاريخ انتهاء الجواز{% endif %}</span></div>
+                    <input type="text" id="f_passport_expiry_ar" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly>
+                  </div>
+                </div>
+
+                <!-- Entry Number -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم الدخول{% else %}Entry Number{% endif %}</span></div>
+                    <input type="text" name="entry_number" id="f_entry_number" class="pl-input pl-input-en" oninput="mirrorNum(this,'f_entry_number_ar')">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Entry Number{% else %}رقم الدخول{% endif %}</span></div>
+                    <input type="text" id="f_entry_number_ar" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly>
+                  </div>
+                </div>
+
+                <!-- Iqama Number -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم الإقامة{% else %}Iqama Number{% endif %}</span></div>
+                    <input type="text" name="iqama_number" id="f_iqama_number" class="pl-input pl-input-en" oninput="mirrorNum(this,'f_iqama_number_ar')">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Iqama Number{% else %}رقم الإقامة{% endif %}</span></div>
+                    <input type="text" id="f_iqama_number_ar" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly>
+                  </div>
+                </div>
+
+                <!-- Iqama Expiry -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}تاريخ انتهاء الإقامة{% else %}Iqama Expiry Date{% endif %}</span></div>
+                    <input type="date" name="iqama_expiry" id="f_iqama_expiry" class="pl-input pl-input-en" oninput="mirrorDate(this,'f_iqama_expiry_ar')">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Iqama Expiry Date{% else %}تاريخ انتهاء الإقامة{% endif %}</span></div>
+                    <input type="text" id="f_iqama_expiry_ar" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly>
+                  </div>
+                </div>
+
+                <!-- Profession dropdown -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}المهنة{% else %}Profession{% endif %}</span></div>
+                    <select name="profession" id="f_profession" class="pl-input pl-input-en" onchange="onProfessionChange()">
+                      <option value="">{% if ar %}-- اختر المهنة --{% else %}-- Select Profession --{% endif %}</option>
+                    </select>
+                    <input type="hidden" name="profession_ar" id="f_profession_ar">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Profession{% else %}المهنة{% endif %}</span></div>
+                    <input type="text" id="f_profession_ar_display" class="pl-input pl-input-ar" dir="rtl" readonly style="background:#f3f4f6">
+                  </div>
+                </div>
+
+                <!-- Employee Type — MCQ -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}نوع الموظف{% else %}Employee Type{% endif %}</span></div>
+                    <div class="mcq-group" id="empTypeGroup">
+                      <label class="mcq-btn" onclick="selectMCQ('empTypeGroup',this,'f_employee_type','skilled')">
+                        <input type="radio" name="employee_type" value="skilled">
+                        {% if ar %}مزدور{% else %}Skilled{% endif %}
+                      </label>
+                      <label class="mcq-btn" onclick="selectMCQ('empTypeGroup',this,'f_employee_type','non_skilled')">
+                        <input type="radio" name="employee_type" value="non_skilled">
+                        {% if ar %}غير مزدور{% else %}Non-Skilled{% endif %}
+                      </label>
+                    </div>
+                    <input type="hidden" name="employee_type" id="f_employee_type">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Employee Type{% else %}نوع الموظف{% endif %}</span></div>
+                    <div id="empTypeArDisplay" class="mt-1 text-muted small" dir="rtl"></div>
+                  </div>
+                </div>
+
+                <!-- Education -->
+                {{ bilingual_field('education','Education','التعليم') }}
+
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ 2. DOCUMENT UPLOAD ══ -->
+          <div class="pl-accordion">
+            <button type="button" class="pl-acc-header pl-acc-collapsed" onclick="toggleAcc('docs')">
+              <span><i class="fas fa-upload me-2 text-muted"></i>Employee Document's Upload / <span class="ar-label">تحميل مستندات الموظف</span></span>
+              <i class="fas fa-chevron-down pl-acc-icon" id="icon-docs"></i>
+            </button>
+            <div class="pl-acc-body d-none" id="body-docs">
+              <div class="px-4 py-3">
+                <!-- Document type dropdown -->
+                <div class="mb-3">
+                  <label class="pl-label-en d-block mb-1">{% if ar %}نوع الوثيقة{% else %}Document Type{% endif %}</label>
+                  <select name="document_type" id="f_document_type" class="pl-input pl-input-en" style="max-width:300px">
+                    <option value="">{% if ar %}-- اختر نوع الوثيقة --{% else %}-- Select Document Type --{% endif %}</option>
+                    <option value="id_card">{% if ar %}بطاقة الهوية{% else %}ID Card{% endif %}</option>
+                    <option value="passport">{% if ar %}جواز السفر{% else %}Passport{% endif %}</option>
+                    <option value="iqama">{% if ar %}الإقامة{% else %}Iqama{% endif %}</option>
+                    <option value="work_permit">{% if ar %}تصريح العمل{% else %}Work Permit{% endif %}</option>
+                    <option value="contract">{% if ar %}عقد العمل{% else %}Employment Contract{% endif %}</option>
+                    <option value="certificate">{% if ar %}شهادة{% else %}Certificate{% endif %}</option>
+                    <option value="other">{% if ar %}أخرى{% else %}Other{% endif %}</option>
+                  </select>
+                </div>
+                <div class="doc-upload-box">
+                  <div class="d-flex gap-2 mb-2">
+                    <button type="button" class="btn btn-success btn-sm" onclick="document.getElementById('f_document').click()">
+                      <i class="fas fa-plus me-1"></i>{% if ar %}اختر / Choose{% else %}Choose / اختر{% endif %}
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="doUpload()">
+                      <i class="fas fa-upload me-1"></i>{% if ar %}رفع / Upload{% else %}Upload / رفع{% endif %}
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="cancelUpload()">
+                      <i class="fas fa-times me-1"></i>{% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}
+                    </button>
+                  </div>
+                  <input type="file" name="document" id="f_document" class="d-none" accept=".pdf,.jpg,.jpeg,.png" onchange="onDocChosen(this)">
+                  <div class="text-muted small" id="docNameDisplay">
+                    {% if ar %}اسحب الملفات هنا لتحميلها / Drag and drop files to here to upload{% else %}Drag and drop files to here to upload / اسحب الملفات هنا لتحميلها{% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ 3. CONTACT INFORMATION ══ -->
+          <div class="pl-accordion">
+            <button type="button" class="pl-acc-header pl-acc-collapsed" onclick="toggleAcc('contact')">
+              <span><i class="fas fa-phone-alt me-2 text-muted"></i>Employee Contact Information / <span class="ar-label">معلومات اتصال الموظف</span></span>
+              <i class="fas fa-chevron-down pl-acc-icon" id="icon-contact"></i>
+            </button>
+            <div class="pl-acc-body d-none" id="body-contact">
+              <div class="px-4 py-3">
+                <!-- Mobile — single field -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم الجوال{% else %}Mobile Number{% endif %}</span></div>
+                    <input type="text" name="mobile" id="f_mobile" class="pl-input pl-input-en" placeholder="+0">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar" style="color:#9ca3af">{% if ar %}Mobile Number{% else %}رقم الجوال{% endif %}</span></div>
+                    <input type="text" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly placeholder="+٠">
+                  </div>
+                </div>
+                {{ bilingual_field('address','Address','العنوان') }}
+                <!-- Email — English only -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}البريد الإلكتروني{% else %}Email{% endif %}</span></div>
+                    <input type="email" name="email" id="f_email" class="pl-input pl-input-en">
+                  </div>
+                  <div class="pl-field-wrap"><!-- Email is EN only --></div>
+                </div>
+                {{ bilingual_field('home_city','Home City','مدينة المنزل') }}
+                <!-- Employee Reference — bilingual -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}مرجع الموظف{% else %}Employee Reference{% endif %}</span></div>
+                    <div class="pl-en-wrap">
+                      <input type="text" name="employee_reference" id="f_employee_reference" class="pl-input pl-input-en" oninput="eT(this,'f_employee_reference_ar','en')">
+                      <button type="button" class="pl-retranslate pl-retranslate-en emp-rt" style="display:none" onclick="eR('f_employee_reference_ar','f_employee_reference','ar')"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Employee Reference{% else %}مرجع الموظف{% endif %}</span></div>
+                    <div class="pl-ar-wrap">
+                      <input type="text" name="employee_reference_ar" id="f_employee_reference_ar" class="pl-input pl-input-ar" dir="rtl" oninput="eT(this,'f_employee_reference','ar')">
+                      <span class="pl-spin" id="spin_employee_reference"></span>
+                      <button type="button" class="pl-retranslate pl-retranslate-ar emp-rt" style="display:none" onclick="eR('f_employee_reference','f_employee_reference_ar','en')"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ 4. SALARY INFORMATION — single language ══ -->
+          <div class="pl-accordion">
+            <button type="button" class="pl-acc-header pl-acc-collapsed" onclick="toggleAcc('salary')">
+              <span><i class="fas fa-money-bill-wave me-2 text-muted"></i>Salary Information / <span class="ar-label">معلومات الراتب</span></span>
+              <i class="fas fa-chevron-down pl-acc-icon" id="icon-salary"></i>
+            </button>
+            <div class="pl-acc-body d-none" id="body-salary">
+              <div class="px-4 py-3 {% if ar %}salary-ar{% else %}salary-en{% endif %}">
+
+                <!-- Salary Type — MCQ -->
+                <div class="mb-3">
+                  <label class="pl-label-en d-block mb-2">{% if ar %}نوع الراتب{% else %}Salary Type{% endif %}</label>
+                  <div class="mcq-group" id="salTypeGroup">
+                    {% for v,le,la in [('salary','Salary','راتب'),('azad','Azad','أزاد'),('kafalat','Kafalat','كفالات')] %}
+                    <label class="mcq-btn" onclick="selectMCQ('salTypeGroup',this,'f_salary_type','{{ v }}')">
+                      <input type="radio" name="_salary_type_mcq" value="{{ v }}">
+                      {% if ar %}{{ la }}{% else %}{{ le }}{% endif %}
+                    </label>
+                    {% endfor %}
+                  </div>
+                  <input type="hidden" name="salary_type" id="f_salary_type">
+                </div>
+
+                {% set sal_fields = [
+                  ('rate',          'Rate',          'معدل',                False),
+                  ('po_rate',       'PO Rate',       'معدل طلب الشراء',    False),
+                  ('po_number',     'PO Number',     'رقم طلب الشراء',     True),
+                  ('basic_salary',  'Basic Salary',  'الراتب الأساسي',     False),
+                  ('food_allowance','Food Allowance','بدل الطعام',          False),
+                  ('rent',          'Rent',          'الإيجار',             False),
+                  ('working_hours', 'Working Hours', 'ساعات العمل',         False),
+                  ('overtime_rate', 'Over Time Rate','معدل العمل الإضافي', False),
+                ] %}
+                {% for fn,le,la,is_text in sal_fields %}
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}{{ la }}{% else %}{{ le }}{% endif %}</span></div>
+                    <input type="{% if is_text %}text{% else %}number{% endif %}"
+                           name="{{ fn }}" id="f_{{ fn }}" class="pl-input pl-input-en"
+                           {% if not is_text %}step="0.01" min="0"{% endif %}
+                           oninput="{% if fn in ['basic_salary','food_allowance','rent'] %}calcNetSalary();{% endif %}mirrorNum(this,'f_{{ fn }}_ar')">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}{{ le }}{% else %}{{ la }}{% endif %}</span></div>
+                    <input type="text" id="f_{{ fn }}_ar" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly>
+                  </div>
+                </div>
+                {% endfor %}
+
+                <!-- Allowances -->
+                <div class="mt-3">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <label class="pl-label-en fw-semibold">{% if ar %}البدلات{% else %}Allowances{% endif %}</label>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addAllowanceRow()">
+                      <i class="fas fa-plus me-1"></i>{% if ar %}إضافة بدل{% else %}Add Allowance{% endif %}
+                    </button>
+                  </div>
+                  <div id="allowancesContainer"></div>
+                </div>
+
+                <!-- Net Salary (auto-calculated) -->
+                <div class="mt-3 p-3 bg-light rounded border">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">{% if ar %}الراتب الصافي{% else %}Net Salary{% endif %}</span>
+                    <span class="fw-bold text-success fs-5" id="netSalaryDisplay">0.00</span>
+                  </div>
+                  <small class="text-muted">{% if ar %}= الراتب الأساسي + البدلات + بدل الطعام + الإيجار{% else %}= Basic Salary + Allowances + Food Allowance + Rent{% endif %}</small>
+                  <input type="hidden" name="net_salary" id="f_net_salary" value="0">
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ 5. WORK INFORMATION ══ -->
+          <div class="pl-accordion">
+            <button type="button" class="pl-acc-header pl-acc-collapsed" onclick="toggleAcc('work')">
+              <span><i class="fas fa-info-circle me-2 text-muted"></i>Employee Work Information / <span class="ar-label">معلومات العمل</span></span>
+              <i class="fas fa-chevron-down pl-acc-icon" id="icon-work"></i>
+            </button>
+            <div class="pl-acc-body d-none" id="body-work">
+              <div class="px-4 py-3">
+
+                <!-- Select Buyer -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}اختر المشتري{% else %}Select Buyer{% endif %}</span></div>
+                    <select name="buyer_id" id="f_buyer_id" class="pl-input pl-input-en">
+                      <option value="">{% if ar %}اختر مشتري / Select a buyer{% else %}Select a buyer / اختر مشتري{% endif %}</option>
+                    </select>
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar text-warning small">{% if ar %}Buyer selection is recommended{% else %}يوصى باختيار المشتري{% endif %}</span></div>
+                  </div>
+                </div>
+
+                <!-- Joining Date / Department -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}تاريخ الانضمام{% else %}Joining Date{% endif %}<span class="pl-req">*</span></span></div>
+                    <input type="date" name="joining_date" id="f_joining_date" class="pl-input pl-input-en">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Joining Date{% else %}تاريخ الانضمام{% endif %}</span></div>
+                    <input type="text" id="f_joining_date_ar_display" class="pl-input pl-input-ar" dir="rtl" readonly style="background:#f3f4f6">
+                  </div>
+                </div>
+
+                <!-- Department bilingual -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}القسم{% else %}Department{% endif %}</span></div>
+                    <div class="pl-en-wrap">
+                      <input type="text" name="department" id="f_department" class="pl-input pl-input-en" oninput="eT(this,'f_department_ar','en')">
+                      <button type="button" class="pl-retranslate pl-retranslate-en emp-rt" style="display:none" onclick="eR('f_department_ar','f_department','ar')"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Department{% else %}القسم{% endif %}</span></div>
+                    <div class="pl-ar-wrap">
+                      <input type="text" name="department_ar" id="f_department_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Department{% else %}القسم{% endif %}" oninput="eT(this,'f_department','ar')">
+                      <span class="pl-spin" id="spin_department"></span>
+                      <button type="button" class="pl-retranslate pl-retranslate-ar emp-rt" style="display:none" onclick="eR('f_department','f_department_ar','en')"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Shift Type — MCQ (English labels only as per requirement) -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}نوع الوردية{% else %}Shift Type{% endif %}</span></div>
+                    <div class="mcq-group" id="shiftGroup">
+                      {% for v,le,la in [('day','Day','نهاري'),('evening','Evening','مسائي'),('night','Night','ليلي')] %}
+                      <label class="mcq-btn" onclick="selectMCQ('shiftGroup',this,'f_shift_type','{{ v }}')">
+                        <input type="radio" name="_shift_mcq" value="{{ v }}">
+                        {{ le }} / {{ la }}
+                      </label>
+                      {% endfor %}
+                    </div>
+                    <input type="hidden" name="shift_type" id="f_shift_type" value="day">
+                  </div>
+                </div>
+
+                <!-- Forman bilingual -->
+                {{ bilingual_field('forman','Forman','مشرف') }}
+
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ 6. HOSTEL INFORMATION ══ -->
+          <div class="pl-accordion">
+            <button type="button" class="pl-acc-header pl-acc-collapsed" onclick="toggleAcc('hostel')">
+              <span><i class="fas fa-home me-2 text-muted"></i>Employee Hostel Information / <span class="ar-label">معلومات السكن</span></span>
+              <i class="fas fa-chevron-down pl-acc-icon" id="icon-hostel"></i>
+            </button>
+            <div class="pl-acc-body d-none" id="body-hostel">
+              <div class="px-4 py-3">
+                {{ bilingual_field('hostel_name','Hostel Name','اسم السكن') }}
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم الغرفة{% else %}Room Number{% endif %}</span></div>
+                    <input type="text" name="room_number" id="f_room_number" class="pl-input pl-input-en" oninput="mirrorNum(this,'f_room_number_ar')">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Room Number{% else %}رقم الغرفة{% endif %}</span></div>
+                    <input type="text" id="f_room_number_ar" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly>
+                  </div>
+                </div>
+                {{ bilingual_field('hostel_location','Hostel Location','موقع السكن') }}
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ 7. BANKING INFORMATION ══ -->
+          <div class="pl-accordion">
+            <button type="button" class="pl-acc-header pl-acc-collapsed" onclick="toggleAcc('banking')">
+              <span><i class="fas fa-credit-card me-2 text-muted"></i>Banking Information / <span class="ar-label">معلومات البنك</span></span>
+              <i class="fas fa-chevron-down pl-acc-icon" id="icon-banking"></i>
+            </button>
+            <div class="pl-acc-body d-none" id="body-banking">
+              <div class="px-4 py-3">
+                <div class="mb-3">
+                  <label class="pl-label-en d-block mb-1">{% if ar %}اسم البنك{% else %}Bank Name{% endif %}</label>
+                  <select id="f_bank_name_sel" class="pl-input pl-input-en" style="max-width:100%" onchange="onEmpBankChange()">
+                    <option value="">{% if ar %}-- اختر البنك --{% else %}-- Select Bank --{% endif %}</option>
+                  </select>
+                  <input type="hidden" name="bank_name" id="f_bank_name">
+                  <input type="hidden" name="bank_name_ar" id="f_bank_name_ar">
+                </div>
+                {{ bilingual_field('bank_branch','Branch','الفرع') }}
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رمز السويفت{% else %}Swift Code{% endif %}</span></div>
+                    <input type="text" name="swift_code" id="f_swift_code" class="pl-input pl-input-en" oninput="mirrorNum(this,'f_swift_ar')">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Swift Code{% else %}رمز السويفت{% endif %}</span></div>
+                    <input type="text" id="f_swift_ar" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly>
+                  </div>
+                </div>
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم الحساب{% else %}Account Number{% endif %}</span></div>
+                    <input type="text" name="account_number" id="f_account_number" class="pl-input pl-input-en" oninput="mirrorNum(this,'f_acct_ar_disp')">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Account Number{% else %}رقم الحساب{% endif %}</span></div>
+                    <input type="text" id="f_acct_ar_disp" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly>
+                  </div>
+                </div>
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}أيبان{% else %}IBAN{% endif %}</span></div>
+                    <input type="text" name="iban" id="f_iban" class="pl-input pl-input-en" oninput="mirrorNum(this,'f_iban_ar')">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}IBAN{% else %}أيبان{% endif %}</span></div>
+                    <input type="text" id="f_iban_ar" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ 8. OFFICE USE ══ -->
+          <div class="pl-accordion">
+            <button type="button" class="pl-acc-header pl-acc-collapsed" onclick="toggleAcc('office')">
+              <span><i class="fas fa-briefcase me-2 text-muted"></i>{% if ar %}معلومات المكتب{% else %}Office Use{% endif %} / <span class="ar-label">{% if ar %}Office Use{% else %}معلومات المكتب{% endif %}</span></span>
+              <i class="fas fa-chevron-down pl-acc-icon" id="icon-office"></i>
+            </button>
+            <div class="pl-acc-body d-none" id="body-office">
+              <div class="px-4 py-3">
+
+                <!-- CRN — bilingual, both editable -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم السجل التجاري{% else %}CRN{% endif %}</span></div>
+                    <div class="pl-en-wrap">
+                      <input type="text" name="crn" id="f_crn" class="pl-input pl-input-en" oninput="eT(this,'f_crn_ar','en')">
+                      <button type="button" class="pl-retranslate pl-retranslate-en emp-rt" style="display:none" onclick="eR('f_crn_ar','f_crn','ar')"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}CRN{% else %}رقم السجل التجاري{% endif %}</span></div>
+                    <div class="pl-ar-wrap">
+                      <input type="text" name="crn_ar" id="f_crn_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}CRN{% else %}رقم السجل التجاري{% endif %}" oninput="eT(this,'f_crn','ar')">
+                      <span class="pl-spin" id="spin_crn"></span>
+                      <button type="button" class="pl-retranslate pl-retranslate-ar emp-rt" style="display:none" onclick="eR('f_crn','f_crn_ar','en')"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Insurance Company — bilingual, both editable -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}شركة التأمين{% else %}Insurance Company{% endif %}</span></div>
+                    <div class="pl-en-wrap">
+                      <input type="text" name="insurance_company" id="f_insurance_company" class="pl-input pl-input-en" oninput="eT(this,'f_insurance_company_ar','en')">
+                      <button type="button" class="pl-retranslate pl-retranslate-en emp-rt" style="display:none" onclick="eR('f_insurance_company_ar','f_insurance_company','ar')"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Insurance Company{% else %}شركة التأمين{% endif %}</span></div>
+                    <div class="pl-ar-wrap">
+                      <input type="text" name="insurance_company_ar" id="f_insurance_company_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Insurance Company{% else %}شركة التأمين{% endif %}" oninput="eT(this,'f_insurance_company','en')">
+                      <span class="pl-spin" id="spin_insurance_company"></span>
+                      <button type="button" class="pl-retranslate pl-retranslate-ar emp-rt" style="display:none" onclick="eR('f_insurance_company','f_insurance_company_ar','en')"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Insurance Expiry — label in portal language -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}تاريخ انتهاء التأمين{% else %}Insurance Expiry Date{% endif %}</span></div>
+                    <input type="date" name="insurance_expiry" id="f_insurance_expiry" class="pl-input pl-input-en">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Insurance Expiry Date{% else %}تاريخ انتهاء التأمين{% endif %}</span></div>
+                    <input type="text" id="f_insurance_expiry_ar_display" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly>
+                  </div>
+                </div>
+
+                <!-- Labour Office -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم مكتب العمل{% else %}Labour Office{% endif %}</span></div>
+                    <input type="text" name="labour_office" id="f_labour_office" class="pl-input pl-input-en" oninput="mirrorNum(this,'f_labour_office_ar')">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Labour Office{% else %}رقم مكتب العمل{% endif %}</span></div>
+                    <input type="text" id="f_labour_office_ar" class="pl-input pl-input-ar" dir="rtl" style="background:#f3f4f6" readonly>
+                  </div>
+                </div>
+
+                <!-- Passport Location — MCQ -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}موقع جواز السفر{% else %}Passport Location{% endif %}</span></div>
+                    <div class="mcq-group" id="passportLocGroup">
+                      <label class="mcq-btn active" onclick="selectMCQ('passportLocGroup',this,'f_passport_location','IN')">
+                        <input type="radio" name="_pl_mcq" value="IN" checked>{% if ar %}داخل / IN{% else %}IN / داخل{% endif %}
+                      </label>
+                      <label class="mcq-btn" onclick="selectMCQ('passportLocGroup',this,'f_passport_location','OUT')">
+                        <input type="radio" name="_pl_mcq" value="OUT">{% if ar %}خارج / OUT{% else %}OUT / خارج{% endif %}
+                      </label>
+                    </div>
+                    <input type="hidden" name="passport_location" id="f_passport_location" value="IN">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+      <div class="modal-footer proledg-modal-footer">
+        <button type="button" class="pl-footer-btn pl-btn-reset" onclick="resetEmpForm()"><i class="fas fa-redo me-1"></i>{% if ar %}إعادة تعيين / Reset{% else %}Reset / إعادة تعيين{% endif %}</button>
+        <button type="button" class="pl-footer-btn pl-btn-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}</button>
+        <button type="button" class="pl-footer-btn pl-btn-save" onclick="submitEmpForm()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ / Save{% else %}Save / حفظ{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-sm"><div class="modal-content">
+    <div class="modal-header border-0"><h6 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>{% if ar %}تأكيد الحذف{% else %}Confirm Delete{% endif %}</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body"><p id="delText" class="mb-0"></p></div>
+    <div class="modal-footer border-0">
+      <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+      <form id="delForm" method="POST" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-sm btn-danger">{% if ar %}حذف{% else %}Delete{% endif %}</button></form>
+    </div>
+  </div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script>
+const TRANSLATE_URL = '{{ url_for("sellers.translate_text") }}';
+const CSRF          = '{{ csrf_token() }}';
+const IS_AR         = {{ 'true' if ar else 'false' }};
+const EMP_DATA_URL  = '{{ url_for("employees.employees_data") }}';
+const BANKS_URL     = '{{ url_for("banks.banks_data") }}';
+const PROF_URL      = '{{ url_for("lookups.professions_data") }}';
+const BUYERS_URL    = '{{ url_for("lookups.buyers_data") }}';
+const IS_ADMIN      = {{ 'true' if current_user.is_admin() else 'false' }};
+
+/* ══ NATIONALITIES ══════════════════════════════════════════════════ */
+const NATIONALITIES = [
+  {en:'Saudi',ar:'سعودي'},{en:'Pakistani',ar:'باكستاني'},{en:'Indian',ar:'هندي'},
+  {en:'Egyptian',ar:'مصري'},{en:'Bangladeshi',ar:'بنغلاديشي'},{en:'Filipino',ar:'فلبيني'},
+  {en:'Yemeni',ar:'يمني'},{en:'Jordanian',ar:'أردني'},{en:'Syrian',ar:'سوري'},
+  {en:'Lebanese',ar:'لبناني'},{en:'Iraqi',ar:'عراقي'},{en:'Sudanese',ar:'سوداني'},
+  {en:'Ethiopian',ar:'إثيوبي'},{en:'Indonesian',ar:'إندونيسي'},{en:'Sri Lankan',ar:'سريلانكي'},
+  {en:'Nepalese',ar:'نيبالي'},{en:'Turkish',ar:'تركي'},{en:'British',ar:'بريطاني'},
+  {en:'American',ar:'أمريكي'},{en:'German',ar:'ألماني'},{en:'French',ar:'فرنسي'},
+  {en:'Chinese',ar:'صيني'},{en:'Other',ar:'أخرى'},
+];
+
+function initNationalityDropdown(selectedEn=''){
+  const sel=document.getElementById('f_nationality');
+  if(!sel)return;
+  const ph=IS_AR?'-- اختر الجنسية --':'-- Select Nationality --';
+  sel.innerHTML=`<option value="">${ph}</option>`;
+  NATIONALITIES.forEach(n=>{
+    // Label in portal language only
+    const label=IS_AR?n.ar:n.en;
+    sel.innerHTML+=`<option value="${n.en}" data-ar="${n.ar}"${n.en===selectedEn?' selected':''}>${label}</option>`;
+  });
+  if(selectedEn) updateNationalityAr(selectedEn);
+}
+function updateNationalityAr(en){
+  const nat=NATIONALITIES.find(n=>n.en===en);
+  const ar=nat?nat.ar:'';
+  const hid=document.getElementById('f_nationality_ar');
+  const disp=document.getElementById('f_nationality_ar_display');
+  if(hid)hid.value=ar;
+  if(disp)disp.value=ar;
+}
+function onNationalityChange(){
+  const en=document.getElementById('f_nationality').value;
+  updateNationalityAr(en);
+}
+
+/* ══ AG-GRID ════════════════════════════════════════════════════════ */
+const STR={
+  code:IS_AR?'كود الموظف':'Employee Code',name:IS_AR?'الاسم':'Name',
+  profession:IS_AR?'المهنة':'Profession',kafeel:IS_AR?'اسم الكفيل':'Kafeel Name',
+  kafeelRef:IS_AR?'المرجع':'Kafeel Reference',nationality:IS_AR?'الجنسية':'Nationality',
+  birthDate:IS_AR?'تاريخ الميلاد':'Birth Date',age:IS_AR?'العمر':'Age',
+  iqama:IS_AR?'رقم الإقامة':'Iqama No',iqamaExp:IS_AR?'انتهاء الإقامة':'Iqama Expiry',
+  passport:IS_AR?'الجواز':'Passport No',dept:IS_AR?'القسم':'Department',
+  salType:IS_AR?'نوع الراتب':'Salary Type',basic:IS_AR?'الراتب الأساسي':'Basic Salary',
+  net:IS_AR?'الراتب الصافي':'Net Salary',type:IS_AR?'النوع':'Type',
+  status:IS_AR?'الحالة':'Status',actions:IS_AR?'الإجراءات':'Actions',
+};
+function renderCode(p){return p.value?`<span class="code-badge">${p.value}</span>`:''}
+function renderStatus(p){return p.value?`<span class="st-active">${IS_AR?'نشيط':'Active'}</span>`:`<span class="st-inactive">${IS_AR?'غير نشيط':'Inactive'}</span>`}
+function renderNum(p){return p.value?Number(p.value).toLocaleString():'—'}
+class ActR{init(p){this.g=document.createElement('div');this.g.className='ag-act-cell';const id=p.data.id,n=(p.data.name||'').replace(/'/g,"\\'");this.g.innerHTML=`<button class="ag-ab ag-ab-edit" onclick="openEditEmp(${id})"><i class="fas fa-pencil-alt"></i></button><button class="ag-ab ag-ab-del" onclick="confirmDel('/employees/${id}/delete','${n}')"><i class="fas fa-trash"></i></button>`;}getGui(){return this.g;}}
+
+const cols=[
+  {headerName:'',field:'id',width:48,checkboxSelection:true,headerCheckboxSelection:true,sortable:false,suppressMenu:true,resizable:false,pinned:IS_AR?'right':'left'},
+  {headerName:STR.code,field:'employee_code',width:130,pinned:IS_AR?'right':'left',cellRenderer:renderCode,filter:'agTextColumnFilter'},
+  {headerName:STR.name,field:'name',minWidth:160,filter:'agTextColumnFilter'},
+  {headerName:STR.profession,field:'profession',width:150,filter:'agTextColumnFilter'},
+  {headerName:STR.kafeel,field:'kafeel_name',width:140,filter:'agTextColumnFilter'},
+  {headerName:STR.kafeelRef,field:'kafeel_reference',width:130,filter:'agTextColumnFilter'},
+  {headerName:STR.nationality,field:'nationality',width:120,filter:'agTextColumnFilter'},
+  {headerName:STR.birthDate,field:'birth_date',width:120,filter:'agTextColumnFilter'},
+  {headerName:STR.age,field:'age',width:140,filter:'agTextColumnFilter'},
+  {headerName:STR.iqama,field:'iqama_number',width:130,filter:'agTextColumnFilter'},
+  {headerName:STR.iqamaExp,field:'iqama_expiry',width:130,filter:'agTextColumnFilter'},
+  {headerName:STR.passport,field:'passport_number',width:130,filter:'agTextColumnFilter'},
+  {headerName:STR.dept,field:'department',width:130,filter:'agTextColumnFilter'},
+  {headerName:STR.salType,field:'salary_type',width:120,filter:'agSetColumnFilter'},
+  {headerName:STR.basic,field:'basic_salary',width:130,cellRenderer:renderNum,filter:'agNumberColumnFilter'},
+  {headerName:STR.net,field:'net_salary',width:130,cellRenderer:renderNum,filter:'agNumberColumnFilter'},
+  {headerName:STR.status,field:'is_active',width:100,cellRenderer:renderStatus},
+];
+if(IS_ADMIN)cols.push({headerName:STR.actions,field:'_a',width:100,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,resizable:false,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 8px'}});
+
+let gridApi;
+agGrid.createGrid(document.getElementById('empGrid'),{
+  columnDefs:cols,rowData:[],pagination:true,paginationPageSize:20,
+  rowSelection:'multiple',suppressRowClickSelection:true,animateRows:true,enableRtl:IS_AR,
+  defaultColDef:{sortable:true,resizable:true,filter:true,suppressMenu:false,menuTabs:['filterMenuTab','generalMenuTab']},
+  onGridReady(p){gridApi=p.api;loadData();},
+  onFilterChanged(){upd();},onSortChanged(){upd();},onPaginationChanged(){upd();},onSelectionChanged(){upd();},
+  getRowStyle(p){return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'};}
+});
+function loadData(){fetch(EMP_DATA_URL).then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);upd();});}
+function upd(){if(!gridApi)return;const sel=gridApi.getSelectedRows().length,disp=gridApi.getDisplayedRowCount();document.getElementById('selText').textContent=sel>0?`${sel} ${IS_AR?'محدد':'selected'}`:`${disp} ${IS_AR?'سجل':'records'}`;document.getElementById('pageInfo').textContent=`${disp} ${IS_AR?'سجل':'records'}`;}
+
+/* ══ FILTER POPUP ══ */
+let _aC=null;
+document.addEventListener('click',e=>{if(!e.target.closest('.pl-filter-popup')&&!e.target.closest('.pl-filt-icon'))document.getElementById('plFilterPopup').classList.remove('open');});
+function openFP(col,btn){_aC=col;const cur=(gridApi.getFilterModel()||{})[col];document.getElementById('plfpCondition').value=cur?.type||'contains';document.getElementById('plfpValue').value=cur?.filter||'';const r=btn.getBoundingClientRect(),p=document.getElementById('plFilterPopup');p.style.top=(r.bottom+window.scrollY+4)+'px';p.style.left=Math.min(r.left+window.scrollX,window.innerWidth-300)+'px';p.classList.add('open');setTimeout(()=>document.getElementById('plfpValue').focus(),50);}
+function applyCurrentFilter(){if(!_aC)return;const c=document.getElementById('plfpCondition').value,v=document.getElementById('plfpValue').value;(!v&&!['blank','notBlank'].includes(c))?gridApi.setColumnFilterModel(_aC,null).then(()=>gridApi.onFilterChanged()):gridApi.setColumnFilterModel(_aC,{filterType:'text',type:c,filter:v}).then(()=>gridApi.onFilterChanged());document.getElementById('plFilterPopup').classList.remove('open');}
+function clearCurrentFilter(){if(!_aC)return;gridApi.setColumnFilterModel(_aC,null).then(()=>gridApi.onFilterChanged());document.getElementById('plfpValue').value='';document.getElementById('plFilterPopup').classList.remove('open');}
+document.getElementById('plfpValue').addEventListener('keydown',e=>{if(e.key==='Enter')applyCurrentFilter();});
+function injFI(){document.querySelectorAll('.ag-header-cell[col-id]').forEach(cell=>{const cid=cell.getAttribute('col-id');if(!cid||['id','_a'].includes(cid))return;if(cell.querySelector('.pl-filt-icon'))return;const lbl=cell.querySelector('.ag-header-cell-label');if(!lbl)return;const btn=document.createElement('button');btn.className='pl-filt-icon';btn.innerHTML='<i class="fas fa-filter"></i>';btn.style.cssText='background:none;border:none;cursor:pointer;padding:0 3px;color:#9ca3af;font-size:10px;margin-left:2px;';btn.addEventListener('click',e=>{e.stopPropagation();openFP(cid,btn);});lbl.appendChild(btn);});}
+setTimeout(injFI,800);document.getElementById('empGrid').addEventListener('click',()=>setTimeout(injFI,100));
+
+/* ══ TRANSLATE ══════════════════════════════════════════════════════ */
+const _eT={},_eL={};
+function toAr(s){return s.replace(/[0-9]/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);}
+function isNum(s){return /^[\d٠-٩\s\-\+\(\)\.\/]+$/.test(s);}
+
+function eT(src,tid,sl){
+  if(isEditEmp)return;
+  if(_eL[tid])return;
+  const text=src.value.trim(),tgt=document.getElementById(tid);
+  if(!tgt)return;
+  clearTimeout(_eT[tid]);
+  if(!text){tgt.value='';return;}
+  if(isNum(text)){_eL[tid]=true;tgt.value=sl==='en'?toAr(text):text.replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));setTimeout(()=>_eL[tid]=false,150);return;}
+  _eT[tid]=setTimeout(()=>{
+    fetch(TRANSLATE_URL,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify({text,direction:`${sl}|${sl==='en'?'ar':'en'}`})})
+    .then(r=>r.json()).then(d=>{if(d.translated&&tgt){_eL[tid]=true;tgt.value=d.translated;tgt.classList.add('pl-translated');setTimeout(()=>{tgt.classList.remove('pl-translated');_eL[tid]=false;},900);}})
+    .catch(()=>{});
+  },700);
+}
+
+function eR(tid,sid,tl){
+  const src=document.getElementById(sid),tgt=document.getElementById(tid);
+  const text=src?src.value.trim():'';if(!text||!tgt)return;
+  const sl=tl==='ar'?'en':'ar';
+  fetch(TRANSLATE_URL,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify({text,direction:`${sl}|${tl}`})})
+  .then(r=>r.json()).then(d=>{if(d.translated)tgt.value=d.translated;}).catch(()=>{});
+}
+
+// Mirror EN → AR: numbers become Arabic-Indic, text stays as-is
+function mirrorNum(src, tid) {
+  const t = document.getElementById(tid);
+  if (!t) return;
+  const v = src.value;
+  // If it's a number/code, show Arabic-Indic numerals
+  t.value = v.replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+}
+
+// Mirror date: show as Arabic-Indic numeral string
+function mirrorDate(src, tid) {
+  const t = document.getElementById(tid);
+  if (!t) return;
+  t.value = src.value.replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+}
+
+// Keep old name for compatibility
+function syncNum(src, tid) { mirrorNum(src, tid); }
+
+/* ══ MCQ RADIO BUTTONS ══════════════════════════════════════════════ */
+function selectMCQ(groupId,btn,hiddenId,value){
+  document.querySelectorAll('#'+groupId+' .mcq-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const h=document.getElementById(hiddenId);if(h)h.value=value;
+  // Update AR display for employee type
+  if(groupId==='empTypeGroup'){
+    const ar=value==='skilled'?'مزدور':'غير مزدور';
+    const d=document.getElementById('empTypeArDisplay');if(d)d.textContent=ar;
+  }
+}
+
+function setMCQ(groupId,value,hiddenId){
+  document.querySelectorAll('#'+groupId+' .mcq-btn').forEach(b=>{
+    const v=b.querySelector('input')?.value;
+    b.classList.toggle('active',v===value);
+  });
+  const h=document.getElementById(hiddenId);if(h)h.value=value;
+}
+
+/* ══ AUTO CODE TOGGLE ══════════════════════════════════════════════ */
+function toggleAutoCode(){
+  const auto=document.getElementById('f_auto_code').checked;
+  document.getElementById('codeDisplayWrap').classList.toggle('d-none',!auto);
+  document.getElementById('codeInputWrap').classList.toggle('d-none',auto);
+}
+
+/* ══ PROFESSION DROPDOWN ══════════════════════════════════════════ */
+let _profsCache=null;
+function loadProfessions(selectedEn=''){
+  const sel=document.getElementById('f_profession');if(!sel)return;
+  const ph=IS_AR?'-- اختر المهنة --':'-- Select Profession --';
+  if(_profsCache){fillProfs(sel,_profsCache,ph,selectedEn);return;}
+  fetch(PROF_URL).then(r=>r.json()).then(p=>{_profsCache=p;fillProfs(sel,p,ph,selectedEn);}).catch(()=>{});
+}
+function fillProfs(sel,profs,ph,selectedEn){
+  sel.innerHTML=`<option value="">${ph}</option>`;
+  profs.forEach(p=>{sel.innerHTML+=`<option value="${p.en}" data-ar="${p.ar}"${p.en===selectedEn?' selected':''}>${p.label}</option>`;});
+  if(selectedEn)updateProfAr(selectedEn);
+}
+function updateProfAr(en){
+  if(!_profsCache)return;
+  const p=_profsCache.find(x=>x.en===en);
+  const ar=p?p.ar:'';
+  const hid=document.getElementById('f_profession_ar');
+  const disp=document.getElementById('f_profession_ar_display');
+  if(hid)hid.value=ar;if(disp)disp.value=ar;
+}
+function onProfessionChange(){updateProfAr(document.getElementById('f_profession').value);}
+
+/* ══ BUYERS DROPDOWN ══════════════════════════════════════════════ */
+let _buyersCache=null;
+function loadBuyers(selectedId=''){
+  const sel=document.getElementById('f_buyer_id');if(!sel)return;
+  const ph=IS_AR?'اختر مشتري / Select a buyer':'Select a buyer / اختر مشتري';
+  if(_buyersCache){fillBuyers(sel,_buyersCache,ph,selectedId);return;}
+  fetch(BUYERS_URL).then(r=>r.json()).then(b=>{_buyersCache=b;fillBuyers(sel,b,ph,selectedId);}).catch(()=>{});
+}
+function fillBuyers(sel,buyers,ph,selectedId){
+  sel.innerHTML=`<option value="">${ph}</option>`;
+  buyers.forEach(b=>{sel.innerHTML+=`<option value="${b.id}"${String(b.id)===String(selectedId)?' selected':''}>${b.label}</option>`;});
+}
+
+/* ══ BANK DROPDOWN ══════════════════════════════════════════════════ */
+let _banksCache=null;
+function loadBanks(selectedEn=''){
+  const sel=document.getElementById('f_bank_name_sel');if(!sel)return;
+  const ph=IS_AR?'-- اختر البنك --':'-- Select Bank --';
+  if(_banksCache){fillBanks(sel,_banksCache,ph,selectedEn);return;}
+  fetch(BANKS_URL).then(r=>r.json()).then(b=>{_banksCache=b;fillBanks(sel,b,ph,selectedEn);}).catch(()=>{});
+}
+function fillBanks(sel,banks,ph,selectedEn){
+  sel.innerHTML=`<option value="">${ph}</option>`;
+  banks.forEach(b=>{sel.innerHTML+=`<option value="${b.en}" data-ar="${b.ar}" data-swift="${b.swift}"${b.en===selectedEn?' selected':''}>${b.label}</option>`;});
+}
+function onEmpBankChange(){
+  const sel=document.getElementById('f_bank_name_sel');
+  const opt=sel.options[sel.selectedIndex];
+  const en=sel.value,ar=opt?opt.dataset.ar||'':'',sw=opt?opt.dataset.swift||'':'';
+  const hEn=document.getElementById('f_bank_name'),hAr=document.getElementById('f_bank_name_ar');
+  if(hEn)hEn.value=en;if(hAr)hAr.value=ar;
+  const swEl=document.getElementById('f_swift_code');if(swEl&&sw)swEl.value=sw;
+}
+
+/* ══ ALLOWANCES ════════════════════════════════════════════════════ */
+const ALLOWANCE_TYPES = IS_AR
+  ? ['بدل السكن','بدل المواصلات','بدل الهاتف','بدل اللباس','بدل التمثيل','أخرى']
+  : ['Housing','Transport','Phone','Clothing','Representation','Other'];
+
+function addAllowanceRow(name='',amount=0){
+  const container=document.getElementById('allowancesContainer');
+  const div=document.createElement('div');div.className='allowance-row';
+  div.innerHTML=`
+    <select name="allowance_name[]" class="pl-input pl-input-en" style="flex:1.5" onchange="calcNetSalary()">
+      <option value="">-- ${IS_AR?'نوع البدل':'Allowance Type'} --</option>
+      ${ALLOWANCE_TYPES.map(t=>`<option value="${t}"${t===name?' selected':''}>${t}</option>`).join('')}
+    </select>
+    <input type="number" name="allowance_amount[]" class="pl-input pl-input-en" style="flex:1" value="${amount}" min="0" step="0.01" placeholder="${IS_AR?'المبلغ':'Amount'}" oninput="calcNetSalary()">
+    <button type="button" class="btn-remove" onclick="this.parentElement.remove();calcNetSalary()"><i class="fas fa-times"></i></button>`;
+  container.appendChild(div);
+}
+
+function calcNetSalary(){
+  const basic=parseFloat(document.getElementById('f_basic_salary')?.value||0)||0;
+  const food=parseFloat(document.getElementById('f_food_allowance')?.value||0)||0;
+  const rent=parseFloat(document.getElementById('f_rent')?.value||0)||0;
+  let allowTotal=0;
+  document.querySelectorAll('[name="allowance_amount[]"]').forEach(inp=>{allowTotal+=parseFloat(inp.value||0)||0;});
+  const net=basic+food+rent+allowTotal;
+  const disp=document.getElementById('netSalaryDisplay');
+  if(disp)disp.textContent=net.toFixed(2);
+  const hid=document.getElementById('f_net_salary');
+  if(hid)hid.value=net.toFixed(2);
+}
+
+/* ══ MODAL OPEN/CLOSE ══════════════════════════════════════════════ */
+let currentEmpId=null, isEditEmp=false;
+
+function openAddEmp(){
+  currentEmpId=null; isEditEmp=false;
+  document.getElementById('empModalTitle').textContent=IS_AR?'تفاصيل الموظف':'Employee Details';
+  document.getElementById('empForm').action='{{ url_for("employees.add_employee") }}';
+  document.getElementById('empFormId').value='';
+  // Reset FIRST (clears all fields but NOT selects)
+  resetEmpForm();
+  // Then populate dropdowns AFTER reset
+  initNationalityDropdown();
+  loadProfessions();
+  loadBuyers();
+  loadBanks();
+  document.querySelectorAll('.emp-rt').forEach(b=>b.style.display='none');
+}
+
+function openEditEmp(id){
+  currentEmpId=id; isEditEmp=true;
+  document.getElementById('empModalTitle').textContent=IS_AR?'تعديل موظف':'Edit Employee';
+  document.getElementById('empForm').action=`/employees/${id}/edit`;
+  document.getElementById('empFormId').value=id;
+  // Show modal first so DOM is ready for dropdown population
+  const modal = new bootstrap.Modal(document.getElementById('empModal'));
+  modal.show();
+  // Load dropdowns immediately
+  initNationalityDropdown();
+  loadProfessions();
+  loadBuyers();
+  loadBanks();
+
+  fetch(`/employees/${id}/json`).then(r=>r.json()).then(d=>{
+    document.getElementById('empCodeDisplay').textContent=d.employee_code;
+    document.getElementById('f_auto_code').checked=d.auto_code!==false;
+    toggleAutoCode();
+    document.getElementById('f_manual_code').value=d.employee_code;
+    document.getElementById('f_is_active').checked=d.is_active;
+    document.getElementById('f_is_muslim').checked=d.is_muslim;
+
+    const textFields=['name','name_ar','kafeel_name','kafeel_name_ar','kafeel_reference','kafeel_reference_ar',
+      'arrival_date','birth_date','passport_number','passport_expiry','entry_number',
+      'iqama_number','iqama_expiry','education','education_ar','mobile','address','address_ar',
+      'email','home_city','home_city_ar','employee_reference','employee_reference_ar',
+      'rate','po_rate','po_number','food_allowance','rent','basic_salary','working_hours','overtime_rate',
+      'joining_date','department','department_ar','forman','forman_ar',
+      'hostel_name','hostel_name_ar','room_number','hostel_location','hostel_location_ar',
+      'swift_code','account_number','iban','crn','crn_ar','insurance_company','insurance_company_ar',
+      'insurance_expiry','labour_office'];
+    textFields.forEach(f=>{const el=document.getElementById('f_'+f);if(el)el.value=d[f]||'';});
+
+    // Mirror all numeric/date fields to AR
+    const numMirrors = [
+      ['f_passport_number','f_passport_number_ar'],['f_entry_number','f_entry_number_ar'],
+      ['f_iqama_number','f_iqama_number_ar'],['f_room_number','f_room_number_ar'],
+      ['f_account_number','f_acct_ar_disp'],['f_swift_code','f_swift_ar'],['f_iban','f_iban_ar'],
+      ['f_labour_office','f_labour_office_ar'],
+      ['f_rate','f_rate_ar'],['f_po_rate','f_po_rate_ar'],['f_po_number','f_po_number_ar'],
+      ['f_basic_salary','f_basic_salary_ar'],['f_food_allowance','f_food_allowance_ar'],
+      ['f_rent','f_rent_ar'],['f_working_hours','f_working_hours_ar'],
+      ['f_overtime_rate','f_overtime_rate_ar'],
+    ];
+    numMirrors.forEach(([srcId,tgtId])=>{
+      const src=document.getElementById(srcId), tgt=document.getElementById(tgtId);
+      if(src&&tgt) tgt.value=(src.value||'').replace(/[0-9]/g,n=>'٠١٢٣٤٥٦٧٨٩'[n]);
+    });
+    const dateMirrors=[
+      ['f_arrival_date','f_arrival_date_ar'],['f_passport_expiry','f_passport_expiry_ar'],
+      ['f_iqama_expiry','f_iqama_expiry_ar'],['f_joining_date','f_joining_date_ar_display'],
+      ['f_insurance_expiry','f_insurance_expiry_ar_display'],
+    ];
+    dateMirrors.forEach(([srcId,tgtId])=>{
+      const src=document.getElementById(srcId), tgt=document.getElementById(tgtId);
+      if(src&&tgt) tgt.value=(src.value||'').replace(/[0-9]/g,n=>'٠١٢٣٤٥٦٧٨٩'[n]);
+    });
+    calcAge();
+
+    // MCQ
+    setMCQ('empTypeGroup',d.employee_type||'','f_employee_type');
+    setMCQ('salTypeGroup',d.salary_type||'salary','f_salary_type');
+    setMCQ('shiftGroup',d.shift_type||'day','f_shift_type');
+    setMCQ('passportLocGroup',d.passport_location||'IN','f_passport_location');
+
+    // Set dropdown values — use setTimeout to ensure API responses arrived
+    setTimeout(() => {
+      initNationalityDropdown(d.nationality||'');
+      loadProfessions(d.profession||'');
+      loadBuyers(d.buyer_id||'');
+      loadBanks(d.bank_name||'');
+    }, 100);
+
+    // Allowances
+    document.getElementById('allowancesContainer').innerHTML='';
+    (d.allowances||[]).forEach(a=>addAllowanceRow(a.name,a.amount));
+    calcNetSalary();
+
+    document.querySelectorAll('.emp-rt').forEach(b=>b.style.display='inline-flex');
+  });
+}
+
+function submitEmpForm(){document.getElementById('empForm').submit();}
+
+function resetEmpForm(){
+  // DO NOT use form.reset() — it wipes select dropdowns we populate via JS
+  // Manually clear all text/number/date inputs
+  const textIds = [
+    'f_name','f_name_ar','f_kafeel_name','f_kafeel_name_ar',
+    'f_kafeel_reference','f_kafeel_reference_ar',
+    'f_arrival_date','f_birth_date','f_passport_number','f_passport_expiry',
+    'f_entry_number','f_iqama_number','f_iqama_expiry',
+    'f_education','f_education_ar',
+    'f_mobile','f_address','f_address_ar','f_email',
+    'f_home_city','f_home_city_ar','f_employee_reference','f_employee_reference_ar',
+    'f_rate','f_po_rate','f_po_number','f_basic_salary','f_food_allowance',
+    'f_rent','f_working_hours','f_overtime_rate',
+    'f_joining_date','f_department','f_department_ar','f_forman','f_forman_ar',
+    'f_hostel_name','f_hostel_name_ar','f_room_number',
+    'f_hostel_location','f_hostel_location_ar',
+    'f_bank_name','f_bank_name_ar','f_swift_code','f_account_number','f_iban',
+    'f_crn','f_crn_ar','f_insurance_company','f_insurance_company_ar',
+    'f_insurance_expiry','f_labour_office',
+    // AR mirror/display fields
+    'f_nationality_ar','f_nationality_ar_display','f_profession_ar','f_profession_ar_display',
+    'f_arrival_date_ar','f_age_display','f_passport_number_ar','f_passport_expiry_ar',
+    'f_entry_number_ar','f_iqama_number_ar','f_iqama_expiry_ar',
+    'f_joining_date_ar_display','f_insurance_expiry_ar_display',
+    'f_rate_ar','f_po_rate_ar','f_po_number_ar','f_basic_salary_ar',
+    'f_food_allowance_ar','f_rent_ar','f_working_hours_ar','f_overtime_rate_ar',
+    'f_room_number_ar','f_acct_ar_disp','f_swift_ar','f_iban_ar','f_labour_office_ar',
+  ];
+  textIds.forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+
+  // Reset checkboxes
+  const active = document.getElementById('f_is_active'); if(active) active.checked = true;
+  const muslim = document.getElementById('f_is_muslim'); if(muslim) muslim.checked = false;
+
+  // Reset MCQ buttons
+  setMCQ('shiftGroup','day','f_shift_type');
+  setMCQ('passportLocGroup','IN','f_passport_location');
+  // Clear employee type and salary type MCQ
+  document.querySelectorAll('#empTypeGroup .mcq-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#salTypeGroup .mcq-btn').forEach(b=>b.classList.remove('active'));
+  const etHid=document.getElementById('f_employee_type'); if(etHid)etHid.value='';
+  const stHid=document.getElementById('f_salary_type'); if(stHid)stHid.value='';
+
+  // Reset allowances
+  const ac = document.getElementById('allowancesContainer'); if(ac) ac.innerHTML='';
+  const ns = document.getElementById('netSalaryDisplay'); if(ns) ns.textContent='0.00';
+  const nsh = document.getElementById('f_net_salary'); if(nsh) nsh.value='0';
+
+  // Reset document upload
+  const docDisp = document.getElementById('docNameDisplay');
+  if(docDisp) docDisp.textContent = IS_AR ? 'اسحب الملفات هنا لتحميلها / Drag and drop files' : 'Drag and drop files to here to upload / اسحب الملفات هنا';
+  const docInput = document.getElementById('f_document'); if(docInput) docInput.value='';
+
+  // Reset code display
+  const codeDisp = document.getElementById('empCodeDisplay');
+  if(codeDisp) codeDisp.textContent = IS_AR ? '(تلقائي)' : '(Auto)';
+
+  document.querySelectorAll('.emp-rt').forEach(b=>b.style.display='none');
+}
+
+function toggleAcc(n){const b=document.getElementById('body-'+n),i=document.getElementById('icon-'+n),o=!b.classList.contains('d-none');b.classList.toggle('d-none',o);i.className=o?'fas fa-chevron-down pl-acc-icon':'fas fa-chevron-up pl-acc-icon';}
+
+/* Document upload */
+function onDocChosen(input){
+  const d=document.getElementById('docNameDisplay');
+  if(d)d.textContent=input.files[0]?input.files[0].name:(IS_AR?'اسحب الملفات هنا':'Drag and drop files');
+}
+function doUpload(){}
+function cancelUpload(){
+  const f=document.getElementById('f_document');if(f)f.value='';
+  const d=document.getElementById('docNameDisplay');
+  if(d)d.textContent=IS_AR?'اسحب الملفات هنا لتحميلها / Drag and drop files':'Drag and drop files to here to upload / اسحب الملفات هنا';
+}
+
+/* Delete */
+function confirmDel(url,name){
+  document.getElementById('delForm').action=url;
+  document.getElementById('delText').textContent=(IS_AR?'حذف: ':'Delete: ')+name+'?';
+  new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+document.getElementById('empForm').addEventListener('submit',()=>setTimeout(loadData,600));
+
+/* ══ AGE CALCULATION ════════════════════════════════════════════════ */
+function calcAge(){
+  const bdEl=document.getElementById('f_birth_date');
+  const dispEl=document.getElementById('f_age_display');
+  if(!bdEl||!dispEl||!bdEl.value)return;
+  const bd=new Date(bdEl.value), today=new Date();
+  let yrs=today.getFullYear()-bd.getFullYear();
+  let months=today.getMonth()-bd.getMonth();
+  let days=today.getDate()-bd.getDate();
+  if(days<0){months--;days+=new Date(today.getFullYear(),today.getMonth(),0).getDate();}
+  if(months<0){yrs--;months+=12;}
+  if(IS_AR){
+    dispEl.value=`${yrs} سنة ${months} شهر ${days} يوم`;
+  } else {
+    dispEl.value=`${yrs} Yrs ${months} Mo ${days} Days`;
+  }
+}
+
+/* Auto-fill AR display fields for dates */
+document.addEventListener('DOMContentLoaded',()=>{
+  // Wire all date inputs to their AR mirror
+  const dateMirrors = [
+    ['f_joining_date',    'f_joining_date_ar_display'],
+    ['f_insurance_expiry','f_insurance_expiry_ar_display'],
+    ['f_arrival_date',    'f_arrival_date_ar'],
+    ['f_passport_expiry', 'f_passport_expiry_ar'],
+    ['f_iqama_expiry',    'f_iqama_expiry_ar'],
+  ];
+  dateMirrors.forEach(([srcId, tgtId]) => {
+    const src = document.getElementById(srcId);
+    if (src) src.addEventListener('change', function() {
+      const tgt = document.getElementById(tgtId);
+      if (tgt) tgt.value = this.value.replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+    });
+  });
+  // Birth date → calculate age
+  const bd = document.getElementById('f_birth_date');
+  if (bd) bd.addEventListener('change', calcAge);
+});
+
+/* Wire all date mirrors on load */
+</script>
+{% endblock %}

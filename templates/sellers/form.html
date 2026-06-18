@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} – Seller MS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if current_locale == 'ar' %}الرئيسية{% else %}Home{% endif %}</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('sellers.list_sellers') }}">{% if current_locale == 'ar' %}البائعون{% else %}Sellers{% endif %}</a></li>
+<li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="fas {% if is_edit %}fa-edit{% else %}fa-user-plus{% endif %} me-2 text-primary"></i>
+        {{ title }}
+        {% if is_edit and seller %}
+        <small class="text-muted fs-6 ms-2">{{ seller.seller_code }}</small>
+        {% endif %}
+    </h1>
+</div>
+
+<form method="POST" action="" novalidate>
+    {{ form.hidden_tag() }}
+
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs nav-tabs-modern mb-0" id="sellerTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">
+            <i class="fas fa-info-circle me-1"></i> {% if current_locale == 'ar' %}المعلومات العامة{% else %}General{% endif %}
+        </button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-contact" type="button">
+            <i class="fas fa-phone me-1"></i> {% if current_locale == 'ar' %}جهة الاتصال{% else %}Contact{% endif %}
+        </button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-address" type="button">
+            <i class="fas fa-map-marker-alt me-1"></i> {% if current_locale == 'ar' %}العنوان{% else %}Address{% endif %}
+        </button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-business" type="button">
+            <i class="fas fa-briefcase me-1"></i> {% if current_locale == 'ar' %}تجاري{% else %}Business{% endif %}
+        </button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-bank" type="button">
+            <i class="fas fa-university me-1"></i> {% if current_locale == 'ar' %}بيانات البنك{% else %}Bank{% endif %}
+        </button></li>
+    </ul>
+
+    <div class="tab-content form-tab-content">
+
+        <!-- SECTION 1: General -->
+        <div class="tab-pane fade show active" id="tab-general">
+            <div class="card card-modern border-top-0 rounded-top-0">
+                <div class="card-body">
+                    {% if is_edit and seller %}
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-muted">{% if current_locale == 'ar' %}كود البائع{% else %}Seller Code{% endif %}</label>
+                            <input type="text" class="form-control" value="{{ seller.seller_code }}" disabled>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">{% if current_locale == 'ar' %}اسم البائع{% else %}Seller Name{% endif %}</label>
+                            {{ form.seller_name(class="form-control" + (" is-invalid" if form.seller_name.errors else "")) }}
+                            {% for e in form.seller_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{% if current_locale == 'ar' %}الاسم التجاري{% else %}Trade Name{% endif %}</label>
+                            {{ form.trade_name(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}نوع البائع{% else %}Seller Type{% endif %}</label>
+                            {{ form.seller_type(class="form-select") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}فئة المورد{% else %}Vendor Category{% endif %}</label>
+                            {{ form.vendor_category(class="form-select") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required">{% if current_locale == 'ar' %}الحالة{% else %}Status{% endif %}</label>
+                            {{ form.status(class="form-select") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}رقم التسجيل{% else %}Registration Number{% endif %}</label>
+                            {{ form.registration_number(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}الرقم الضريبي{% else %}Tax Number{% endif %}</label>
+                            {{ form.tax_number(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}رقم ضريبة القيمة المضافة{% else %}VAT Number{% endif %}</label>
+                            {{ form.vat_number(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}رقم الرخصة{% else %}License Number{% endif %}</label>
+                            {{ form.license_number(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}نوع الصناعة{% else %}Industry Type{% endif %}</label>
+                            {{ form.industry_type(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}الموقع الإلكتروني{% else %}Website{% endif %}</label>
+                            {{ form.website(class="form-control", placeholder="https://...") }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{% if current_locale == 'ar' %}ملاحظات{% else %}Notes{% endif %}</label>
+                            {{ form.notes(class="form-control", rows="3") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: Contact -->
+        <div class="tab-pane fade" id="tab-contact">
+            <div class="card card-modern border-top-0 rounded-top-0">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{% if current_locale == 'ar' %}الشخص المسؤول{% else %}Contact Person{% endif %}</label>
+                            {{ form.contact_person(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{% if current_locale == 'ar' %}المسمى الوظيفي{% else %}Designation{% endif %}</label>
+                            {{ form.designation(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}رقم الجوال{% else %}Mobile Number{% endif %}</label>
+                            {{ form.mobile(class="form-control", placeholder="+1 555 000 0000") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}جوال بديل{% else %}Alternate Mobile{% endif %}</label>
+                            {{ form.alternate_mobile(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}رقم الهاتف{% else %}Telephone{% endif %}</label>
+                            {{ form.telephone(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{% if current_locale == 'ar' %}البريد الإلكتروني{% else %}Email Address{% endif %}</label>
+                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="email@example.com") }}
+                            {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: Address -->
+        <div class="tab-pane fade" id="tab-address">
+            <div class="card card-modern border-top-0 rounded-top-0">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">{% if current_locale == 'ar' %}العنوان - السطر 1{% else %}Address Line 1{% endif %}</label>
+                            {{ form.address1(class="form-control") }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{% if current_locale == 'ar' %}العنوان - السطر 2{% else %}Address Line 2{% endif %}</label>
+                            {{ form.address2(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}المدينة{% else %}City{% endif %}</label>
+                            {{ form.city(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}المنطقة{% else %}State{% endif %}</label>
+                            {{ form.state(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}الرمز البريدي{% else %}Postal Code{% endif %}</label>
+                            {{ form.postal_code(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{% if current_locale == 'ar' %}الدولة{% else %}Country{% endif %}</label>
+                            {{ form.country(class="form-control") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: Business -->
+        <div class="tab-pane fade" id="tab-business">
+            <div class="card card-modern border-top-0 rounded-top-0">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{% if current_locale == 'ar' %}شروط الدفع{% else %}Payment Terms{% endif %}</label>
+                            {{ form.payment_terms(class="form-select") }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{% if current_locale == 'ar' %}أيام الائتمان{% else %}Credit Days{% endif %}</label>
+                            {{ form.credit_days(class="form-control", min="0", max="365") }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{% if current_locale == 'ar' %}العملة{% else %}Currency{% endif %}</label>
+                            {{ form.currency(class="form-select") }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{% if current_locale == 'ar' %}شروط التسليم{% else %}Delivery Terms{% endif %}</label>
+                            {{ form.delivery_terms(class="form-select") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 5: Bank -->
+        <div class="tab-pane fade" id="tab-bank">
+            <div class="card card-modern border-top-0 rounded-top-0">
+                <div class="card-body">
+                    <div class="alert alert-info d-flex align-items-center mb-4">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        {% if current_locale == 'ar' %}يتم تخزين بيانات البنك بشكل آمن ومشفر.{% else %}Bank details are stored securely and encrypted.{% endif %}
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{% if current_locale == 'ar' %}اسم البنك{% else %}Bank Name{% endif %}</label>
+                            {{ form.bank_name(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{% if current_locale == 'ar' %}اسم صاحب الحساب{% else %}Account Holder Name{% endif %}</label>
+                            {{ form.account_holder(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}رقم الحساب{% else %}Account Number{% endif %}</label>
+                            {{ form.account_number(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}رقم IBAN{% else %}IBAN{% endif %}</label>
+                            {{ form.iban(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{% if current_locale == 'ar' %}كود SWIFT{% else %}SWIFT Code{% endif %}</label>
+                            {{ form.swift_code(class="form-control") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-actions mt-4">
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="fas fa-save me-2"></i>
+            {% if is_edit %}{% if current_locale == 'ar' %}تحديث{% else %}Update{% endif %}{% else %}{% if current_locale == 'ar' %}حفظ{% else %}Save{% endif %}{% endif %}
+        </button>
+        <a href="{{ url_for('sellers.list_sellers') }}" class="btn btn-secondary btn-lg">
+            <i class="fas fa-times me-2"></i>{% if current_locale == 'ar' %}إلغاء{% else %}Cancel{% endif %}
+        </a>
+    </div>
+</form>
+{% endblock %}

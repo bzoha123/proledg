@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% set ar = current_locale == 'ar' %}
+{% block title %}{% if ar %}المشترون{% else %}Buyers{% endif %}{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
+<li class="breadcrumb-item active">{% if ar %}المشترون{% else %}Buyers{% endif %}</li>
+{% endblock %}
+{% block content %}
+<div class="proledg-page">
+  <h2 class="page-heading">{% if ar %}المشترون{% else %}Buyer Master{% endif %}</h2>
+  <div class="toolbar">
+    <div class="toolbar-left">
+      {% if current_user.is_admin() %}
+      <button class="tool-btn tool-btn-green" data-bs-toggle="modal" data-bs-target="#addModal"><i class="fas fa-plus"></i></button>
+      {% endif %}
+      <a href="{{ url_for('employees.list_employees') }}" class="tool-btn"><i class="fas fa-arrow-left"></i></a>
+    </div>
+  </div>
+  <div class="proledg-table-wrap">
+    <table class="proledg-table">
+      <thead><tr>
+        <th>#</th>
+        <th>{% if ar %}اسم المشتري بالإنجليزية{% else %}Buyer Name (English){% endif %}</th>
+        <th>{% if ar %}اسم المشتري بالعربية{% else %}Buyer Name (Arabic){% endif %}</th>
+        <th>{% if ar %}الحالة{% else %}Status{% endif %}</th>
+        {% if current_user.is_admin() %}<th class="text-center">{% if ar %}إجراءات{% else %}Actions{% endif %}</th>{% endif %}
+      </tr></thead>
+      <tbody>
+        {% for b in items %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td class="fw-semibold">{{ b.buyer_name_en }}</td>
+          <td dir="rtl" style="text-align:right">{{ b.buyer_name_ar or '—' }}</td>
+          <td><span class="badge {% if b.is_active %}status-active{% else %}status-inactive{% endif %}">{% if b.is_active %}{% if ar %}نشط{% else %}Active{% endif %}{% else %}{% if ar %}غير نشط{% else %}Inactive{% endif %}{% endif %}</span></td>
+          {% if current_user.is_admin() %}
+          <td class="text-center">
+            <button class="action-btn action-btn-edit" onclick="openEdit({{ b.id }},'{{ b.buyer_name_en|e }}','{{ b.buyer_name_ar|e }}',{{ b.is_active|lower }})"><i class="fas fa-pencil-alt"></i></button>
+            <form method="POST" action="{{ url_for('lookups.delete_buyer', id=b.id) }}" class="d-inline" onsubmit="return confirm('Delete?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="action-btn action-btn-delete"><i class="fas fa-trash"></i></button>
+            </form>
+          </td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="empty-row">{% if ar %}لا يوجد مشترون{% else %}No buyers added{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="proledg-pagination"><span class="page-count">{{ items|length }} {% if ar %}مشتري{% else %}buyer(s){% endif %}</span></div>
+</div>
+<div class="modal fade" id="addModal" tabindex="-1">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content proledg-modal">
+      <div class="modal-header proledg-modal-header">
+        <h5 class="modal-title" id="modalTitle">{% if ar %}إضافة مشتري{% else %}Add Buyer{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="buyerForm" method="POST" action="{{ url_for('lookups.add_buyer') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="pl-row mb-2">
+            <div class="pl-field-wrap">
+              <div class="pl-labels"><span class="pl-label-en">{% if ar %}الاسم بالإنجليزية{% else %}Name (English){% endif %}<span class="pl-req">*</span></span></div>
+              <div class="pl-en-wrap">
+                <input type="text" name="buyer_name_en" id="b_en" class="pl-input pl-input-en" required oninput="bTranslate(this,'b_ar','en')">
+                <button type="button" class="pl-retranslate pl-retranslate-en" onclick="bRetrans('b_ar','b_en','ar')"><i class="fas fa-sync-alt"></i></button>
+              </div>
+            </div>
+            <div class="pl-field-wrap">
+              <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Name (English){% else %}الاسم بالعربية{% endif %}</span></div>
+              <div class="pl-ar-wrap">
+                <input type="text" name="buyer_name_ar" id="b_ar" class="pl-input pl-input-ar" dir="rtl" oninput="bTranslate(this,'b_en','ar')">
+                <span class="pl-spin" id="b_spin"></span>
+                <button type="button" class="pl-retranslate pl-retranslate-ar" onclick="bRetrans('b_en','b_ar','en')"><i class="fas fa-sync-alt"></i></button>
+              </div>
+            </div>
+          </div>
+          <div class="form-check mt-2"><input type="checkbox" name="is_active" id="b_active" class="form-check-input" checked><label for="b_active" class="form-check-label">{% if ar %}نشط{% else %}Active{% endif %}</label></div>
+        </form>
+      </div>
+      <div class="modal-footer proledg-modal-footer">
+        <button type="button" class="pl-footer-btn pl-btn-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button type="button" class="pl-footer-btn pl-btn-save" onclick="document.getElementById('buyerForm').submit()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const TRANSLATE_URL='{{ url_for("sellers.translate_text") }}';
+const CSRF='{{ csrf_token() }}';
+let _t=null;
+function bTranslate(src,tid,sl){clearTimeout(_t);const text=src.value.trim(),tgt=document.getElementById(tid);if(!text){if(tgt)tgt.value='';return;}_t=setTimeout(()=>{fetch(TRANSLATE_URL,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify({text,direction:`${sl}|${sl==='en'?'ar':'en'}`})}).then(r=>r.json()).then(d=>{if(d.translated&&tgt)tgt.value=d.translated;}).catch(()=>{});},700);}
+function bRetrans(tid,sid,tl){const src=document.getElementById(sid),tgt=document.getElementById(tid);const text=src?src.value.trim():'';if(!text||!tgt)return;fetch(TRANSLATE_URL,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify({text,direction:`${tl==='ar'?'en':'ar'}|${tl}`})}).then(r=>r.json()).then(d=>{if(d.translated)tgt.value=d.translated;}).catch(()=>{});}
+function openEdit(id,en,ar,active){document.getElementById('modalTitle').textContent='Edit Buyer';document.getElementById('buyerForm').action=`/buyers/${id}/edit`;document.getElementById('b_en').value=en;document.getElementById('b_ar').value=ar;document.getElementById('b_active').checked=active;new bootstrap.Modal(document.getElementById('addModal')).show();}
+</script>
+{% endblock %}
