@@ -72,8 +72,11 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
 .field-wrap{position:relative;display:flex;align-items:center;}
 .field-wrap .field-input{flex:1;padding-right:36px;}
 .field-wrap[dir="rtl"] .field-input{padding-right:12px;padding-left:36px;}
-.retrans-btn{position:absolute;right:6px;width:24px;height:24px;border-radius:5px;border:1px solid #bfdbfe;background:#eff6ff;display:none;align-items:center;justify-content:center;cursor:pointer;font-size:10px;color:#2563eb;flex-shrink:0;}
+.field-wrap[dir="rtl"] .field-input{padding-right:12px;padding-left:36px;}
+.retrans-btn{position:absolute;right:6px;width:24px;height:24px;border-radius:5px;border:1px solid #bfdbfe;background:#eff6ff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;color:#2563eb;flex-shrink:0;}
 .field-wrap[dir="rtl"] .retrans-btn{right:auto;left:6px;background:#f0fdf4;border-color:#bbf7d0;color:#16a34a;}
+.en-retrans{background:#eff6ff!important;border-color:#bfdbfe!important;color:#2563eb!important;}
+.ar-retrans{background:#f0fdf4!important;border-color:#bbf7d0!important;color:#16a34a!important;}
 .retrans-btn:hover{filter:brightness(0.95);}
 .field-spin{position:absolute;right:34px;color:#9ca3af;font-size:11px;}
 .translated-flash{animation:tflash .6s ease;}
@@ -213,22 +216,47 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
 
 {# Bilingual field: EN input (left) + AR input (right), both real, auto-translate #}
 {% macro bf(fname, len, lar, req=False) %}
+              {# ── LEFT: English input (always editable) ───────────────
+                 EN portal: typing here → auto-fills Arabic  → 🔄 re-does EN→AR
+                 AR portal: typing here → auto-fills Arabic  → 🔄 re-does EN→AR
+                 User can always edit either side manually without affecting the other.
+              ───────────────────────────────────────────────────────── #}
               <div class="field-item">
-                <div class="field-label" dir="ltr" style="text-align:left">{{ len }}{% if req %}<span class="field-req">*</span>{% endif %}</div>
+                <div class="field-label" dir="ltr" style="text-align:left">
+                  {{ len }}{% if req %}<span class="field-req">*</span>{% endif %}
+                </div>
                 <div class="field-wrap" dir="ltr">
-                  <input type="text" name="{{ fname }}" id="f_{{ fname }}" class="field-input" dir="ltr"
-                         {% if req %}required{% endif %} placeholder="{{ len }}"
-                         oninput="biTranslate('f_{{ fname }}','f_{{ fname }}_ar','en')">
-                  <button type="button" class="retrans-btn bi-rt" data-side="en" onclick="biRetranslate('f_{{ fname }}','f_{{ fname }}_ar','en')"><i class="fas fa-sync-alt"></i></button>
+                  <input type="text" name="{{ fname }}" id="f_{{ fname }}"
+                         class="field-input" dir="ltr"
+                         {% if req %}required{% endif %}
+                         placeholder="{{ len }}"
+                         oninput="biTrans('f_{{ fname }}','f_{{ fname }}_ar','en')">
+                  <button type="button" class="retrans-btn en-retrans"
+                          title="Re-translate EN → AR"
+                          onclick="biRetrans('f_{{ fname }}','f_{{ fname }}_ar','en')">
+                    <i class="fas fa-sync-alt"></i>
+                  </button>
                 </div>
               </div>
+              {# ── RIGHT: Arabic input (always editable) ───────────────
+                 Typing here auto-fills English if you want,
+                 but changes to AR side never override what's in EN side.
+              ───────────────────────────────────────────────────────── #}
               <div class="field-item">
-                <div class="field-label" dir="rtl" style="text-align:right">{% if req %}<span class="field-req">*</span>{% endif %}{{ lar }}</div>
+                <div class="field-label" dir="rtl" style="text-align:right">
+                  {% if req %}<span class="field-req">*</span>{% endif %}{{ lar }}
+                </div>
                 <div class="field-wrap" dir="rtl">
-                  <input type="text" name="{{ fname }}_ar" id="f_{{ fname }}_ar" class="field-input" dir="rtl"
-                         placeholder="{{ lar }}" oninput="biTranslate('f_{{ fname }}_ar','f_{{ fname }}','ar')">
+                  <input type="text" name="{{ fname }}_ar" id="f_{{ fname }}_ar"
+                         class="field-input" dir="rtl"
+                         placeholder="{{ lar }}"
+                         oninput="biTrans('f_{{ fname }}_ar','f_{{ fname }}','ar')">
                   <span class="field-spin" id="spin_{{ fname }}"></span>
-                  <button type="button" class="retrans-btn bi-rt" data-side="ar" onclick="biRetranslate('f_{{ fname }}_ar','f_{{ fname }}','ar')"><i class="fas fa-sync-alt"></i></button>
+                  <button type="button" class="retrans-btn ar-retrans"
+                          title="Re-translate AR → EN"
+                          onclick="biRetrans('f_{{ fname }}_ar','f_{{ fname }}','ar')">
+                    <i class="fas fa-sync-alt"></i>
+                  </button>
                 </div>
               </div>
 {% endmacro %}
@@ -780,94 +808,107 @@ function togAcc(key) {
 
 /* ════════ BILINGUAL TEXT TRANSLATE (auto, add mode only) ════════ */
 const _biTimers = {}, _biLock = {};
-let isEditEmp = false;
+let isEditEmp = false; // kept for reference but no longer blocks translation
 
-function biTranslate(srcId, tgtId, srcLang) {
-  if (isEditEmp) return; // edit mode = manual only
+/* ════════ BILINGUAL AUTO-TRANSLATE ══════════════════════════════
+   biTrans(srcId, tgtId, srcLang):
+     Called on every keystroke in a bilingual input.
+     After 700ms debounce, translates and fills the OTHER side.
+     - Both sides are always editable — no locking
+     - Auto-translate works the same in ADD and EDIT mode
+     - If you manually edit the AR side after auto-fill, that's fine —
+       the EN side is untouched. Same in reverse.
+     - Retranslate (🔄) button: force re-translate that side on demand
+
+   EN portal example:
+     Type "Ali Hassan" in EN box → Arabic fills "علي حسن" automatically
+     Edit "علي حسن" manually → EN stays "Ali Hassan" untouched
+     Click 🔄 on EN box → re-translates EN value → overwrites AR again
+
+   AR portal example:
+     Type "علي حسن" in AR box → English fills "Ali Hassan" automatically
+     Edit "Ali Hassan" manually → AR stays "علي حسن" untouched
+     Click 🔄 on AR box → re-translates AR value → overwrites EN again
+════════════════════════════════════════════════════════════════ */
+function biTrans(srcId, tgtId, srcLang) {
+  // EN portal: only auto-translate EN→AR (srcLang='en'). AR changes don't auto-translate.
+  // AR portal: only auto-translate AR→EN (srcLang='ar'). EN changes don't auto-translate.
+  // To push the other direction, user must click the 🔄 retranslate button.
+  if (!IS_AR && srcLang === 'ar') return;  // EN portal: ignore AR keystrokes
+  if (IS_AR  && srcLang === 'en') return;  // AR portal: ignore EN keystrokes
+
   if (_biLock[tgtId]) return;
   const src = document.getElementById(srcId), tgt = document.getElementById(tgtId);
   if (!src || !tgt) return;
   const text = src.value.trim();
   clearTimeout(_biTimers[tgtId]);
   if (!text) { tgt.value = ''; return; }
-  // numeric/code passthrough with Arabic-Indic mirror
-  if (/^[\d\s\-\+\(\)\.\/]+$/.test(text)) {
+  // Numeric/code: mirror as Arabic-Indic numerals instantly (no API needed)
+  if (/^[\d٠-٩\s\-\+\(\)\.\/]+$/.test(text)) {
     _biLock[tgtId] = true;
-    tgt.value = srcLang === 'en' ? text.replace(/[0-9]/g, d=>'٠١٢٣٤٥٦٧٨٩'[d]) : text.replace(/[٠-٩]/g, d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
-    setTimeout(()=>_biLock[tgtId]=false, 150);
+    tgt.value = srcLang === 'en'
+      ? text.replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d])
+      : text.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+    setTimeout(() => _biLock[tgtId] = false, 150);
     return;
   }
   const tgtLang = srcLang === 'en' ? 'ar' : 'en';
-  const fieldBase = tgtId.replace('f_','').replace('_ar','');
-  const spin = document.getElementById('spin_'+fieldBase);
+  const fieldBase = tgtId.replace(/^f_/, '').replace(/_ar$/, '');
+  const spin = document.getElementById('spin_' + fieldBase);
   if (spin) spin.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
   _biTimers[tgtId] = setTimeout(() => {
-    fetch(TR, {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF}, body:JSON.stringify({text, direction:`${srcLang}|${tgtLang}`})})
-    .then(r=>r.json()).then(d=>{
+    fetch(TR, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify({text, direction:`${srcLang}|${tgtLang}`})
+    })
+    .then(r => r.json())
+    .then(d => {
       if (d.translated && tgt) {
         _biLock[tgtId] = true;
         tgt.value = d.translated;
         tgt.classList.add('translated-flash');
-        setTimeout(()=>{tgt.classList.remove('translated-flash');_biLock[tgtId]=false;}, 700);
+        setTimeout(() => { tgt.classList.remove('translated-flash'); _biLock[tgtId] = false; }, 700);
       }
       if (spin) spin.innerHTML = '';
-    }).catch(()=>{if(spin)spin.innerHTML='';});
+    })
+    .catch(() => { if (spin) spin.innerHTML = ''; });
   }, 700);
 }
 
-function biRetranslate(srcId, tgtId, tgtLang) {
+// biRetrans: manual retranslate button click
+// EN 🔄 button: reads f_name → translates to AR → writes f_name_ar  (srcLang='en', tgtLang='ar')
+// AR 🔄 button: reads f_name_ar → translates to EN → writes f_name  (srcLang='ar', tgtLang='en')
+function biRetrans(srcId, tgtId, srcLang) {
   const src = document.getElementById(srcId), tgt = document.getElementById(tgtId);
   const text = src ? src.value.trim() : '';
   if (!text || !tgt) return;
-  const srcLang = tgtLang === 'ar' ? 'en' : 'ar';
-  fetch(TR, {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF}, body:JSON.stringify({text, direction:`${srcLang}|${tgtLang}`})})
-  .then(r=>r.json()).then(d=>{ if (d.translated) tgt.value = d.translated; }).catch(()=>{});
+  const tgtLang = srcLang === 'en' ? 'ar' : 'en';
+  const fieldBase = tgtId.replace(/^f_/, '').replace(/_ar$/, '');
+  const spin = document.getElementById('spin_' + fieldBase);
+  if (spin) spin.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
+  fetch(TR, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body: JSON.stringify({text, direction:`${srcLang}|${tgtLang}`})
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.translated && tgt) {
+      tgt.value = d.translated;
+      tgt.classList.add('translated-flash');
+      setTimeout(() => tgt.classList.remove('translated-flash'), 700);
+    }
+    if (spin) spin.innerHTML = '';
+  })
+  .catch(() => { if (spin) spin.innerHTML = ''; });
 }
 
 function showRetransButtons(show) {
-  document.querySelectorAll('.bi-rt').forEach(b => b.style.display = show ? 'flex' : 'none');
+  // Kept for compatibility — retranslate buttons are now always visible
+  // so this is a no-op, but old call sites won't break
 }
 
-/* ════════ ONE-SIDE-WRITE LOCK ════════════════════════════════════
-   ADD mode: only the side matching the portal language is editable.
-     - AR portal → AR (right) input is editable, EN (left) input is
-       readonly and gets auto-filled by translation.
-     - EN portal → EN (left) input is editable, AR (right) is readonly
-       and gets auto-filled.
-   EDIT mode: both sides unlocked or fully editable (user can fix
-   translations manually), with retranslate buttons shown.
-════════════════════════════════════════════════════════════════ */
-function applyOneSideLock() {
-  // Every bilingual field has id f_<name> (EN) and f_<name>_ar (AR)
-  document.querySelectorAll('#empForm input[id$="_ar"]').forEach(arInput => {
-    const enId = arInput.id.replace(/_ar$/, '');
-    const enInput = document.getElementById(enId);
-    if (!enInput) return; // not a bilingual pair (e.g. f_nationality_ar is a dropdown's hidden mirror)
-    if (enInput.type !== 'text' && enInput.type !== '') return;
-
-    if (isEditEmp) {
-      // Edit mode: unlock both sides completely
-      enInput.readOnly = false;
-      arInput.readOnly = false;
-      enInput.style.background = '';
-      arInput.style.background = '';
-      return;
-    }
-
-    // Add mode: lock the side that does NOT match the portal language
-    if (IS_AR) {
-      enInput.readOnly = true;
-      enInput.style.background = '#f8fafc';
-      arInput.readOnly = false;
-      arInput.style.background = '';
-    } else {
-      arInput.readOnly = true;
-      arInput.style.background = '#f8fafc';
-      enInput.readOnly = false;
-      enInput.style.background = '';
-    }
-  });
-}
 
 /* ════════ FORM RESET (never use form.reset() — kills our selects) ════════ */
 function resetEmpForm() {
@@ -908,7 +949,6 @@ function openAddEmp() {
   initDocType('');
   showRetransButtons(false);
   setTimeout(wireHijriBadges, 50);
-  setTimeout(applyOneSideLock, 60);
 }
 
 /* ════════ MODAL: EDIT ════════ */
@@ -919,7 +959,6 @@ function openEditEmp(id) {
   document.getElementById('empFormId').value = id;
   new bootstrap.Modal(document.getElementById('empModal')).show();
   showRetransButtons(true);
-  applyOneSideLock(); // unlock both sides for manual editing
 
   fetch('/employees/' + id + '/json').then(r => r.json()).then(d => {
     document.getElementById('empCodeDisplay').textContent = d.employee_code;

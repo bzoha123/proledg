@@ -194,7 +194,7 @@
                     <div class="pl-en-wrap">
                       <input type="text" name="{{ fname }}" id="f_{{ fname }}" class="pl-input pl-input-en" dir="ltr"
                              {% if req %}required{% endif %} oninput="doTranslate(this,'{{ fname }}','en')">
-                      <button type="button" class="pl-retranslate pl-retranslate-en" style="display:none"
+                      <button type="button" class="pl-retranslate pl-retranslate-en"
                               onclick="retranslate('{{ fname }}','ar')"
                               title="{% if ar %}إعادة الترجمة للإنجليزية{% else %}Re-translate to English{% endif %}">
                         <i class="fas fa-sync-alt"></i>
@@ -210,7 +210,7 @@
                              placeholder="{% if ar %}{{ len }}{% else %}{{ lar }}{% endif %}"
                              oninput="doTranslate(this,'{{ fname }}','ar')">
                       <span class="pl-spin" id="spin_{{ fname }}"></span>
-                      <button type="button" class="pl-retranslate pl-retranslate-ar" style="display:none"
+                      <button type="button" class="pl-retranslate pl-retranslate-ar"
                               onclick="retranslate('{{ fname }}','en')"
                               title="{% if ar %}إعادة الترجمة للعربية{% else %}Re-translate to Arabic{% endif %}">
                         <i class="fas fa-sync-alt"></i>
@@ -285,7 +285,7 @@
                     <div class="pl-labels"><span class="pl-label-en">{% if ar %}اسم الشارع <small style="color:#9ca3af;font-size:10px">(English)</small>{% else %}Street Name{% endif %}</span></div>
                     <div class="pl-en-wrap">
                       <input type="text" name="street_name" id="f_street_name" class="pl-input pl-input-en" dir="ltr" oninput="doTranslate(this,'street_name','en')">
-                      <button type="button" class="pl-retranslate pl-retranslate-en" style="display:none" onclick="retranslate('street_name','ar')" title="{% if ar %}إعادة ترجمة للإنجليزية{% else %}Re-translate to EN{% endif %}"><i class="fas fa-sync-alt"></i></button>
+                      <button type="button" class="pl-retranslate pl-retranslate-en" onclick="retranslate('street_name','ar')" title="{% if ar %}إعادة ترجمة للإنجليزية{% else %}Re-translate to EN{% endif %}"><i class="fas fa-sync-alt"></i></button>
                     </div>
                   </div>
                   <div class="pl-field-wrap">
@@ -293,7 +293,7 @@
                     <div class="pl-ar-wrap">
                       <input type="text" name="street_name_ar" id="f_street_name_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Street Name{% else %}اسم الشارع{% endif %}" oninput="doTranslate(this,'street_name','ar')">
                       <span class="pl-spin" id="spin_street_name"></span>
-                      <button type="button" class="pl-retranslate pl-retranslate-ar" style="display:none" onclick="retranslate('street_name','en')" title="{% if ar %}إعادة ترجمة للعربية{% else %}Re-translate to AR{% endif %}"><i class="fas fa-sync-alt"></i></button>
+                      <button type="button" class="pl-retranslate pl-retranslate-ar" onclick="retranslate('street_name','en')" title="{% if ar %}إعادة ترجمة للعربية{% else %}Re-translate to AR{% endif %}"><i class="fas fa-sync-alt"></i></button>
                     </div>
                   </div>
                 </div>
@@ -304,7 +304,7 @@
                     <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم المبنى <small style="color:#9ca3af;font-size:10px">(English)</small>{% else %}Building Number{% endif %}</span></div>
                     <div class="pl-en-wrap">
                       <input type="text" name="building_number" id="f_building_number" class="pl-input pl-input-en" dir="ltr" oninput="doTranslate(this,'building_number','en')">
-                      <button type="button" class="pl-retranslate pl-retranslate-en" style="display:none" onclick="retranslate('building_number','ar')"><i class="fas fa-sync-alt"></i></button>
+                      <button type="button" class="pl-retranslate pl-retranslate-en" onclick="retranslate('building_number','ar')"><i class="fas fa-sync-alt"></i></button>
                     </div>
                   </div>
                   <div class="pl-field-wrap">
@@ -312,7 +312,7 @@
                     <div class="pl-ar-wrap">
                       <input type="text" name="building_number_ar" id="f_building_number_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Building Number{% else %}رقم المبنى{% endif %}" oninput="doTranslate(this,'building_number','ar')">
                       <span class="pl-spin" id="spin_building_number"></span>
-                      <button type="button" class="pl-retranslate pl-retranslate-ar" style="display:none" onclick="retranslate('building_number','en')"><i class="fas fa-sync-alt"></i></button>
+                      <button type="button" class="pl-retranslate pl-retranslate-ar" onclick="retranslate('building_number','en')"><i class="fas fa-sync-alt"></i></button>
                     </div>
                   </div>
                 </div>
@@ -323,7 +323,7 @@
                     <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم إضافي <small style="color:#9ca3af;font-size:10px">(English)</small>{% else %}Additional Number{% endif %}</span></div>
                     <div class="pl-en-wrap">
                       <input type="text" name="additional_number" id="f_additional_number" class="pl-input pl-input-en" dir="ltr" oninput="doTranslate(this,'additional_number','en')">
-                      <button type="button" class="pl-retranslate pl-retranslate-en" style="display:none" onclick="retranslate('additional_number','ar')"><i class="fas fa-sync-alt"></i></button>
+                      <button type="button" class="pl-retranslate pl-retranslate-en" onclick="retranslate('additional_number','ar')"><i class="fas fa-sync-alt"></i></button>
                     </div>
                   </div>
                   <div class="pl-field-wrap">
@@ -331,7 +331,7 @@
                     <div class="pl-ar-wrap">
                       <input type="text" name="additional_number_ar" id="f_additional_number_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Additional Number{% else %}رقم إضافي{% endif %}" oninput="doTranslate(this,'additional_number','ar')">
                       <span class="pl-spin" id="spin_additional_number"></span>
-                      <button type="button" class="pl-retranslate pl-retranslate-ar" style="display:none" onclick="retranslate('additional_number','en')"><i class="fas fa-sync-alt"></i></button>
+                      <button type="button" class="pl-retranslate pl-retranslate-ar" onclick="retranslate('additional_number','en')"><i class="fas fa-sync-alt"></i></button>
                     </div>
                   </div>
                 </div>
@@ -379,7 +379,7 @@
                     <div class="pl-labels"><span class="pl-label-en">{% if ar %}الرمز البريدي <small style="color:#9ca3af;font-size:10px">(English)</small>{% else %}Postal Code{% endif %}</span></div>
                     <div class="pl-en-wrap">
                       <input type="text" name="postal_code" id="f_postal_code" class="pl-input pl-input-en" dir="ltr" oninput="doTranslate(this,'postal_code','en')">
-                      <button type="button" class="pl-retranslate pl-retranslate-en" style="display:none" onclick="retranslate('postal_code','ar')"><i class="fas fa-sync-alt"></i></button>
+                      <button type="button" class="pl-retranslate pl-retranslate-en" onclick="retranslate('postal_code','ar')"><i class="fas fa-sync-alt"></i></button>
                     </div>
                   </div>
                   <div class="pl-field-wrap">
@@ -387,7 +387,7 @@
                     <div class="pl-ar-wrap">
                       <input type="text" name="postal_code_ar" id="f_postal_code_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Postal Code{% else %}الرمز البريدي{% endif %}" oninput="doTranslate(this,'postal_code','ar')">
                       <span class="pl-spin" id="spin_postal_code"></span>
-                      <button type="button" class="pl-retranslate pl-retranslate-ar" style="display:none" onclick="retranslate('postal_code','en')"><i class="fas fa-sync-alt"></i></button>
+                      <button type="button" class="pl-retranslate pl-retranslate-ar" onclick="retranslate('postal_code','en')"><i class="fas fa-sync-alt"></i></button>
                     </div>
                   </div>
                 </div>
@@ -933,7 +933,10 @@ function toWesternNums(s) { return s.replace(/[٠-٩]/g, d=>String('٠١٢٣٤٥
 function isNumeric(s)     { return /^[\d٠-٩\s\-\+\(\)\.\/]+$/.test(s); }
 
 function doTranslate(srcEl, fieldId, srcLang) {
-  if (isEditMode) return;
+  // EN portal: only auto-translate EN→AR. Ignore AR keystrokes (use 🔄 button for AR→EN).
+  // AR portal: only auto-translate AR→EN. Ignore EN keystrokes (use 🔄 button for EN→AR).
+  if (!IS_AR && srcLang === 'ar') return;
+  if ( IS_AR && srcLang === 'en') return;
   if (_translating[fieldId]) return;
   const text=srcEl.value.trim(), tgtLang=srcLang==='en'?'ar':'en';
   const tgtEl=document.getElementById(srcLang==='en'?`f_${fieldId}_ar`:`f_${fieldId}`);
@@ -972,9 +975,9 @@ function callTranslateAPI(text,srcLang,tgtLang,cb){
 function flash(el){ el.classList.add('pl-translated'); setTimeout(()=>el.classList.remove('pl-translated'),900); }
 function resetTranslateLocks(){ Object.keys(_timers).forEach(k=>clearTimeout(_timers[k])); Object.keys(_translating).forEach(k=>_translating[k]=false); document.querySelectorAll('.pl-spin').forEach(el=>el.innerHTML=''); }
 function updateRetranslateButtons(){
-  // Both EN and AR retranslate buttons shown in edit mode
-  document.querySelectorAll('.pl-retranslate-ar').forEach(btn=>btn.style.display=isEditMode?'inline-flex':'none');
-  document.querySelectorAll('.pl-retranslate-en').forEach(btn=>btn.style.display=isEditMode?'inline-flex':'none');
+  // Always show both retranslate buttons — user can always manually re-trigger translation
+  document.querySelectorAll('.pl-retranslate-ar').forEach(btn=>btn.style.display='inline-flex');
+  document.querySelectorAll('.pl-retranslate-en').forEach(btn=>btn.style.display='inline-flex');
 }
 
 /* ══ CASCADE DROPDOWNS ════════════════════════════════════
