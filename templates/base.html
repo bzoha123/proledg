@@ -39,17 +39,95 @@
         </div>
 
         <ul class="sidebar-nav">
+
+            {# ── Dashboard ─────────────────────────────────── #}
             <li class="nav-item">
                 <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint=='dashboard.index' %}active{% endif %}">
                     <i class="fas fa-tachometer-alt"></i>
                     <span>{% if current_locale=='ar' %}لوحة التحكم{% else %}Dashboard{% endif %}</span>
                 </a>
             </li>
-            <li class="nav-section">{% if current_locale=='ar' %}إدارة الموظفين{% else %}Employee Management{% endif %}</li>
+
+            {# ══ SELLER ══════════════════════════════════════ #}
+            <li class="nav-section">{% if current_locale=='ar' %}البائعون{% else %}Seller{% endif %}</li>
+            <li class="nav-item">
+                <a href="{{ url_for('sellers.list_sellers') }}" class="nav-link {% if request.endpoint in ['sellers.list_sellers','sellers.view_seller'] %}active{% endif %}">
+                    <i class="fas fa-users"></i>
+                    <span>{% if current_locale=='ar' %}البائعون{% else %}Seller{% endif %}</span>
+                </a>
+            </li>
+            <li class="nav-item nav-item-coming">
+                <span class="nav-link nav-link-disabled">
+                    <i class="fas fa-file-alt"></i>
+                    <span>{% if current_locale=='ar' %}وثائق البائع{% else %}Seller Documents{% endif %}</span>
+                    <span class="nav-soon">{% if current_locale=='ar' %}قريباً{% else %}Soon{% endif %}</span>
+                </span>
+            </li>
+            {% if current_user.is_admin() %}
+            <li class="nav-item">
+                <a href="{{ url_for('banks.list_banks') }}" class="nav-link {% if request.endpoint and 'banks.' in request.endpoint %}active{% endif %}">
+                    <i class="fas fa-university"></i>
+                    <span>{% if current_locale=='ar' %}إدارة البنوك{% else %}Bank Master{% endif %}</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {# ══ PURCHASE ════════════════════════════════════ #}
+            <li class="nav-section">{% if current_locale=='ar' %}المشتريات{% else %}Purchase{% endif %}</li>
+            {% for icon, en, ar in [
+                ('store','Vendor Reg','تسجيل المورد'),
+                ('file-alt','Purchase Request','طلب شراء'),
+                ('file-invoice','Purchase Quotation','عرض سعر شراء'),
+                ('shopping-bag','Purchase Order','أمر شراء'),
+                ('truck','Goods Receipt Note','إشعار استلام بضاعة'),
+                ('receipt','Purchase Invoice','فاتورة شراء'),
+                ('undo','Goods Return Request','طلب إرجاع بضاعة'),
+                ('dolly','Goods Return Note','إشعار إرجاع بضاعة'),
+                ('file-invoice-dollar','Invoice Debit Memo','مذكرة الخصم'),
+            ] %}
+            <li class="nav-item nav-item-coming">
+                <span class="nav-link nav-link-disabled">
+                    <i class="fas fa-{{ icon }}"></i>
+                    <span>{% if current_locale=='ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</span>
+                    <span class="nav-soon">{% if current_locale=='ar' %}قريباً{% else %}Soon{% endif %}</span>
+                </span>
+            </li>
+            {% endfor %}
+
+            {# ══ SALE ════════════════════════════════════════ #}
+            <li class="nav-section">{% if current_locale=='ar' %}المبيعات{% else %}Sale{% endif %}</li>
+            <li class="nav-item">
+                <a href="{{ url_for('lookups.list_buyers') }}" class="nav-link {% if request.endpoint == 'lookups.list_buyers' %}active{% endif %}">
+                    <i class="fas fa-user-tag"></i>
+                    <span>{% if current_locale=='ar' %}تسجيل المشتري{% else %}Buyer Reg{% endif %}</span>
+                </a>
+            </li>
+            {% for icon, en, ar in [
+                ('file-alt','Buyer Document','وثائق المشتري'),
+                ('file-signature','Sale Request','طلب بيع'),
+                ('file-invoice','Sale Quotation','عرض سعر بيع'),
+                ('shopping-cart','Sale Order','أمر بيع'),
+                ('boxes','Goods Receipt Note','إشعار استلام بضاعة'),
+                ('file-invoice-dollar','Sale Invoice','فاتورة بيع'),
+                ('undo','Goods Return Request','طلب إرجاع بضاعة'),
+                ('dolly-flatbed','Goods Return Note','إشعار إرجاع بضاعة'),
+                ('credit-card','Invoice Credit Memo','مذكرة الإضافة'),
+            ] %}
+            <li class="nav-item nav-item-coming">
+                <span class="nav-link nav-link-disabled">
+                    <i class="fas fa-{{ icon }}"></i>
+                    <span>{% if current_locale=='ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</span>
+                    <span class="nav-soon">{% if current_locale=='ar' %}قريباً{% else %}Soon{% endif %}</span>
+                </span>
+            </li>
+            {% endfor %}
+
+            {# ══ EMPLOYEE ════════════════════════════════════ #}
+            <li class="nav-section">{% if current_locale=='ar' %}الموظفون{% else %}Employee{% endif %}</li>
             <li class="nav-item">
                 <a href="{{ url_for('employees.list_employees') }}" class="nav-link {% if request.endpoint and 'employees.' in request.endpoint %}active{% endif %}">
                     <i class="fas fa-user-tie"></i>
-                    <span>{% if current_locale=='ar' %}الموظفون{% else %}Employees{% endif %}</span>
+                    <span>{% if current_locale=='ar' %}الموظفون{% else %}Employee{% endif %}</span>
                 </a>
             </li>
             <li class="nav-item">
@@ -59,32 +137,25 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="{{ url_for('lookups.list_buyers') }}" class="nav-link {% if request.endpoint == 'lookups.list_buyers' %}active{% endif %}">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span>{% if current_locale=='ar' %}المشترون{% else %}Buyers{% endif %}</span>
+                <a href="{{ url_for('lookups.list_allowance_types') }}" class="nav-link {% if request.endpoint == 'lookups.list_allowance_types' %}active{% endif %}">
+                    <i class="fas fa-tags"></i>
+                    <span>{% if current_locale=='ar' %}أنواع البدلات{% else %}Allowance Types{% endif %}</span>
                 </a>
             </li>
-            <li class="nav-section">{% if current_locale=='ar' %}إدارة البائعين{% else %}Seller Management{% endif %}</li>
-            <li class="nav-item">
-                <a href="{{ url_for('sellers.list_sellers') }}" class="nav-link {% if request.endpoint in ['sellers.list_sellers','sellers.view_seller'] %}active{% endif %}">
-                    <i class="fas fa-users"></i>
-                    <span>{% if current_locale=='ar' %}قائمة البائعين{% else %}Sellers List{% endif %}</span>
-                </a>
+            {% for icon, en, ar in [
+                ('tasks','Work Allocation','توزيع العمل'),
+                ('hand-holding-usd','Advances','السلف'),
+                ('money-check-alt','Pay Roll','كشف الرواتب'),
+            ] %}
+            <li class="nav-item nav-item-coming">
+                <span class="nav-link nav-link-disabled">
+                    <i class="fas fa-{{ icon }}"></i>
+                    <span>{% if current_locale=='ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</span>
+                    <span class="nav-soon">{% if current_locale=='ar' %}قريباً{% else %}Soon{% endif %}</span>
+                </span>
             </li>
-            {% if current_user.is_admin() %}
-            <li class="nav-item">
-                <a href="{{ url_for('banks.list_banks') }}" class="nav-link {% if request.endpoint and 'banks.' in request.endpoint %}active{% endif %}">
-                    <i class="fas fa-university"></i>
-                    <span>{% if current_locale=='ar' %}إدارة البنوك{% else %}Bank Master{% endif %}</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('sellers.export_sellers') }}" class="nav-link">
-                    <i class="fas fa-file-export"></i>
-                    <span>{% if current_locale=='ar' %}تصدير البيانات{% else %}Export Data{% endif %}</span>
-                </a>
-            </li>
-            {% endif %}
+            {% endfor %}
+
         </ul>
 
         <div class="sidebar-footer">
@@ -170,3 +241,5 @@
 {% block extra_js %}{% endblock %}
 </body>
 </html>
+        .nav-link-disabled{opacity:.4;cursor:default;pointer-events:none;display:flex;align-items:center;gap:10px;padding:9px 16px;color:rgba(255,255,255,.55);font-size:13px;border-radius:8px;}
+        .nav-soon{margin-left:auto;font-size:9px;background:rgba(255,255,255,.12);border-radius:3px;padding:1px 5px;color:rgba(255,255,255,.6);font-weight:600;}

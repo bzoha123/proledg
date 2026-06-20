@@ -111,3 +111,140 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 });
+
+/* ════════════════════════════════════════════════════════════════
+   REQUIRED FIELD VALIDATION — works across ALL forms
+   Usage: call validateForm(formEl) before submit
+   Marks empty required fields red + shows message below field
+════════════════════════════════════════════════════════════════ */
+
+// Add validation styles
+(function() {
+  const style = document.createElement('style');
+  style.textContent = `
+    .field-error {
+      color: #dc2626;
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .field-error::before { content: '⚠'; }
+    .input-invalid {
+      border-color: #dc2626 !important;
+      box-shadow: 0 0 0 3px rgba(220,38,38,.1) !important;
+    }
+    .form-validation-banner {
+      background: #fef2f2;
+      border: 1.5px solid #fca5a5;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      color: #dc2626;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+function validateForm(formEl) {
+  if (!formEl) return true;
+  let valid = true;
+  const IS_AR = document.documentElement.lang === 'ar';
+
+  // Clear previous errors
+  formEl.querySelectorAll('.field-error').forEach(el => el.remove());
+  formEl.querySelectorAll('.input-invalid').forEach(el => el.classList.remove('input-invalid'));
+  formEl.querySelectorAll('.form-validation-banner').forEach(el => el.remove());
+
+  // Check all required inputs, selects, textareas
+  const required = formEl.querySelectorAll('input[required], select[required], textarea[required]');
+  let firstInvalid = null;
+
+  required.forEach(field => {
+    // Skip hidden fields
+    if (field.type === 'hidden') return;
+    // Skip file inputs
+    if (field.type === 'file') return;
+
+    const val = field.value ? field.value.trim() : '';
+    if (!val) {
+      valid = false;
+      field.classList.add('input-invalid');
+
+      // Show error message below field
+      const msg = document.createElement('div');
+      msg.className = 'field-error';
+      const label = field.closest('.field-item, .pl-field-wrap, .mb-3, div')
+                        ?.querySelector('label, .field-label, .pl-label-en, .pl-label-ar');
+      const fieldName = label ? label.textContent.replace('*','').trim() : (IS_AR ? 'هذا الحقل' : 'This field');
+      msg.textContent = IS_AR ? `${fieldName} مطلوب` : `${fieldName} is required`;
+      field.insertAdjacentElement('afterend', msg);
+
+      if (!firstInvalid) firstInvalid = field;
+    }
+  });
+
+  // Also check MCQ hidden inputs that are required
+  formEl.querySelectorAll('input[type="hidden"][data-required]').forEach(field => {
+    if (!field.value) {
+      valid = false;
+      const grpId = field.id.replace('f_', '') + 'Grp';
+      const grp = document.getElementById(grpId);
+      if (grp && !grp.querySelector('.field-error')) {
+        const msg = document.createElement('div');
+        msg.className = 'field-error';
+        msg.textContent = IS_AR ? 'يرجى الاختيار' : 'Please select an option';
+        grp.insertAdjacentElement('afterend', msg);
+      }
+    }
+  });
+
+  if (!valid && firstInvalid) {
+    // Show banner at top of form
+    const banner = document.createElement('div');
+    banner.className = 'form-validation-banner';
+    banner.innerHTML = IS_AR
+      ? '<i class="fas fa-exclamation-circle"></i> يرجى ملء جميع الحقول المطلوبة قبل الحفظ'
+      : '<i class="fas fa-exclamation-circle"></i> Please fill all required fields before saving';
+    formEl.insertAdjacentElement('afterbegin', banner);
+
+    // Scroll to first invalid field
+    firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    firstInvalid.focus();
+
+    // Open accordion section if field is inside a hidden one
+    const accBody = firstInvalid.closest('.acc-body.hidden');
+    if (accBody) {
+      const key = accBody.id.replace('body-', '');
+      if (typeof togAcc === 'function') togAcc(key);
+    }
+  }
+
+  return valid;
+}
+
+// Auto-clear validation error when user starts typing
+document.addEventListener('input', function(e) {
+  const field = e.target;
+  if (field.classList.contains('input-invalid')) {
+    field.classList.remove('input-invalid');
+    const err = field.nextElementSibling;
+    if (err && err.classList.contains('field-error')) err.remove();
+  }
+}, true);
+
+document.addEventListener('change', function(e) {
+  const field = e.target;
+  if (field.classList.contains('input-invalid')) {
+    field.classList.remove('input-invalid');
+    const err = field.nextElementSibling;
+    if (err && err.classList.contains('field-error')) err.remove();
+  }
+}, true);

@@ -1,100 +1,1286 @@
 {% extends "base.html" %}
 {% set ar = current_locale == 'ar' %}
-{% block title %}{% if ar %}المشترون{% else %}Buyers{% endif %}{% endblock %}
+{% block title %}{% if ar %}المشترون{% else %}Buyers{% endif %} – {% if ar %}نظام إدارة المشترين{% else %}Buyer MS{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
+<style>
+.ag-theme-alpine {
+  --ag-font-family: 'Segoe UI', Tahoma, system-ui, sans-serif;
+  --ag-font-size: 13px;
+  --ag-header-background-color: #f8f9fa;
+  --ag-header-foreground-color: #374151;
+  --ag-border-color: #e2e8f0;
+  --ag-row-border-color: #f1f5f9;
+  --ag-odd-row-background-color: #ffffff;
+  --ag-even-row-background-color: #fafbfc;
+  --ag-row-hover-color: #f0f7ff;
+  --ag-selected-row-background-color: #eff6ff;
+  --ag-cell-horizontal-padding: 12px;
+  --ag-header-height: 42px;
+  --ag-row-height: 42px;
+  --ag-checkbox-checked-color: #16a34a;
+}
+.ag-theme-alpine .ag-header-cell-label { font-weight: 600; font-size: 12px; }
+.ag-theme-alpine .ag-header-cell,
+.ag-theme-alpine .ag-cell { border-right: 1px solid #e8ecf0 !important; }
+.ag-theme-alpine .ag-paging-panel { border-top:1px solid #e2e8f0; background:#f8f9fa; font-size:12px; }
+
+.code-badge { background:#eff6ff; color:#1d4ed8; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:600; }
+.name-wrap   { display:flex; align-items:center; gap:7px; }
+.name-dot    { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.st-active      { background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+.st-inactive    { background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+.st-pending     { background:#dbeafe; color:#1e40af; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+
+.ag-act-cell { display:flex; align-items:center; gap:4px; }
+.ag-ab { width:26px; height:26px; border-radius:4px; border:none; display:inline-flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; }
+.ag-ab-edit  { background:#eff6ff; color:#2563eb; } .ag-ab-edit:hover  { background:#dbeafe; }
+.ag-ab-del   { background:#fef2f2; color:#dc2626; } .ag-ab-del:hover   { background:#fee2e2; }
+.ag-ab-view  { background:#f0fdf4; color:#16a34a; } .ag-ab-view:hover  { background:#dcfce7; }
+
+/* filter popup */
+.pl-filter-popup { display:none; position:fixed; z-index:9999; background:white; border-radius:10px; box-shadow:0 8px 32px rgba(0,0,0,.18); min-width:280px; overflow:hidden; }
+.pl-filter-popup.open { display:block; }
+.plfp-row { padding:10px 14px; border-bottom:1px solid #f1f5f9; }
+.plfp-select { width:100%; border:1px solid #d1d5db; border-radius:7px; padding:8px 10px; font-size:13px; background:white; appearance:none; cursor:pointer; }
+.plfp-select:focus { outline:none; border-color:#16a34a; }
+.plfp-search-wrap { position:relative; }
+.plfp-search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:12px; }
+.plfp-input { width:100%; border:1px solid #d1d5db; border-radius:7px; padding:8px 10px 8px 30px; font-size:13px; }
+.plfp-input:focus { outline:none; border-color:#16a34a; }
+.plfp-add-rule { width:100%; background:none; border:none; padding:10px 14px; color:#16a34a; font-size:13px; font-weight:500; cursor:pointer; text-align:left; display:flex; align-items:center; gap:6px; }
+.plfp-add-rule:hover { background:#f0fdf4; }
+.plfp-footer { display:flex; justify-content:flex-end; gap:8px; padding:10px 14px; border-top:1px solid #f1f5f9; }
+.plfp-btn-clear { background:white; border:1px solid #d1d5db; border-radius:6px; padding:7px 16px; font-size:13px; cursor:pointer; }
+.plfp-btn-apply { background:#16a34a; border:none; border-radius:6px; padding:7px 18px; font-size:13px; color:white; cursor:pointer; font-weight:500; }
+.sel-badge { background:#f3f4f6; border:1px solid #d1d5db; border-radius:6px; padding:5px 12px; font-size:13px; color:#374151; display:flex; align-items:center; gap:6px; cursor:pointer; white-space:nowrap; }
+.tool-btn-active { background:#dcfce7!important; color:#16a34a!important; border-color:#16a34a!important; }
+
+/* ── Force correct label directions ── */
+.pl-label-en { direction:ltr !important; text-align:left !important; display:inline-block; }
+.pl-label-ar { direction:rtl !important; text-align:right !important; display:inline-block; width:100%; }
+.pl-labels    { justify-content:flex-start; }
+.pl-labels-ar { justify-content:flex-end; }
+.pl-input-en  { direction:ltr; text-align:left; }
+.pl-input-ar  { direction:rtl; text-align:right; }
+/* Prevent writing wrong language in add mode */
+.pl-input-en[readonly] { background:#f0f4ff !important; cursor:not-allowed; }
+.pl-input-ar[readonly] { background:#fafdf9 !important; cursor:not-allowed; }
+
+/* Force EN always left, AR always right regardless of portal direction */
+.pl-row { direction: ltr !important; }
+.pl-row .pl-field-wrap:first-child { text-align: left; }
+.pl-row .pl-field-wrap:last-child { text-align: right; }
+.pl-input-en { direction: ltr; text-align: left; }
+.pl-input-ar { direction: rtl; text-align: right; }
+</style>
+{% endblock %}
+
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
 <li class="breadcrumb-item active">{% if ar %}المشترون{% else %}Buyers{% endif %}</li>
 {% endblock %}
+
 {% block content %}
 <div class="proledg-page">
-  <h2 class="page-heading">{% if ar %}المشترون{% else %}Buyer Master{% endif %}</h2>
+  <h2 class="page-heading">{% if ar %}المشترون{% else %}Buyers{% endif %}</h2>
+
+  <!-- Toolbar -->
   <div class="toolbar">
     <div class="toolbar-left">
       {% if current_user.is_admin() %}
-      <button class="tool-btn tool-btn-green" data-bs-toggle="modal" data-bs-target="#addModal"><i class="fas fa-plus"></i></button>
+      <button class="tool-btn tool-btn-green" data-bs-toggle="modal" data-bs-target="#sellerModal" onclick="openAddModal()" title="{% if ar %}إضافة بائع{% else %}Add Seller{% endif %}">
+        <i class="fas fa-plus"></i>
+      </button>
       {% endif %}
-      <a href="{{ url_for('employees.list_employees') }}" class="tool-btn"><i class="fas fa-arrow-left"></i></a>
+      <button class="tool-btn tool-btn-blue" onclick="refreshGrid()" title="{% if ar %}تحديث{% else %}Refresh{% endif %}"><i class="fas fa-sync-alt"></i></button>
+      <button class="tool-btn" onclick="exportCSV()" title="{% if ar %}تصدير{% else %}Export CSV{% endif %}"><i class="fas fa-file-export"></i></button>
+      <button class="tool-btn" id="btnClearFilters" onclick="clearAllFilters()" title="{% if ar %}مسح الفلاتر{% else %}Clear Filters{% endif %}"><i class="fas fa-times-circle"></i></button>
+    </div>
+    <div class="toolbar-right d-flex align-items-center gap-3">
+      <div class="sel-badge"><span id="selText">0 {% if ar %}سجل{% else %}records{% endif %}</span><i class="fas fa-chevron-down"></i></div>
+      <div class="search-form">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="globalSearch" class="search-input" style="width:220px"
+               placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"
+               oninput="gridApi&&gridApi.setGridOption('quickFilterText',this.value)">
+      </div>
     </div>
   </div>
-  <div class="proledg-table-wrap">
-    <table class="proledg-table">
-      <thead><tr>
-        <th>#</th>
-        <th>{% if ar %}اسم المشتري بالإنجليزية{% else %}Buyer Name (English){% endif %}</th>
-        <th>{% if ar %}اسم المشتري بالعربية{% else %}Buyer Name (Arabic){% endif %}</th>
-        <th>{% if ar %}الحالة{% else %}Status{% endif %}</th>
-        {% if current_user.is_admin() %}<th class="text-center">{% if ar %}إجراءات{% else %}Actions{% endif %}</th>{% endif %}
-      </tr></thead>
-      <tbody>
-        {% for b in items %}
-        <tr>
-          <td>{{ loop.index }}</td>
-          <td class="fw-semibold">{{ b.buyer_name_en }}</td>
-          <td dir="rtl" style="text-align:right">{{ b.buyer_name_ar or '—' }}</td>
-          <td><span class="badge {% if b.is_active %}status-active{% else %}status-inactive{% endif %}">{% if b.is_active %}{% if ar %}نشط{% else %}Active{% endif %}{% else %}{% if ar %}غير نشط{% else %}Inactive{% endif %}{% endif %}</span></td>
-          {% if current_user.is_admin() %}
-          <td class="text-center">
-            <button class="action-btn action-btn-edit" onclick="openEdit({{ b.id }},'{{ b.buyer_name_en|e }}','{{ b.buyer_name_ar|e }}',{{ b.is_active|lower }})"><i class="fas fa-pencil-alt"></i></button>
-            <form method="POST" action="{{ url_for('lookups.delete_buyer', id=b.id) }}" class="d-inline" onsubmit="return confirm('Delete?')">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="action-btn action-btn-delete"><i class="fas fa-trash"></i></button>
-            </form>
-          </td>
-          {% endif %}
-        </tr>
-        {% else %}
-        <tr><td colspan="5" class="empty-row">{% if ar %}لا يوجد مشترون{% else %}No buyers added{% endif %}</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+
+  <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;overflow:hidden;">
+    <div id="sellerGrid" class="ag-theme-alpine" style="width:100%;height:530px;"></div>
   </div>
-  <div class="proledg-pagination"><span class="page-count">{{ items|length }} {% if ar %}مشتري{% else %}buyer(s){% endif %}</span></div>
+
+  <div class="proledg-pagination">
+    <span class="page-count" id="pageInfo">–</span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="small text-muted">{% if ar %}عدد الصفوف:{% else %}Rows per page:{% endif %}</span>
+      <select class="form-select form-select-sm" style="width:72px" onchange="gridApi&&gridApi.setGridOption('paginationPageSize',+this.value)">
+        <option value="5">5</option><option value="10">10</option>
+        <option value="20" selected>20</option><option value="50">50</option><option value="100">100</option>
+      </select>
+    </div>
+  </div>
 </div>
-<div class="modal fade" id="addModal" tabindex="-1">
-  <div class="modal-dialog modal-md">
+
+<!-- Filter Popup -->
+<div class="pl-filter-popup" id="plFilterPopup">
+  <div class="plfp-row">
+    <select class="plfp-select" id="plfpMatch">
+      <option value="AND">{% if ar %}يطابق مع الكل{% else %}Match All{% endif %}</option>
+      <option value="OR">{% if ar %}يطابق أي{% else %}Match Any{% endif %}</option>
+    </select>
+  </div>
+  <div class="plfp-row">
+    <select class="plfp-select" id="plfpCondition">
+      <option value="contains">{% if ar %}يحتوي{% else %}Contains{% endif %}</option>
+      <option value="equals">{% if ar %}يساوي{% else %}Equals{% endif %}</option>
+      <option value="startsWith">{% if ar %}يبدأ بـ{% else %}Starts With{% endif %}</option>
+      <option value="endsWith">{% if ar %}ينتهي بـ{% else %}Ends With{% endif %}</option>
+      <option value="notContains">{% if ar %}لا يحتوي{% else %}Not Contains{% endif %}</option>
+      <option value="blank">{% if ar %}فارغ{% else %}Blank{% endif %}</option>
+      <option value="notBlank">{% if ar %}غير فارغ{% else %}Not Blank{% endif %}</option>
+    </select>
+  </div>
+  <div class="plfp-row">
+    <div class="plfp-search-wrap">
+      <i class="fas fa-search plfp-search-icon"></i>
+      <input type="text" class="plfp-input" id="plfpValue" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}">
+    </div>
+  </div>
+  <button type="button" class="plfp-add-rule"><i class="fas fa-plus"></i> {% if ar %}إضافة قاعدة{% else %}Add Rule{% endif %}</button>
+  <div class="plfp-footer">
+    <button class="plfp-btn-clear" onclick="clearCurrentFilter()">{% if ar %}مسح{% else %}Clear{% endif %}</button>
+    <button class="plfp-btn-apply" onclick="applyCurrentFilter()">{% if ar %}تطبيق{% else %}Apply{% endif %}</button>
+  </div>
+</div>
+
+<!-- ══ ADD/EDIT SELLER MODAL ══ -->
+<div class="modal fade" id="buyerModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content proledg-modal">
       <div class="modal-header proledg-modal-header">
-        <h5 class="modal-title" id="modalTitle">{% if ar %}إضافة مشتري{% else %}Add Buyer{% endif %}</h5>
+        <h5 class="modal-title" id="sellerModalLabel">
+          {% if ar %}إضافة بائع{% else %}Add Seller{% endif %}
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
-        <form id="buyerForm" method="POST" action="{{ url_for('lookups.add_buyer') }}">
+      <div class="modal-body p-0">
+        <form id="buyerForm" method="POST" action="{{ url_for('lookups.add_buyer') }}" enctype="multipart/form-data">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <div class="pl-row mb-2">
-            <div class="pl-field-wrap">
-              <div class="pl-labels"><span class="pl-label-en">{% if ar %}الاسم بالإنجليزية{% else %}Name (English){% endif %}<span class="pl-req">*</span></span></div>
-              <div class="pl-en-wrap">
-                <input type="text" name="buyer_name_en" id="b_en" class="pl-input pl-input-en" required oninput="bTranslate(this,'b_ar','en')">
-                <button type="button" class="pl-retranslate pl-retranslate-en" onclick="bRetrans('b_ar','b_en','ar')"><i class="fas fa-sync-alt"></i></button>
-              </div>
-            </div>
-            <div class="pl-field-wrap">
-              <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Name (English){% else %}الاسم بالعربية{% endif %}</span></div>
-              <div class="pl-ar-wrap">
-                <input type="text" name="buyer_name_ar" id="b_ar" class="pl-input pl-input-ar" dir="rtl" oninput="bTranslate(this,'b_en','ar')">
-                <span class="pl-spin" id="b_spin"></span>
-                <button type="button" class="pl-retranslate pl-retranslate-ar" onclick="bRetrans('b_en','b_ar','en')"><i class="fas fa-sync-alt"></i></button>
+          <input type="hidden" id="formBuyerId" name="_buyer_id" value="">
+
+          <!-- BASIC -->
+          <div class="pl-accordion">
+            <button type="button" class="pl-acc-header" onclick="toggleAcc('basic')">
+              <span><i class="fas fa-user-circle me-2 text-muted"></i>{% if ar %}المعلومات الأساسية{% else %}Basic Information{% endif %}</span>
+              <i class="fas fa-chevron-up pl-acc-icon" id="icon-basic"></i>
+            </button>
+            <div class="pl-acc-body" id="body-basic">
+              <div class="pl-fields">
+
+                {% set basic_fields = [
+                  ('name',       'Name',       'الاسم',                          True),
+                  ('vat_number', 'VAT Number', 'رقم ضريبة القيمة المضافة',       True),
+                  ('crn',        'CRN',        'رقم السجل التجاري',              True),
+                ] %}
+                {% for fname, len, lar, req in basic_fields %}
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en" style="direction:ltr;text-align:left;display:block;">{% if ar %}{{ lar }} <small style="color:#9ca3af;font-size:10px;direction:ltr;">(English)</small>{% else %}{{ len }}{% endif %}{% if req %}<span class="pl-req">*</span>{% endif %}</span></div>
+                    <div class="pl-en-wrap">
+                      <input type="text" name="{{ fname }}" id="f_{{ fname }}" class="pl-input pl-input-en" dir="ltr"
+                             {% if req %}required{% endif %} oninput="doTranslate(this,'{{ fname }}','en')">
+                      {% if not ar %}
+                      <button type="button" class="pl-retranslate pl-retranslate-en"
+                              onclick="retranslate('{{ fname }}','ar')"
+                              title="Re-translate EN → AR">
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar">
+                      <span class="pl-label-ar" style="direction:rtl;text-align:right;display:block;">{% if ar %}{{ lar }}{% else %}{{ lar }} <small style="color:#9ca3af;font-size:10px;direction:ltr;">(Arabic)</small>{% endif %}{% if req %}<span class="pl-req">*</span>{% endif %}</span>
+                    </div>
+                    <div class="pl-ar-wrap">
+                      <input type="text" name="{{ fname }}_ar" id="f_{{ fname }}_ar" class="pl-input pl-input-ar" dir="rtl"
+                             placeholder="{% if ar %}{{ len }}{% else %}{{ lar }}{% endif %}"
+                             oninput="doTranslate(this,'{{ fname }}','ar')">
+                      <span class="pl-spin" id="spin_{{ fname }}"></span>
+                      {% if ar %}
+                      <button type="button" class="pl-retranslate pl-retranslate-ar"
+                              onclick="retranslate('{{ fname }}','en')"
+                              title="ترجمة AR → EN">
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+
+                <!-- Phone / Fax -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}الهاتف{% else %}Phone{% endif %}</span></div>
+                    <input type="text" name="phone" id="f_phone" class="pl-input pl-input-en" dir="ltr" placeholder="e.g., 013 8970166">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}الفاكس{% else %}Fax{% endif %}</span></div>
+                    <input type="text" name="fax" id="f_fax" class="pl-input pl-input-ar" placeholder="e.g., 013 8937050">
+                  </div>
+                </div>
+
+                <!-- Email / Website -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}البريد الإلكتروني{% else %}Email{% endif %}</span></div>
+                    <input type="text" name="email" id="f_email" class="pl-input pl-input-en" dir="ltr" placeholder="info@company.com">
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}الموقع الإلكتروني{% else %}Website{% endif %}</span></div>
+                    <input type="text" name="website" id="f_website" class="pl-input pl-input-ar" placeholder="www.company.com">
+                  </div>
+                </div>
+
+                <!-- Report Color -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رمز لون عنوان التقرير{% else %}Report Heading Color Code{% endif %}<span class="pl-req">*</span></span></div>
+                    <div class="pl-color-wrap">
+                      <input type="text" name="report_color" id="f_report_color" class="pl-input pl-input-en" dir="ltr" value="#16a34a" placeholder="#FF5733">
+                      <input type="color" id="colorPicker" value="#16a34a" class="pl-color-swatch" oninput="document.getElementById('f_report_color').value=this.value">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Logo / BG Logo -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}تصفح الشعار{% else %}Browse Logo{% endif %}<span class="pl-req">*</span></span></div>
+                    <label class="pl-file-label"><span id="logo-name">{% if ar %}اختر ملف - لم يتم الاختيار{% else %}Choose File No file chosen{% endif %}</span><input type="file" name="logo" accept=".jpg,.jpeg,.png" class="d-none" onchange="setFileName(this,'logo-name')"></label>
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}تصفح الشعار الخلفي{% else %}Browse Background Logo{% endif %}</span></div>
+                    <label class="pl-file-label"><span id="bg-logo-name">{% if ar %}اختر ملف - لم يتم الاختيار{% else %}Choose File No file chosen{% endif %}</span><input type="file" name="bg_logo" accept=".jpg,.jpeg,.png" class="d-none" onchange="setFileName(this,'bg-logo-name')"></label>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
-          <div class="form-check mt-2"><input type="checkbox" name="is_active" id="b_active" class="form-check-input" checked><label for="b_active" class="form-check-label">{% if ar %}نشط{% else %}Active{% endif %}</label></div>
+
+          <!-- ADDRESS -->
+          <div class="pl-accordion">
+            <button type="button" class="pl-acc-header pl-acc-collapsed" onclick="toggleAcc('address')">
+              <span><i class="fas fa-home me-2 text-muted"></i>{% if ar %}معلومات العنوان{% else %}Address Information{% endif %}</span>
+              <i class="fas fa-chevron-down pl-acc-icon" id="icon-address"></i>
+            </button>
+            <div class="pl-acc-body d-none" id="body-address">
+              <div class="pl-fields">
+                <!-- Street Name -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}اسم الشارع <small style="color:#9ca3af;font-size:10px">(English)</small>{% else %}Street Name{% endif %}</span></div>
+                    <div class="pl-en-wrap">
+                      <input type="text" name="street_name" id="f_street_name" class="pl-input pl-input-en" dir="ltr" oninput="doTranslate(this,'street_name','en')">
+                      {% if not ar %}
+                      <button type="button" class="pl-retranslate pl-retranslate-en" onclick="retranslate('street_name','ar')" title="{% if ar %}إعادة ترجمة للإنجليزية{% else %}Re-translate to EN{% endif %}"><i class="fas fa-sync-alt"></i></button>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}اسم الشارع{% else %}Street Name <small style="color:#9ca3af;font-size:10px">(Arabic)</small>{% endif %}</span></div>
+                    <div class="pl-ar-wrap">
+                      <input type="text" name="street_name_ar" id="f_street_name_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Street Name{% else %}اسم الشارع{% endif %}" oninput="doTranslate(this,'street_name','ar')">
+                      <span class="pl-spin" id="spin_street_name"></span>
+                      {% if ar %}
+                      <button type="button" class="pl-retranslate pl-retranslate-ar" onclick="retranslate('street_name','en')" title="{% if ar %}إعادة ترجمة للعربية{% else %}Re-translate to AR{% endif %}"><i class="fas fa-sync-alt"></i></button>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Building Number -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم المبنى <small style="color:#9ca3af;font-size:10px">(English)</small>{% else %}Building Number{% endif %}</span></div>
+                    <div class="pl-en-wrap">
+                      <input type="text" name="building_number" id="f_building_number" class="pl-input pl-input-en" dir="ltr" oninput="doTranslate(this,'building_number','en')">
+                      {% if not ar %}
+                      <button type="button" class="pl-retranslate pl-retranslate-en" onclick="retranslate('building_number','ar')"><i class="fas fa-sync-alt"></i></button>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}رقم المبنى{% else %}Building Number <small style="color:#9ca3af;font-size:10px">(Arabic)</small>{% endif %}</span></div>
+                    <div class="pl-ar-wrap">
+                      <input type="text" name="building_number_ar" id="f_building_number_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Building Number{% else %}رقم المبنى{% endif %}" oninput="doTranslate(this,'building_number','ar')">
+                      <span class="pl-spin" id="spin_building_number"></span>
+                      {% if ar %}
+                      <button type="button" class="pl-retranslate pl-retranslate-ar" onclick="retranslate('building_number','en')"><i class="fas fa-sync-alt"></i></button>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Additional Number -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم إضافي <small style="color:#9ca3af;font-size:10px">(English)</small>{% else %}Additional Number{% endif %}</span></div>
+                    <div class="pl-en-wrap">
+                      <input type="text" name="additional_number" id="f_additional_number" class="pl-input pl-input-en" dir="ltr" oninput="doTranslate(this,'additional_number','en')">
+                      {% if not ar %}
+                      <button type="button" class="pl-retranslate pl-retranslate-en" onclick="retranslate('additional_number','ar')"><i class="fas fa-sync-alt"></i></button>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}رقم إضافي{% else %}Additional Number <small style="color:#9ca3af;font-size:10px">(Arabic)</small>{% endif %}</span></div>
+                    <div class="pl-ar-wrap">
+                      <input type="text" name="additional_number_ar" id="f_additional_number_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Additional Number{% else %}رقم إضافي{% endif %}" oninput="doTranslate(this,'additional_number','ar')">
+                      <span class="pl-spin" id="spin_additional_number"></span>
+                      {% if ar %}
+                      <button type="button" class="pl-retranslate pl-retranslate-ar" onclick="retranslate('additional_number','en')"><i class="fas fa-sync-alt"></i></button>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- COUNTRY — single dropdown, language-aware -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}الدولة{% else %}Country{% endif %}</span></div>
+                    <!-- Hidden EN value for form submission -->
+                    <input type="hidden" name="country" id="f_country_hidden">
+                    <input type="hidden" name="country_ar" id="f_country_ar_hidden">
+                    <select id="f_country" class="pl-input pl-input-en" dir="ltr" onchange="onCountryChange()">
+                      <option value="">{% if ar %}-- اختر الدولة --{% else %}-- Select Country --{% endif %}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- CITY — single dropdown -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}المدينة{% else %}City{% endif %}</span></div>
+                    <input type="hidden" name="city" id="f_city_hidden">
+                    <input type="hidden" name="city_ar" id="f_city_ar_hidden">
+                    <select id="f_city" class="pl-input pl-input-en" dir="ltr" onchange="onCityChange()" disabled>
+                      <option value="">{% if ar %}-- اختر المدينة --{% else %}-- Select City --{% endif %}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- DISTRICT — single dropdown -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}المنطقة{% else %}District{% endif %}</span></div>
+                    <input type="hidden" name="district" id="f_district_hidden">
+                    <input type="hidden" name="district_ar" id="f_district_ar_hidden">
+                    <select id="f_district" class="pl-input pl-input-en" dir="ltr" onchange="onDistrictChange()" disabled>
+                      <option value="">{% if ar %}-- اختر المنطقة --{% else %}-- Select District --{% endif %}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- POSTAL CODE -->
+                <div class="pl-row">
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels"><span class="pl-label-en">{% if ar %}الرمز البريدي <small style="color:#9ca3af;font-size:10px">(English)</small>{% else %}Postal Code{% endif %}</span></div>
+                    <div class="pl-en-wrap">
+                      <input type="text" name="postal_code" id="f_postal_code" class="pl-input pl-input-en" dir="ltr" oninput="doTranslate(this,'postal_code','en')">
+                      {% if not ar %}
+                      <button type="button" class="pl-retranslate pl-retranslate-en" onclick="retranslate('postal_code','ar')"><i class="fas fa-sync-alt"></i></button>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="pl-field-wrap">
+                    <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}الرمز البريدي{% else %}Postal Code <small style="color:#9ca3af;font-size:10px">(Arabic)</small>{% endif %}</span></div>
+                    <div class="pl-ar-wrap">
+                      <input type="text" name="postal_code_ar" id="f_postal_code_ar" class="pl-input pl-input-ar" dir="rtl" placeholder="{% if ar %}Postal Code{% else %}الرمز البريدي{% endif %}" oninput="doTranslate(this,'postal_code','ar')">
+                      <span class="pl-spin" id="spin_postal_code"></span>
+                      {% if ar %}
+                      <button type="button" class="pl-retranslate pl-retranslate-ar" onclick="retranslate('postal_code','en')"><i class="fas fa-sync-alt"></i></button>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BANK -->
+          <div class="pl-accordion">
+            <button type="button" class="pl-acc-header pl-acc-collapsed" onclick="toggleAcc('bank')">
+              <span><i class="fas fa-credit-card me-2 text-muted"></i>{% if ar %}معلومات البنك{% else %}Bank Information{% endif %}</span>
+              <i class="fas fa-chevron-down pl-acc-icon" id="icon-bank"></i>
+            </button>
+            <div class="pl-acc-body d-none" id="body-bank">
+              <div style="padding:16px 24px">
+                <button type="button" class="pl-add-bank-btn" onclick="showBankRow()">
+                  <i class="fas fa-plus me-1"></i>{% if ar %}إضافة بيانات بنك{% else %}Add Bank Details{% endif %}
+                </button>
+
+                <div id="bankInputRow" class="pl-bank-input-row d-none mt-3">
+                  <!-- Bank Name — single dropdown in portal language -->
+                  <div class="mb-3">
+                    <label class="pl-label-en d-block mb-1">{% if ar %}اسم البنك{% else %}Bank Name{% endif %}</label>
+                    <select id="bi_bank_name" class="pl-input pl-input-en" dir="ltr" style="max-width:100%" onchange="onBankNameChange()">
+                      <option value="">{% if ar %}-- اختر البنك --{% else %}-- Select Bank --{% endif %}</option>
+                    </select>
+                    <input type="hidden" id="bi_bank_name_ar">
+                  </div>
+                  <!-- Account Number — EN/AR -->
+                  <div class="pl-row mb-2">
+                    <div class="pl-field-wrap">
+                      <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم الحساب{% else %}Account Number{% endif %}</span></div>
+                      <input type="text" id="bi_account_number" class="pl-input pl-input-en" dir="ltr"
+                             placeholder="{% if ar %}رقم الحساب{% else %}Account Number{% endif %}"
+                             oninput="syncBankNum(this,'bi_account_number_ar')">
+                    </div>
+                    <div class="pl-field-wrap">
+                      <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Account Number{% else %}رقم الحساب{% endif %}</span></div>
+                      <input type="text" id="bi_account_number_ar" class="pl-input pl-input-ar" dir="rtl"
+                             placeholder="{% if ar %}Account Number{% else %}رقم الحساب{% endif %}">
+                    </div>
+                  </div>
+                  <!-- Branch — EN/AR -->
+                  <div class="pl-row mb-2">
+                    <div class="pl-field-wrap">
+                      <div class="pl-labels"><span class="pl-label-en">{% if ar %}الفرع{% else %}Branch{% endif %}</span></div>
+                      <input type="text" id="bi_branch" class="pl-input pl-input-en" dir="ltr"
+                             placeholder="{% if ar %}الفرع{% else %}Branch{% endif %}"
+                             oninput="bankTranslate(this,'bi_branch_ar','en')">
+                    </div>
+                    <div class="pl-field-wrap">
+                      <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Branch{% else %}الفرع{% endif %}</span></div>
+                      <input type="text" id="bi_branch_ar" class="pl-input pl-input-ar" dir="rtl"
+                             placeholder="{% if ar %}Branch{% else %}الفرع{% endif %}"
+                             oninput="bankTranslate(this,'bi_branch','ar')">
+                    </div>
+                  </div>
+                  <!-- SWIFT / IBAN -->
+                  <div class="pl-row mb-2">
+                    <div class="pl-field-wrap">
+                      <div class="pl-labels"><span class="pl-label-en">SWIFT Code</span></div>
+                      <input type="text" id="bi_swift" class="pl-input pl-input-en" dir="ltr" placeholder="SWIFT Code">
+                    </div>
+                    <div class="pl-field-wrap">
+                      <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">IBAN</span></div>
+                      <input type="text" id="bi_iban" class="pl-input pl-input-en" dir="ltr" placeholder="IBAN">
+                    </div>
+                  </div>
+                  <!-- Primary -->
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <input type="checkbox" id="bi_primary" class="form-check-input mt-0">
+                    <label for="bi_primary" class="small fw-semibold">{% if ar %}حساب رئيسي{% else %}Primary Account{% endif %}</label>
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="saveBankRow()"><i class="fas fa-check me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="hideBankRow()"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+                  </div>
+                </div>
+
+                <div class="table-responsive mt-3">
+                  <table class="proledg-table">
+                    <thead><tr>
+                      <th>{% if ar %}اسم البنك{% else %}Bank Name{% endif %}</th>
+                      <th>{% if ar %}رقم الحساب{% else %}Account No{% endif %}</th>
+                      <th>{% if ar %}الفرع{% else %}Branch{% endif %}</th>
+                      <th>SWIFT</th><th>IBAN</th>
+                      <th>{% if ar %}رئيسي{% else %}Primary{% endif %}</th>
+                      <th></th>
+                    </tr></thead>
+                    <tbody id="banksTbody"><tr><td colspan="7" class="empty-row">{% if ar %}لم يتم إضافة بيانات بنك{% else %}No bank details added{% endif %}</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
         </form>
       </div>
       <div class="modal-footer proledg-modal-footer">
+        <button type="button" class="pl-footer-btn pl-btn-reset" onclick="resetBuyerForm()"><i class="fas fa-redo me-1"></i>{% if ar %}إعادة تعيين{% else %}Reset{% endif %}</button>
         <button type="button" class="pl-footer-btn pl-btn-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button type="button" class="pl-footer-btn pl-btn-save" onclick="document.getElementById('buyerForm').submit()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+        <button type="button" class="pl-footer-btn pl-btn-save" onclick="if(validateForm(document.getElementById('buyerForm')))submitBuyerForm()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Seller Modal (Read-Only) -->
+<div class="modal fade" id="viewSellerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content proledg-modal">
+      <div class="modal-header proledg-modal-header">
+        <h5 id="viewSellerTitle" class="modal-title">{% if ar %}بيانات البائع{% else %}Seller Details{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0" id="viewSellerBody" style="max-height:65vh;overflow-y:auto;">
+        <!-- filled by JS -->
+      </div>
+      <div class="modal-footer proledg-modal-footer">
+        {% if current_user.is_admin() %}
+        <button type="button" class="pl-footer-btn pl-btn-save" style="background:#2563eb;"
+                onclick="bootstrap.Modal.getInstance(document.getElementById('viewSellerModal')).hide();setTimeout(()=>openEditModal(currentViewSellerId),300)">
+          <i class="fas fa-pencil-alt me-1"></i>{% if ar %}تعديل{% else %}Edit{% endif %}
+        </button>
+        {% endif %}
+        <button type="button" class="pl-footer-btn pl-btn-cancel" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>{% if ar %}إغلاق{% else %}Close{% endif %}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header border-0"><h6 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>{% if ar %}تأكيد الحذف{% else %}Confirm Delete{% endif %}</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><p id="deleteModalText" class="mb-0"></p></div>
+      <div class="modal-footer border-0">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <form id="deleteForm" method="POST" class="d-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-sm btn-danger">{% if ar %}حذف{% else %}Delete{% endif %}</button>
+        </form>
       </div>
     </div>
   </div>
 </div>
 {% endblock %}
+
 {% block extra_js %}
 <script>
-const TRANSLATE_URL='{{ url_for("sellers.translate_text") }}';
-const CSRF='{{ csrf_token() }}';
-let _t=null;
-function bTranslate(src,tid,sl){clearTimeout(_t);const text=src.value.trim(),tgt=document.getElementById(tid);if(!text){if(tgt)tgt.value='';return;}_t=setTimeout(()=>{fetch(TRANSLATE_URL,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify({text,direction:`${sl}|${sl==='en'?'ar':'en'}`})}).then(r=>r.json()).then(d=>{if(d.translated&&tgt)tgt.value=d.translated;}).catch(()=>{});},700);}
-function bRetrans(tid,sid,tl){const src=document.getElementById(sid),tgt=document.getElementById(tid);const text=src?src.value.trim():'';if(!text||!tgt)return;fetch(TRANSLATE_URL,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify({text,direction:`${tl==='ar'?'en':'ar'}|${tl}`})}).then(r=>r.json()).then(d=>{if(d.translated)tgt.value=d.translated;}).catch(()=>{});}
-function openEdit(id,en,ar,active){document.getElementById('modalTitle').textContent='Edit Buyer';document.getElementById('buyerForm').action=`/buyers/${id}/edit`;document.getElementById('b_en').value=en;document.getElementById('b_ar').value=ar;document.getElementById('b_active').checked=active;new bootstrap.Modal(document.getElementById('addModal')).show();}
+// Geo data: Country → Cities → Districts
+// Focused on GCC + major business countries
+const GEO = {
+  "Saudi Arabia": {
+    ar: "المملكة العربية السعودية",
+    cities: {
+      "Riyadh":       { ar: "الرياض",      districts: ["Al Olaya","Al Malaz","Al Murabba","Al Naseem","Al Rawdah","Al Sulaimaniyah","Al Aqiq","Al Maseef","Al Wurud","Al Rabwah","Diplomatic Quarter","Al Nakheel","Al Sahafah","Al Rabi","Al Qirawan","Al Yasmin","Al Narjis","Al Arid","Al Munsiyah","Al Khaleej"] },
+      "Jeddah":       { ar: "جدة",          districts: ["Al Balad","Al Hamra","Al Rawdah","Al Andalus","Al Zahraa","Al Shati","Al Naeem","Al Faisaliyah","Al Aziziyah","Obhur Al Shamaliyah","Al Marwah","Al Safa","Al Rehab","Al Khalidiyah","Al Nuzlah Al Yamaniyah"] },
+      "Mecca":        { ar: "مكة المكرمة",  districts: ["Al Adl","Al Aziziyah","Al Shasha","Al Hujoun","Ajyad","Al Massfalah","Al Nakkasah","Al Rusaifah","Al Zahir","Kudai"] },
+      "Medina":       { ar: "المدينة المنورة", districts: ["Al Haram","Al Aziziyah","Al Khalidiyah","Al Iskan","Quba","Al Rawdah","Al Manakhah","Al Buda","Al Difa"] },
+      "Dammam":       { ar: "الدمام",       districts: ["Al Faisaliyah","Al Noor","Al Badiyah","Al Shulah","Al Jalawiyah","Al Hamra","Al Aziziyah","Al Rehab","Al Khobar Road","Al Wahah"] },
+      "Al Khobar":    { ar: "الخبر",        districts: ["Al Thuqbah","Al Aqrabiyah","Al Bandariyah","Al Khobar Al Shamaliyah","Al Hamra","Al Olaya","Al Rawdah","Al Muraikabat"] },
+      "Al Qatif":     { ar: "القطيف",       districts: ["At Tawbi Dist","Al Qatif Center","Al Buhairah","Saihat","Tarout","Al Awamiyah","Abu Lifa","Al Jesh"] },
+      "Tabuk":        { ar: "تبوك",         districts: ["Al Wahah","Al Aziziyah","Al Muruj","Al Rawdah","Al Salam","Al Hamra","King Fahd","Al Riyadh"] },
+      "Abha":         { ar: "أبها",         districts: ["Al Mansoorah","Al Aziziyah","Al Wahda","Al Nakheel","Al Rabwa","Al Zahra","Al Maather"] },
+      "Taif":         { ar: "الطائف",       districts: ["Al Nuzha","Al Shifa","Al Hawiyah","Al Hada","Al Huwayah","Al Kilo Thamaniya"] },
+    }
+  },
+  "United Arab Emirates": {
+    ar: "الإمارات العربية المتحدة",
+    cities: {
+      "Dubai":        { ar: "دبي",          districts: ["Downtown Dubai","Deira","Bur Dubai","Jumeirah","Al Quoz","Business Bay","DIFC","Al Barsha","Mirdif","Al Karama","Al Nahda","Al Qusais","Al Rashidiya","Silicon Oasis"] },
+      "Abu Dhabi":    { ar: "أبوظبي",       districts: ["Al Khalidiyah","Al Mushrif","Al Zaab","Al Muroor","Al Shamkha","Khalifa City","Mohammed Bin Zayed City","Al Reem Island","Al Reef","Al Nahyan"] },
+      "Sharjah":      { ar: "الشارقة",      districts: ["Al Nahda","Al Taawun","Al Qasimia","Muwaileh","Al Majaz","Al Khan","Al Mamzar","Halwan"] },
+      "Ajman":        { ar: "عجمان",        districts: ["Al Nuaimiyah","Al Rashidiyah","Al Jurf","Al Rumailah","Al Hamidiyah","Al Rawda"] },
+      "Ras Al Khaimah": { ar: "رأس الخيمة", districts: ["Al Nakheel","Al Qawasim","Al Uraibi","Al Mamourah","Al Rams"] },
+    }
+  },
+  "Kuwait": {
+    ar: "الكويت",
+    cities: {
+      "Kuwait City":  { ar: "مدينة الكويت", districts: ["Salmiya","Hawalli","Rumaithiya","Mishref","Jabriya","Bayan","Salwa","Fintas","Mangaf","Fahaheel","Ahmadi"] },
+      "Al Ahmadi":    { ar: "الأحمدي",      districts: ["Fahaheel","Mangaf","Al Fintas","Al Mahbula","Al Riqqa"] },
+    }
+  },
+  "Bahrain": {
+    ar: "البحرين",
+    cities: {
+      "Manama":       { ar: "المنامة",      districts: ["Adliya","Juffair","Seef","Diplomatic Area","Sanabis","Tubli","Isa Town"] },
+      "Muharraq":     { ar: "المحرق",       districts: ["Muharraq Center","Busaiteen","Hidd","Galali"] },
+    }
+  },
+  "Qatar": {
+    ar: "قطر",
+    cities: {
+      "Doha":         { ar: "الدوحة",       districts: ["West Bay","Al Sadd","Al Wakrah","Lusail","Al Waab","Al Khor","Msheireb","The Pearl"] },
+      "Al Rayyan":    { ar: "الريان",       districts: ["Al Rayyan Center","Muaither","Al Waab","Gharafa","Al Luqta"] },
+    }
+  },
+  "Oman": {
+    ar: "عُمان",
+    cities: {
+      "Muscat":       { ar: "مسقط",         districts: ["Muttrah","Al Qurum","Ruwi","Al Khuwair","Bausher","Al Maabela","Al Ghubra","Azaiba","Madinat Al Sultan Qaboos"] },
+      "Salalah":      { ar: "صلالة",        districts: ["Al Hafah","Salalah Center","Al Nahdah","Itin"] },
+    }
+  },
+  "Jordan": {
+    ar: "الأردن",
+    cities: {
+      "Amman":        { ar: "عمّان",         districts: ["Abdali","Shmeisani","Jabal Al Hussain","Al Wehdat","Sweifieh","Khalda","Al Rabiyeh","Mecca Street","7th Circle","Abdoun"] },
+      "Zarqa":        { ar: "الزرقاء",      districts: ["New Zarqa","Old Zarqa","Russeifa"] },
+      "Irbid":        { ar: "إربد",         districts: ["Irbid Center","Al Hay Al Janoobi","Al Hay Al Shimali"] },
+    }
+  },
+  "Egypt": {
+    ar: "مصر",
+    cities: {
+      "Cairo":        { ar: "القاهرة",      districts: ["Nasr City","Heliopolis","Maadi","Zamalek","Dokki","Mohandessin","New Cairo","6th of October","Ain Shams","Shubra"] },
+      "Alexandria":   { ar: "الإسكندرية",   districts: ["Montaza","Smouha","Gleem","Sidi Gaber","Stanly","Fleming","Raml Station"] },
+      "Giza":         { ar: "الجيزة",       districts: ["Haram","Dokki","Agouza","Imbaba","Sheikh Zayed","6th of October"] },
+    }
+  },
+  "Pakistan": {
+    ar: "باكستان",
+    cities: {
+      "Karachi":      { ar: "كراتشي",       districts: ["Clifton","Defence","Gulshan-e-Iqbal","North Nazimabad","Korangi","Malir","Landhi","F.B. Area","Gulberg","S.I.T.E."] },
+      "Lahore":       { ar: "لاهور",        districts: ["DHA","Gulberg","Model Town","Johar Town","Bahria Town","Cantt","Iqbal Town","Garden Town"] },
+      "Islamabad":    { ar: "إسلام آباد",   districts: ["F-6","F-7","F-8","F-10","G-9","G-10","G-11","I-8","I-9","Blue Area"] },
+      "Rawalpindi":   { ar: "راولبندي",     districts: ["Saddar","Chaklala","Bahria Town","DHA","Satellite Town"] },
+    }
+  },
+  "India": {
+    ar: "الهند",
+    cities: {
+      "Mumbai":       { ar: "مومباي",       districts: ["Andheri","Bandra","Colaba","Dadar","Juhu","Kurla","Powai","Thane","Worli","Borivali"] },
+      "Delhi":        { ar: "دلهي",         districts: ["Connaught Place","Karol Bagh","Lajpat Nagar","Nehru Place","Rohini","Dwarka","Saket","Vasant Kunj"] },
+      "Bangalore":    { ar: "بنغالور",      districts: ["Whitefield","Koramangala","Indiranagar","Jayanagar","Malleswaram","Electronic City"] },
+    }
+  },
+  "USA": {
+    ar: "الولايات المتحدة الأمريكية",
+    cities: {
+      "New York":     { ar: "نيويورك",      districts: ["Manhattan","Brooklyn","Queens","Bronx","Staten Island"] },
+      "Los Angeles":  { ar: "لوس أنجلوس",  districts: ["Downtown","Hollywood","Beverly Hills","Santa Monica","Burbank"] },
+      "Chicago":      { ar: "شيكاغو",       districts: ["Downtown","Lincoln Park","Hyde Park","Wicker Park","Evanston"] },
+    }
+  },
+  "UK": {
+    ar: "المملكة المتحدة",
+    cities: {
+      "London":       { ar: "لندن",         districts: ["City of London","Westminster","Kensington","Chelsea","Canary Wharf","Shoreditch","Camden","Mayfair"] },
+      "Manchester":   { ar: "مانشستر",      districts: ["City Centre","Salford","Trafford","Didsbury","Chorlton"] },
+      "Birmingham":   { ar: "برمنغهام",     districts: ["City Centre","Edgbaston","Erdington","Handsworth","Moseley"] },
+    }
+  },
+  "Germany": {
+    ar: "ألمانيا",
+    cities: {
+      "Berlin":       { ar: "برلين",        districts: ["Mitte","Kreuzberg","Prenzlauer Berg","Charlottenburg","Neukölln"] },
+      "Munich":       { ar: "ميونخ",        districts: ["Maxvorstadt","Schwabing","Bogenhausen","Pasing","Neuhausen"] },
+      "Frankfurt":    { ar: "فرانكفورت",    districts: ["Innenstadt","Sachsenhausen","Bornheim","Gallus","Niederrad"] },
+    }
+  },
+  "China": {
+    ar: "الصين",
+    cities: {
+      "Beijing":      { ar: "بكين",         districts: ["Chaoyang","Dongcheng","Xicheng","Haidian","Fengtai"] },
+      "Shanghai":     { ar: "شنغهاي",       districts: ["Pudong","Huangpu","Jing'an","Xuhui","Changning"] },
+    }
+  },
+  "Turkey": {
+    ar: "تركيا",
+    cities: {
+      "Istanbul":     { ar: "إسطنبول",      districts: ["Beyoglu","Kadikoy","Besiktas","Sisli","Fatih","Uskudar","Maltepe"] },
+      "Ankara":       { ar: "أنقرة",        districts: ["Cankaya","Kecioren","Yenimahalle","Altindag","Etimesgut"] },
+    }
+  },
+};
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script>
+const TRANSLATE_URL = '{{ url_for("sellers.translate_text") }}';
+const CSRF          = '{{ csrf_token() }}';
+const DATA_URL      = '{{ url_for("lookups.buyers_data") }}';
+const IS_ADMIN      = {{ 'true' if current_user.is_admin() else 'false' }};
+const IS_AR         = {{ 'true' if ar else 'false' }};
+
+// All UI strings in both languages
+const STR = {
+  edit:        IS_AR ? 'تعديل'   : 'Edit',
+  delete:      IS_AR ? 'حذف'     : 'Delete',
+  view:        IS_AR ? 'عرض'     : 'View',
+  noData:      IS_AR ? 'لا توجد بيانات' : 'No data',
+  records:     IS_AR ? 'سجل'     : 'records',
+  selected:    IS_AR ? 'محدد'    : 'selected',
+  page:        IS_AR ? 'صفحة'    : 'Page',
+  of:          IS_AR ? 'من'      : 'of',
+  deleteConfirm: IS_AR ? 'هل تريد حذف: ' : 'Delete: ',
+  // Column headers
+  col: {
+    name:        IS_AR ? 'الاسم'              : 'Name',
+    code:        IS_AR ? 'كود البائع'         : 'Seller Code',
+    vat:         IS_AR ? 'رقم ضريبة القيمة المضافة' : 'VAT Number',
+    crn:         IS_AR ? 'رقم السجل التجاري' : 'CRN',
+    phone:       IS_AR ? 'الهاتف'            : 'Phone',
+    fax:         IS_AR ? 'الفاكس'            : 'Fax',
+    email:       IS_AR ? 'البريد الإلكتروني' : 'Email',
+    website:     IS_AR ? 'الموقع الإلكتروني' : 'Website',
+    street:      IS_AR ? 'اسم الشارع'        : 'Street Name',
+    building:    IS_AR ? 'رقم المبنى'        : 'Building No',
+    additional:  IS_AR ? 'رقم إضافي'         : 'Additional No',
+    district:    IS_AR ? 'المنطقة'           : 'District',
+    city:        IS_AR ? 'المدينة'           : 'City',
+    postal:      IS_AR ? 'الرمز البريدي'     : 'Postal Code',
+    country:     IS_AR ? 'الدولة'            : 'Country',
+    status:      IS_AR ? 'الحالة'            : 'Status',
+    created:     IS_AR ? 'تاريخ الإضافة'     : 'Created',
+    actions:     IS_AR ? 'الإجراءات'         : 'Actions',
+  },
+  status: {
+    active:      IS_AR ? 'نشط'      : 'Active',
+    inactive:    IS_AR ? 'غير نشط' : 'Inactive',
+    pending:     IS_AR ? 'معلق'     : 'Pending',
+    blacklisted: IS_AR ? 'محظور'   : 'Blacklisted',
+  }
+};
+
+/* ══ CELL RENDERERS ══ */
+function renderCode(p)   { return p.value ? `<span class="code-badge">${p.value}</span>` : ''; }
+function renderName(p)   {
+  const c = p.data.report_color || '#16a34a';
+  const displayName = IS_AR && p.data.name_ar ? p.data.name_ar : (p.value || '');
+  return `<div class="name-wrap"><span class="name-dot" style="background:${c}"></span>${displayName}</div>`;
+}
+// Show AR city/country/district in table when AR mode
+function renderCity(p)    { return IS_AR&&p.data.city_ar     ? p.data.city_ar     : (p.value||''); }
+function renderCountry(p) { return IS_AR&&p.data.country_ar  ? p.data.country_ar  : (p.value||''); }
+function renderDistrict(p){ return IS_AR&&p.data.district_ar ? p.data.district_ar : (p.value||''); }
+function renderStatus(p) {
+  const s = (p.value || 'active').toLowerCase();
+  const label = STR.status[s] || s;
+  return `<span class="st-${s}">${label}</span>`;
+}
+
+class ActionsRenderer {
+  init(p) {
+    this.gui = document.createElement('div');
+    this.gui.className = 'ag-act-cell';
+    const id = p.data.id, name = (p.data.name||'').replace(/'/g,"\'");
+    this.gui.innerHTML = `
+      <button class="ag-ab ag-ab-view" title="${STR.view}" onclick="openViewSeller(${id})"><i class="fas fa-eye"></i></button>
+      <button class="ag-ab ag-ab-edit" title="${STR.edit}" onclick="openEditModal(${id})"><i class="fas fa-pencil-alt"></i></button>
+      <button class="ag-ab ag-ab-del"  title="${STR.delete}" onclick="confirmDelete('... ${id}/delete','${name}')"><i class="fas fa-trash"></i></button>`;
+  }
+  getGui() { return this.gui; }
+}
+
+/* ══ COLUMNS ══ */
+const baseCols = [
+  { headerName:'', field:'id', width:48, checkboxSelection:true, headerCheckboxSelection:true, sortable:false, suppressMenu:true, resizable:false, pinned: IS_AR ? 'right' : 'left' },
+  { headerName: STR.col.name,       field:'name',              minWidth:180, pinned: IS_AR?'right':'left', cellRenderer:renderName,   filter:'agTextColumnFilter' },
+  { headerName: STR.col.code,       field:'buyer_code',       width:130, cellRenderer:renderCode, filter:'agTextColumnFilter' },
+  { headerName: STR.col.vat,        field:'vat_number',        width:150, filter:'agTextColumnFilter' },
+  { headerName: STR.col.crn,        field:'crn',               width:130, filter:'agTextColumnFilter' },
+  { headerName: STR.col.phone,      field:'phone',             width:135, filter:'agTextColumnFilter' },
+  { headerName: STR.col.fax,        field:'fax',               width:120, filter:'agTextColumnFilter' },
+  { headerName: STR.col.email,      field:'email',             width:190, filter:'agTextColumnFilter' },
+  { headerName: STR.col.website,    field:'website',           width:165, filter:'agTextColumnFilter' },
+  { headerName: STR.col.street,     field:'street_name',       width:165, filter:'agTextColumnFilter' },
+  { headerName: STR.col.building,   field:'building_number',   width:125, filter:'agTextColumnFilter' },
+  { headerName: STR.col.additional, field:'additional_number', width:135, filter:'agTextColumnFilter' },
+  { headerName: STR.col.district,   field:'district',  width:140, filter:'agTextColumnFilter', cellRenderer: renderDistrict },
+  { headerName: STR.col.city,       field:'city',      width:120, filter:'agTextColumnFilter', cellRenderer: renderCity },
+  { headerName: STR.col.postal,     field:'postal_code', width:120, filter:'agTextColumnFilter' },
+  { headerName: STR.col.country,    field:'country',   width:130, filter:'agTextColumnFilter', cellRenderer: renderCountry },
+  { headerName: STR.col.status,     field:'status',            width:110, cellRenderer:renderStatus, filter:'agSetColumnFilter' },
+  { headerName: STR.col.created,    field:'created_at',        width:120, filter:'agTextColumnFilter' },
+];
+if (IS_ADMIN) baseCols.push({
+  headerName: STR.col.actions, field:'_actions', width:125,
+  pinned: IS_AR ? 'left' : 'right', sortable:false, suppressMenu:true, resizable:false,
+  cellRenderer: ActionsRenderer, cellStyle:{overflow:'visible',padding:'0 8px'}
+});
+
+/* ══ GRID INIT ══ */
+let gridApi;
+agGrid.createGrid(document.getElementById('sellerGrid'), {
+  columnDefs: baseCols,
+  rowData: [],
+  pagination: true,
+  paginationPageSize: 20,
+  rowSelection: 'multiple',
+  suppressRowClickSelection: true,
+  animateRows: true,
+  enableRtl: IS_AR,
+  defaultColDef: { sortable:true, resizable:true, filter:true, suppressMenu:false, menuTabs:['filterMenuTab','generalMenuTab'] },
+  onGridReady(p)        { gridApi=p.api; loadData(); },
+  onFilterChanged()     { updateBadge(); },
+  onSortChanged()       { updateBadge(); },
+  onPaginationChanged() { updateBadge(); },
+  onSelectionChanged()  { updateBadge(); },
+  getRowStyle(p)        { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; },
+});
+
+function loadData() {
+  fetch(DATA_URL).then(r=>r.json()).then(data=>{ gridApi.setGridOption('rowData',data); updateBadge(); });
+}
+function refreshGrid()    { loadData(); }
+function exportCSV()      { gridApi.exportDataAsCsv({fileName:'buyers.csv'}); }
+function clearAllFilters(){ gridApi.setFilterModel(null); closeFilter(); }
+
+function updateBadge() {
+  if (!gridApi) return;
+  const sel = gridApi.getSelectedRows().length;
+  const disp = gridApi.getDisplayedRowCount();
+  const total = (gridApi.getGridOption('rowData')||[]).length;
+  document.getElementById('selText').textContent = sel > 0
+    ? `${sel} ${STR.selected}` : `${disp} ${STR.records}`;
+  const page = gridApi.paginationGetCurrentPage()+1;
+  const pages = gridApi.paginationGetTotalPages();
+  document.getElementById('pageInfo').textContent = `${disp} ${STR.of} ${total} ${STR.records} — ${STR.page} ${page} ${STR.of} ${pages}`;
+}
+
+/* ══ VIEW SELLER (read-only) ══ */
+let currentViewSellerId = null;
+function openViewSeller(id) {
+  currentViewSellerId = id;
+  fetch('... '+id+'/json').then(r=>r.json()).then(d=>{
+    const na = IS_AR ? 'غير محدد' : 'N/A';
+    const rows = [
+      [IS_AR?'كود البائع':'Seller Code',        d.buyer_code||na],
+      [IS_AR?'الاسم':'Name',                     IS_AR&&d.name_ar ? d.name_ar : d.name],
+      [IS_AR?'رقم ضريبة القيمة المضافة':'VAT Number', d.vat_number||na],
+      [IS_AR?'رقم السجل التجاري':'CRN',          d.crn||na],
+      [IS_AR?'الهاتف':'Phone',                   d.phone||na],
+      [IS_AR?'الفاكس':'Fax',                     d.fax||na],
+      [IS_AR?'البريد الإلكتروني':'Email',         d.email||na],
+      [IS_AR?'الموقع الإلكتروني':'Website',       d.website||na],
+      [IS_AR?'اسم الشارع':'Street Name',          IS_AR&&d.street_name_ar ? d.street_name_ar : (d.street_name||na)],
+      [IS_AR?'رقم المبنى':'Building Number',      d.building_number||na],
+      [IS_AR?'المدينة':'City',                    IS_AR&&d.city_ar ? d.city_ar : (d.city||na)],
+      [IS_AR?'الدولة':'Country',                  IS_AR&&d.country_ar ? d.country_ar : (d.country||na)],
+      [IS_AR?'الرمز البريدي':'Postal Code',       d.postal_code||na],
+    ];
+    let html = `<table style="width:100%;border-collapse:collapse;font-size:13px;">`;
+    rows.forEach((r,i)=>{
+      const bg=i%2===0?'#f9fafb':'white';
+      html+=`<tr style="background:${bg}"><td style="padding:8px 12px;font-weight:600;color:#374151;border-bottom:1px solid #f1f5f9;width:40%;${IS_AR?'text-align:right;direction:rtl;':''}">${r[0]}</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;${IS_AR?'text-align:right;direction:rtl;':''}">${r[1]}</td></tr>`;
+    });
+    html += '</table>';
+    document.getElementById('viewSellerTitle').textContent = (IS_AR?'بيانات البائع: ':'Seller: ')+(IS_AR&&d.name_ar?d.name_ar:d.name);
+    document.getElementById('viewSellerBody').innerHTML = html;
+    new bootstrap.Modal(document.getElementById('viewSellerModal')).show();
+  });
+}
+
+/* ══ FILTER POPUP ══ */
+let _activeCol = null;
+document.addEventListener('click', e => {
+  if (!e.target.closest('.pl-filter-popup') && !e.target.closest('.pl-filt-icon'))
+    document.getElementById('plFilterPopup').classList.remove('open');
+});
+
+function openFilterPopup(colField, btnEl) {
+  _activeCol = colField;
+  const cur = (gridApi.getFilterModel()||{})[colField];
+  document.getElementById('plfpCondition').value = cur?.type || 'contains';
+  document.getElementById('plfpValue').value     = cur?.filter || '';
+  const rect = btnEl.getBoundingClientRect();
+  const popup = document.getElementById('plFilterPopup');
+  popup.style.top  = (rect.bottom + window.scrollY + 4) + 'px';
+  popup.style.left = Math.min(rect.left + window.scrollX, window.innerWidth-300) + 'px';
+  popup.classList.add('open');
+  setTimeout(()=>document.getElementById('plfpValue').focus(), 50);
+}
+function applyCurrentFilter() {
+  if (!_activeCol) return;
+  const condition = document.getElementById('plfpCondition').value;
+  const value     = document.getElementById('plfpValue').value;
+  if (!value && !['blank','notBlank'].includes(condition))
+    gridApi.setColumnFilterModel(_activeCol, null).then(()=>gridApi.onFilterChanged());
+  else
+    gridApi.setColumnFilterModel(_activeCol, {filterType:'text', type:condition, filter:value}).then(()=>gridApi.onFilterChanged());
+  closeFilter();
+}
+function clearCurrentFilter() {
+  if (!_activeCol) return;
+  gridApi.setColumnFilterModel(_activeCol, null).then(()=>gridApi.onFilterChanged());
+  document.getElementById('plfpValue').value='';
+  closeFilter();
+}
+function closeFilter() { document.getElementById('plFilterPopup').classList.remove('open'); }
+document.getElementById('plfpValue').addEventListener('keydown', e=>{ if(e.key==='Enter') applyCurrentFilter(); });
+
+function injectFilterIcons() {
+  document.querySelectorAll('.ag-header-cell[col-id]').forEach(cell => {
+    const colId = cell.getAttribute('col-id');
+    if (!colId || ['id','_actions'].includes(colId)) return;
+    if (cell.querySelector('.pl-filt-icon')) return;
+    const label = cell.querySelector('.ag-header-cell-label');
+    if (!label) return;
+    const btn = document.createElement('button');
+    btn.className = 'pl-filt-icon';
+    btn.innerHTML = '<i class="fas fa-filter"></i>';
+    btn.style.cssText = 'background:none;border:none;cursor:pointer;padding:0 3px;color:#9ca3af;font-size:10px;margin-left:2px;';
+    btn.addEventListener('click', e=>{ e.stopPropagation(); openFilterPopup(colId, btn); });
+    label.appendChild(btn);
+  });
+}
+setTimeout(injectFilterIcons, 800);
+document.getElementById('sellerGrid').addEventListener('click', ()=>setTimeout(injectFilterIcons,100));
+
+/* ══ AUTO-TRANSLATE ══ */
+const _timers={}, _translating={};
+
+// In ADD mode: block manual typing in the "other language" side
+// EN portal: EN input is primary, AR input gets auto-filled (block manual)
+// AR portal: AR input is primary, EN input gets auto-filled (block manual)
+// In EDIT mode: both sides are always editable
+document.addEventListener('DOMContentLoaded', () => {
+  enforceDirectionRule();
+});
+function enforceDirectionRule() {
+  if (isEditMode) return;
+  if (IS_AR) {
+    // AR portal: EN inputs are secondary (auto-filled) — add visual cue but still allow override
+    document.querySelectorAll('.pl-input-en').forEach(el => {
+      if (!el.readOnly) el.style.background = '#f8faff';
+    });
+  } else {
+    // EN portal: AR inputs are secondary
+    document.querySelectorAll('.pl-input-ar').forEach(el => {
+      if (!el.readOnly) el.style.background = '#fafdf9';
+    });
+  }
+}
+
+function toArabicNums(s)  { return s.replace(/[0-9]/g, d=>'٠١٢٣٤٥٦٧٨٩'[d]); }
+function toWesternNums(s) { return s.replace(/[٠-٩]/g, d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))); }
+function isNumeric(s)     { return /^[\d٠-٩\s\-\+\(\)\.\/]+$/.test(s); }
+
+function doTranslate(srcEl, fieldId, srcLang) {
+  // EN portal: only auto-translate EN→AR. Ignore AR keystrokes (use 🔄 button for AR→EN).
+  // AR portal: only auto-translate AR→EN. Ignore EN keystrokes (use 🔄 button for EN→AR).
+  if (!IS_AR && srcLang === 'ar') return;
+  if ( IS_AR && srcLang === 'en') return;
+  if (_translating[fieldId]) return;
+  const text=srcEl.value.trim(), tgtLang=srcLang==='en'?'ar':'en';
+  const tgtEl=document.getElementById(srcLang==='en'?`f_${fieldId}_ar`:`f_${fieldId}`);
+  const spin=document.getElementById(`spin_${fieldId}`);
+  clearTimeout(_timers[fieldId]);
+  if (!text) { if(tgtEl)tgtEl.value=''; if(spin)spin.innerHTML=''; return; }
+  if (isNumeric(text)) {
+    if(tgtEl){ _translating[fieldId]=true; tgtEl.value=srcLang==='en'?toArabicNums(text):toWesternNums(text); flash(tgtEl); setTimeout(()=>_translating[fieldId]=false,150); }
+    if(spin)spin.innerHTML=''; return;
+  }
+  if(spin)spin.innerHTML='<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
+  _timers[fieldId]=setTimeout(()=>{
+    callTranslateAPI(text,srcLang,tgtLang,translated=>{
+      if(translated&&tgtEl&&!_translating[fieldId]){ _translating[fieldId]=true; tgtEl.value=translated; flash(tgtEl); setTimeout(()=>_translating[fieldId]=false,200); }
+      if(spin){ spin.innerHTML=translated?'<i class="fas fa-check-circle" style="font-size:11px;color:#16a34a"></i>':''; setTimeout(()=>{ if(spin)spin.innerHTML=''; },2000); }
+    });
+  },700);
+}
+
+function retranslate(fieldId, srcLang) {
+  const srcEl=document.getElementById(srcLang==='en'?`f_${fieldId}`:`f_${fieldId}_ar`);
+  const tgtEl=document.getElementById(srcLang==='en'?`f_${fieldId}_ar`:`f_${fieldId}`);
+  const spin=document.getElementById(`spin_${fieldId}`);
+  const tgtLang=srcLang==='en'?'ar':'en';
+  const text=(srcEl?srcEl.value:'').trim();
+  if(!text)return;
+  if(isNumeric(text)){ if(tgtEl){tgtEl.value=srcLang==='en'?toArabicNums(text):toWesternNums(text);flash(tgtEl);}return; }
+  if(spin)spin.innerHTML='<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
+  callTranslateAPI(text,srcLang,tgtLang,translated=>{ if(translated&&tgtEl){tgtEl.value=translated;flash(tgtEl);} if(spin)spin.innerHTML=''; });
+}
+
+function callTranslateAPI(text,srcLang,tgtLang,cb){
+  fetch(TRANSLATE_URL,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify({text,direction:`${srcLang}|${tgtLang}`})})
+  .then(r=>r.json()).then(d=>cb(d.translated||'')).catch(()=>cb(''));
+}
+function flash(el){ el.classList.add('pl-translated'); setTimeout(()=>el.classList.remove('pl-translated'),900); }
+function resetTranslateLocks(){ Object.keys(_timers).forEach(k=>clearTimeout(_timers[k])); Object.keys(_translating).forEach(k=>_translating[k]=false); document.querySelectorAll('.pl-spin').forEach(el=>el.innerHTML=''); }
+function updateRetranslateButtons(){
+  // EN portal: only show EN retranslate buttons (left/primary side)
+  // AR portal: only show AR retranslate buttons (right/primary side)
+  // (The other side's buttons are not rendered by Jinja2 at all, but keep this as safety net)
+  document.querySelectorAll('.pl-retranslate-en').forEach(btn=>btn.style.display=IS_AR?'none':'inline-flex');
+  document.querySelectorAll('.pl-retranslate-ar').forEach(btn=>btn.style.display=IS_AR?'inline-flex':'none');
+}
+
+/* ══ CASCADE DROPDOWNS ════════════════════════════════════
+   Country → City → District (both EN and AR in sync)
+═══════════════════════════════════════════════════════════ */
+const BANKS_API_URL = '{{ url_for("banks.banks_data") }}';
+let _banksCache = null;
+
+function initBankDropdown() {
+  const sel = document.getElementById('bi_bank_name');
+  if (!sel) return;
+  const ph = IS_AR ? '-- اختر البنك --' : '-- Select Bank --';
+
+  if (_banksCache) {
+    populateBankDropdown(sel, _banksCache, ph);
+    return;
+  }
+  fetch(BANKS_API_URL)
+    .then(r => r.json())
+    .then(banks => {
+      _banksCache = banks;
+      populateBankDropdown(sel, banks, ph);
+    })
+    .catch(() => {
+      sel.innerHTML = `<option value="">${ph}</option><option value="Other" data-ar="أخرى">Other</option>`;
+    });
+}
+
+function populateBankDropdown(sel, banks, ph) {
+  sel.innerHTML = `<option value="">${ph}</option>`;
+  banks.forEach(b => {
+    sel.innerHTML += `<option value="${b.en}" data-ar="${b.ar}" data-swift="${b.swift}">${b.label}</option>`;
+  });
+}
+
+function onBankNameChange() {
+  const sel = document.getElementById('bi_bank_name');
+  const opt = sel.options[sel.selectedIndex];
+  const arInput = document.getElementById('bi_bank_name_ar');
+  if (arInput && opt) arInput.value = opt.dataset.ar || '';
+}
+
+function syncBankNum(src, targetId) {
+  // Mirror account number to AR field as Arabic-Indic numerals
+  const target = document.getElementById(targetId);
+  if (target) target.value = toArabicNums(src.value);
+}
+
+const _bankTransTimers = {};
+function bankTranslate(srcEl, targetId, srcLang) {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  clearTimeout(_bankTransTimers[targetId]);
+  const text = srcEl.value.trim();
+  if (!text) { target.value=''; return; }
+  if (isNumeric(text)) { target.value = srcLang==='en' ? toArabicNums(text) : toWesternNums(text); return; }
+  _bankTransTimers[targetId] = setTimeout(() => {
+    callTranslateAPI(text, srcLang, srcLang==='en'?'ar':'en', t => { if(t) target.value=t; });
+  }, 700);
+}
+
+function geoInit() {
+  const sel = document.getElementById('f_country');
+  if (!sel) return;
+  if (typeof GEO === 'undefined') { console.error('GEO data not loaded!'); return; }
+  const ph = IS_AR ? '-- اختر الدولة --' : '-- Select Country --';
+  sel.innerHTML = `<option value="">${ph}</option>`;
+  // Show labels in portal language
+  Object.keys(GEO).sort().forEach(en => {
+    const label = IS_AR ? GEO[en].ar : en;
+    sel.innerHTML += `<option value="${en}" data-ar="${GEO[en].ar}">${label}</option>`;
+  });
+  // Default to Saudi Arabia
+  sel.value = 'Saudi Arabia';
+  // Set hidden fields
+  const opt = sel.options[sel.selectedIndex];
+  const hEn=document.getElementById('f_country_hidden');
+  const hAr=document.getElementById('f_country_ar_hidden');
+  if(hEn)hEn.value='Saudi Arabia';
+  if(hAr)hAr.value=opt?opt.dataset.ar||'المملكة العربية السعودية':'المملكة العربية السعودية';
+  // Populate cities for Saudi Arabia immediately
+  geoFillCities('Saudi Arabia');
+}
+
+function geoClearCities() {
+  const cityPH = IS_AR ? '-- اختر المدينة --' : '-- Select City --';
+  const distPH = IS_AR ? '-- اختر المنطقة --' : '-- Select District --';
+  const city = document.getElementById('f_city');
+  const dist = document.getElementById('f_district');
+  if (city) { city.innerHTML=`<option value="">${cityPH}</option>`; city.disabled=true; }
+  if (dist) { dist.innerHTML=`<option value="">${distPH}</option>`; dist.disabled=true; }
+  // Clear hidden fields
+  ['f_city_hidden','f_city_ar_hidden','f_district_hidden','f_district_ar_hidden'].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.value='';
+  });
+}
+
+function geoFillCities(countryEn, selCityEn, selCityAr) {
+  const citySel = document.getElementById('f_city');
+  if (!citySel || !countryEn || !GEO[countryEn]) { geoClearCities(); return; }
+  const ph = IS_AR ? '-- اختر المدينة --' : '-- Select City --';
+  citySel.innerHTML = `<option value="">${ph}</option>`;
+  citySel.disabled = false;
+  Object.keys(GEO[countryEn].cities).sort().forEach(en => {
+    const ar = GEO[countryEn].cities[en].ar;
+    const label = IS_AR ? ar : en;
+    const sel = en===selCityEn||ar===selCityAr?' selected':'';
+    citySel.innerHTML += `<option value="${en}" data-ar="${ar}"${sel}>${label}</option>`;
+  });
+  geoClearDistricts();
+  if (selCityEn) geoFillDistricts(countryEn, selCityEn, selCityAr||'');
+}
+
+function geoClearDistricts() {
+  const ph = IS_AR ? '-- اختر المنطقة --' : '-- Select District --';
+  const dist = document.getElementById('f_district');
+  if (dist) { dist.innerHTML=`<option value="">${ph}</option>`; dist.disabled=true; }
+  ['f_district_hidden','f_district_ar_hidden'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+}
+
+function geoFillDistricts(countryEn, cityEn, selDist) {
+  const distSel = document.getElementById('f_district');
+  if (!distSel||!countryEn||!GEO[countryEn]||!GEO[countryEn].cities[cityEn]) { geoClearDistricts(); return; }
+  const ph = IS_AR ? '-- اختر المنطقة --' : '-- Select District --';
+  distSel.innerHTML=`<option value="">${ph}</option>`;
+  distSel.disabled=false;
+  GEO[countryEn].cities[cityEn].districts.forEach(d => {
+    distSel.innerHTML += `<option value="${d}"${d===selDist?' selected':''}>${d}</option>`;
+  });
+}
+
+// Single country dropdown changed
+function onCountryChange(isDefault) {
+  const sel = document.getElementById('f_country');
+  const opt = sel.options[sel.selectedIndex];
+  const en = sel.value;
+  const ar = opt ? (opt.dataset.ar||'') : '';
+  // Sync hidden fields
+  const hEn=document.getElementById('f_country_hidden'), hAr=document.getElementById('f_country_ar_hidden');
+  if(hEn)hEn.value=en; if(hAr)hAr.value=ar;
+  if (!isDefault) geoFillCities(en);
+}
+
+function onCityChange() {
+  const sel = document.getElementById('f_city');
+  const opt = sel.options[sel.selectedIndex];
+  const en = sel.value;
+  const ar = opt ? (opt.dataset.ar||en) : '';
+  const hEn=document.getElementById('f_city_hidden'), hAr=document.getElementById('f_city_ar_hidden');
+  if(hEn)hEn.value=en; if(hAr)hAr.value=ar;
+  const countryEn = document.getElementById('f_country').value;
+  geoClearDistricts();
+  if (en) geoFillDistricts(countryEn, en);
+}
+
+function onDistrictChange() {
+  const sel = document.getElementById('f_district');
+  const v = sel.value;
+  const hEn=document.getElementById('f_district_hidden'), hAr=document.getElementById('f_district_ar_hidden');
+  if(hEn)hEn.value=v; if(hAr)hAr.value=v;
+}
+
+/* ══ MODAL ══ */
+let currentSellerId=null, pendingBanks=[], isEditMode=false;
+
+function openAddModal(){
+  currentSellerId=null; pendingBanks=[]; isEditMode=false;
+  document.getElementById('sellerModalLabel').textContent = IS_AR ? 'إضافة بائع' : 'Add Seller';
+  document.getElementById('sellerForm').action='{{ url_for("lookups.add_buyer") }}';
+  document.getElementById('formSellerId').value='';
+  // Reset text fields manually (NOT form.reset() — that would clear our dropdowns)
+  ['f_name','f_name_ar','f_vat_number','f_vat_number_ar','f_crn','f_crn_ar',
+   'f_phone','f_fax','f_email','f_website','f_street_name','f_street_name_ar',
+   'f_building_number','f_building_number_ar','f_additional_number','f_additional_number_ar',
+   'f_postal_code','f_postal_code_ar'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value=''; });
+  document.getElementById('f_report_color').value='#16a34a';
+  document.getElementById('colorPicker').value='#16a34a';
+  const noFile = IS_AR ? 'اختر ملف - لم يتم الاختيار' : 'Choose File No file chosen';
+  ['logo-name','bg-logo-name'].forEach(id=>{ const el=document.getElementById(id); if(el)el.textContent=noFile; });
+  resetTranslateLocks();
+  // Init dropdowns AFTER clearing (not form.reset which clears selects too)
+  geoInit();
+  refreshBanksTable([]);
+  updateRetranslateButtons();
+}
+
+function openEditModal(id){
+  currentSellerId=id; pendingBanks=[]; isEditMode=true;
+  document.getElementById('sellerModalLabel').textContent = IS_AR ? 'تعديل بائع' : 'Edit Seller';
+  document.getElementById('sellerForm').action='... '+id+'/edit';
+  document.getElementById('formSellerId').value=id;
+  // Init country dropdowns first, then load data
+  geoInit();
+  fetch('... '+id+'/json').then(r=>r.json()).then(d=>{
+    ['name','vat_number','crn','phone','fax','email','website','report_color'].forEach(f=>{const el=document.getElementById('f_'+f);if(el)el.value=d[f]||'';});
+    ['name','vat_number','crn'].forEach(f=>{const el=document.getElementById('f_'+f+'_ar');if(el)el.value=d[f+'_ar']||'';});
+    ['street_name','building_number','additional_number','postal_code'].forEach(f=>{
+      const el=document.getElementById('f_'+f); if(el)el.value=d[f]||'';
+      const arEl=document.getElementById('f_'+f+'_ar'); if(arEl)arEl.value=d[f+'_ar']||'';
+    });
+    document.getElementById('colorPicker').value=d.report_color||'#16a34a';
+    // Cascade: country → cities → districts
+    const cnEn=document.getElementById('f_country'), cnAr=document.getElementById('f_country_ar');
+    if(cnEn)cnEn.value=d.country||'';
+    if(cnAr)cnAr.value=d.country_ar||'';
+    geoFillCities(d.country||'', d.city||'', d.city_ar||'');
+    if(d.city) setTimeout(()=>geoFillDistricts(d.country||'',d.city||'',d.district||''),50);
+    refreshBanksTable(d.banks||[]);
+    updateRetranslateButtons();
+  });
+  new bootstrap.Modal(document.getElementById('sellerModal')).show();
+}
+
+function submitSellerForm(){ document.getElementById('buyerForm').submit(); }
+function resetBuyerForm(){
+  // Reset text inputs manually — form.reset() would wipe select dropdowns
+  ['f_name','f_name_ar','f_vat_number','f_vat_number_ar','f_crn','f_crn_ar',
+   'f_phone','f_fax','f_email','f_website','f_street_name','f_street_name_ar',
+   'f_building_number','f_building_number_ar','f_additional_number','f_additional_number_ar',
+   'f_postal_code','f_postal_code_ar'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value=''; });
+  document.getElementById('f_report_color').value='#16a34a';
+  document.getElementById('colorPicker').value='#16a34a';
+  const noFile = IS_AR ? 'اختر ملف - لم يتم الاختيار' : 'Choose File No file chosen';
+  ['logo-name','bg-logo-name'].forEach(id=>{ const el=document.getElementById(id); if(el)el.textContent=noFile; });
+  resetTranslateLocks();
+  geoInit(); // Re-init cascade dropdowns
+}
+function toggleAcc(n){ const b=document.getElementById('body-'+n),i=document.getElementById('icon-'+n),o=!b.classList.contains('d-none'); b.classList.toggle('d-none',o); i.className=o?'fas fa-chevron-down pl-acc-icon':'fas fa-chevron-up pl-acc-icon'; }
+function setFileName(input,id){ const noFile=IS_AR?'اختر ملف - لم يتم الاختيار':'Choose File No file chosen'; document.getElementById(id).textContent=input.files[0]?'Choose File '+input.files[0].name:noFile; }
+function showBankRow(){ document.getElementById('bankInputRow').classList.remove('d-none'); initBankDropdown(); }
+function hideBankRow(){ document.getElementById('bankInputRow').classList.add('d-none'); }
+function saveBankRow(){
+  const bankSel = document.getElementById('bi_bank_name');
+  const bankEn  = bankSel.value;
+  const bankAr  = bankSel.options[bankSel.selectedIndex]?.dataset.ar || bankEn;
+  if(!bankEn){alert(IS_AR?'اسم البنك مطلوب':'Bank name required');return;}
+  const displayName = IS_AR ? bankAr : bankEn;
+  pendingBanks.push({
+    temp_id: Date.now(),
+    bank_name: bankEn, bank_name_ar: bankAr,
+    display_name: displayName,
+    account_number:    document.getElementById('bi_account_number').value.trim(),
+    account_number_ar: document.getElementById('bi_account_number_ar').value.trim(),
+    branch:    document.getElementById('bi_branch').value.trim(),
+    branch_ar: document.getElementById('bi_branch_ar').value.trim(),
+    swift_code: document.getElementById('bi_swift').value.trim(),
+    iban:       document.getElementById('bi_iban').value.trim(),
+    is_primary: document.getElementById('bi_primary').checked,
+    is_new: true
+  });
+  refreshBanksTable(pendingBanks); hideBankRow();
+  bankSel.value='';
+  ['bi_bank_name_ar','bi_account_number','bi_account_number_ar','bi_branch','bi_branch_ar','bi_swift','bi_iban'].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.value='';
+  });
+  document.getElementById('bi_primary').checked=false;
+}
+function refreshBanksTable(banks){
+  const tb=document.getElementById('banksTbody');
+  if(!banks||!banks.length){tb.innerHTML=`<tr><td colspan="7" class="empty-row">${IS_AR?'لم يتم إضافة بيانات بنك':'No bank details added'}</td></tr>`;return;}
+  tb.innerHTML='';
+  banks.forEach(b=>{
+    const nameDisplay   = IS_AR ? (b.bank_name_ar||b.bank_name||'—') : (b.bank_name||'—');
+    const acctDisplay   = IS_AR ? (b.account_number_ar||b.account_number||'—') : (b.account_number||'—');
+    const branchDisplay = IS_AR ? (b.branch_ar||b.branch||'—') : (b.branch||'—');
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${nameDisplay}</td><td>${acctDisplay}</td><td>${branchDisplay}</td><td>${b.swift_code||'—'}</td><td>${b.iban||'—'}</td><td>${b.is_primary?`<span class="badge bg-success">${IS_AR?'رئيسي':'Primary'}</span>`:'—'}</td><td><button type="button" class="action-btn action-btn-delete" onclick="delBank(${b.id||b.temp_id},${!!b.id})"><i class="fas fa-trash"></i></button></td>`;
+    tb.appendChild(tr);
+  });
+}
+function delBank(id,sv){
+  if(sv&&currentSellerId){if(!confirm(IS_AR?'حذف هذا البنك؟':'Delete this bank?'))return;fetch('/banks/'+id+'/delete',{method:'POST',headers:{'X-CSRFToken':CSRF}}).then(()=>fetch('... '+currentSellerId+'/json').then(r=>r.json()).then(d=>refreshBanksTable(d.banks)));}
+  else{pendingBanks=pendingBanks.filter(b=>b.temp_id!==id);refreshBanksTable(pendingBanks);}
+}
+function confirmDelete(url,name){
+  document.getElementById('deleteForm').action=url;
+  document.getElementById('deleteModalText').textContent=STR.deleteConfirm+name+'?';
+  new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+document.getElementById('sellerForm').addEventListener('submit',()=>setTimeout(loadData,600));
+
+
 </script>
 {% endblock %}

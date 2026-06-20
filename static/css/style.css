@@ -100,6 +100,7 @@ body {
     margin: 0;
     flex: 1;
     overflow-y: auto;
+    max-height: calc(100vh - 160px);
 }
 
 .nav-section {
@@ -999,3 +1000,29 @@ select.pl-input-ar:focus { background-color: white; }
   transition: background .15s;
 }
 .pl-retranslate-en:hover { background: #dbeafe; }
+
+/* ── Coming Soon Nav Items ───────────────────────────── */
+.nav-link-disabled {
+    opacity: .4;
+    cursor: default;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    color: rgba(255,255,255,.55);
+    font-size: 13px;
+    border-radius: 8px;
+    margin: 2px 0;
+}
+.nav-soon {
+    margin-left: auto;
+    font-size: 9px;
+    background: rgba(255,255,255,.12);
+    border-radius: 3px;
+    padding: 1px 6px;
+    color: rgba(255,255,255,.6);
+    font-weight: 600;
+    letter-spacing: .3px;
+    white-space: nowrap;
+}

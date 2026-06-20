@@ -124,11 +124,48 @@ class ProfessionMaster(db.Model):
 
 class BuyerMaster(db.Model):
     __tablename__ = 'buyers'
-    id = db.Column(db.Integer, primary_key=True)
-    buyer_name_en = db.Column(db.String(200), nullable=False)
-    buyer_name_ar = db.Column(db.String(200))
-    is_active     = db.Column(db.Boolean, default=True)
-    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
+    id             = db.Column(db.Integer, primary_key=True)
+    buyer_code     = db.Column(db.String(20), unique=True)
+    buyer_name_en  = db.Column(db.String(200), nullable=False)
+    buyer_name_ar  = db.Column(db.String(200))
+    vat_number     = db.Column(db.String(50))
+    crn            = db.Column(db.String(50))
+    phone          = db.Column(db.String(30))
+    fax            = db.Column(db.String(30))
+    email          = db.Column(db.String(120))
+    website        = db.Column(db.String(200))
+    report_color   = db.Column(db.String(10), default='#2563eb')
+    # Address
+    street_name    = db.Column(db.String(200))
+    street_name_ar = db.Column(db.String(200))
+    building_number= db.Column(db.String(50))
+    building_number_ar = db.Column(db.String(50))
+    additional_number  = db.Column(db.String(50))
+    additional_number_ar= db.Column(db.String(50))
+    postal_code    = db.Column(db.String(20))
+    postal_code_ar = db.Column(db.String(20))
+    country        = db.Column(db.String(100), default='Saudi Arabia')
+    country_ar     = db.Column(db.String(100))
+    city           = db.Column(db.String(100))
+    city_ar        = db.Column(db.String(100))
+    district       = db.Column(db.String(100))
+    district_ar    = db.Column(db.String(100))
+    # Status
+    status         = db.Column(db.String(20), default='active')
+    is_active      = db.Column(db.Boolean, default=True)
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at     = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by     = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'buyer_code': self.buyer_code or '',
+            'name': self.buyer_name_en, 'name_ar': self.buyer_name_ar or '',
+            'vat_number': self.vat_number or '', 'crn': self.crn or '',
+            'phone': self.phone or '', 'email': self.email or '',
+            'status': self.status or 'active', 'is_active': self.is_active,
+            'report_color': self.report_color or '#2563eb',
+        }
 
 
 class BankMaster(db.Model):
@@ -183,16 +220,16 @@ class Employee(db.Model):
     employee_reference = db.Column(db.String(100))
 
     # Salary Information
-    rate             = db.Column(db.Float, default=0)
     po_rate          = db.Column(db.Float, default=0)
     po_number        = db.Column(db.String(50))
-    salary_type      = db.Column(db.String(20))   # azad / salary / kafalat
-    food_allowance   = db.Column(db.Float, default=0)
-    rent             = db.Column(db.Float, default=0)
+    salary_type      = db.Column(db.String(20), default='salary')  # salary/azad/kafalat
     basic_salary     = db.Column(db.Float, default=0)
-    net_salary       = db.Column(db.Float, default=0)
+    total_allowances = db.Column(db.Float, default=0)   # sum of EmployeeAllowance rows
+    net_salary       = db.Column(db.Float, default=0)   # basic_salary + total_allowances
     working_hours    = db.Column(db.Float, default=8)
+    overtime_ratio   = db.Column(db.Float, default=1.5)  # e.g. 1.5x
     overtime_rate    = db.Column(db.Float, default=0)
+    kafalat_number   = db.Column(db.String(50))          # kafalat reference number
 
     # Work Information
     joining_date     = db.Column(db.Date)
@@ -237,3 +274,62 @@ class Employee(db.Model):
     created_at       = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at       = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by       = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+
+class EmployeeAllowance(db.Model):
+    """One allowance row per employee per allowance type. Unique per (employee, type)."""
+    __tablename__ = 'employee_allowances'
+    __table_args__ = (db.UniqueConstraint('employee_id', 'allowance_type_id',
+                                          name='uq_emp_allow_type'),)
+
+    id                = db.Column(db.Integer, primary_key=True)
+    employee_id       = db.Column(db.Integer, db.ForeignKey('employees.id', ondelete='CASCADE'), nullable=False)
+    allowance_type_id = db.Column(db.Integer, db.ForeignKey('allowance_types.id'), nullable=True)
+    name              = db.Column(db.String(150))  # kept for backward compat
+    name_ar           = db.Column(db.String(150))
+    amount            = db.Column(db.Float, default=0, nullable=False)
+    created_at        = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at        = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    employee          = db.relationship('Employee', backref=db.backref('allowance_rows', cascade='all, delete-orphan', lazy='dynamic'))
+    allowance_type    = db.relationship('AllowanceType', backref='employee_allowances')
+
+    def to_dict(self):
+        at = self.allowance_type
+        return {
+            'id':                self.id,
+            'employee_id':       self.employee_id,
+            'allowance_type_id': self.allowance_type_id,
+            'allowance_code':    at.allowance_code if at else '',
+            'name':              at.allowance_name_en if at else (self.name or ''),
+            'name_ar':           at.allowance_name_ar if at else (self.name_ar or ''),
+            'amount':            self.amount,
+            'created_at':        self.created_at.strftime('%Y-%m-%d') if self.created_at else '',
+        }
+
+
+class AllowanceType(db.Model):
+    """Master list of allowance types (Housing, Transport, Food, etc.)"""
+    __tablename__ = 'allowance_types'
+
+    id                = db.Column(db.Integer, primary_key=True)
+    allowance_code    = db.Column(db.String(20), unique=True, nullable=False)
+    allowance_name_en = db.Column(db.String(150), nullable=False)
+    allowance_name_ar = db.Column(db.String(150))
+    description       = db.Column(db.Text)
+    is_active         = db.Column(db.Boolean, default=True)
+    created_at        = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at        = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id':                self.id,
+            'allowance_code':    self.allowance_code,
+            'allowance_name_en': self.allowance_name_en,
+            'allowance_name_ar': self.allowance_name_ar or '',
+            'description':       self.description or '',
+            'is_active':         self.is_active,
+        }
+
+    def __repr__(self):
+        return f'<AllowanceType {self.allowance_code}>'

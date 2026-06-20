@@ -190,6 +190,7 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
               <div class="val" id="empCodeDisplay">{% if ar %}(تلقائي){% else %}(Auto){% endif %}</div>
             </div>
             <div class="ms-auto d-flex align-items-center gap-4">
+
               <div class="form-check form-switch mb-0">
                 <input type="checkbox" name="is_active" id="f_is_active" class="form-check-input" checked>
                 <label for="f_is_active" class="form-check-label small fw-semibold">{% if ar %}نشيط{% else %}Active{% endif %}</label>
@@ -216,11 +217,9 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
 
 {# Bilingual field: EN input (left) + AR input (right), both real, auto-translate #}
 {% macro bf(fname, len, lar, req=False) %}
-              {# ── LEFT: English input (always editable) ───────────────
-                 EN portal: typing here → auto-fills Arabic  → 🔄 re-does EN→AR
-                 AR portal: typing here → auto-fills Arabic  → 🔄 re-does EN→AR
-                 User can always edit either side manually without affecting the other.
-              ───────────────────────────────────────────────────────── #}
+              {# EN portal: 🔄 button on EN side only (EN is primary)
+                 AR portal: 🔄 button on AR side only (AR is primary)
+                 Both inputs always editable. Auto-translate fires from primary side only. #}
               <div class="field-item">
                 <div class="field-label" dir="ltr" style="text-align:left">
                   {{ len }}{% if req %}<span class="field-req">*</span>{% endif %}
@@ -231,17 +230,15 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
                          {% if req %}required{% endif %}
                          placeholder="{{ len }}"
                          oninput="biTrans('f_{{ fname }}','f_{{ fname }}_ar','en')">
+                  {% if not ar %}
                   <button type="button" class="retrans-btn en-retrans"
                           title="Re-translate EN → AR"
                           onclick="biRetrans('f_{{ fname }}','f_{{ fname }}_ar','en')">
                     <i class="fas fa-sync-alt"></i>
                   </button>
+                  {% endif %}
                 </div>
               </div>
-              {# ── RIGHT: Arabic input (always editable) ───────────────
-                 Typing here auto-fills English if you want,
-                 but changes to AR side never override what's in EN side.
-              ───────────────────────────────────────────────────────── #}
               <div class="field-item">
                 <div class="field-label" dir="rtl" style="text-align:right">
                   {% if req %}<span class="field-req">*</span>{% endif %}{{ lar }}
@@ -252,11 +249,13 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
                          placeholder="{{ lar }}"
                          oninput="biTrans('f_{{ fname }}_ar','f_{{ fname }}','ar')">
                   <span class="field-spin" id="spin_{{ fname }}"></span>
+                  {% if ar %}
                   <button type="button" class="retrans-btn ar-retrans"
-                          title="Re-translate AR → EN"
+                          title="ترجمة AR → EN"
                           onclick="biRetrans('f_{{ fname }}_ar','f_{{ fname }}','ar')">
                     <i class="fas fa-sync-alt"></i>
                   </button>
+                  {% endif %}
                 </div>
               </div>
 {% endmacro %}
@@ -277,12 +276,13 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
               </div>
 {% endmacro %}
 
-{# Single dropdown: ONE select only, options shown in portal language #}
+{# Single dropdown: ONE select only, options shown in portal language
+   The select itself has name="{{ fname }}" so it submits directly.
+   A hidden _arval stores the Arabic equivalent for bilingual lookups. #}
 {% macro sd(fname, ten, tar, span2=False) %}
               <div class="field-item{% if span2 %}" style="grid-column:1/-1;max-width:calc(50% - 8px){% endif %}">
                 <div class="field-label">{% if ar %}{{ tar }}{% else %}{{ ten }}{% endif %}</div>
-                <select id="f_{{ fname }}" class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"></select>
-                <input type="hidden" name="{{ fname }}" id="f_{{ fname }}_val">
+                <select name="{{ fname }}" id="f_{{ fname }}" class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"></select>
                 {% if fname in ['nationality','profession','bank_name'] %}<input type="hidden" name="{{ fname }}_ar" id="f_{{ fname }}_arval">{% endif %}
               </div>
 {% endmacro %}
@@ -310,18 +310,20 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
                 <div class="field-item">
                   <div class="field-label">{% if ar %}نوع الموظف{% else %}Employee Type{% endif %}</div>
                   <div class="mcq-wrap" id="empTypeGrp">
-                    <label class="mcq-opt" onclick="pickMCQ('empTypeGrp',this,'f_employee_type','skilled')"><input type="radio">{% if ar %}مزدور{% else %}Skilled{% endif %}</label>
+                    <label class="mcq-opt chosen" onclick="pickMCQ('empTypeGrp',this,'f_employee_type','skilled')"><input type="radio">{% if ar %}مزدور{% else %}Skilled{% endif %}</label>
                     <label class="mcq-opt" onclick="pickMCQ('empTypeGrp',this,'f_employee_type','non_skilled')"><input type="radio">{% if ar %}غير مزدور{% else %}Non-Skilled{% endif %}</label>
                   </div>
-                  <input type="hidden" name="employee_type" id="f_employee_type">
+                  <input type="hidden" name="employee_type" id="f_employee_type" value="skilled">
                 </div>
               </div>
               <hr style="border-color:#f1f5f9;margin:16px 0;">
+              {# Field order: Arrival → Entry → Birth → Age → Passport No → Passport Expiry → Iqama No → Iqama Expiry #}
               <div class="field-row">
                 {{ sf('arrival_date','Arrival Date','تاريخ الوصول','date') }}
-                {{ sf('birth_date','Birth Date','تاريخ الميلاد','date') }}
+                {{ sf('entry_number','Entry Number','رقم الدخول') }}
               </div>
               <div class="field-row">
+                {{ sf('birth_date','Birth Date','تاريخ الميلاد','date') }}
                 <div class="field-item">
                   <div class="field-label">{% if ar %}العمر{% else %}Age{% endif %}</div>
                   <input type="text" id="f_age_display" class="field-input" readonly style="background:#f0fdf4;color:#15803d;font-weight:600" placeholder="{% if ar %}يحسب تلقائياً{% else %}Auto-calculated{% endif %}">
@@ -332,10 +334,7 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
                 {{ sf('passport_expiry','Passport Expiry','تاريخ انتهاء الجواز','date') }}
               </div>
               <div class="field-row">
-                {{ sf('entry_number','Entry Number','رقم الدخول') }}
                 {{ sf('iqama_number','Iqama Number','رقم الإقامة') }}
-              </div>
-              <div class="field-row">
                 {{ sf('iqama_expiry','Iqama Expiry','تاريخ انتهاء الإقامة','date') }}
               </div>
             </div>
@@ -343,17 +342,14 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
 
           {# ══ 2. DOCUMENT UPLOAD ══ #}
           {{ sec('docs','upload','Document Upload','تحميل المستندات') }}
-              <div class="field-row">
-                {{ sd('document_type','Document Type','نوع الوثيقة', True) }}
+              <div id="docFilesList"></div>
+              <div style="margin-top:8px;">
+                <button type="button" class="btn btn-success btn-sm" onclick="addDocRow()">
+                  <i class="fas fa-plus me-1"></i>{% if ar %}إضافة مستند{% else %}Add Document{% endif %}
+                </button>
               </div>
-              <div class="doc-dropzone">
-                <div class="doc-btns">
-                  <label for="f_document" class="btn btn-success btn-sm mb-0" style="cursor:pointer;"><i class="fas fa-plus me-1"></i>{% if ar %}اختر{% else %}Choose{% endif %}</label>
-                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="cancelDoc()"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-                </div>
-                <input type="file" name="document" id="f_document" accept=".pdf,.jpg,.jpeg,.png"
-                       style="position:fixed;top:-9999px;left:-9999px;" onchange="onDocPick(this)">
-                <div class="doc-filename" id="docName">{% if ar %}اسحب الملفات هنا لتحميلها{% else %}Drag and drop files to here to upload{% endif %}</div>
+              <div style="font-size:11px;color:#9ca3af;margin-top:6px;">
+                {% if ar %}يمكنك إضافة أنواع مستندات متعددة{% else %}You can add multiple documents with different types{% endif %}
               </div>
             </div>
           </div>
@@ -378,52 +374,125 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
 
           {# ══ 4. SALARY INFORMATION ══ #}
           {{ sec('salary','money-bill-wave','Salary Information','معلومات الراتب') }}
+              {# Salary Type — "Salary" pre-selected #}
               <div style="margin-bottom:18px;">
                 <div class="field-label" style="margin-bottom:8px;">{% if ar %}نوع الراتب{% else %}Salary Type{% endif %}</div>
                 <div class="mcq-wrap" id="salTypeGrp">
-                  <label class="mcq-opt" onclick="pickMCQ('salTypeGrp',this,'f_salary_type','salary')"><input type="radio">{% if ar %}راتب{% else %}Salary{% endif %}</label>
+                  <label class="mcq-opt chosen" onclick="pickMCQ('salTypeGrp',this,'f_salary_type','salary')"><input type="radio">{% if ar %}راتب{% else %}Salary{% endif %}</label>
                   <label class="mcq-opt" onclick="pickMCQ('salTypeGrp',this,'f_salary_type','azad')"><input type="radio">{% if ar %}أزاد{% else %}Azad{% endif %}</label>
-                  <label class="mcq-opt" onclick="pickMCQ('salTypeGrp',this,'f_salary_type','kafalat')"><input type="radio">{% if ar %}كفالات{% else %}Kafalat{% endif %}</label>
                 </div>
-                <input type="hidden" name="salary_type" id="f_salary_type">
+                <input type="hidden" name="salary_type" id="f_salary_type" value="salary">
               </div>
-              <div class="num-grid" style="margin-bottom:18px;">
-                {% for fn,le,la in [('rate','Rate','معدل'),('po_rate','PO Rate','معدل طلب الشراء'),('po_number','PO Number','رقم طلب الشراء'),('basic_salary','Basic Salary','الراتب الأساسي'),('food_allowance','Food Allowance','بدل الطعام'),('rent','Rent','الإيجار'),('working_hours','Working Hours','ساعات العمل'),('overtime_rate','Over Time Rate','معدل العمل الإضافي')] %}
+
+                            {# ── Salary fields: exact user-specified sequence ──────
+                 1 PO Rate  2 PO Number  3 Kafalat Number
+                 4 Basic Salary  5 Allowances  6 Net Salary
+                 7 Working Hours  8 Overtime Ratio  9 Overtime Rate
+              ─────────────────────────────────────────────────────── #}
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;">
+
+                {# 1 — PO Rate #}
                 <div>
-                  <div class="field-label">{% if ar %}{{ la }}{% else %}{{ le }}{% endif %}</div>
-                  <input type="{% if fn=='po_number' %}text{% else %}number{% endif %}" name="{{ fn }}" id="f_{{ fn }}"
+                  <div class="field-label">{% if ar %}معدل طلب الشراء{% else %}PO Rate{% endif %}</div>
+                  <input type="number" name="po_rate" id="f_po_rate"
                          class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                         {% if fn!='po_number' %}step="0.01" min="0"{% endif %}
-                         {% if fn in ['basic_salary','food_allowance','rent'] %}oninput="calcNet()"{% endif %}>
+                         step="0.01" min="0" placeholder="0.00">
                 </div>
-                {% endfor %}
-              </div>
-              <div style="margin-bottom:14px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                  <div class="field-label" style="margin:0;">{% if ar %}البدلات{% else %}Allowances{% endif %}</div>
-                  <button type="button" class="btn btn-sm btn-outline-primary" onclick="addAllow()"><i class="fas fa-plus me-1"></i>{% if ar %}إضافة{% else %}Add{% endif %}</button>
-                </div>
-                <div id="allowBox"></div>
-              </div>
-              <div class="net-box">
+
+                {# 2 — PO Number (alpha-numeric) #}
                 <div>
-                  <div class="net-lbl">{% if ar %}الراتب الصافي{% else %}Net Salary{% endif %}</div>
-                  <div class="net-hint">{% if ar %}= أساسي + بدلات + طعام + إيجار{% else %}= Basic + Allowances + Food + Rent{% endif %}</div>
+                  <div class="field-label">{% if ar %}رقم طلب الشراء{% else %}PO Number{% endif %}</div>
+                  <input type="text" name="po_number" id="f_po_number"
+                         class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                         placeholder="{% if ar %}PO-001{% else %}PO-001{% endif %}">
                 </div>
-                <div class="net-amt" id="netDisp">0.00</div>
-                <input type="hidden" name="net_salary" id="f_net_salary" value="0">
+
+                {# 3 — Kafalat Number (alpha-numeric) #}
+                <div>
+                  <div class="field-label">{% if ar %}رقم الكفالة{% else %}Kafalat Number{% endif %}</div>
+                  <input type="text" name="kafalat_number" id="f_kafalat_number"
+                         class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                         placeholder="{% if ar %}KAF-001{% else %}KAF-001{% endif %}">
+                </div>
+
+                {# 4 — Basic Salary #}
+                <div>
+                  <div class="field-label">{% if ar %}الراتب الأساسي{% else %}Basic Salary{% endif %}</div>
+                  <input type="number" name="basic_salary" id="f_basic_salary"
+                         class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                         step="0.01" min="0" placeholder="0.00" oninput="calcNet();calcOvertimeRate()">
+                </div>
+
+                {# 5 — Allowances (from Allowances page) #}
+                <div>
+                  <div class="field-label">
+                    {% if ar %}إجمالي البدلات{% else %}Total Allowances{% endif %}
+                  </div>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <input type="number" name="total_allowances" id="f_total_allowances"
+                           class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                           style="background:#eff6ff;color:#1d4ed8;font-weight:600;flex:1;"
+                           step="0.01" min="0" placeholder="0.00" readonly
+                           title="{% if ar %}يتم تحديثه تلقائياً من نافذة البدلات{% else %}Auto-updated from Allowances popup{% endif %}">
+                    <button type="button" id="btnAllowances"
+                            onclick="openAllowancesPopup()"
+                            title="{% if ar %}إدارة البدلات{% else %}Manage Allowances{% endif %}"
+                            style="width:36px;height:36px;background:#9ca3af;color:white;border:none;border-radius:7px;font-size:13px;cursor:not-allowed;display:flex;align-items:center;justify-content:center;opacity:0.4;flex-shrink:0;position:relative;pointer-events:none;">
+                      <i class="fas fa-bars"></i>
+                      <span id="allowBadge" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:white;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;">0</span>
+                    </button>
+                  </div>
+                </div>
+
+                {# 6 — Net Salary (auto-calculated, readonly) #}
+                <div>
+                  <div class="field-label">{% if ar %}الراتب الصافي{% else %}Net Salary{% endif %}</div>
+                  <input type="number" id="f_net_salary_display"
+                         class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                         style="background:#f0fdf4;color:#15803d;font-weight:700;"
+                         readonly placeholder="0.00">
+                  <input type="hidden" name="net_salary" id="f_net_salary" value="0">
+                </div>
+
+                {# 7 — Working Hours #}
+                <div>
+                  <div class="field-label">{% if ar %}ساعات العمل{% else %}Working Hours{% endif %}</div>
+                  <input type="number" name="working_hours" id="f_working_hours"
+                         class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                         step="0.5" min="0" placeholder="8"
+                         oninput="calcOvertimeRate()">
+                </div>
+
+                {# 8 — Overtime Ratio (e.g. 1.5×) #}
+                <div>
+                  <div class="field-label">{% if ar %}نسبة الأوفرتايم{% else %}Overtime Ratio{% endif %}</div>
+                  <input type="number" name="overtime_ratio" id="f_overtime_ratio"
+                         class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                         step="0.25" min="1" placeholder="1.5"
+                         oninput="calcOvertimeRate()">
+                </div>
+
+                {# 9 — Overtime Rate #}
+                <div>
+                  <div class="field-label">{% if ar %}معدل الأوفرتايم{% else %}Overtime Rate{% endif %}</div>
+                  <input type="number" name="overtime_rate" id="f_overtime_rate"
+                         class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                         style="background:#f0fdf4;color:#15803d;font-weight:600;"
+                         step="0.01" min="0" placeholder="0.00" readonly
+                         title="{% if ar %}محسوب تلقائياً: (الأساسي ÷ 30 ÷ ساعات العمل) × نسبة الأوفرتايم{% else %}Auto: (Basic ÷ 30 ÷ Working Hours) × Overtime Ratio{% endif %}">
+                </div>
+
               </div>
+
+
             </div>
           </div>
 
           {# ══ 5. WORK INFORMATION ══ #}
           {{ sec('work','info-circle','Work Information','معلومات العمل') }}
               <div class="field-row">
-                {{ sd('buyer_id','Select Buyer','اختر المشتري', True) }}
-              </div>
-              <div style="font-size:11px;color:#f59e0b;margin:-8px 0 14px;"><i class="fas fa-info-circle me-1"></i>{% if ar %}يوصى باختيار المشتري{% else %}Buyer selection is recommended{% endif %}</div>
-              <div class="field-row">
-                {{ sf('joining_date','Joining Date','تاريخ الانضمام','date',True) }}
+                {{ sd('buyer_id','Select Buyer','اختر المشتري') }}
+                {{ sf('joining_date','Joining Date','تاريخ الانضمام','date') }}
               </div>
               <div class="field-row">
                 {{ bf('department','Department','القسم') }}
@@ -451,10 +520,10 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
                 {{ bf('hostel_name','Hostel Name','اسم السكن') }}
               </div>
               <div class="field-row">
-                {{ sf('room_number','Room Number','رقم الغرفة') }}
+                {{ bf('hostel_location','Hostel Location','موقع السكن') }}
               </div>
               <div class="field-row">
-                {{ bf('hostel_location','Hostel Location','موقع السكن') }}
+                {{ sf('room_number','Room Number','رقم الغرفة') }}
               </div>
             </div>
           </div>
@@ -508,7 +577,97 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
       <div class="modal-footer-bar">
         <button type="button" class="btn-footer btn-footer-reset" onclick="resetEmpForm()"><i class="fas fa-redo me-1"></i>{% if ar %}إعادة تعيين{% else %}Reset{% endif %}</button>
         <button type="button" class="btn-footer btn-footer-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button type="button" class="btn-footer btn-footer-save" onclick="document.getElementById('empForm').submit()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+        <button type="button" class="btn-footer btn-footer-save" onclick="if(validateForm(document.getElementById('empForm')))document.getElementById('empForm').submit()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ EMPLOYEE ALLOWANCES POPUP ══════════════════════════════════════
+     Opens from the Allowances button next to Total Allowances field.
+     Works in BOTH Add mode (stores in JS) and Edit mode (AJAX saves).
+     Employee Code shown automatically. Only THIS employee's allowances shown.
+     On close → Total Allowances field on form auto-updates.
+════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="allowPopup" tabindex="-1" style="z-index:1060;">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content" style="border:none;border-radius:10px;overflow:hidden;">
+
+      {# Header #}
+      <div style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:700;font-size:15px;"><i class="fas fa-list-ul me-2"></i>{% if ar %}بدلات الموظف{% else %}Employee Allowances{% endif %}</div>
+          <div id="ap_emp_info" style="font-size:12px;opacity:.85;margin-top:3px;"></div>
+        </div>
+        <button type="button" class="btn-close" style="filter:brightness(0) invert(1);opacity:.8;" data-bs-dismiss="modal" onclick="onAllowPopupClose()"></button>
+      </div>
+
+      {# Add form row #}
+      <div style="padding:16px 20px;background:#f8fafc;border-bottom:1.5px solid #e2e8f0;">
+        <div style="display:grid;grid-template-columns:2fr 1.2fr auto;gap:10px;align-items:end;">
+          <div>
+            <div class="field-label" style="margin-bottom:5px;">{% if ar %}نوع البدل{% else %}Allowance Type{% endif %} <span style="color:#ef4444">*</span></div>
+            <select id="ap_type" name="" class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}">
+              <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-label" style="margin-bottom:5px;">{% if ar %}المبلغ{% else %}Amount{% endif %} <span style="color:#ef4444">*</span></div>
+            <input type="number" id="ap_amount" class="field-input" min="0" step="0.01"
+                   placeholder="0.00" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();saveAllowance();}">
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button type="button" id="ap_save_btn"
+                    onclick="saveAllowance()"
+                    style="padding:9px 16px;background:#16a34a;color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
+              <i class="fas fa-plus me-1"></i>{% if ar %}إضافة{% else %}Add{% endif %}
+            </button>
+            <button type="button" id="ap_cancel_edit_btn"
+                    onclick="cancelAllowEdit()"
+                    style="padding:9px 12px;background:white;color:#6b7280;border:1.5px solid #d1d5db;border-radius:7px;font-size:12px;cursor:pointer;display:none;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div id="ap_error" style="color:#dc2626;font-size:12px;margin-top:6px;display:none;"></div>
+      </div>
+
+      {# Allowances grid #}
+      <div style="overflow-x:auto;max-height:320px;overflow-y:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead style="position:sticky;top:0;background:#f1f5f9;z-index:1;">
+            <tr>
+              <th style="padding:9px 14px;text-align:{% if ar %}right{% else %}left{% endif %};font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;">#</th>
+              <th style="padding:9px 14px;text-align:{% if ar %}right{% else %}left{% endif %};font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;">{% if ar %}نوع البدل{% else %}Type{% endif %}</th>
+              <th style="padding:9px 14px;text-align:{% if ar %}right{% else %}left{% endif %};font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;">{% if ar %}الاسم{% else %}Name{% endif %}</th>
+              <th style="padding:9px 14px;text-align:{% if ar %}right{% else %}left{% endif %};font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;">{% if ar %}المبلغ{% else %}Amount{% endif %}</th>
+              <th style="padding:9px 14px;text-align:center;font-weight:600;color:#6b7280;font-size:11px;">{% if ar %}إجراءات{% else %}Actions{% endif %}</th>
+            </tr>
+          </thead>
+          <tbody id="ap_tbody">
+            <tr id="ap_empty">
+              <td colspan="5" style="text-align:center;padding:24px;color:#9ca3af;font-size:13px;">
+                <i class="fas fa-inbox fa-2x mb-2 d-block" style="color:#d1d5db;"></i>
+                {% if ar %}لا توجد بدلات بعد{% else %}No allowances added yet{% endif %}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {# Total bar #}
+      <div style="padding:12px 20px;background:#f0fdf4;border-top:1.5px solid #86efac;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:600;color:#15803d;font-size:13px;">{% if ar %}إجمالي البدلات{% else %}Total Allowances{% endif %}</span>
+        <span id="ap_total" style="font-weight:800;color:#15803d;font-size:20px;letter-spacing:.5px;">0.00</span>
+      </div>
+
+      {# Footer #}
+      <div style="padding:12px 20px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;">
+        <button type="button" class="btn-footer btn-footer-cancel" data-bs-dismiss="modal" onclick="onAllowPopupClose()">
+          <i class="fas fa-check me-1"></i>{% if ar %}تم{% else %}Done{% endif %}
+        </button>
       </div>
 
     </div>
@@ -586,16 +745,16 @@ function fillStaticDropdown(selectId, hiddenValId, hiddenArId, list, placeholder
   });
   sel.onchange = function() {
     const opt = sel.options[sel.selectedIndex];
-    const hv = document.getElementById(hiddenValId);
+    // The select itself has name=fname, so its value submits directly.
+    // Only update the _arval hidden input (for Arabic equivalent storage).
     const ha = document.getElementById(hiddenArId);
-    if (hv) hv.value = sel.value;
     if (ha) ha.value = opt ? (opt.dataset.ar || '') : '';
   };
   if (selectedEn) sel.onchange();
 }
 
 function initNationality(selectedEn) {
-  fillStaticDropdown('f_nationality', 'f_nationality_val', 'f_nationality_arval', NATS,
+  fillStaticDropdown('f_nationality', null, 'f_nationality_arval', NATS,
     IS_AR ? '-- اختر --' : '-- Select --', selectedEn || '');
 }
 
@@ -615,9 +774,8 @@ function loadAsyncDropdown(url, cacheSetter, cacheGetter, selectId, hiddenValId,
     });
     sel.onchange = function() {
       const opt = sel.options[sel.selectedIndex];
-      const hv = document.getElementById(hiddenValId);
+      // select has name=fname so submits directly; only update _arval
       const ha = document.getElementById(hiddenArId);
-      if (hv) hv.value = sel.value;
       if (ha) ha.value = opt ? (opt.dataset.ar || '') : '';
     };
     if (selectedVal) sel.onchange();
@@ -634,17 +792,17 @@ function loadAsyncDropdown(url, cacheSetter, cacheGetter, selectId, hiddenValId,
 
 function initProfession(selectedEn) {
   loadAsyncDropdown(PRURL, d => _profCache = d, () => _profCache,
-    'f_profession', 'f_profession_val', 'f_profession_arval',
+    'f_profession', null, 'f_profession_arval',
     IS_AR ? '-- اختر المهنة --' : '-- Select Profession --', selectedEn || '', false);
 }
 function initBuyer(selectedId) {
   loadAsyncDropdown(BYURL, d => _buyerCache = d, () => _buyerCache,
-    'f_buyer_id', 'f_buyer_id_val', null,
+    'f_buyer_id', null, null,
     IS_AR ? '-- اختر مشتري --' : '-- Select a Buyer --', selectedId || '', true);
 }
 function initBank(selectedEn) {
   loadAsyncDropdown(BKURL, d => _bankCache = d, () => _bankCache,
-    'f_bank_name', 'f_bank_name_val', 'f_bank_name_arval',
+    'f_bank_name', null, 'f_bank_name_arval',
     IS_AR ? '-- اختر البنك --' : '-- Select Bank --', selectedEn || '', false);
   // Also wire swift autofill
   setTimeout(() => {
@@ -757,43 +915,137 @@ function wireHijriBadges() {
   });
 }
 
+/* ════════ ALLOWANCES TABLE ════════════════════════════════════
+   Each row: serial #, Name (EN), Name (AR), Amount, Delete
+   Rows stored as hidden inputs (allow_name[], allow_name_ar[], allow_amount[])
+   submitted with the main form. calcNet() auto-updates totals.
+════════════════════════════════════════════════════════════════ */
+let _allowSerial = 0;
+
+function addAllowRow(name='', nameAr='', amount='') {
+  _allowSerial++;
+  const tbody = document.getElementById('allowTableBody');
+  // Remove empty placeholder row
+  const emptyRow = document.getElementById('allowEmptyRow');
+  if (emptyRow) emptyRow.remove();
+
+  const tr = document.createElement('tr');
+  tr.id = 'allowRow_' + _allowSerial;
+  tr.style.borderBottom = '1px solid #f1f5f9';
+  const serial = _allowSerial;
+  tr.innerHTML = `
+    <td style="padding:8px 12px;color:#6b7280;font-size:12px;text-align:${IS_AR?'right':'left'}">${serial}</td>
+    <td style="padding:6px 8px;">
+      <input type="text" name="allow_name[]" class="field-input" dir="ltr"
+             style="font-size:12px;padding:6px 8px;" placeholder="${IS_AR?'Name':'Allowance Name'}"
+             value="${name}" oninput="calcNet()">
+    </td>
+    <td style="padding:6px 8px;">
+      <input type="text" name="allow_name_ar[]" class="field-input" dir="rtl"
+             style="font-size:12px;padding:6px 8px;text-align:right;" placeholder="${IS_AR?'اسم البدل':'اسم البدل'}"
+             value="${nameAr}">
+    </td>
+    <td style="padding:6px 8px;">
+      <input type="number" name="allow_amount[]" class="field-input" dir="ltr"
+             style="font-size:12px;padding:6px 8px;" placeholder="0.00"
+             value="${amount}" min="0" step="0.01" oninput="calcNet()">
+    </td>
+    <td style="padding:6px 8px;text-align:center;">
+      <button type="button" class="allow-del" onclick="removeAllowRow('allowRow_${serial}')">
+        <i class="fas fa-times"></i>
+      </button>
+    </td>`;
+  tbody.appendChild(tr);
+  calcNet();
+}
+
+function removeAllowRow(rowId) {
+  const row = document.getElementById(rowId);
+  if (row) row.remove();
+  // Show empty placeholder if no rows left
+  const tbody = document.getElementById('allowTableBody');
+  if (tbody && tbody.querySelectorAll('tr:not(#allowEmptyRow)').length === 0) {
+    const tr = document.createElement('tr');
+    tr.id = 'allowEmptyRow';
+    tr.innerHTML = `<td colspan="5" style="text-align:center;padding:16px;color:#9ca3af;font-size:12px;">${IS_AR?'لا توجد بدلات — اضغط "إضافة بدل"':'No allowances yet — click "Add Allowance"'}</td>`;
+    tbody.appendChild(tr);
+  }
+  calcNet();
+}
+
+function getAllowTotal() {
+  let total = 0;
+  document.querySelectorAll('[name="allow_amount[]"]').forEach(inp => {
+    total += parseFloat(inp.value || 0) || 0;
+  });
+  return total;
+}
+
 /* ════════ NET SALARY ════════ */
 function calcNet() {
-  const g = id => parseFloat(document.getElementById(id)?.value || 0) || 0;
-  const basic = g('f_basic_salary'), food = g('f_food_allowance'), rent = g('f_rent');
-  let allow = 0;
-  document.querySelectorAll('[name="allowance_amount[]"]').forEach(i => allow += parseFloat(i.value||0)||0);
-  const net = basic + food + rent + allow;
-  document.getElementById('netDisp').textContent = net.toFixed(2);
-  document.getElementById('f_net_salary').value = net.toFixed(2);
+  const basic      = parseFloat(document.getElementById('f_basic_salary')?.value    || 0) || 0;
+  const totalAllow = parseFloat(document.getElementById('f_total_allowances')?.value || 0) || 0;
+  const net        = basic + totalAllow;
+  // Update visible net salary field
+  const dispEl = document.getElementById('f_net_salary_display');
+  if (dispEl) dispEl.value = net.toFixed(2);
+  // Update hidden net_salary for form submission
+  const hidEl = document.getElementById('f_net_salary');
+  if (hidEl) hidEl.value = net.toFixed(2);
 }
 
-/* ════════ ALLOWANCES ════════ */
-const ALLOW_TYPES = IS_AR ? ['بدل السكن','بدل المواصلات','بدل الهاتف','بدل اللباس','أخرى'] : ['Housing','Transport','Phone','Clothing','Other'];
-function addAllow(name='', amt=0) {
-  const box = document.getElementById('allowBox');
-  const div = document.createElement('div');
-  div.className = 'allow-row';
-  div.innerHTML = `<select name="allowance_name[]" class="field-input" dir="${IS_AR?'rtl':'ltr'}" style="flex:1.5" onchange="calcNet()"><option value="">--</option>${ALLOW_TYPES.map(t=>`<option value="${t}"${t===name?' selected':''}>${t}</option>`).join('')}</select><input type="number" name="allowance_amount[]" class="field-input" style="flex:1" value="${amt}" min="0" step="0.01" placeholder="${IS_AR?'المبلغ':'Amount'}" oninput="calcNet()"><button type="button" class="allow-del" onclick="this.parentElement.remove();calcNet()"><i class="fas fa-times"></i></button>`;
-  box.appendChild(div);
+/* ════════ DOCUMENT UPLOAD — multiple files, each with own type ════════ */
+let _docSerial = 0;
+const DOC_TYPE_OPTIONS = [
+  {en:'ID Card',ar:'بطاقة الهوية'},
+  {en:'Passport',ar:'جواز السفر'},
+  {en:'Iqama',ar:'الإقامة'},
+  {en:'Work Permit',ar:'تصريح العمل'},
+  {en:'Contract',ar:'عقد العمل'},
+  {en:'Certificate',ar:'شهادة'},
+  {en:'Other',ar:'أخرى'},
+];
+
+function addDocRow() {
+  _docSerial++;
+  const serial = _docSerial;
+  const list = document.getElementById('docFilesList');
+  const wrapper = document.createElement('div');
+  wrapper.id = 'docRow_' + serial;
+  wrapper.style.cssText = 'display:flex;gap:10px;align-items:center;margin-bottom:8px;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;';
+
+  // Document type dropdown
+  const typeOpts = DOC_TYPE_OPTIONS.map(t =>
+    `<option value="${t.en}">${IS_AR ? t.ar : t.en}</option>`).join('');
+  const ph = IS_AR ? '-- اختر --' : '-- Select --';
+
+  wrapper.innerHTML = `
+    <span style="color:#9ca3af;font-size:12px;min-width:20px;">${serial}</span>
+    <select name="document_type[]" class="field-input" dir="${IS_AR?'rtl':'ltr'}"
+            style="flex:1.5;font-size:12px;padding:7px 10px;">
+      <option value="">${ph}</option>${typeOpts}
+    </select>
+    <label style="flex:2;display:flex;align-items:center;gap:8px;cursor:pointer;
+                  border:1.5px dashed #d1d5db;border-radius:7px;padding:7px 12px;
+                  background:white;font-size:12px;color:#6b7280;min-width:0;">
+      <i class="fas fa-paperclip"></i>
+      <span id="docLabel_${serial}">${IS_AR?'اختر ملفاً...':'Choose file...'}</span>
+      <input type="file" name="documents[]" accept=".pdf,.jpg,.jpeg,.png"
+             style="position:fixed;top:-9999px;left:-9999px;"
+             onchange="onDocFilePick(this,${serial})">
+    </label>
+    <button type="button" class="allow-del" onclick="document.getElementById('docRow_${serial}').remove()">
+      <i class="fas fa-times"></i>
+    </button>`;
+  list.appendChild(wrapper);
 }
 
-/* ════════ DOCUMENT UPLOAD ════════ */
-function onDocPick(inp) {
-  const d = document.getElementById('docName');
+function onDocFilePick(inp, serial) {
+  const lbl = document.getElementById('docLabel_' + serial);
   if (inp.files && inp.files[0]) {
-    d.textContent = '✅ ' + inp.files[0].name + ' (' + Math.round(inp.files[0].size/1024) + ' KB)';
-    d.style.color = '#16a34a';
-  } else {
-    d.textContent = IS_AR ? 'اسحب الملفات هنا لتحميلها' : 'Drag and drop files to here to upload';
-    d.style.color = '';
+    const kb = Math.round(inp.files[0].size / 1024);
+    if (lbl) lbl.innerHTML = `<i class="fas fa-check-circle" style="color:#16a34a"></i> ${inp.files[0].name} (${kb} KB)`;
   }
-}
-function cancelDoc() {
-  const f = document.getElementById('f_document'); if (f) f.value = '';
-  const d = document.getElementById('docName');
-  d.textContent = IS_AR ? 'اسحب الملفات هنا لتحميلها' : 'Drag and drop files to here to upload';
-  d.style.color = '';
 }
 
 /* ════════ ACCORDION ════════ */
@@ -919,17 +1171,33 @@ function resetEmpForm() {
   document.getElementById('f_is_active').checked = true;
   document.getElementById('f_is_muslim').checked = false;
   document.getElementById('empCodeDisplay').textContent = IS_AR ? '(تلقائي)' : '(Auto)';
-  document.getElementById('allowBox').innerHTML = '';
-  document.getElementById('netDisp').textContent = '0.00';
-  document.getElementById('f_net_salary').value = '0';
+  // Clear allowance table
+  const tbody = document.getElementById('allowTableBody');
+  if (tbody) {
+    tbody.innerHTML = `<tr id="allowEmptyRow"><td colspan="5" style="text-align:center;padding:16px;color:#9ca3af;font-size:12px;">${IS_AR?'لا توجد بدلات — اضغط "إضافة بدل"':'No allowances yet — click "Add Allowance"'}</td></tr>`;
+  }
+  _allowSerial   = 0;
+  _currentEmpId  = null;
+  _pendingAllows = [];
+  _pendingSerial = 0;
+  document.querySelectorAll('.pend-allow').forEach(el=>el.remove());
+  const taEl = document.getElementById('f_total_allowances');
+  if (taEl) taEl.value = '';
+  setAllowBtn(false);
+  const netDisp = document.getElementById('f_net_salary_display');
+  if (netDisp) netDisp.value = '';
+  const netHid = document.getElementById('f_net_salary');
+  if (netHid) netHid.value = '0';
+  // Clear doc upload rows
+  const docList = document.getElementById('docFilesList');
+  if (docList) docList.innerHTML = '';
+  _docSerial = 0;
   document.querySelectorAll('.mcq-opt').forEach(b => b.classList.remove('chosen'));
-  document.querySelectorAll('#empForm input[type=hidden][id^="f_"]').forEach(el => {
-    if (el.id.includes('employee_type') || el.id.includes('salary_type')) el.value = '';
-  });
-  setMCQ('shiftGrp','day','f_shift_type');
-  setMCQ('passLocGrp','IN','f_passport_location');
-  document.getElementById('docName').textContent = IS_AR ? 'اسحب الملفات هنا لتحميلها' : 'Drag and drop files to here to upload';
-  document.getElementById('docName').style.color = '';
+  setMCQ('shiftGrp',   'day',     'f_shift_type');
+  setMCQ('passLocGrp', 'IN',      'f_passport_location');
+  setMCQ('empTypeGrp', 'skilled', 'f_employee_type');
+  setMCQ('salTypeGrp', 'salary',  'f_salary_type');
+  // docName element removed (multi-file upload now used — docFilesList cleared above)
   document.querySelectorAll('.hijri-badge').forEach(b => b.style.display='none');
   showRetransButtons(false);
 }
@@ -949,6 +1217,11 @@ function openAddEmp() {
   initDocType('');
   showRetransButtons(false);
   setTimeout(wireHijriBadges, 50);
+  // Add mode: no DB id, allowances stored in JS
+  _currentEmpId  = null;
+  _pendingAllows = [];
+  _pendingSerial = 0;
+  setAllowBtn(true);   // Allow button works in Add mode too
 }
 
 /* ════════ MODAL: EDIT ════════ */
@@ -959,6 +1232,10 @@ function openEditEmp(id) {
   document.getElementById('empFormId').value = id;
   new bootstrap.Modal(document.getElementById('empModal')).show();
   showRetransButtons(true);
+  // Enable allowances button immediately
+  _currentEmpId  = id;
+  _pendingAllows = [];  // clear any pending from add mode
+  setAllowBtn(true);
 
   fetch('/employees/' + id + '/json').then(r => r.json()).then(d => {
     document.getElementById('empCodeDisplay').textContent = d.employee_code;
@@ -980,7 +1257,7 @@ function openEditEmp(id) {
     const singleFields = ['mobile','email','passport_number','entry_number','iqama_number',
                            'room_number','swift_code','account_number','iban','labour_office',
                            'rate','po_rate','po_number','basic_salary','food_allowance','rent',
-                           'working_hours','overtime_rate',
+                           'working_hours','overtime_ratio','overtime_rate','kafalat_number',
                            'arrival_date','birth_date','passport_expiry','iqama_expiry',
                            'joining_date','insurance_expiry'];
     singleFields.forEach(f => {
@@ -988,13 +1265,17 @@ function openEditEmp(id) {
       if (el) el.value = d[f] || '';
     });
     document.getElementById('f_net_salary').value = d.net_salary || 0;
-    document.getElementById('netDisp').textContent = (d.net_salary||0).toFixed ? (d.net_salary||0).toFixed(2) : '0.00';
+    const nd = document.getElementById('f_net_salary_display');
+    if (nd) nd.value = d.net_salary ? Number(d.net_salary).toFixed(2) : '0.00';
 
     // MCQ
     setMCQ('empTypeGrp', d.employee_type || '', 'f_employee_type');
     setMCQ('salTypeGrp', d.salary_type || 'salary', 'f_salary_type');
     setMCQ('shiftGrp', d.shift_type || 'day', 'f_shift_type');
     setMCQ('passLocGrp', d.passport_location || 'IN', 'f_passport_location');
+
+    // Load allowances and update badge + total (employee id already set above)
+    // allowances loaded when popup opens
 
     // Dropdowns
     initNationality(d.nationality || '');
@@ -1007,10 +1288,17 @@ function openEditEmp(id) {
     calcAge();
     setTimeout(wireHijriBadges, 50);
 
-    // Allowances
-    document.getElementById('allowBox').innerHTML = '';
-    (d.allowances || []).forEach(a => addAllow(a.name, a.amount));
+    // Load allowances into table
+    const tbody = document.getElementById('allowTableBody');
+    if (tbody) {
+      tbody.innerHTML = `<tr id="allowEmptyRow"><td colspan="5" style="text-align:center;padding:16px;color:#9ca3af;font-size:12px;">${IS_AR?'لا توجد بدلات':'No allowances yet'}</td></tr>`;
+    }
+    _allowSerial = 0;
+    (d.allowances || []).forEach(a => addAllowRow(a.name || '', a.name_ar || '', a.amount || 0));
+    const taEl = document.getElementById('f_total_allowances');
+    if (taEl) taEl.value = (d.total_allowances || 0).toFixed(2);
     calcNet();
+    calcOvertimeRate();   // auto-fill overtime rate from loaded values
   });
 }
 
@@ -1075,6 +1363,255 @@ function editFromView() {
   const m = bootstrap.Modal.getInstance(document.getElementById('viewEmpModal'));
   if (m) m.hide();
   setTimeout(() => openEditEmp(currentViewId), 300);
+}
+
+/* ════════ OVERTIME AUTO-CALCULATION ═════════════════════════════
+   Overtime Rate = (Basic Salary / 30 / Working Hours) × Overtime Ratio
+   Fires whenever Basic Salary, Working Hours, or Overtime Ratio changes.
+════════════════════════════════════════════════════════════════ */
+function calcOvertimeRate() {
+  const basic   = parseFloat(document.getElementById('f_basic_salary')?.value  || 0) || 0;
+  const hours   = parseFloat(document.getElementById('f_working_hours')?.value  || 0) || 0;
+  const ratio   = parseFloat(document.getElementById('f_overtime_ratio')?.value || 0) || 0;
+  const otEl    = document.getElementById('f_overtime_rate');
+  if (!otEl) return;
+  if (basic > 0 && hours > 0 && ratio > 0) {
+    const otRate = (basic / 30 / hours) * ratio;
+    otEl.value = otRate.toFixed(4);
+  } else {
+    otEl.value = '';
+  }
+}
+// calcOvertimeRate is called via oninput on each field directly
+
+/* ════════ EMPLOYEE ALLOWANCES POPUP ════════════════════════════
+   Opens when "Allowances" button is clicked on the employee form.
+   Loads allowance types from /allowance-types/data.
+   Uses AJAX to add/edit/delete allowances for the current employee.
+   On close, updates f_total_allowances and recalculates net salary.
+════════════════════════════════════════════════════════════════ */
+const AT_URL = '{{ url_for("lookups.allowance_types_data") }}';
+
+/* ════════ EMPLOYEE ALLOWANCES POPUP ════════════════════════════
+   ADD MODE  (new employee, no DB id yet):
+     Allowances stored in JS _pendingAllows[].
+     On form submit, written as hidden inputs allow_type_id[] / allow_amount[].
+   EDIT MODE (existing employee):
+     AJAX saves to DB immediately.
+   Both modes: closing popup syncs f_total_allowances + recalculates Net Salary.
+════════════════════════════════════════════════════════════════ */
+let _atCache       = null;
+let _currentEmpId  = null;      // null = Add mode, number = Edit mode
+let _editingRowId  = null;
+let _pendingAllows = [];
+let _pendingSerial = 0;
+let _lastRows      = [];        // cache for edit-row lookup
+
+/* Enable / disable the Allowances button */
+function setAllowBtn(enabled) {
+  const btn = document.getElementById('btnAllowances');
+  if (!btn) return;
+  btn.style.pointerEvents = enabled ? 'auto'    : 'none';
+  btn.style.opacity       = enabled ? '1'       : '0.4';
+  btn.style.cursor        = enabled ? 'pointer' : 'not-allowed';
+  btn.style.background    = enabled ? '#16a34a' : '#9ca3af';
+}
+
+function openAllowancesPopup() {
+  // Header: show employee code + name
+  const code  = document.getElementById('empCodeDisplay')?.textContent || '';
+  const name  = document.getElementById('f_name')?.value || '';
+  const infoEl = document.getElementById('ap_emp_info');
+  if (infoEl) {
+    const codeStr = (code && code !== '(Auto)' && code !== '(تلقائي)') ? code : (IS_AR?'(جديد)':'(New)');
+    infoEl.textContent = codeStr + (name ? '  —  ' + name : '');
+  }
+  // Load types dropdown (used types will be greyed after rows load)
+  if (!_atCache) {
+    fetch(AT_URL).then(r=>r.json()).then(d=>{ _atCache=d; _fillTypeDropdown(d, []); });
+  } else { _fillTypeDropdown(_atCache, []); }
+  // Reset form
+  _resetApForm();
+  // Load rows
+  if (_currentEmpId) _loadFromDB(_currentEmpId);
+  else _renderRows(_pendingAllows);
+  new bootstrap.Modal(document.getElementById('allowPopup')).show();
+}
+
+function _fillTypeDropdown(types, usedTypeIds) {
+  const sel = document.getElementById('ap_type');
+  if (!sel) return;
+  const ph = IS_AR ? '-- اختر نوع البدل --' : '-- Select Type --';
+  const used = usedTypeIds || [];
+  sel.innerHTML = `<option value="">${ph}</option>`;
+  types.forEach(t => {
+    // Allow the currently-editing row's type to be re-selectable
+    const currentEditType = _editingRowId ? (() => {
+      const row = _currentEmpId
+        ? (_lastRows||[]).find(r=>String(r.id)===String(_editingRowId))
+        : (_pendingAllows||[]).find(a=>a._key===_editingRowId);
+      return row ? String(row.allowance_type_id) : null;
+    })() : null;
+    const isUsed = used.includes(String(t.id)) && String(t.id) !== currentEditType;
+    const disabled = isUsed ? ' disabled style="color:#9ca3af;"' : '';
+    const label = isUsed ? `${t.label} (${t.code}) ✓` : `${t.label} (${t.code})`;
+    sel.innerHTML += `<option value="${t.id}" data-code="${t.code}" data-en="${t.en}" data-ar="${t.ar}"${disabled}>${label}</option>`;
+  });
+}
+
+function _loadFromDB(empId) {
+  fetch(`/employees/${empId}/allowances`)
+  .then(r=>r.json())
+  .then(rows=>{ _lastRows=rows; _renderRows(rows); })
+  .catch(()=>_renderRows([]));
+}
+
+function _renderRows(rows) {
+  const tbody = document.getElementById('ap_tbody');
+  if (!tbody) return;
+  if (!rows || rows.length===0) {
+    tbody.innerHTML = `<tr id="ap_empty"><td colspan="5" style="text-align:center;padding:24px;color:#9ca3af;font-size:13px;"><i class="fas fa-inbox fa-2x mb-2 d-block" style="color:#d1d5db;"></i>${IS_AR?'لا توجد بدلات بعد':'No allowances added yet'}</td></tr>`;
+    _syncTotal(0); _syncBadge(0); return;
+  }
+  let total = 0; tbody.innerHTML = '';
+  rows.forEach((a,i) => {
+    total += parseFloat(a.amount)||0;
+    const bg  = i%2===0?'#fff':'#f9fafb';
+    const td  = IS_AR?'text-align:right;direction:rtl;':'';
+    const rid = a.id || a._key;
+    const nm  = (IS_AR && a.name_ar) ? a.name_ar : (a.name||'');
+    const cd  = a.allowance_code||a.code||'';
+    const tr  = document.createElement('tr');
+    tr.id = 'apr_'+rid; tr.style.background=bg;
+    tr.innerHTML = `
+      <td style="padding:9px 14px;font-size:12px;color:#6b7280;${td}">${i+1}</td>
+      <td style="padding:9px 14px;${td}"><span class="code-badge">${cd}</span></td>
+      <td style="padding:9px 14px;font-weight:600;${td}">${nm}</td>
+      <td style="padding:9px 14px;${td}">${Number(a.amount).toLocaleString(undefined,{minimumFractionDigits:2})}</td>
+      <td style="padding:9px 14px;text-align:center;">
+        <button class="ag-ab ag-ab-edit" onclick="_apEdit('${rid}')" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+        <button class="ag-ab ag-ab-del"  onclick="_apDelete('${rid}')" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  _syncTotal(total); _syncBadge(rows.length);
+  // Refresh dropdown to mark used types
+  const usedIds = rows.map(r => String(r.allowance_type_id));
+  if (_atCache) _fillTypeDropdown(_atCache, usedIds);
+}
+
+function _syncTotal(total) {
+  const el = document.getElementById('ap_total');
+  if (el) el.textContent = total.toLocaleString(undefined,{minimumFractionDigits:2});
+  const taEl = document.getElementById('f_total_allowances');
+  if (taEl) { taEl.value = total.toFixed(2); calcNet(); }
+}
+
+function _syncBadge(count) {
+  const b = document.getElementById('allowBadge');
+  if (!b) return;
+  b.textContent = count;
+  b.style.display = count>0 ? 'flex' : 'none';
+}
+
+function _resetApForm() {
+  document.getElementById('ap_type').value='';
+  document.getElementById('ap_amount').value='';
+  const e=document.getElementById('ap_error'); if(e) e.style.display='none';
+  _editingRowId=null;
+  const sb=document.getElementById('ap_save_btn');
+  if(sb) sb.innerHTML=`<i class="fas fa-plus me-1"></i>${IS_AR?'إضافة':'Add'}`;
+  const cb=document.getElementById('ap_cancel_edit_btn');
+  if(cb) cb.style.display='none';
+}
+
+function saveAllowance() {
+  const typeId = document.getElementById('ap_type').value;
+  const amount = parseFloat(document.getElementById('ap_amount').value||0);
+  const e      = document.getElementById('ap_error'); if(e) e.style.display='none';
+  if (!typeId)         { _apErr(IS_AR?'اختر نوع البدل':'Select an allowance type.'); return; }
+  if (!amount||amount<=0){ _apErr(IS_AR?'أدخل مبلغاً صحيحاً':'Enter a valid amount.'); return; }
+
+  const opt    = document.getElementById('ap_type').options[document.getElementById('ap_type').selectedIndex];
+  const tEn    = opt?opt.dataset.en:'';
+  const tAr    = opt?opt.dataset.ar:'';
+  const tCode  = opt?opt.dataset.code:'';
+
+  if (_currentEmpId) {
+    // EDIT MODE — save via AJAX
+    const url = _editingRowId
+      ? `/employees/allowances/${_editingRowId}/edit`
+      : `/employees/${_currentEmpId}/allowances/add`;
+    fetch(url, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+                 body: JSON.stringify({allowance_type_id:typeId, amount}) })
+    .then(r=>r.json())
+    .then(d=>{ if(!d.ok){_apErr(d.error||(IS_AR?'خطأ':'Error'));return;} _resetApForm(); _loadFromDB(_currentEmpId); })
+    .catch(()=>_apErr(IS_AR?'فشل الاتصال':'Connection failed'));
+
+  } else {
+    // ADD MODE — store in JS
+    const dup = _pendingAllows.find(a => String(a.allowance_type_id)===String(typeId) && a._key!==_editingRowId);
+    if (dup) { _apErr(IS_AR?'هذا النوع موجود بالفعل':'This allowance type already exists.'); return; }
+    if (_editingRowId) {
+      const row = _pendingAllows.find(a=>a._key===_editingRowId);
+      if (row) Object.assign(row, {allowance_type_id:typeId,name:tEn,name_ar:tAr,allowance_code:tCode,amount});
+    } else {
+      _pendingSerial++;
+      _pendingAllows.push({_key:'tmp_'+_pendingSerial, allowance_type_id:typeId, allowance_code:tCode, name:tEn, name_ar:tAr, amount});
+    }
+    _resetApForm();
+    _renderRows(_pendingAllows);
+  }
+}
+
+function _apEdit(rid) {
+  _editingRowId = rid;
+  let row = _currentEmpId
+    ? _lastRows.find(r=>String(r.id)===String(rid))
+    : _pendingAllows.find(a=>a._key===rid);
+  if (!row) return;
+  document.getElementById('ap_type').value   = row.allowance_type_id||'';
+  document.getElementById('ap_amount').value = row.amount||'';
+  document.getElementById('ap_amount').focus();
+  const sb=document.getElementById('ap_save_btn');
+  if(sb) sb.innerHTML=`<i class="fas fa-save me-1"></i>${IS_AR?'تحديث':'Update'}`;
+  const cb=document.getElementById('ap_cancel_edit_btn');
+  if(cb) cb.style.display='inline-flex';
+}
+
+function _apDelete(rid) {
+  if (!confirm(IS_AR?'حذف هذا البدل؟':'Delete this allowance?')) return;
+  if (_currentEmpId) {
+    fetch(`/employees/allowances/${rid}/delete`,
+      {method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:'{}'})
+    .then(r=>r.json()).then(d=>{ if(d.ok) _loadFromDB(_currentEmpId); });
+  } else {
+    _pendingAllows = _pendingAllows.filter(a=>a._key!==rid);
+    _renderRows(_pendingAllows);
+  }
+}
+
+function cancelAllowEdit() { _resetApForm(); }
+function _apErr(msg) { const e=document.getElementById('ap_error'); if(e){e.textContent=msg;e.style.display='block';} }
+
+function onAllowPopupClose() {
+  _resetApForm();
+  if (_currentEmpId) {
+    _loadFromDB(_currentEmpId);
+  } else {
+    const total = _pendingAllows.reduce((s,a)=>s+(parseFloat(a.amount)||0),0);
+    _syncTotal(total);
+    // Write pending as hidden inputs for form submission
+    document.querySelectorAll('.pend-allow').forEach(el=>el.remove());
+    _pendingAllows.forEach(a=>{
+      ['allow_type_id[]','allow_amount[]'].forEach((n,i)=>{
+        const inp=document.createElement('input');
+        inp.type='hidden'; inp.name=n; inp.value=i===0?a.allowance_type_id:a.amount;
+        inp.className='pend-allow';
+        document.getElementById('empForm').appendChild(inp);
+      });
+    });
+  }
 }
 
 /* ════════ AG-GRID ════════ */
