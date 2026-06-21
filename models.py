@@ -89,6 +89,29 @@ class SellerBank(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class BuyerBank(db.Model):
+    __tablename__ = 'buyer_banks'
+    id             = db.Column(db.Integer, primary_key=True)
+    buyer_id       = db.Column(db.Integer, db.ForeignKey('buyers.id', ondelete='CASCADE'), nullable=False)
+    bank_name      = db.Column(db.String(150), nullable=False)
+    account_number = db.Column(db.String(50))
+    branch         = db.Column(db.String(100))
+    swift_code     = db.Column(db.String(20))
+    iban           = db.Column(db.String(50))
+    is_primary     = db.Column(db.Boolean, default=False)
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+
+    buyer = db.relationship('BuyerMaster', backref=db.backref('banks', cascade='all, delete-orphan', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'buyer_id': self.buyer_id,
+            'bank_name': self.bank_name, 'account_number': self.account_number or '',
+            'branch': self.branch or '', 'swift_code': self.swift_code or '',
+            'iban': self.iban or '', 'is_primary': self.is_primary,
+        }
+
+
 class SellerDocument(db.Model):
     __tablename__ = 'seller_documents'
     id = db.Column(db.Integer, primary_key=True)
@@ -305,6 +328,58 @@ class EmployeeAllowance(db.Model):
             'name_ar':           at.allowance_name_ar if at else (self.name_ar or ''),
             'amount':            self.amount,
             'created_at':        self.created_at.strftime('%Y-%m-%d') if self.created_at else '',
+        }
+
+
+class WorkAllocation(db.Model):
+    __tablename__ = 'work_allocations'
+    id             = db.Column(db.Integer, primary_key=True)
+    employee_id    = db.Column(db.Integer, db.ForeignKey('employees.id', ondelete='CASCADE'), nullable=False)
+    status         = db.Column(db.String(20), default='active')   # active / inactive
+    month          = db.Column(db.String(10))                      # e.g. Jan/25
+    company        = db.Column(db.String(150))
+    company_ar     = db.Column(db.String(150))
+    department     = db.Column(db.String(100))
+    department_ar  = db.Column(db.String(100))
+    section        = db.Column(db.String(100))
+    section_ar     = db.Column(db.String(100))
+    shift_type     = db.Column(db.String(30))                      # day / night / rotating
+    buyer_id       = db.Column(db.Integer, db.ForeignKey('buyers.id'), nullable=True)
+    joining_date   = db.Column(db.Date)
+    end_date       = db.Column(db.Date)
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at     = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by     = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    employee = db.relationship('Employee', backref=db.backref('work_allocations', lazy=True))
+    buyer    = db.relationship('BuyerMaster', backref=db.backref('work_allocations', lazy=True), foreign_keys=[buyer_id])
+
+    def to_dict(self):
+        e = self.employee
+        return {
+            'id': self.id,
+            'employee_id': self.employee_id,
+            'employee_code': e.employee_code if e else '',
+            'name': e.name if e else '',
+            'name_ar': e.name_ar if e else '',
+            'nationality': e.nationality if e else '',
+            'passport_number': e.passport_number if e else '',
+            'iqama_number': e.iqama_number if e else '',
+            'profession': e.profession if e else '',
+            'kafeel_name': e.kafeel_name if e else '',
+            'status': self.status or 'active',
+            'month': self.month or '',
+            'company': self.company or '',
+            'company_ar': self.company_ar or '',
+            'department': self.department or '',
+            'department_ar': self.department_ar or '',
+            'section': self.section or '',
+            'section_ar': self.section_ar or '',
+            'shift_type': self.shift_type or '',
+            'buyer_id': self.buyer_id,
+            'buyer_name': self.buyer.buyer_name_en if self.buyer else '',
+            'joining_date': self.joining_date.strftime('%Y-%m-%d') if self.joining_date else '',
+            'end_date': self.end_date.strftime('%Y-%m-%d') if self.end_date else '',
         }
 
 

@@ -428,26 +428,25 @@
                 </button>
 
                 <div id="bankInputRow" class="pl-bank-input-row d-none mt-3">
-                  <!-- Bank Name — single dropdown in portal language -->
-                  <div class="mb-3">
-                    <label class="pl-label-en d-block mb-1">{% if ar %}اسم البنك{% else %}Bank Name{% endif %}</label>
-                    <select id="bi_bank_name" class="pl-input pl-input-en" dir="ltr" style="max-width:100%" onchange="onBankNameChange()">
-                      <option value="">{% if ar %}-- اختر البنك --{% else %}-- Select Bank --{% endif %}</option>
-                    </select>
-                    <input type="hidden" id="bi_bank_name_ar">
-                  </div>
-                  <!-- Account Number — EN/AR -->
-                  <div class="pl-row mb-2">
+                  <!-- Bank Name — bilingual text input (manual entry) -->
+                  <div class="pl-row mb-3">
                     <div class="pl-field-wrap">
-                      <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم الحساب{% else %}Account Number{% endif %}</span></div>
-                      <input type="text" id="bi_account_number" class="pl-input pl-input-en" dir="ltr"
-                             placeholder="{% if ar %}رقم الحساب{% else %}Account Number{% endif %}"
-                             oninput="syncBankNum(this,'bi_account_number_ar')">
+                      <div class="pl-labels"><span class="pl-label-en">{% if ar %}اسم البنك (English){% else %}Bank Name{% endif %}</span></div>
+                      <div class="pl-en-wrap">
+                        <input type="text" id="bi_bank_name" class="pl-input pl-input-en" dir="ltr"
+                               placeholder="{% if ar %}Enter bank name{% else %}Enter bank name{% endif %}"
+                               oninput="bankTranslate(this,'bi_bank_name_ar','en')">
+                        {% if not ar %}<button type="button" class="pl-retranslate pl-retranslate-en" onclick="bankRetrans('bi_bank_name_ar','bi_bank_name','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                      </div>
                     </div>
                     <div class="pl-field-wrap">
-                      <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}Account Number{% else %}رقم الحساب{% endif %}</span></div>
-                      <input type="text" id="bi_account_number_ar" class="pl-input pl-input-ar" dir="rtl"
-                             placeholder="{% if ar %}Account Number{% else %}رقم الحساب{% endif %}">
+                      <div class="pl-labels pl-labels-ar"><span class="pl-label-ar">{% if ar %}اسم البنك{% else %}اسم البنك (Arabic){% endif %}</span></div>
+                      <div class="pl-ar-wrap">
+                        <input type="text" id="bi_bank_name_ar" class="pl-input pl-input-ar" dir="rtl"
+                               placeholder="{% if ar %}أدخل اسم البنك{% else %}أدخل اسم البنك{% endif %}"
+                               oninput="bankTranslate(this,'bi_bank_name','ar')">
+                        {% if ar %}<button type="button" class="pl-retranslate pl-retranslate-ar" onclick="bankRetrans('bi_bank_name','bi_bank_name_ar','en')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                      </div>
                     </div>
                   </div>
                   <!-- Branch — EN/AR -->
@@ -476,13 +475,21 @@
                       <input type="text" id="bi_iban" class="pl-input pl-input-en" dir="ltr" placeholder="IBAN">
                     </div>
                   </div>
+                   <!-- Account Number — single LTR (number, no Arabic) -->
+                   <div class="pl-row mb-2">
+                     <div class="pl-field-wrap">
+                       <div class="pl-labels"><span class="pl-label-en">{% if ar %}رقم الحساب{% else %}Account Number{% endif %}</span></div>
+                       <input type="text" id="bi_account_number" class="pl-input pl-input-en" dir="ltr"
+                              placeholder="{% if ar %}أدخل رقم الحساب{% else %}Enter account number{% endif %}">
+                     </div>
+                   </div>
                   <!-- Primary -->
                   <div class="d-flex align-items-center gap-2 mb-2">
                     <input type="checkbox" id="bi_primary" class="form-check-input mt-0">
                     <label for="bi_primary" class="small fw-semibold">{% if ar %}حساب رئيسي{% else %}Primary Account{% endif %}</label>
                   </div>
                   <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-sm btn-primary" onclick="saveBankRow()"><i class="fas fa-check me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+                    <button type="button" class="btn btn-sm btn-success" onclick="saveBankRow()"><i class="fas fa-plus me-1"></i>{% if ar %}إضافة بيانات البنك / Add Bank Detail{% else %}+ Add Bank Detail / إضافة بيانات البنك{% endif %}</button>
                     <button type="button" class="btn btn-sm btn-secondary" onclick="hideBankRow()"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
                   </div>
                 </div>
@@ -1005,42 +1012,15 @@ function updateRetranslateButtons(){
 /* ══ CASCADE DROPDOWNS ════════════════════════════════════
    Country → City → District (both EN and AR in sync)
 ═══════════════════════════════════════════════════════════ */
-const BANKS_API_URL = '{{ url_for("banks.banks_data") }}';
-let _banksCache = null;
+// Bank name is now free-text, no dropdown needed
+function initBankDropdown() { return; /* bank name is free-text */ }
 
-function initBankDropdown() {
-  const sel = document.getElementById('bi_bank_name');
-  if (!sel) return;
-  const ph = IS_AR ? '-- اختر البنك --' : '-- Select Bank --';
 
-  if (_banksCache) {
-    populateBankDropdown(sel, _banksCache, ph);
-    return;
-  }
-  fetch(BANKS_API_URL)
-    .then(r => r.json())
-    .then(banks => {
-      _banksCache = banks;
-      populateBankDropdown(sel, banks, ph);
-    })
-    .catch(() => {
-      sel.innerHTML = `<option value="">${ph}</option><option value="Other" data-ar="أخرى">Other</option>`;
-    });
-}
+// populateBankDropdown removed — free-text now
 
-function populateBankDropdown(sel, banks, ph) {
-  sel.innerHTML = `<option value="">${ph}</option>`;
-  banks.forEach(b => {
-    sel.innerHTML += `<option value="${b.en}" data-ar="${b.ar}" data-swift="${b.swift}">${b.label}</option>`;
-  });
-}
 
-function onBankNameChange() {
-  const sel = document.getElementById('bi_bank_name');
-  const opt = sel.options[sel.selectedIndex];
-  const arInput = document.getElementById('bi_bank_name_ar');
-  if (arInput && opt) arInput.value = opt.dataset.ar || '';
-}
+// onBankNameChange removed — bank name is free-text
+
 
 function syncBankNum(src, targetId) {
   // Mirror account number to AR field as Arabic-Indic numerals
@@ -1049,6 +1029,14 @@ function syncBankNum(src, targetId) {
 }
 
 const _bankTransTimers = {};
+function bankRetrans(tgtId, srcId, tl) {
+  const src = document.getElementById(srcId), tgt = document.getElementById(tgtId);
+  const text = src ? src.value.trim() : '';
+  if (!text || !tgt) return;
+  fetch(TRANSLATE_URL, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body: JSON.stringify({text, direction:`${tl==='ar'?'en':'ar'}|${tl}`}) })
+  .then(r=>r.json()).then(d=>{ if(d.translated) tgt.value=d.translated; });
+}
 function bankTranslate(srcEl, targetId, srcLang) {
   const target = document.getElementById(targetId);
   if (!target) return;
@@ -1229,20 +1217,19 @@ function resetSellerForm(){
 }
 function toggleAcc(n){ const b=document.getElementById('body-'+n),i=document.getElementById('icon-'+n),o=!b.classList.contains('d-none'); b.classList.toggle('d-none',o); i.className=o?'fas fa-chevron-down pl-acc-icon':'fas fa-chevron-up pl-acc-icon'; }
 function setFileName(input,id){ const noFile=IS_AR?'اختر ملف - لم يتم الاختيار':'Choose File No file chosen'; document.getElementById(id).textContent=input.files[0]?'Choose File '+input.files[0].name:noFile; }
-function showBankRow(){ document.getElementById('bankInputRow').classList.remove('d-none'); initBankDropdown(); }
+function showBankRow(){ document.getElementById('bankInputRow').classList.remove('d-none'); const f=document.getElementById('bi_bank_name'); if(f) setTimeout(()=>f.focus(),100); }
 function hideBankRow(){ document.getElementById('bankInputRow').classList.add('d-none'); }
 function saveBankRow(){
-  const bankSel = document.getElementById('bi_bank_name');
-  const bankEn  = bankSel.value;
-  const bankAr  = bankSel.options[bankSel.selectedIndex]?.dataset.ar || bankEn;
+  const bankEnEl = document.getElementById('bi_bank_name');
+  const bankEn   = bankEnEl ? bankEnEl.value.trim() : '';
+  const bankAr   = document.getElementById('bi_bank_name_ar')?.value.trim() || '';
   if(!bankEn){alert(IS_AR?'اسم البنك مطلوب':'Bank name required');return;}
-  const displayName = IS_AR ? bankAr : bankEn;
+  const displayName = IS_AR && bankAr ? bankAr : bankEn;
   pendingBanks.push({
     temp_id: Date.now(),
     bank_name: bankEn, bank_name_ar: bankAr,
     display_name: displayName,
-    account_number:    document.getElementById('bi_account_number').value.trim(),
-    account_number_ar: document.getElementById('bi_account_number_ar').value.trim(),
+    account_number: document.getElementById('bi_account_number').value.trim(),
     branch:    document.getElementById('bi_branch').value.trim(),
     branch_ar: document.getElementById('bi_branch_ar').value.trim(),
     swift_code: document.getElementById('bi_swift').value.trim(),
@@ -1251,8 +1238,7 @@ function saveBankRow(){
     is_new: true
   });
   refreshBanksTable(pendingBanks); hideBankRow();
-  bankSel.value='';
-  ['bi_bank_name_ar','bi_account_number','bi_account_number_ar','bi_branch','bi_branch_ar','bi_swift','bi_iban'].forEach(id=>{
+  ['bi_bank_name','bi_bank_name_ar','bi_account_number','bi_branch','bi_branch_ar','bi_swift','bi_iban'].forEach(id=>{
     const el=document.getElementById(id); if(el)el.value='';
   });
   document.getElementById('bi_primary').checked=false;

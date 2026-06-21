@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, session
 from flask_login import login_required, current_user
-from models import db, ProfessionMaster, BuyerMaster, Employee, EmployeeAllowance, AllowanceType
+from models import db, ProfessionMaster, BuyerMaster, BuyerBank, Employee, EmployeeAllowance, AllowanceType
 from functools import wraps
 
 lookups_bp = Blueprint('lookups', __name__)
@@ -119,6 +119,25 @@ def add_buyer():
         created_by=current_user.id,
     )
     db.session.add(b)
+    db.session.flush()
+    # Save pending bank details
+    names = request.form.getlist('bank_bank_name[]')
+    accts = request.form.getlist('bank_account_number[]')
+    brchs = request.form.getlist('bank_branch[]')
+    swfts = request.form.getlist('bank_swift_code[]')
+    ibans = request.form.getlist('bank_iban[]')
+    prims = request.form.getlist('bank_is_primary[]')
+    for i,bn in enumerate(names):
+        if not bn.strip(): continue
+        db.session.add(BuyerBank(
+            buyer_id=b.id,
+            bank_name=bn.strip(),
+            account_number=accts[i].strip() if i<len(accts) else '',
+            branch=brchs[i].strip() if i<len(brchs) else '',
+            swift_code=swfts[i].strip() if i<len(swfts) else '',
+            iban=ibans[i].strip() if i<len(ibans) else '',
+            is_primary=prims[i]=='1' if i<len(prims) else False,
+        ))
     db.session.commit()
     flash(_t(f'Buyer {code} added.', f'تم إضافة المشتري {code}.'),'success')
     return redirect(url_for('lookups.list_buyers'))
@@ -178,13 +197,11 @@ def buyer_json(id):
         'vat_number':g('vat_number'),'crn':g('crn'),
         'phone':g('phone'),'fax':g('fax'),'email':g('email'),'website':g('website'),
         'report_color':g('report_color') or '#2563eb',
-        'street_name':g('street_name'),'street_name_ar':g('street_name_ar'),
-        'building_number':g('building_number'),'building_number_ar':g('building_number_ar'),
-        'additional_number':g('additional_number'),'additional_number_ar':g('additional_number_ar'),
-        'postal_code':g('postal_code'),'postal_code_ar':g('postal_code_ar'),
-        'country':g('country') or 'Saudi Arabia','country_ar':g('country_ar'),
-        'city':g('city'),'city_ar':g('city_ar'),
-        'district':g('district'),'district_ar':g('district_ar'),
+        'street_name':g('street_name'),'building_number':g('building_number'),
+        'additional_number':g('additional_number'),
+        'postal_code':g('postal_code'),
+        'country':g('country') or 'Saudi Arabia',
+        'city':g('city'),'district':g('district'),
         'status':g('status') or 'active',
     })
 
@@ -207,6 +224,61 @@ def buyers_data():
         'is_active':b.is_active,
         'report_color': b.report_color or '#2563eb',
     } for b in items])
+
+# ── BUYER BANKS API ──────────────────────────────────────────────────
+@lookups_bp.route('/buyers/<int:buyer_id>/banks')
+@login_required
+def buyer_banks(buyer_id):
+    banks = BuyerBank.query.filter_by(buyer_id=buyer_id).order_by(BuyerBank.id).all()
+    return jsonify([b.to_dict() for b in banks])
+
+@lookups_bp.route('/buyers/<int:buyer_id>/banks/add', methods=['POST'])
+@login_required
+@admin_required
+def add_buyer_bank(buyer_id):
+    BuyerMaster.query.get_or_404(buyer_id)
+    data = request.get_json() or {}
+    b = BuyerBank(
+        buyer_id=buyer_id,
+        bank_name=data.get('bank_name','').strip(),
+        account_number=data.get('account_number','').strip(),
+        branch=data.get('branch','').strip(),
+        swift_code=data.get('swift_code','').strip(),
+        iban=data.get('iban','').strip(),
+        is_primary=bool(data.get('is_primary',False)),
+    )
+    if b.is_primary:
+        BuyerBank.query.filter_by(buyer_id=buyer_id, is_primary=True).update({'is_primary':False})
+    db.session.add(b)
+    db.session.commit()
+    return jsonify({'ok':True, 'bank':b.to_dict()})
+
+@lookups_bp.route('/buyers/banks/<int:bank_id>/edit', methods=['POST'])
+@login_required
+@admin_required
+def edit_buyer_bank(bank_id):
+    b = BuyerBank.query.get_or_404(bank_id)
+    data = request.get_json() or {}
+    b.bank_name     = data.get('bank_name', b.bank_name).strip()
+    b.account_number= data.get('account_number', b.account_number or '').strip()
+    b.branch        = data.get('branch', b.branch or '').strip()
+    b.swift_code    = data.get('swift_code', b.swift_code or '').strip()
+    b.iban          = data.get('iban', b.iban or '').strip()
+    b.is_primary    = bool(data.get('is_primary', b.is_primary))
+    if b.is_primary:
+        BuyerBank.query.filter_by(buyer_id=b.buyer_id, is_primary=True).update({'is_primary':False})
+        b.is_primary = True
+    db.session.commit()
+    return jsonify({'ok':True, 'bank':b.to_dict()})
+
+@lookups_bp.route('/buyers/banks/<int:bank_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_buyer_bank(bank_id):
+    b = BuyerBank.query.get_or_404(bank_id)
+    db.session.delete(b)
+    db.session.commit()
+    return jsonify({'ok':True})
 
 # ── ALLOWANCE TYPES MASTER ────────────────────────────────────────────
 @lookups_bp.route('/allowance-types')

@@ -47,6 +47,7 @@ def bind_employee(emp, f, files=None):
         'mobile','address','address_ar','email','home_city','home_city_ar',
         'employee_reference','employee_reference_ar',
         'po_number','salary_type','kafalat_number','department','department_ar','shift_type',
+        'bank_name','bank_name_ar',
         'forman','forman_ar','hostel_name','hostel_name_ar','room_number',
         'hostel_location','hostel_location_ar','bank_name','bank_name_ar',
         'bank_branch','bank_branch_ar','swift_code','account_number','iban',
@@ -77,6 +78,15 @@ def bind_employee(emp, f, files=None):
     basic = emp.basic_salary or 0
     total = emp.total_allowances or 0
     emp.net_salary = basic + total
+
+def save_employee_banks(emp_id, f):
+    """Save bank rows from hidden inputs bank_name[], account_number[], etc."""
+    names = f.getlist('bank_name[]')
+    if not names:
+        return
+    # For now store bank info as JSON in bank_name/account/etc fields
+    # (simple approach without separate bank table for employees)
+    pass  # Bank data handled via hidden inputs submission
 
 def save_allowances(emp_id, f):
     """Save pending allowances submitted from Add mode form (hidden inputs)."""

@@ -142,8 +142,13 @@
                     <span>{% if current_locale=='ar' %}أنواع البدلات{% else %}Allowance Types{% endif %}</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="{{ url_for('work_allocations.list_wa') }}" class="nav-link {% if request.endpoint and 'work_allocations.' in request.endpoint %}active{% endif %}">
+                    <i class="fas fa-tasks"></i>
+                    <span>{% if current_locale=='ar' %}توزيع العمل{% else %}Work Allocation{% endif %}</span>
+                </a>
+            </li>
             {% for icon, en, ar in [
-                ('tasks','Work Allocation','توزيع العمل'),
                 ('hand-holding-usd','Advances','السلف'),
                 ('money-check-alt','Pay Roll','كشف الرواتب'),
             ] %}
@@ -241,5 +246,3 @@
 {% block extra_js %}{% endblock %}
 </body>
 </html>
-        .nav-link-disabled{opacity:.4;cursor:default;pointer-events:none;display:flex;align-items:center;gap:10px;padding:9px 16px;color:rgba(255,255,255,.55);font-size:13px;border-radius:8px;}
-        .nav-soon{margin-left:auto;font-size:9px;background:rgba(255,255,255,.12);border-radius:3px;padding:1px 5px;color:rgba(255,255,255,.6);font-weight:600;}
