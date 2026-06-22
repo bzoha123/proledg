@@ -102,13 +102,18 @@
                     <span>{% if current_locale=='ar' %}تسجيل المشتري{% else %}Buyer Reg{% endif %}</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="{{ url_for('invoices.list_invoices') }}" class="nav-link {% if request.endpoint and 'invoice' in request.endpoint %}active{% endif %}">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>{% if current_locale=='ar' %}الفواتير{% else %}Invoices{% endif %}</span>
+                </a>
+            </li>
             {% for icon, en, ar in [
                 ('file-alt','Buyer Document','وثائق المشتري'),
                 ('file-signature','Sale Request','طلب بيع'),
                 ('file-invoice','Sale Quotation','عرض سعر بيع'),
                 ('shopping-cart','Sale Order','أمر بيع'),
                 ('boxes','Goods Receipt Note','إشعار استلام بضاعة'),
-                ('file-invoice-dollar','Sale Invoice','فاتورة بيع'),
                 ('undo','Goods Return Request','طلب إرجاع بضاعة'),
                 ('dolly-flatbed','Goods Return Note','إشعار إرجاع بضاعة'),
                 ('credit-card','Invoice Credit Memo','مذكرة الإضافة'),

@@ -69,6 +69,21 @@ select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .vw-item{background:#f8fafc;border-radius:7px;padding:9px 12px;border-left:3px solid #2563eb;}
 .vw-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
 .vw-value{font-size:13px;font-weight:600;color:#111827;}
+
+/* ── AG-Grid filter popup — ProLedg style ── */
+.ag-theme-alpine .ag-filter{font-family:'Segoe UI',Tahoma,sans-serif;font-size:12px;min-width:260px;border-radius:8px!important;box-shadow:0 4px 20px rgba(0,0,0,.15)!important;border:1px solid #e2e8f0!important;overflow:hidden;}
+.ag-theme-alpine .ag-filter-select .ag-picker-field-wrapper{border:1.5px solid #d1d5db;border-radius:6px;padding:4px 8px;font-size:12px;background:white;}
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input{border:1.5px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:12px;width:100%;}
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.1);}
+.ag-theme-alpine .ag-filter-apply-panel{padding:8px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;gap:6px;justify-content:space-between;}
+.ag-theme-alpine .ag-filter-apply-panel-button{padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;border:none;cursor:pointer;}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"]{background:white;color:#374151;border:1.5px solid #d1d5db;}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]{background:linear-gradient(135deg,#16a34a,#15803d);color:white;}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"]{background:white;color:#374151;border:1.5px solid #d1d5db;}
+.ag-theme-alpine .ag-floating-filter-input .ag-input-field-input{border:1px solid #d1d5db;border-radius:5px;padding:3px 7px;font-size:11px;}
+.ag-theme-alpine .ag-floating-filter-input .ag-input-field-input:focus{outline:none;border-color:#2563eb;}
+.ag-theme-alpine .ag-filter-add-join-condition .ag-button{color:#2563eb;font-size:12px;font-weight:600;background:none;border:none;cursor:pointer;}
+.ag-theme-alpine .ag-header-icon.ag-header-label-icon.ag-filter-active{color:#fbbf24;}
 </style>
 {% endblock %}
 
@@ -461,11 +476,28 @@ function initPickerGrid(emps) {
     {headerName:IS_AR?'القسم':'Department',field:'department',width:130,filter:'agTextColumnFilter',floatingFilter:true},
     {headerName:IS_AR?'الجنسية':'Nationality',field:'nationality',width:120,filter:'agTextColumnFilter',floatingFilter:true},
   ];
+  
+  // Bilingual AG-Grid locale
+  const _agLocale = typeof IS_AR !== 'undefined' && IS_AR ? {
+    filterOoo:'تصفية...',equals:'يساوي',notEqual:'لا يساوي',contains:'يحتوي على',
+    notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',
+    blank:'فارغ',notBlank:'غير فارغ',lessThan:'أقل من',greaterThan:'أكبر من',
+    applyFilter:'تطبيق / Apply',clearFilter:'مسح / Clear',resetFilter:'إعادة تعيين',
+    addFilterCondition:'+ إضافة قاعدة / Add Rule',matchAll:'يطابق الكل / Match All',
+    matchAny:'يطابق أي / Match Any',andCondition:'و / AND',orCondition:'أو / OR',
+    noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...',searchOoo:'بحث...',
+    sortAscending:'تصاعدي',sortDescending:'تنازلي',
+  } : {
+    filterOoo:'Filter...',applyFilter:'Apply / تطبيق',clearFilter:'Clear / مسح',
+    resetFilter:'Reset',addFilterCondition:'+ Add Rule / إضافة قاعدة',
+    matchAll:'Match All / بتطابق مع الكل',matchAny:'Match Any / يطابق أي',
+    andCondition:'AND / و',orCondition:'OR / أو',noRowsToShow:'No records found',searchOoo:'Search...',
+  };
   agGrid.createGrid(document.getElementById('pickerGrid'),{
     columnDefs:pickerCols, rowData:emps,
     rowSelection:'multiple', suppressRowClickSelection:true,
-    animateRows:true, enableRtl:IS_AR,
-    defaultColDef:{sortable:true,resizable:true},
+    animateRows:true, localeText:_agLocale, enableRtl:IS_AR,
+    defaultColDef:{sortable:true,resizable:true,filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}},
     onSelectionChanged: updatePickerCount,
     getRowStyle:p=>p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'},
     onGridReady(p){
@@ -675,7 +707,7 @@ class ActR {
   getGui(){return this.g;}
 }
 
-const defCol={sortable:true,resizable:true,filter:true,floatingFilter:true};
+const defCol={sortable:true,resizable:true,filter:true,floatingFilter:true,filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}};
 const mainCols=[
   {headerName:'#',field:'_idx',width:55,sortable:false,suppressMenu:true,floatingFilter:false,valueGetter:p=>p.node.rowIndex+1,cellStyle:{color:'#6b7280',fontSize:'12px'}},
   {headerName:IS_AR?'كود الموظف':'Emp Code',field:'employee_code',width:130,cellRenderer:rCode,filter:'agTextColumnFilter'},

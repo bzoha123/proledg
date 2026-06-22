@@ -408,3 +408,110 @@ class AllowanceType(db.Model):
 
     def __repr__(self):
         return f'<AllowanceType {self.allowance_code}>'
+
+
+class Invoice(db.Model):
+    __tablename__ = 'invoices'
+    id                = db.Column(db.Integer, primary_key=True)
+    invoice_no        = db.Column(db.String(30), unique=True, nullable=False)  # auto: STDINV-00001
+    custom_invoice_no = db.Column(db.String(50))
+    dr_cr_type        = db.Column(db.String(10), default='S')   # S=Standard, D=Debit Receipt, C=Credit Note
+    payment_type      = db.Column(db.String(10), default='credit')  # credit/cash
+    invoice_date      = db.Column(db.Date, nullable=False)
+    month             = db.Column(db.String(20))
+    po_number         = db.Column(db.String(50))
+    project_reference = db.Column(db.String(100))
+    due_date          = db.Column(db.Date)
+    period_start      = db.Column(db.Date)
+    period_end        = db.Column(db.Date)
+    invoice_type      = db.Column(db.String(50))
+    invoice_department= db.Column(db.String(100))
+    seller_id         = db.Column(db.Integer, db.ForeignKey('sellers.id'), nullable=False)
+    buyer_id          = db.Column(db.Integer, db.ForeignKey('buyers.id'), nullable=False)
+    gross_total       = db.Column(db.Numeric(12,2), default=0)
+    total_discount    = db.Column(db.Numeric(12,2), default=0)
+    vat_amount        = db.Column(db.Numeric(12,2), default=0)
+    total_amount      = db.Column(db.Numeric(12,2), default=0)  # incl. VAT
+    retention_pct     = db.Column(db.Numeric(5,2), default=0)
+    retention_amount  = db.Column(db.Numeric(12,2), default=0)
+    balance_due       = db.Column(db.Numeric(12,2), default=0)
+    status            = db.Column(db.String(20), default='active')
+    created_at        = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by        = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    seller      = db.relationship('Seller', backref=db.backref('invoices', lazy=True))
+    buyer       = db.relationship('BuyerMaster', backref=db.backref('invoices', lazy=True), foreign_keys=[buyer_id])
+    line_items  = db.relationship('InvoiceLineItem', backref='invoice', lazy=True, cascade='all, delete-orphan')
+    payments    = db.relationship('InvoicePayment', backref='invoice', lazy=True, cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'invoice_no': self.invoice_no,
+            'custom_invoice_no': self.custom_invoice_no or '',
+            'dr_cr_type': self.dr_cr_type,
+            'payment_type': self.payment_type,
+            'invoice_date': self.invoice_date.strftime('%d/%m/%Y') if self.invoice_date else '',
+            'month': self.month or '',
+            'po_number': self.po_number or '',
+            'invoice_type': self.invoice_type or '',
+            'invoice_department': self.invoice_department or '',
+            'seller_id': self.seller_id,
+            'seller_name': self.seller.name if self.seller else '',
+            'buyer_id': self.buyer_id,
+            'buyer_name': self.buyer.buyer_name_en if self.buyer else '',
+            'gross_total': float(self.gross_total or 0),
+            'vat_amount': float(self.vat_amount or 0),
+            'total_amount': float(self.total_amount or 0),
+            'balance_due': float(self.balance_due or 0),
+            'retention_pct': float(self.retention_pct or 0),
+            'status': self.status,
+            'line_items': [li.to_dict() for li in self.line_items],
+        }
+
+
+class InvoiceLineItem(db.Model):
+    __tablename__ = 'invoice_line_items'
+    id          = db.Column(db.Integer, primary_key=True)
+    invoice_id  = db.Column(db.Integer, db.ForeignKey('invoices.id', ondelete='CASCADE'), nullable=False)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=True)
+    uom         = db.Column(db.String(20), default='hour')
+    quantity    = db.Column(db.Numeric(10,2), default=0)
+    rate        = db.Column(db.Numeric(10,2), default=0)
+    discount    = db.Column(db.Numeric(10,2), default=0)
+    taxable     = db.Column(db.Boolean, default=True)
+    tax_rate    = db.Column(db.Numeric(5,2), default=15.00)
+    tax_amount  = db.Column(db.Numeric(10,2), default=0)
+    total       = db.Column(db.Numeric(10,2), default=0)
+
+    employee = db.relationship('Employee', backref=db.backref('invoice_lines', lazy=True))
+
+    def to_dict(self):
+        e = self.employee
+        return {
+            'id': self.id,
+            'invoice_id': self.invoice_id,
+            'employee_id': self.employee_id,
+            'employee_name': e.name if e else '',
+            'employee_code': e.employee_code if e else '',
+            'uom': self.uom,
+            'quantity': float(self.quantity or 0),
+            'rate': float(self.rate or 0),
+            'discount': float(self.discount or 0),
+            'taxable': self.taxable,
+            'tax_rate': float(self.tax_rate or 15),
+            'tax_amount': float(self.tax_amount or 0),
+            'total': float(self.total or 0),
+        }
+
+
+class InvoicePayment(db.Model):
+    __tablename__ = 'invoice_payments'
+    id           = db.Column(db.Integer, primary_key=True)
+    invoice_id   = db.Column(db.Integer, db.ForeignKey('invoices.id', ondelete='CASCADE'), nullable=False)
+    payment_date = db.Column(db.Date, nullable=False)
+    amount       = db.Column(db.Numeric(12,2), nullable=False)
+    method       = db.Column(db.String(50))
+    reference    = db.Column(db.String(100))
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by   = db.Column(db.Integer, db.ForeignKey('users.id'))

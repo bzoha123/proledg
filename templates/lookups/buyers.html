@@ -57,6 +57,21 @@ select.field-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
 .bank-table th{padding:8px 12px;background:#f1f5f9;font-weight:600;color:#374151;border-bottom:1px solid #e2e8f0;text-align:left;}
 .bank-table td{padding:8px 12px;border-bottom:1px solid #f1f5f9;}
 .bank-table tr:last-child td{border-bottom:none;}
+
+/* ── AG-Grid filter popup — ProLedg style ── */
+.ag-theme-alpine .ag-filter{font-family:'Segoe UI',Tahoma,sans-serif;font-size:12px;min-width:260px;border-radius:8px!important;box-shadow:0 4px 20px rgba(0,0,0,.15)!important;border:1px solid #e2e8f0!important;overflow:hidden;}
+.ag-theme-alpine .ag-filter-select .ag-picker-field-wrapper{border:1.5px solid #d1d5db;border-radius:6px;padding:4px 8px;font-size:12px;background:white;}
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input{border:1.5px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:12px;width:100%;}
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.1);}
+.ag-theme-alpine .ag-filter-apply-panel{padding:8px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;gap:6px;justify-content:space-between;}
+.ag-theme-alpine .ag-filter-apply-panel-button{padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;border:none;cursor:pointer;}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"]{background:white;color:#374151;border:1.5px solid #d1d5db;}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]{background:linear-gradient(135deg,#16a34a,#15803d);color:white;}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"]{background:white;color:#374151;border:1.5px solid #d1d5db;}
+.ag-theme-alpine .ag-floating-filter-input .ag-input-field-input{border:1px solid #d1d5db;border-radius:5px;padding:3px 7px;font-size:11px;}
+.ag-theme-alpine .ag-floating-filter-input .ag-input-field-input:focus{outline:none;border-color:#2563eb;}
+.ag-theme-alpine .ag-filter-add-join-condition .ag-button{color:#2563eb;font-size:12px;font-weight:600;background:none;border:none;cursor:pointer;}
+.ag-theme-alpine .ag-header-icon.ag-header-label-icon.ag-filter-active{color:#fbbf24;}
 </style>
 {% endblock %}
 
@@ -489,10 +504,27 @@ const cols=[
 if(ADM) cols.push({headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:110,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,resizable:false,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 8px'}});
 
 let gridApi;
-agGrid.createGrid(document.getElementById('buyerGrid'),{
+
+  // Bilingual AG-Grid locale
+  const _agLocale = typeof IS_AR !== 'undefined' && IS_AR ? {
+    filterOoo:'تصفية...',equals:'يساوي',notEqual:'لا يساوي',contains:'يحتوي على',
+    notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',
+    blank:'فارغ',notBlank:'غير فارغ',lessThan:'أقل من',greaterThan:'أكبر من',
+    applyFilter:'تطبيق / Apply',clearFilter:'مسح / Clear',resetFilter:'إعادة تعيين',
+    addFilterCondition:'+ إضافة قاعدة / Add Rule',matchAll:'يطابق الكل / Match All',
+    matchAny:'يطابق أي / Match Any',andCondition:'و / AND',orCondition:'أو / OR',
+    noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...',searchOoo:'بحث...',
+    sortAscending:'تصاعدي',sortDescending:'تنازلي',
+  } : {
+    filterOoo:'Filter...',applyFilter:'Apply / تطبيق',clearFilter:'Clear / مسح',
+    resetFilter:'Reset',addFilterCondition:'+ Add Rule / إضافة قاعدة',
+    matchAll:'Match All / بتطابق مع الكل',matchAny:'Match Any / يطابق أي',
+    andCondition:'AND / و',orCondition:'OR / أو',noRowsToShow:'No records found',searchOoo:'Search...',
+  };
+  agGrid.createGrid(document.getElementById('buyerGrid'),{
   columnDefs:cols,rowData:[],pagination:true,paginationPageSize:20,
-  animateRows:true,enableRtl:IS_AR,
-  defaultColDef:{sortable:true,resizable:true,filter:true},
+  animateRows:true, localeText:_agLocale,enableRtl:IS_AR,
+  defaultColDef:{sortable:true,resizable:true,filter:true,filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}},
   onGridReady(p){gridApi=p.api;loadData();},
   onPaginationChanged(){upd();},
   getRowStyle(p){return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'};}

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ inv.invoice_no }}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: Arial, sans-serif; font-size: 11px; color: #000; background: white; }
+/* Page */
+.page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 8mm 10mm; }
+@media print {
+  body { margin:0; }
+  .page { width:100%; padding:8mm 10mm; }
+  .no-print { display:none!important; }
+  @page { size:A4; margin:0; }
+}
+/* Header */
+.inv-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6mm; padding-bottom:4mm; border-bottom:1px solid #e0e0e0; }
+.company-logo { width:80px; height:80px; }
+.company-logo img { width:100%; height:100%; object-fit:contain; }
+.company-details { text-align:right; }
+.company-name-ar { font-size:16px; font-weight:bold; color:#007bbb; direction:rtl; }
+.company-name-en { font-size:14px; font-weight:bold; color:#007bbb; }
+.company-meta { font-size:10px; color:#444; margin-top:3px; direction:rtl; }
+.company-meta span { display:block; }
+/* TAX INVOICE banner */
+.invoice-banner { border:1px solid #333; margin-bottom:4mm; }
+.invoice-banner-inner { display:flex; align-items:center; }
+.invoice-banner-en { flex:1; text-align:center; font-size:16px; font-weight:bold; padding:6px; border-right:1px solid #333; }
+.invoice-banner-ar { flex:1; text-align:center; font-size:16px; font-weight:bold; padding:6px; direction:rtl; }
+/* Table base */
+table { width:100%; border-collapse:collapse; }
+td, th { border:1px solid #999; padding:3px 5px; vertical-align:middle; }
+.th-gray { background:#e8e8e8; font-weight:bold; font-size:10px; }
+.td-val { font-size:10px; }
+.rtl { direction:rtl; text-align:right; }
+.center { text-align:center; }
+.bold { font-weight:bold; }
+/* Invoice meta row */
+.meta-table { margin-bottom:2mm; }
+.meta-table td { font-size:9.5px; }
+/* Seller/Buyer section */
+.party-section { display:grid; grid-template-columns:1fr 1fr; gap:0; margin-bottom:2mm; }
+.party-box { border:1px solid #999; }
+.party-header { background:#e8e8e8; font-weight:bold; text-align:center; padding:4px; border-bottom:1px solid #999; font-size:11px; }
+.party-header.en { float:left; }
+.party-header.ar { float:right; direction:rtl; }
+.party-header-row { display:flex; justify-content:space-between; background:#e8e8e8; border-bottom:1px solid #999; }
+.party-header-row div { padding:4px 8px; font-weight:bold; font-size:11px; }
+.party-table td { font-size:9.5px; border:none; border-bottom:1px solid #ddd; padding:3px 5px; }
+.party-table tr:last-child td { border-bottom:none; }
+.label-cell { font-weight:bold; white-space:nowrap; width:90px; }
+/* Line items */
+.li-header th { background:#2c2c2c; color:white; font-size:9.5px; text-align:center; padding:5px 4px; }
+.li-row td { font-size:10px; text-align:center; }
+.li-desc { text-align:left!important; padding-left:8px!important; }
+/* Summary */
+.summary-table { width:100%; margin-top:2mm; }
+.summary-table td { border:1px solid #999; padding:3px 8px; font-size:10px; }
+.sum-label-en { text-align:left; }
+.sum-label-ar { text-align:right; direction:rtl; }
+.sum-value { text-align:right; font-weight:bold; min-width:80px; }
+.sum-total-row td { background:#1e3a5f; color:white; font-weight:bold; }
+.sum-balance-row td { background:#e8f4ff; font-weight:bold; border:2px solid #1e3a5f; }
+/* Words */
+.words-row { border:1px solid #999; padding:4px 8px; margin-top:2mm; font-size:10px; }
+/* Footer */
+.inv-footer { margin-top:4mm; border-top:1px solid #999; padding-top:3mm; font-size:9px; color:#555; text-align:center; }
+/* QR / watermark area */
+.bottom-section { display:flex; justify-content:space-between; align-items:flex-start; margin-top:3mm; }
+.qr-area { width:70px; height:70px; border:1px solid #ccc; display:flex; align-items:center; justify-content:center; font-size:9px; color:#999; }
+/* Print button */
+.print-btn { position:fixed; top:10px; right:10px; background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; z-index:9999; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+.print-btn:hover { background:#1d4ed8; }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨 Print</button>
+
+<div class="page">
+
+  {# ── HEADER ── #}
+  <div class="inv-header">
+    <div class="company-logo">
+      {% if inv.seller and inv.seller.logo %}
+      <img src="{{ url_for('static', filename='uploads/logos/' + inv.seller.logo) }}" alt="Logo">
+      {% else %}
+      <div style="width:80px;height:80px;border:2px solid #007bbb;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:10px;color:#007bbb;text-align:center;padding:4px;">
+        {{ (inv.seller.name[:2] if inv.seller else 'CD')|upper }}
+      </div>
+      {% endif %}
+    </div>
+    <div class="company-details">
+      <div class="company-name-ar">{% if inv.seller %}{{ inv.seller.name_ar or inv.seller.name }}{% endif %}</div>
+      <div class="company-name-en">{% if inv.seller %}{{ inv.seller.name }}{% endif %}</div>
+      <div class="company-meta">
+        {% if inv.seller %}
+        <span>C.R : {{ inv.seller.crn or '—' }}</span>
+        <span>VAT : {{ inv.seller.vat_number or '—' }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# ── TAX INVOICE BANNER ── #}
+  <div class="invoice-banner">
+    <div class="invoice-banner-inner">
+      <div class="invoice-banner-en">TAX INVOICE</div>
+      <div class="invoice-banner-ar">فاتورة ضريبية</div>
+    </div>
+  </div>
+
+  {# ── INVOICE NO ROW ── #}
+  <table class="meta-table" style="margin-bottom:1mm;">
+    <tr>
+      <td class="th-gray bold" style="width:90px;">Invoice No:</td>
+      <td class="td-val bold" style="color:#c0392b;">{{ inv.invoice_no }}</td>
+      <td class="th-gray bold rtl" style="width:70px;">:الفاتورة</td>
+      <td class="td-val bold rtl" style="color:#c0392b;">{{ inv.invoice_no }}</td>
+    </tr>
+  </table>
+
+  {# ── META TABLE ── #}
+  <table class="meta-table" style="margin-bottom:1mm;">
+    <thead>
+      <tr>
+        <th class="th-gray center">Invoice Date<br><span class="rtl" style="display:block;">تاريخ الفاتورة</span></th>
+        <th class="th-gray center">Invoice Month<br><span class="rtl" style="display:block;">شهر الفاتورة</span></th>
+        <th class="th-gray center">Invoice Period<br><span class="rtl" style="display:block;">فترة الفاتورة</span></th>
+        <th class="th-gray center">Due Date<br><span class="rtl" style="display:block;">تاريخ الاستحقاق</span></th>
+        <th class="th-gray center">Project / Ref No.<br><span class="rtl" style="display:block;">رقم أمر الشراء</span></th>
+        <th class="th-gray center">Contract / PO No.<br><span class="rtl" style="display:block;">رقم المرجع / المشروع</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="center td-val">{{ inv.invoice_date.strftime('%d-%b-%Y') if inv.invoice_date else '' }}</td>
+        <td class="center td-val">{{ inv.month or '' }}</td>
+        <td class="center td-val">{% if inv.period_start and inv.period_end %}{{ inv.period_start.strftime('%d/%m') }}–{{ inv.period_end.strftime('%d/%m/%Y') }}{% endif %}</td>
+        <td class="center td-val">{{ inv.due_date.strftime('%d-%b-%Y') if inv.due_date else '' }}</td>
+        <td class="center td-val">{{ inv.project_reference or '' }}</td>
+        <td class="center td-val">{{ inv.po_number or '' }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  {# ── INVOICE TYPE / DEPT ── #}
+  <table class="meta-table" style="margin-bottom:1mm;">
+    <tr>
+      <td class="th-gray" style="width:80px;">Invoice Type</td>
+      <td class="td-val">{{ inv.invoice_type or '' }}</td>
+      <td class="th-gray" style="width:80px;">Department</td>
+      <td class="td-val">{{ inv.invoice_department or '' }}</td>
+    </tr>
+  </table>
+
+  {# ── BANK DETAILS (from seller primary bank) ── #}
+  {% set bank = inv.seller.banks|selectattr('is_primary')|first if inv.seller else none %}
+  {% if not bank and inv.seller and inv.seller.banks %}{% set bank = inv.seller.banks[0] %}{% endif %}
+  {% if bank %}
+  <table class="meta-table" style="margin-bottom:2mm;">
+    <thead>
+      <tr>
+        <th class="th-gray center">Account Number | رقم الحساب</th>
+        <th class="th-gray center">Bank | المصرف</th>
+        <th class="th-gray center">Branch | فرع</th>
+        <th class="th-gray center">Swift | رقم السويفت</th>
+        <th class="th-gray center">IBAN | رقم الايبان</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="center td-val">{{ bank.account_number or '' }}</td>
+        <td class="center td-val">{{ bank.bank_name or '' }}</td>
+        <td class="center td-val">{{ bank.branch or '' }}</td>
+        <td class="center td-val">{{ bank.swift_code or '' }}</td>
+        <td class="center td-val">{{ bank.iban or '' }}</td>
+      </tr>
+    </tbody>
+  </table>
+  {% endif %}
+
+  {# ── SELLER / BUYER ── #}
+  <table style="margin-bottom:2mm;">
+    <tr>
+      <td style="width:50%;vertical-align:top;padding:0;border:none;">
+        <table style="width:100%;">
+          <tr>
+            <td colspan="4" style="background:#e8e8e8;font-weight:bold;text-align:center;padding:4px;border:1px solid #999;">
+              Seller Details &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="direction:rtl;">المورد</span>
+            </td>
+          </tr>
+          {% if inv.seller %}
+          <tr><td class="label-cell" style="border:1px solid #ccc;padding:3px 5px;">Name:</td><td colspan="3" style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.seller.name }}</td></tr>
+          <tr><td class="label-cell" style="border:1px solid #ccc;padding:3px 5px;">Street Name:</td><td colspan="3" style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.seller.street_name or '' }}</td></tr>
+          <tr>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">Building No:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;width:60px;">{{ inv.seller.building_number or '' }}</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">City:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.seller.city or '' }}</td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">Addl. No:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.seller.additional_number or '' }}</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">District:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.seller.district or '' }}</td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">Postal Code:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.seller.postal_code or '' }}</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">Country:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.seller.country or 'Saudi Arabia' }}</td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">VAT Number:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.seller.vat_number or '' }}</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">CRN:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.seller.crn or '' }}</td>
+          </tr>
+          {% endif %}
+        </table>
+      </td>
+      <td style="width:50%;vertical-align:top;padding:0 0 0 2mm;border:none;">
+        <table style="width:100%;">
+          <tr>
+            <td colspan="4" style="background:#e8e8e8;font-weight:bold;text-align:center;padding:4px;border:1px solid #999;">
+              Buyer Detail &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="direction:rtl;">تفاصيل شركة العميل</span>
+            </td>
+          </tr>
+          {% if inv.buyer %}
+          <tr><td class="label-cell" style="border:1px solid #ccc;padding:3px 5px;">Name:</td><td colspan="3" style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.buyer.buyer_name_en }}</td></tr>
+          <tr><td class="label-cell" style="border:1px solid #ccc;padding:3px 5px;">Street Name:</td><td colspan="3" style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.buyer.street_name or '' }}</td></tr>
+          <tr>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">Building No:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;width:60px;">{{ inv.buyer.building_number or '' }}</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">City:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.buyer.city or inv.buyer.city_en or '' }}</td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">Addl. No:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.buyer.additional_number or '' }}</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">District:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.buyer.district or '' }}</td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">Postal Code:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.buyer.postal_code or '' }}</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">Country:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.buyer.country or 'Saudi Arabia' }}</td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">VAT Number:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.buyer.vat_number or '' }}</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-weight:bold;font-size:10px;">CRN:</td>
+            <td style="border:1px solid #ccc;padding:3px 5px;font-size:10px;">{{ inv.buyer.crn or '' }}</td>
+          </tr>
+          {% endif %}
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  {# ── LINE ITEMS ── #}
+  <table style="margin-bottom:2mm;">
+    <thead>
+      <tr class="">
+        <th class="li-header center" style="width:28px;background:#2c2c2c;color:white;font-size:9px;">#</th>
+        <th class="li-header" style="background:#2c2c2c;color:white;font-size:9px;">Description<br><span class="rtl" style="display:block;">تفاصيل السلع أو الخدمات</span></th>
+        <th class="li-header center" style="background:#2c2c2c;color:white;font-size:9px;width:45px;">UoM<br><span style="direction:rtl;display:block;">وحدة القياس</span></th>
+        <th class="li-header center" style="background:#2c2c2c;color:white;font-size:9px;width:55px;">Quantity<br><span style="direction:rtl;display:block;">الكمية</span></th>
+        <th class="li-header center" style="background:#2c2c2c;color:white;font-size:9px;width:55px;">Rate<br><span style="direction:rtl;display:block;">معدل</span></th>
+        <th class="li-header center" style="background:#2c2c2c;color:white;font-size:9px;width:55px;">Discount<br><span style="direction:rtl;display:block;">الخصومات</span></th>
+        <th class="li-header center" style="background:#2c2c2c;color:white;font-size:9px;width:60px;">Taxable Amount<br><span style="direction:rtl;display:block;">الوحدة الخاضعة الضريبة</span></th>
+        <th class="li-header center" style="background:#2c2c2c;color:white;font-size:9px;width:40px;">Tax %<br><span style="direction:rtl;display:block;">نسبة الضريبة</span></th>
+        <th class="li-header center" style="background:#2c2c2c;color:white;font-size:9px;width:55px;">Tax Amount<br><span style="direction:rtl;display:block;">الضريبة مبلغ</span></th>
+        <th class="li-header center" style="background:#2c2c2c;color:white;font-size:9px;width:65px;">Total with Tax<br><span style="direction:rtl;display:block;">الإجمالي مع الضريبة</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for li in inv.line_items %}
+      <tr style="border-bottom:1px solid #ddd;">
+        <td class="center" style="font-size:10px;">{{ loop.index }}</td>
+        <td class="li-desc" style="font-size:10px;">
+          {{ li.employee.name if li.employee else '—' }}
+          {% if li.employee and li.employee.name_ar %}<br><span style="direction:rtl;font-size:9px;color:#555;">{{ li.employee.name_ar }}</span>{% endif %}
+        </td>
+        <td class="center" style="font-size:10px;">{{ li.uom|upper }}</td>
+        <td class="center" style="font-size:10px;">{{ '{:,.2f}'.format(li.quantity or 0) }}</td>
+        <td class="center" style="font-size:10px;">{{ '{:,.2f}'.format(li.rate or 0) }}</td>
+        <td class="center" style="font-size:10px;">{{ '{:,.2f}'.format(li.discount or 0) if li.discount else '-' }}</td>
+        <td class="center" style="font-size:10px;">{{ '{:,.2f}'.format((li.quantity or 0) * (li.rate or 0) - (li.discount or 0)) }}</td>
+        <td class="center" style="font-size:10px;">{{ '{:.2f}'.format(li.tax_rate or 15) }}</td>
+        <td class="center" style="font-size:10px;">{{ '{:,.2f}'.format(li.tax_amount or 0) }}</td>
+        <td class="center bold" style="font-size:10px;">{{ '{:,.2f}'.format(li.total or 0) }}</td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <td colspan="10" class="center" style="font-size:9px;padding:4px;font-style:italic;background:#f9f9f9;">
+          ***** Nothing follow / لا شيء يتبع *****
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  {# ── SUMMARY ── #}
+  <table class="summary-table">
+    <tr>
+      <td class="sum-label-en">Gross Total (SAR) <span style="font-size:9px;color:#555;">(ريال سعودي) الإجمالي الإجمالي</span></td>
+      <td class="sum-value">{{ '{:,.2f}'.format(inv.gross_total or 0) }}</td>
+    </tr>
+    <tr>
+      <td class="sum-label-en">Total Discount (SAR) <span style="font-size:9px;color:#555;">(ريال سعودي) الخصم الإضافي</span></td>
+      <td class="sum-value">{{ '{:,.2f}'.format(inv.total_discount or 0) }}</td>
+    </tr>
+    <tr>
+      <td class="sum-label-en">Total excl. VAT (SAR) <span style="font-size:9px;color:#555;">(ريال سعودي) الإجمالي غير شامل ضريبة القيمة المضافة</span></td>
+      <td class="sum-value">{{ '{:,.2f}'.format((inv.gross_total or 0) - (inv.total_discount or 0)) }}</td>
+    </tr>
+    <tr>
+      <td class="sum-label-en">VAT Amount (SAR) <span style="font-size:9px;color:#555;">(ريال سعودي) ضريبة القيمة المضافة</span></td>
+      <td class="sum-value">{{ '{:,.2f}'.format(inv.vat_amount or 0) }}</td>
+    </tr>
+    <tr>
+      <td class="sum-label-en">Amount Incl. VAT (SAR) <span style="font-size:9px;color:#555;">(ريال سعودي) المبلغ شامل ضريبة القيمة المضافة</span></td>
+      <td class="sum-value">{{ '{:,.2f}'.format(inv.total_amount or 0) }}</td>
+    </tr>
+    <tr>
+      <td class="sum-label-en">Less: {{ inv.retention_pct or 0 }}% Retention (SAR) <span style="font-size:9px;color:#555;">(ريال سعودي) أقل: % {{ inv.retention_pct or 0 }} احتفاظ</span></td>
+      <td class="sum-value">{{ '{:,.2f}'.format(inv.retention_amount or 0) }}</td>
+    </tr>
+    <tr class="sum-balance-row">
+      <td class="sum-label-en bold">Balance Due (SAR) <span style="font-size:9px;direction:rtl;">(ريال سعودي) إجمالي المبلغ المستحق</span></td>
+      <td class="sum-value" style="font-size:13px;color:#1e3a5f;">{{ '{:,.2f}'.format(inv.balance_due or 0) }}</td>
+    </tr>
+  </table>
+
+  {# ── AMOUNT IN WORDS ── #}
+  <div class="words-row">
+    <strong>Amount in words:</strong> <span id="words_en"></span><br>
+    <span style="direction:rtl;display:block;margin-top:2px;" id="words_ar"></span>
+  </div>
+
+  {# ── QR + FOOTER ── #}
+  <div class="bottom-section" style="margin-top:4mm;">
+    <div class="qr-area">
+      <div style="text-align:center;">QR<br>Code</div>
+    </div>
+    <div style="font-size:9px;color:#555;text-align:center;flex:1;padding:0 10px;">
+      *This is a computer generated document, no Signature required.<br>
+      <span style="direction:rtl;">*هذه وثيقة تم إنشاؤها بالحاسب الآلي، لا يلزم التوقيع</span>
+    </div>
+    <div style="font-size:9px;color:#555;text-align:right;">
+      1 / 1
+    </div>
+  </div>
+
+  <div class="inv-footer">
+    {% if inv.seller %}
+    {{ inv.seller.street_name or '' }}, {{ inv.seller.district or '' }}, {{ inv.seller.country or 'Saudi Arabia' }}
+    &nbsp;|&nbsp; Tel: {{ inv.seller.phone or '0' }} &nbsp;|&nbsp; Fax: {{ inv.seller.fax or '0' }}
+    &nbsp;|&nbsp; Postal Code: {{ inv.seller.postal_code or '' }}
+    &nbsp;|&nbsp; Add. No: {{ inv.seller.additional_number or '' }}
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+// Amount in words
+const balance = {{ inv.balance_due or 0 }};
+const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+function toWords(n) {
+  if(n<20) return ones[n];
+  if(n<100) return tens[Math.floor(n/10)]+(n%10?' '+ones[n%10]:'');
+  if(n<1000) return ones[Math.floor(n/100)]+' Hundred'+(n%100?' '+toWords(n%100):'');
+  if(n<1000000) return toWords(Math.floor(n/1000))+' Thousand'+(n%1000?' '+toWords(n%1000):'');
+  return toWords(Math.floor(n/1000000))+' Million'+(n%1000000?' '+toWords(n%1000000):'');
+}
+const p = Math.abs(balance).toFixed(2).split('.');
+const words = (toWords(parseInt(p[0]))||'Zero') + ' and ' + p[1] + ' halalas only.';
+document.getElementById('words_en').textContent = words.charAt(0).toUpperCase() + words.slice(1);
+</script>
+</body>
+</html>

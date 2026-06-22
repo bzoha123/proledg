@@ -53,6 +53,7 @@ def create_app(config_name='default'):
     from routes.banks import banks_bp
     from routes.employees import employees_bp
     from routes.work_allocations import wa_bp
+    from routes.invoices import inv_bp
     from routes.lookups import lookups_bp
 
     app.register_blueprint(auth_bp)
@@ -61,6 +62,7 @@ def create_app(config_name='default'):
     app.register_blueprint(banks_bp)
     app.register_blueprint(employees_bp)
     app.register_blueprint(wa_bp)
+    app.register_blueprint(inv_bp)
     app.register_blueprint(lookups_bp)
 
     # Error handlers

@@ -1,0 +1,893 @@
+{% extends "base.html" %}
+{% set ar = current_locale == 'ar' %}
+{% block title %}{% if ar %}الفواتير{% else %}Invoices{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
+<style>
+/* ── AG-Grid ── */
+.ag-theme-alpine{--ag-font-family:'Segoe UI',Tahoma,sans-serif;--ag-font-size:13px;--ag-header-background-color:#1e3a5f;--ag-header-foreground-color:#fff;--ag-border-color:#e2e8f0;--ag-row-border-color:#f1f5f9;--ag-row-hover-color:#f0f7ff;--ag-header-height:46px;--ag-row-height:46px;--ag-filter-tool-panel-header-height:28px;}
+.ag-theme-alpine .ag-header-cell-label{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.3px;}
+.ag-theme-alpine .ag-header-cell,.ag-theme-alpine .ag-cell{border-right:1px solid rgba(255,255,255,.08)!important;}
+.ag-theme-alpine .ag-header-cell{border-right:1px solid rgba(255,255,255,.15)!important;}
+/* ── Filter popup — ProLedg style ── */
+.ag-theme-alpine .ag-filter{font-family:'Segoe UI',Tahoma,sans-serif;font-size:12px;min-width:260px;border-radius:8px!important;box-shadow:0 4px 20px rgba(0,0,0,.15)!important;border:1px solid #e2e8f0!important;overflow:hidden;}
+.ag-theme-alpine .ag-filter-condition-operator{padding:6px 8px;background:#f8fafc;border-bottom:1px solid #e2e8f0;}
+.ag-theme-alpine .ag-filter-select .ag-picker-field-wrapper{border:1.5px solid #d1d5db;border-radius:6px;padding:4px 8px;font-size:12px;background:white;}
+.ag-theme-alpine .ag-filter-select .ag-picker-field-wrapper:focus-within{border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.1);}
+.ag-theme-alpine .ag-filter-filter{padding:6px 8px;}
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input{border:1.5px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:12px;width:100%;}
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.1);}
+.ag-theme-alpine .ag-filter-apply-panel{padding:8px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;gap:6px;justify-content:space-between;}
+.ag-theme-alpine .ag-filter-apply-panel-button{padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;border:none;cursor:pointer;}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"]{background:white;color:#374151;border:1.5px solid #d1d5db;}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"]{background:white;color:#374151;border:1.5px solid #d1d5db;}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]{background:linear-gradient(135deg,#16a34a,#15803d);color:white;}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="cancelFilterButton"]{background:white;color:#374151;border:1.5px solid #d1d5db;}
+.ag-theme-alpine .ag-filter-add-join-condition{padding:4px 8px;}
+.ag-theme-alpine .ag-filter-add-join-condition .ag-button{color:#2563eb;font-size:12px;font-weight:600;background:none;border:none;cursor:pointer;}
+.ag-theme-alpine .ag-filter-add-join-condition .ag-button:hover{text-decoration:underline;}
+/* Floating filter row */
+.ag-theme-alpine .ag-floating-filter-input .ag-input-field-input{border:1px solid #d1d5db;border-radius:5px;padding:3px 7px;font-size:11px;}
+.ag-theme-alpine .ag-floating-filter-input .ag-input-field-input:focus{outline:none;border-color:#2563eb;}
+.ag-theme-alpine .ag-floating-filter-button-button{color:#6b7280;border:none;background:none;cursor:pointer;padding:2px 4px;}
+.ag-theme-alpine .ag-floating-filter-button-button:hover{color:#2563eb;}
+/* Header filter icon */
+.ag-theme-alpine .ag-header-icon.ag-header-label-icon{color:rgba(255,255,255,.7);}
+.ag-theme-alpine .ag-header-icon.ag-header-label-icon.ag-filter-active{color:#fbbf24;}
+/* Sort icons */
+.ag-theme-alpine .ag-sort-ascending-icon,.ag-theme-alpine .ag-sort-descending-icon,.ag-theme-alpine .ag-sort-none-icon{color:rgba(255,255,255,.8);}
+.inv-no{background:#eff6ff;color:#1d4ed8;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:700;letter-spacing:.3px;}
+.inv-no.dr{background:#fef3c7;color:#92400e;}
+.inv-no.cr{background:#fce7f3;color:#9d174d;}
+.inv-no.sim{background:#f0fdf4;color:#166534;}
+.st-active{background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
+.sar-val{font-weight:600;color:#111827;font-variant-numeric:tabular-nums;}
+.sar-val.positive{color:#16a34a;}
+.sar-val.negative{color:#dc2626;}
+/* Action buttons — ProLedg exact colors */
+.ag-act-cell{display:flex;align-items:center;gap:3px;}
+.ag-ab{width:28px;height:28px;border-radius:7px;border:none;display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all .12s;}
+.ag-ab-view{background:#0ea5e9;color:white;}.ag-ab-view:hover{background:#0284c7;}
+.ag-ab-print{background:#16a34a;color:white;}.ag-ab-print:hover{background:#15803d;}
+.ag-ab-edit{background:#f59e0b;color:white;}.ag-ab-edit:hover{background:#d97706;}
+.ag-ab-pay{background:#6b7280;color:white;}.ag-ab-pay:hover{background:#4b5563;}
+.ag-ab-pay.active{background:#f59e0b;color:white;}.ag-ab-pay.active:hover{background:#d97706;}
+.ag-ab-del{background:#ef4444;color:white;}.ag-ab-del:hover{background:#dc2626;}
+.ag-ab-up{background:#8b5cf6;color:white;}.ag-ab-up:hover{background:#7c3aed;}
+/* Modal */
+.inv-hdr{padding:18px 24px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#1e3a5f,#2563eb);}
+.inv-hdr h5{margin:0;font-weight:700;font-size:16px;color:white;}
+.inv-hdr .inv-type-badge{background:rgba(255,255,255,.2);color:white;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;margin-left:10px;}
+.inv-footer{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#f8fafc;border-top:2px solid #e2e8f0;}
+.btn-f{display:inline-flex;align-items:center;gap:7px;padding:9px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.btn-f-save{background:linear-gradient(135deg,#16a34a,#15803d);color:white;box-shadow:0 2px 8px rgba(22,163,74,.3);}
+.btn-f-save:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.4);}
+.btn-f-cancel{background:white;color:#374151;border:1.5px solid #d1d5db;}
+/* Accordion */
+.acc-panel{border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden;transition:box-shadow .15s;}
+.acc-panel:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.acc-btn{width:100%;background:white;border:none;padding:13px 18px;text-align:left;font-weight:600;font-size:13px;color:#1e3a5f;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .1s;}
+.acc-btn:hover{background:#f8fafc;}
+.acc-btn.open{background:#f0f7ff;border-bottom:1.5px solid #e2e8f0;}
+.acc-icon{width:28px;height:28px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;margin-right:10px;font-size:12px;background:#e0f2fe;color:#0284c7;flex-shrink:0;}
+.acc-btn.open .acc-icon{background:#2563eb;color:white;}
+.acc-body{padding:18px 20px;display:none;background:white;}
+.acc-body.show{display:block;}
+/* Form fields */
+.f-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:13px;}
+.f-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:13px;}
+.f-item{display:flex;flex-direction:column;}
+.f-lbl{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+.f-req{color:#ef4444;margin-left:2px;}
+.f-inp{border:1.5px solid #d1d5db;border-radius:8px;padding:9px 13px;font-size:13px;width:100%;font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:white;transition:border-color .15s,box-shadow .15s;}
+.f-inp:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.f-inp[readonly]{background:#f8fafc;color:#374151;cursor:default;}
+.f-inp.auto-no{background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:#15803d;font-weight:700;font-size:14px;border-color:#86efac;letter-spacing:.5px;}
+select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;}
+/* Line items */
+.li-wrap{overflow-x:auto;border:1.5px solid #e2e8f0;border-radius:8px;}
+.li-table{width:100%;border-collapse:collapse;font-size:12px;min-width:900px;}
+.li-table thead tr{background:#1e3a5f;}
+.li-table th{padding:10px 10px;font-weight:600;color:white;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;}
+.li-table td{padding:6px 6px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+.li-table tbody tr:hover td{background:#f9fafb;}
+.li-table tbody tr:nth-child(even) td{background:#fafbfc;}
+.li-inp{border:1.5px solid #e5e7eb;border-radius:6px;padding:6px 9px;font-size:12px;width:100%;font-family:inherit;transition:border-color .15s;}
+.li-inp:focus{outline:none;border-color:#2563eb;background:#fffff;}
+.li-inp[readonly]{background:#f3f4f6;color:#374151;}
+select.li-inp{appearance:none;padding-right:22px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;}
+/* Summary card */
+.summary-card{background:linear-gradient(135deg,#f8fafc,#f0f7ff);border:1.5px solid #bfdbfe;border-radius:10px;padding:18px 20px;}
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed #e2e8f0;font-size:13px;}
+.sum-row:last-child{border-bottom:none;}
+.sum-lbl{color:#374151;font-weight:500;}
+.sum-lbl.ar{direction:rtl;}
+.sum-val{font-weight:700;color:#1e3a5f;font-variant-numeric:tabular-nums;}
+.sum-balance{background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;padding:12px 16px;border-radius:8px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;}
+.sum-balance .lbl{font-size:13px;font-weight:600;opacity:.9;}
+.sum-balance .val{font-size:18px;font-weight:700;}
+.words-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+/* Hijri date note */
+.hijri-note{font-size:10px;color:#7c3aed;background:#f5f3ff;border-radius:4px;padding:2px 6px;margin-top:3px;display:inline-block;}
+/* Toolbar */
+.inv-stat-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.inv-stat{background:white;border:1.5px solid #e2e8f0;border-radius:8px;padding:10px 16px;min-width:120px;text-align:center;}
+.inv-stat .stat-num{font-size:18px;font-weight:700;color:#1e3a5f;}
+.inv-stat .stat-lbl{font-size:11px;color:#6b7280;margin-top:2px;}
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
+<li class="breadcrumb-item active">{% if ar %}الفواتير{% else %}Invoices{% endif %}</li>
+{% endblock %}
+
+{% block content %}
+<div class="proledg-page">
+  <h2 class="page-heading">{% if ar %}الفواتير{% else %}Invoices{% endif %}</h2>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button class="tool-btn tool-btn-green" onclick="openAddInv()"><i class="fas fa-plus"></i></button>
+      <button class="tool-btn tool-btn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
+      <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'invoices.csv'})"><i class="fas fa-file-csv"></i></button>
+      <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null);document.getElementById('qs').value='';gridApi.setGridOption('quickFilterText','')"><i class="fas fa-times-circle"></i></button>
+    </div>
+    <div class="toolbar-right d-flex align-items-center gap-3">
+      <span style="font-size:12px;font-weight:600;color:#6b7280;" id="selText">–</span>
+      <div class="search-form">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="qs" class="search-input" style="width:220px"
+               placeholder="{% if ar %}بحث في الفواتير...{% else %}Search invoices...{% endif %}"
+               oninput="gridApi&&gridApi.setGridOption('quickFilterText',this.value)">
+      </div>
+    </div>
+  </div>
+
+  <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);">
+    <div id="invGrid" class="ag-theme-alpine" style="width:100%;height:520px;"></div>
+  </div>
+  <div class="proledg-pagination"><span class="page-count" id="pageInfo">–</span></div>
+</div>
+
+{# ══ ADD / EDIT MODAL ══════════════════════════════════════════ #}
+<div class="modal fade" id="invModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width:1050px;">
+    <div class="modal-content" style="border:none;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+
+      <div class="inv-hdr">
+        <div style="display:flex;align-items:center;">
+          <h5 id="invModalTitle"><i class="fas fa-file-invoice-dollar me-2"></i>Add Invoice</h5>
+          <span class="inv-type-badge" id="invTypeBadge">STDCR</span>
+        </div>
+        <button type="button" class="btn-close" style="filter:brightness(0) invert(1);" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;">
+        <form id="invForm" method="POST" action="{{ url_for('invoices.add_invoice') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" id="invFormId" name="_inv_id">
+          <div style="padding:16px 20px;">
+
+            {# ── Accordion 1: Basic Invoice Info ── #}
+            <div class="acc-panel">
+              <button type="button" class="acc-btn open" onclick="togAcc('acc1')">
+                <div style="display:flex;align-items:center;">
+                  <i class="acc-icon fas fa-file-alt"></i>
+                  <span>{% if ar %}معلومات الفاتورة الأساسية / Basic Invoice Information{% else %}Basic Invoice Information / معلومات الفاتورة الأساسية{% endif %}</span>
+                </div>
+                <i class="fas fa-chevron-up" id="ch_acc1" style="color:#2563eb;font-size:11px;"></i>
+              </button>
+              <div class="acc-body show" id="acc1">
+
+                <div class="f-grid2">
+                  {# Transaction Type #}
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}نوع المعاملة{% else %}Transaction Type{% endif %}<span class="f-req">*</span></div>
+                    <select name="dr_cr_type" id="inv_type" class="f-inp" required onchange="onTypeChange()">
+                      <option value="STDINV">Standard Invoice (S)</option>
+                      <option value="STDDR">Standard Debit (DR)</option>
+                      <option value="STDCR" selected>Standard Credit (CR)</option>
+                      <option value="SIMINV">Simplified Invoice (SIM)</option>
+                      <option value="SIMCR">Simplified Credit (CR)</option>
+                      <option value="SIMDR">Simplified Debit (DR)</option>
+                    </select>
+                  </div>
+                  {# Payment Type #}
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}طريقة الدفع{% else %}Payment Type{% endif %}<span class="f-req">*</span></div>
+                    <select name="payment_type" id="inv_payment_type" class="f-inp" required>
+                      <option value="cash">{% if ar %}نقدي / In Cash{% else %}In Cash{% endif %}</option>
+                      <option value="credit" selected>{% if ar %}آجل / Credit{% else %}Credit{% endif %}</option>
+                      <option value="bank_card">{% if ar %}بطاقة بنكية / Bank Card{% else %}Bank Card{% endif %}</option>
+                      <option value="bank_account">{% if ar %}تحويل بنكي / Payment to Bank Account{% else %}Payment to Bank Account{% endif %}</option>
+                      <option value="not_defined">{% if ar %}أداة غير محددة / Instrument Not Defined{% else %}Instrument Not Defined{% endif %}</option>
+                    </select>
+                  </div>
+                </div>
+
+                {# Auto Invoice No (readonly) #}
+                <div class="f-grid2">
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}رقم الفاتورة (تلقائي){% else %}Invoice No (Auto-generated){% endif %}</div>
+                    <input type="text" id="inv_no_display" class="f-inp auto-no" readonly
+                           placeholder="{% if ar %}سيتم التوليد تلقائياً{% else %}Auto-generated on save{% endif %}">
+                  </div>
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}رقم أمر الشراء{% else %}PO Number{% endif %}</div>
+                    <input type="text" name="po_number" id="inv_po" class="f-inp" maxlength="50"
+                           placeholder="{% if ar %}رقم أمر الشراء{% else %}PO Number{% endif %}">
+                  </div>
+                </div>
+
+                <div class="f-grid3">
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}تاريخ الفاتورة{% else %}Invoice Date{% endif %}<span class="f-req">*</span></div>
+                    <input type="{% if ar %}text{% else %}date{% endif %}" name="invoice_date" id="inv_date" class="f-inp" dir="ltr" required
+                           placeholder="{% if ar %}YYYY-MM-DD (هجري){% else %}YYYY-MM-DD{% endif %}">
+                    {% if ar %}<span class="hijri-note"><i class="fas fa-moon"></i> التاريخ بالتقويم الهجري</span>{% endif %}
+                  </div>
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}تاريخ الاستحقاق{% else %}Due Date{% endif %}</div>
+                    <input type="{% if ar %}text{% else %}date{% endif %}" name="due_date" id="inv_due" class="f-inp" dir="ltr"
+                           placeholder="{% if ar %}YYYY-MM-DD (هجري){% else %}YYYY-MM-DD{% endif %}">
+                  </div>
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}الشهر{% else %}Month{% endif %}<span class="f-req">*</span></div>
+                    <input type="text" name="month" id="inv_month" class="f-inp" required
+                           placeholder="{% if ar %}مثال: رجب/46{% else %}e.g. Jun/26{% endif %}">
+                  </div>
+                </div>
+
+                <div class="f-grid2">
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}بداية الفترة{% else %}Period Start{% endif %}</div>
+                    <input type="{% if ar %}text{% else %}date{% endif %}" name="period_start" id="inv_pstart" class="f-inp" dir="ltr">
+                  </div>
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}نهاية الفترة{% else %}Period End{% endif %}</div>
+                    <input type="{% if ar %}text{% else %}date{% endif %}" name="period_end" id="inv_pend" class="f-inp" dir="ltr">
+                  </div>
+                </div>
+
+                <div class="f-grid2">
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}نوع الفاتورة{% else %}Invoice Type{% endif %}</div>
+                    <input type="text" name="invoice_type" id="inv_invtype" class="f-inp" maxlength="50">
+                  </div>
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}قسم الفاتورة{% else %}Invoice Department{% endif %}</div>
+                    <input type="text" name="invoice_department" id="inv_dept" class="f-inp" maxlength="100">
+                  </div>
+                </div>
+
+                <div class="f-item" style="margin-bottom:0;">
+                  <div class="f-lbl">{% if ar %}مرجع المشروع{% else %}Project Reference{% endif %}</div>
+                  <input type="text" name="project_reference" id="inv_proj_ref" class="f-inp" maxlength="100">
+                </div>
+
+              </div>
+            </div>
+
+            {# ── Accordion 2: Seller ── #}
+            <div class="acc-panel">
+              <button type="button" class="acc-btn" onclick="togAcc('acc2')">
+                <div style="display:flex;align-items:center;">
+                  <i class="acc-icon fas fa-building"></i>
+                  <span>{% if ar %}معلومات البائع / Seller Information{% else %}Seller Information / معلومات البائع{% endif %}</span>
+                </div>
+                <i class="fas fa-chevron-down" id="ch_acc2" style="color:#9ca3af;font-size:11px;"></i>
+              </button>
+              <div class="acc-body" id="acc2">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}البائع{% else %}Seller{% endif %}<span class="f-req">*</span></div>
+                  <select name="seller_id" id="inv_seller" class="f-inp" required>
+                    <option value="">{% if ar %}-- اختر البائع --{% else %}-- Select Seller --{% endif %}</option>
+                    {% for s in sellers %}
+                    <option value="{{ s.id }}">{{ s.name }}{% if s.name_ar %} / {{ s.name_ar }}{% endif %}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {# ── Accordion 3: Buyer ── #}
+            <div class="acc-panel">
+              <button type="button" class="acc-btn" onclick="togAcc('acc3')">
+                <div style="display:flex;align-items:center;">
+                  <i class="acc-icon fas fa-users"></i>
+                  <span>{% if ar %}معلومات المشتري / Buyer Information{% else %}Buyer Information / معلومات المشتري{% endif %}</span>
+                </div>
+                <i class="fas fa-chevron-down" id="ch_acc3" style="color:#9ca3af;font-size:11px;"></i>
+              </button>
+              <div class="acc-body" id="acc3">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}المشتري{% else %}Buyer{% endif %}<span class="f-req">*</span></div>
+                  <select name="buyer_id" id="inv_buyer" class="f-inp" required>
+                    <option value="">{% if ar %}-- اختر المشتري --{% else %}-- Select Buyer --{% endif %}</option>
+                    {% for b in buyers %}
+                    <option value="{{ b.id }}">{{ b.buyer_name_en }}{% if b.buyer_name_ar %} / {{ b.buyer_name_ar }}{% endif %}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {# ── Accordion 4: Line Items ── #}
+            <div class="acc-panel">
+              <button type="button" class="acc-btn" onclick="togAcc('acc4')">
+                <div style="display:flex;align-items:center;">
+                  <i class="acc-icon fas fa-list-ul"></i>
+                  <span>{% if ar %}بنود الفاتورة / Line Items{% else %}Line Items / بنود الفاتورة{% endif %}</span>
+                </div>
+                <i class="fas fa-chevron-down" id="ch_acc4" style="color:#9ca3af;font-size:11px;"></i>
+              </button>
+              <div class="acc-body" id="acc4">
+                <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+                  <button type="button" onclick="addLineItem()"
+                          style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:#2563eb;color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">
+                    <i class="fas fa-plus"></i>{% if ar %}إضافة بند{% else %}Add Line Item{% endif %}
+                  </button>
+                  <span style="font-size:11px;color:#6b7280;">
+                    <i class="fas fa-info-circle me-1"></i>
+                    {% if ar %}أدخل اسم الموظف يدوياً{% else %}Enter employee name manually{% endif %}
+                  </span>
+                </div>
+                <div class="li-wrap">
+                  <table class="li-table" id="liTable">
+                    <thead>
+                      <tr>
+                        <th style="width:36px;text-align:center;">#</th>
+                        <th style="min-width:160px;">{% if ar %}الموظف{% else %}Employee{% endif %}</th>
+                        <th style="width:110px;">{% if ar %}وحدة القياس{% else %}UoM{% endif %}</th>
+                        <th style="width:85px;">{% if ar %}الكمية{% else %}Qty{% endif %}</th>
+                        <th style="width:85px;">{% if ar %}السعر{% else %}Rate{% endif %}</th>
+                        <th style="width:80px;">{% if ar %}الخصم{% else %}Discount{% endif %}</th>
+                        <th style="width:65px;text-align:center;">{% if ar %}خاضع{% else %}Taxable{% endif %}</th>
+                        <th style="width:65px;">{% if ar %}ضريبة%{% else %}Tax %{% endif %}</th>
+                        <th style="width:85px;">{% if ar %}مبلغ الضريبة{% else %}Tax Amt{% endif %}</th>
+                        <th style="width:90px;">{% if ar %}الإجمالي{% else %}Total{% endif %}</th>
+                        <th style="width:36px;"></th>
+                      </tr>
+                    </thead>
+                    <tbody id="liBody"></tbody>
+                    <tfoot>
+                      <tr style="background:#f1f5f9;">
+                        <td colspan="9" style="padding:8px 12px;font-weight:600;font-size:12px;color:#374151;text-align:right;">
+                          {% if ar %}المجموع{% else %}Subtotal{% endif %}
+                        </td>
+                        <td style="padding:8px 10px;font-weight:700;color:#1e3a5f;font-size:13px;" id="li_subtotal">SAR 0.00</td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {# ── Invoice Summary ── #}
+            <div style="margin-top:12px;">
+              <div style="font-size:11px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                <i class="fas fa-calculator" style="color:#2563eb;"></i>
+                {% if ar %}ملخص الفاتورة / Invoice Summary{% else %}Invoice Summary / ملخص الفاتورة{% endif %}
+              </div>
+              <div class="summary-card">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 30px;">
+                  <div>
+                    <div class="sum-row"><span class="sum-lbl">{% if ar %}الإجمالي الإجمالي{% else %}Gross Total{% endif %}</span><span class="sum-val" id="s_gross">SAR 0.00</span></div>
+                    <div class="sum-row"><span class="sum-lbl">{% if ar %}إجمالي الخصم{% else %}Total Discount{% endif %}</span><span class="sum-val" id="s_disc">SAR 0.00</span></div>
+                    <div class="sum-row"><span class="sum-lbl">{% if ar %}الإجمالي بدون ضريبة{% else %}Total Excl. VAT{% endif %}</span><span class="sum-val" id="s_excl">SAR 0.00</span></div>
+                    <div class="sum-row"><span class="sum-lbl">{% if ar %}مبلغ ضريبة القيمة المضافة{% else %}VAT Amount{% endif %}</span><span class="sum-val" id="s_vat">SAR 0.00</span></div>
+                  </div>
+                  <div>
+                    <div class="sum-row"><span class="sum-lbl">{% if ar %}الإجمالي شامل الضريبة{% else %}Total Incl. VAT{% endif %}</span><span class="sum-val" id="s_incl">SAR 0.00</span></div>
+                    <div class="sum-row" style="align-items:flex-start;">
+                      <span class="sum-lbl" style="padding-top:6px;">{% if ar %}نسبة الاحتجاز (%){% else %}Retention (%){% endif %}</span>
+                      <input type="number" name="retention_pct" id="s_ret_pct" class="f-inp" min="0" max="100" step="0.01" value="0"
+                             style="width:80px;text-align:right;padding:5px 8px;font-size:13px;" oninput="recalcSummary()">
+                    </div>
+                    <div class="sum-row"><span class="sum-lbl">{% if ar %}خصم: الاحتجاز{% else %}Less: Retention{% endif %}</span><span class="sum-val" id="s_ret_amt">SAR 0.00</span></div>
+                    <div class="sum-row" style="border:none;"></div>
+                  </div>
+                </div>
+                <div class="sum-balance">
+                  <span class="lbl">{% if ar %}الرصيد المستحق (ريال سعودي) / Balance Due (SAR){% else %}Balance Due (SAR) / الرصيد المستحق{% endif %}</span>
+                  <span class="val" id="s_balance">SAR 0.00</span>
+                </div>
+                <div class="words-row">
+                  <div>
+                    <div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:4px;">Amount in Words</div>
+                    <input type="text" id="s_words_en" class="f-inp" readonly style="font-size:11px;">
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:4px;text-align:right;">المبلغ بالكلمات</div>
+                    <input type="text" id="s_words_ar" class="f-inp" readonly dir="rtl" style="font-size:11px;">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </form>
+      </div>
+
+      <div class="inv-footer">
+        <button type="button" class="btn-f btn-f-cancel" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>{% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}
+        </button>
+        <button type="button" class="btn-f btn-f-save" onclick="submitInv()">
+          <i class="fas fa-save me-1"></i>{% if ar %}حفظ الفاتورة / Save{% else %}Save Invoice / حفظ{% endif %}
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{# Payment modal #}
+<div class="modal fade" id="pmtModal" tabindex="-1">
+  <div class="modal-dialog modal-md"><div class="modal-content" style="border-radius:10px;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#d97706,#b45309);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
+      <h6 style="margin:0;color:white;font-weight:700;"><i class="fas fa-money-bill-wave me-2"></i>{% if ar %}إضافة دفعة / Add Payment{% else %}Add Payment / إضافة دفعة{% endif %}</h6>
+      <button type="button" class="btn-close" style="filter:brightness(0) invert(1);" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pmt_inv_id">
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;">{% if ar %}الرصيد المستحق{% else %}Balance Due{% endif %}</div>
+        <div id="pmt_balance" style="font-size:18px;font-weight:700;color:#15803d;"></div>
+      </div>
+      <div class="f-grid2">
+        <div class="f-item">
+          <div class="f-lbl">{% if ar %}تاريخ الدفع{% else %}Payment Date{% endif %}<span class="f-req">*</span></div>
+          <input type="date" id="pmt_date" class="f-inp" dir="ltr">
+        </div>
+        <div class="f-item">
+          <div class="f-lbl">{% if ar %}المبلغ{% else %}Amount{% endif %}<span class="f-req">*</span></div>
+          <input type="number" id="pmt_amount" class="f-inp" step="0.01" min="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="f-grid2">
+        <div class="f-item">
+          <div class="f-lbl">{% if ar %}طريقة الدفع{% else %}Method{% endif %}</div>
+          <select id="pmt_method" class="f-inp">
+            <option value="bank_transfer">{% if ar %}تحويل بنكي{% else %}Bank Transfer{% endif %}</option>
+            <option value="cash">{% if ar %}نقدي{% else %}Cash{% endif %}</option>
+            <option value="cheque">{% if ar %}شيك{% else %}Cheque{% endif %}</option>
+          </select>
+        </div>
+        <div class="f-item">
+          <div class="f-lbl">{% if ar %}المرجع{% else %}Reference{% endif %}</div>
+          <input type="text" id="pmt_ref" class="f-inp" maxlength="100">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer border-0" style="background:#f8fafc;">
+      <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+      <button class="btn btn-sm fw-bold" style="background:#d97706;color:white;" onclick="savePayment()">
+        <i class="fas fa-check me-1"></i>{% if ar %}حفظ الدفعة{% else %}Save Payment{% endif %}
+      </button>
+    </div>
+  </div></div>
+</div>
+
+
+{# Upload modal #}
+<div class="modal fade" id="uploadModal" tabindex="-1">
+  <div class="modal-dialog modal-sm"><div class="modal-content" style="border-radius:10px;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#7e22ce,#6d28d9);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
+      <h6 style="margin:0;color:white;font-weight:700;"><i class="fas fa-cloud-download-alt me-2"></i>{% if ar %}تنزيل الفاتورة{% else %}Download Invoice{% endif %}</h6>
+      <button type="button" class="btn-close" style="filter:brightness(0) invert(1);" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="upload_inv_id">
+      <input type="hidden" id="upload_inv_no">
+      <p style="font-size:13px;color:#374151;margin-bottom:14px;">
+        {% if ar %}اختر صيغة التنزيل للفاتورة:{% else %}Choose download format for invoice:{% endif %}
+      </p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-sm btn-outline-danger w-100" onclick="downloadAs('pdf')" style="justify-content:flex-start;display:flex;align-items:center;gap:8px;padding:8px 12px;">
+          <i class="fas fa-file-pdf" style="color:#dc2626;"></i>{% if ar %}تنزيل PDF{% else %}Download as PDF{% endif %}
+        </button>
+        <button class="btn btn-sm btn-outline-success w-100" onclick="downloadAs('print')" style="justify-content:flex-start;display:flex;align-items:center;gap:8px;padding:8px 12px;">
+          <i class="fas fa-print" style="color:#16a34a;"></i>{% if ar %}فتح للطباعة{% else %}Open Print View{% endif %}
+        </button>
+        <button class="btn btn-sm btn-outline-primary w-100" onclick="downloadAs('view')" style="justify-content:flex-start;display:flex;align-items:center;gap:8px;padding:8px 12px;">
+          <i class="fas fa-eye" style="color:#2563eb;"></i>{% if ar %}عرض الفاتورة{% else %}View Invoice{% endif %}
+        </button>
+      </div>
+      <div id="upload_result" style="font-size:12px;font-weight:600;margin-top:8px;"></div>
+    </div>
+    <div class="modal-footer border-0" style="background:#f8fafc;">
+      <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إغلاق{% else %}Close{% endif %}</button>
+    </div>
+  </div></div>
+</div>
+
+{# Delete confirm #}
+<div class="modal fade" id="delModal" tabindex="-1">
+  <div class="modal-dialog modal-sm"><div class="modal-content" style="border-radius:10px;overflow:hidden;">
+    <div class="modal-header border-0"><h6 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>{% if ar %}تأكيد الحذف{% else %}Confirm Delete{% endif %}</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body"><p id="delTxt" class="mb-0 fw-semibold"></p></div>
+    <div class="modal-footer border-0">
+      <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+      <form id="delForm" method="POST" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-sm btn-danger">{% if ar %}حذف{% else %}Delete{% endif %}</button></form>
+    </div>
+  </div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script>
+const CSRF     = '{{ csrf_token() }}';
+const IS_AR    = {{ 'true' if ar else 'false' }};
+const DATA_URL = '{{ url_for("invoices.invoices_data") }}';
+const ADD_URL  = '{{ url_for("invoices.add_invoice") }}';
+const NEXT_NO  = '{{ url_for("invoices.next_no") }}';
+
+let _lineIdx = 0;
+
+/* ══ Type labels ══ */
+const TYPE_LABELS = {
+  STDINV:'Standard Invoice (S)', STDDR:'Standard Debit (DR)', STDCR:'Standard Credit (CR)',
+  SIMINV:'Simplified Invoice (SIM)', SIMCR:'Simplified Credit (CR)', SIMDR:'Simplified Debit (DR)'
+};
+
+/* ══ Accordion ══ */
+function togAcc(id) {
+  const body=document.getElementById(id);
+  const btn=body.previousElementSibling;
+  const ch=document.getElementById('ch_'+id);
+  const open=body.classList.contains('show');
+  body.classList.toggle('show',!open);
+  btn.classList.toggle('open',!open);
+  if(ch){ ch.className=open?'fas fa-chevron-down':'fas fa-chevron-up'; ch.style.cssText=open?'color:#9ca3af;font-size:11px;':'color:#2563eb;font-size:11px;'; }
+}
+
+/* ══ Transaction type → auto invoice no + badge ══ */
+function onTypeChange() {
+  const t = document.getElementById('inv_type').value;
+  const badge = document.getElementById('invTypeBadge');
+  if(badge) badge.textContent = t;
+  fetch(NEXT_NO+'?type='+t).then(r=>r.json()).then(d=>{
+    document.getElementById('inv_no_display').value = d.invoice_no;
+  });
+}
+
+/* ══ Line Items ══ */
+function addLineItem(data) {
+  const idx = _lineIdx++;
+  const d = data || {};
+  const row = `<tr id="li_${idx}">
+    <td style="text-align:center;color:#9ca3af;font-size:12px;padding:6px 4px;">${_lineIdx}</td>
+    <td><input type="text" class="li-inp" name="li_employee[]" value="${d.employee_name||''}"
+               placeholder="${IS_AR?'اسم الموظف':'Employee name'}" style="min-width:140px;"></td>
+    <td><select class="li-inp" name="li_uom[]">
+      <option value="hour" ${(!d.uom||d.uom=='hour')?'selected':''}>Hour / ساعة</option>
+      <option value="day" ${d.uom=='day'?'selected':''}>Day / يوم</option>
+      <option value="month" ${d.uom=='month'?'selected':''}>Month / شهر</option>
+      <option value="unit" ${d.uom=='unit'?'selected':''}>Unit / وحدة</option>
+    </select></td>
+    <td><input type="number" class="li-inp" name="li_qty[]" value="${d.quantity||0}" min="0" step="0.01" oninput="recalcRow(${idx})" style="width:75px;"></td>
+    <td><input type="number" class="li-inp" name="li_rate[]" id="rate_${idx}" value="${d.rate||0}" min="0" step="0.01" oninput="recalcRow(${idx})" style="width:75px;"></td>
+    <td><input type="number" class="li-inp" name="li_discount[]" value="${d.discount||0}" min="0" step="0.01" oninput="recalcRow(${idx})" style="width:70px;"></td>
+    <td style="text-align:center;">
+      <input type="checkbox" id="tax_cb_${idx}" ${d.taxable===false?'':'checked'} style="width:15px;height:15px;cursor:pointer;">
+      <input type="hidden" id="taxable_hid_${idx}" name="li_taxable[]" value="${d.taxable===false?'false':'true'}">
+    </td>
+    <td><input type="number" class="li-inp" name="li_tax_rate[]" id="taxrate_${idx}" value="${d.tax_rate||15}" min="0" max="100" step="0.01" oninput="recalcRow(${idx})" style="width:55px;"></td>
+    <td><input type="number" class="li-inp" id="taxamt_${idx}" name="li_tax_amount[]" value="${d.tax_amount||0}" readonly style="width:75px;background:#f3f4f6;"></td>
+    <td><input type="number" class="li-inp" id="total_${idx}" name="li_total[]" value="${d.total||0}" readonly style="width:80px;background:#f0fdf4;font-weight:700;color:#166534;"></td>
+    <td><button type="button" onclick="removeRow(${idx})"
+                style="width:24px;height:24px;border-radius:5px;border:none;background:#fee2e2;color:#b91c1c;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">
+      <i class="fas fa-times" style="font-size:9px;"></i></button></td>
+  </tr>`;
+  document.getElementById('liBody').insertAdjacentHTML('beforeend', row);
+  const cb = document.getElementById('tax_cb_'+idx);
+  const hid = document.getElementById('taxable_hid_'+idx);
+  cb.onchange = ()=>{ hid.value = cb.checked?'true':'false'; recalcRow(idx); };
+  recalcRow(idx);
+}
+
+function removeRow(idx) {
+  const r=document.getElementById('li_'+idx); if(r) r.remove(); recalcSummary();
+}
+
+function recalcRow(idx) {
+  const row=document.getElementById('li_'+idx); if(!row) return;
+  const get=name=>parseFloat(row.querySelector(`[name="${name}[]"]`)?.value||0)||0;
+  const qty=get('li_qty'), rate=get('li_rate'), disc=get('li_discount');
+  const taxable=document.getElementById('tax_cb_'+idx)?.checked??true;
+  const tax_rate=get('li_tax_rate');
+  const subtotal=qty*rate-disc;
+  const tax_amt=taxable?Math.round(subtotal*tax_rate/100*100)/100:0;
+  const total=subtotal+tax_amt;
+  const ta=document.getElementById('taxamt_'+idx); if(ta) ta.value=tax_amt.toFixed(2);
+  const tt=document.getElementById('total_'+idx); if(tt) tt.value=total.toFixed(2);
+  recalcSummary();
+}
+
+function recalcSummary() {
+  let gross=0,disc=0,vat=0;
+  document.querySelectorAll('#liBody tr').forEach(row=>{
+    const get=name=>parseFloat(row.querySelector(`[name="${name}[]"]`)?.value||0)||0;
+    gross+=get('li_qty')*get('li_rate');
+    disc+=get('li_discount');
+    vat+=parseFloat(row.querySelector('[name="li_tax_amount[]"]')?.value||0)||0;
+  });
+  const excl=gross-disc, incl=excl+vat;
+  const ret_pct=parseFloat(document.getElementById('s_ret_pct')?.value||0)||0;
+  const ret_amt=Math.round(incl*ret_pct/100*100)/100;
+  const balance=incl-ret_amt;
+  const fmt=n=>'SAR '+n.toLocaleString('en-SA',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('s_gross').textContent=fmt(gross);
+  document.getElementById('s_disc').textContent=fmt(disc);
+  document.getElementById('s_excl').textContent=fmt(excl);
+  document.getElementById('s_vat').textContent=fmt(vat);
+  document.getElementById('s_incl').textContent=fmt(incl);
+  document.getElementById('s_ret_amt').textContent=fmt(ret_amt);
+  document.getElementById('s_balance').textContent=fmt(balance);
+  document.getElementById('li_subtotal').textContent=fmt(incl);
+  document.getElementById('s_words_en').value=numToWordsEN(balance);
+}
+
+function numToWordsEN(n) {
+  if(!n||isNaN(n)) return '';
+  const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  const c=n=>{
+    if(n<20) return ones[n];
+    if(n<100) return tens[Math.floor(n/10)]+(n%10?' '+ones[n%10]:'');
+    if(n<1000) return ones[Math.floor(n/100)]+' Hundred'+(n%100?' '+c(n%100):'');
+    if(n<1000000) return c(Math.floor(n/1000))+' Thousand'+(n%1000?' '+c(n%1000):'');
+    return c(Math.floor(n/1000000))+' Million'+(n%1000000?' '+c(n%1000000):'');
+  };
+  const p=Math.abs(n).toFixed(2).split('.');
+  return `SAR ${c(parseInt(p[0]))||'Zero'} and ${p[1]}/100 Riyals`;
+}
+
+/* ══ Open Add ══ */
+function openAddInv() {
+  _lineIdx=0;
+  document.getElementById('invModalTitle').innerHTML='<i class="fas fa-plus-circle me-2"></i>'+(IS_AR?'إضافة فاتورة / Add Invoice':'Add Invoice / إضافة فاتورة');
+  document.getElementById('invForm').action=ADD_URL;
+  document.getElementById('invFormId').value='';
+  document.getElementById('liBody').innerHTML='';
+  const fields=['inv_po','inv_month','inv_invtype','inv_dept','inv_proj_ref'];
+  fields.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['inv_date','inv_due','inv_pstart','inv_pend'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  if(!IS_AR) document.getElementById('inv_date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('inv_type').value='STDCR';
+  document.getElementById('inv_payment_type').value='credit';
+  document.getElementById('s_ret_pct').value='0';
+  document.getElementById('inv_seller').value='';
+  document.getElementById('inv_buyer').value='';
+  onTypeChange();
+  recalcSummary();
+  // Open acc1, close rest
+  ['acc1','acc2','acc3','acc4'].forEach((id,i)=>{
+    const b=document.getElementById(id); const ch=document.getElementById('ch_'+id);
+    b.classList.toggle('show',i===0); b.previousElementSibling.classList.toggle('open',i===0);
+    if(ch){ch.className=i===0?'fas fa-chevron-up':'fas fa-chevron-down';ch.style.cssText=i===0?'color:#2563eb;font-size:11px;':'color:#9ca3af;font-size:11px;';}
+  });
+  addLineItem();
+  new bootstrap.Modal(document.getElementById('invModal')).show();
+}
+
+/* ══ Open Edit ══ */
+function openEditInv(id) {
+  fetch(`/invoices/${id}/json`).then(r=>r.json()).then(d=>{
+    _lineIdx=0;
+    document.getElementById('invModalTitle').innerHTML='<i class="fas fa-edit me-2"></i>'+(IS_AR?'تعديل الفاتورة / Edit Invoice':'Edit Invoice / تعديل الفاتورة');
+    document.getElementById('invForm').action=`/invoices/${id}/edit`;
+    document.getElementById('invFormId').value=id;
+    document.getElementById('inv_no_display').value=d.invoice_no;
+    document.getElementById('invTypeBadge').textContent=d.dr_cr_type||'STDCR';
+    document.getElementById('inv_type').value=d.dr_cr_type||'STDCR';
+    document.getElementById('inv_payment_type').value=d.payment_type||'credit';
+    if(d.invoice_date&&!IS_AR){
+      const p=d.invoice_date.split('/');
+      if(p.length===3) document.getElementById('inv_date').value=`${p[2]}-${p[1]}-${p[0]}`;
+    } else if(d.invoice_date) {
+      document.getElementById('inv_date').value=d.invoice_date;
+    }
+    document.getElementById('inv_month').value=d.month||'';
+    document.getElementById('inv_po').value=d.po_number||'';
+    document.getElementById('inv_seller').value=d.seller_id||'';
+    document.getElementById('inv_buyer').value=d.buyer_id||'';
+    document.getElementById('s_ret_pct').value=d.retention_pct||0;
+    document.getElementById('liBody').innerHTML='';
+    if(d.line_items&&d.line_items.length) d.line_items.forEach(li=>addLineItem(li));
+    else addLineItem();
+    recalcSummary();
+    new bootstrap.Modal(document.getElementById('invModal')).show();
+  });
+}
+
+function submitInv() {
+  if(!validateForm(document.getElementById('invForm'))) return;
+  document.getElementById('invForm').submit();
+}
+
+/* ══ Payment ══ */
+function openPayment(id,balance) {
+  document.getElementById('pmt_inv_id').value=id;
+  document.getElementById('pmt_balance').textContent='SAR '+parseFloat(balance).toLocaleString('en-SA',{minimumFractionDigits:2});
+  document.getElementById('pmt_date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('pmt_amount').value='';
+  document.getElementById('pmt_ref').value='';
+  new bootstrap.Modal(document.getElementById('pmtModal')).show();
+}
+function savePayment() {
+  const id=document.getElementById('pmt_inv_id').value;
+  const amt=document.getElementById('pmt_amount').value;
+  if(!amt||parseFloat(amt)<=0){alert(IS_AR?'أدخل مبلغاً صحيحاً':'Enter a valid amount');return;}
+  fetch(`/invoices/${id}/payment`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken':CSRF},
+    body:new URLSearchParams({csrf_token:CSRF,payment_date:document.getElementById('pmt_date').value,
+      amount:amt,method:document.getElementById('pmt_method').value,reference:document.getElementById('pmt_ref').value})})
+  .then(r=>r.json()).then(d=>{if(d.ok){bootstrap.Modal.getInstance(document.getElementById('pmtModal')).hide();loadData();}});
+}
+
+/* ══ Delete ══ */
+function confDel(url,no){
+  document.getElementById('delForm').action=url;
+  document.getElementById('delTxt').textContent=(IS_AR?'حذف الفاتورة رقم: ':'Delete Invoice: ')+no+'?';
+  new bootstrap.Modal(document.getElementById('delModal')).show();
+}
+
+/* ══ AG-Grid ══ */
+const TYPE_COLORS = {STDINV:'',STDDR:'dr',STDCR:'cr',SIMINV:'sim',SIMCR:'cr',SIMDR:'dr'};
+function rInvNo(p){
+  if(!p.value) return '';
+  const t=p.data?.dr_cr_type||'';
+  return `<span class="inv-no ${TYPE_COLORS[t]||''}">${p.value}</span>`;
+}
+function rStatus(p){ return `<span class="st-active"><i class="fas fa-check-circle me-1" style="font-size:10px;"></i>${IS_AR?'نشيط':'Active'}</span>`;}
+function rSAR(p){
+  if(p.value==null) return '—';
+  const n=parseFloat(p.value);
+  const cls=n<0?'negative':n>0?'positive':'';
+  return `<span class="sar-val ${cls}">${n.toLocaleString('en-SA',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`;
+}
+function rName(p){ return p.value?`<div title="${p.value}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.value}</div>`:'—';}
+
+class ActR {
+  init(p){
+    this.g=document.createElement('div'); this.g.className='ag-act-cell';
+    const d=p.data;
+    const hasBal=d.balance_due>0;
+    this.g.innerHTML=`
+      <button class="ag-ab ag-ab-view"  onclick="window.location='/invoices/${d.id}/view'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
+      <button class="ag-ab ag-ab-print" onclick="window.open('/invoices/${d.id}/print','_blank')" title="${IS_AR?'طباعة':'Print'}"><i class="fas fa-print"></i></button>
+      <button class="ag-ab ag-ab-edit"  onclick="openEditInv(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+      <button class="ag-ab ag-ab-pay ${hasBal?'active':''}" onclick="${hasBal?'openPayment('+d.id+','+d.balance_due+')':''}" title="${IS_AR?'دفعة':'Payment'}" ${hasBal?'':'disabled style="opacity:.45;cursor:not-allowed;"'}><i class="fas fa-money-bill-wave"></i></button>
+      <button class="ag-ab ag-ab-del"   onclick="confDel('/invoices/${d.id}/delete','${d.invoice_no}')" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
+      <button class="ag-ab ag-ab-up"    onclick="downloadInvoice(${d.id},'${d.invoice_no}')" title="${IS_AR?'تنزيل':'Download'}"><i class="fas fa-cloud-download-alt"></i></button>`;
+  }
+  getGui(){return this.g;}
+}
+
+const defCol={sortable:true,resizable:true,filter:true,floatingFilter:true,filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}};
+const cols=[
+  {headerName:'#',field:'id',width:65,sortable:true,floatingFilter:false,suppressMenu:true,cellStyle:{color:'#9ca3af',fontSize:'12px'}},
+  {headerName:IS_AR?'رقم الفاتورة':'Invoice No',field:'invoice_no',width:155,cellRenderer:rInvNo,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'التاريخ':'Invoice Date',field:'invoice_date',width:120,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'الشهر':'Month',field:'month',width:90,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'البائع':'Seller',field:'seller_name',minWidth:180,cellRenderer:rName,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'المشتري':'Buyer',field:'buyer_name',minWidth:180,cellRenderer:rName,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'رقم أمر الشراء':'PO Number',field:'po_number',width:120,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'نوع الفاتورة':'Invoice Type',field:'invoice_type',width:110,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'القسم':'Invoice Dept',field:'invoice_department',width:120,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'الإجمالي':'Gross Total',field:'gross_total',width:130,cellRenderer:rSAR,type:'numericColumn',floatingFilter:false},
+  {headerName:IS_AR?'الضريبة':'VAT Amount',field:'vat_amount',width:115,cellRenderer:rSAR,type:'numericColumn',floatingFilter:false},
+  {headerName:IS_AR?'الإجمالي الكلي':'Total Amount',field:'total_amount',width:130,cellRenderer:rSAR,type:'numericColumn',floatingFilter:false},
+  {headerName:IS_AR?'الرصيد المستحق':'Balance Due',field:'balance_due',width:130,cellRenderer:rSAR,type:'numericColumn',floatingFilter:false},
+  {headerName:IS_AR?'الحالة':'Status',field:'status',width:90,cellRenderer:rStatus,floatingFilter:false,suppressMenu:true},
+  {headerName:IS_AR?'إجراءات':'Actions الإجراءات',field:'_a',width:172,pinned:IS_AR?'left':'right',
+   sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,
+   cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 6px'}},
+];
+
+// ── Bilingual AG-Grid locale ──────────────────────────────────
+const AG_LOCALE = IS_AR ? {
+  // Filter conditions
+  filterOoo: 'تصفية...',
+  equals: 'يساوي',
+  notEqual: 'لا يساوي',
+  lessThan: 'أقل من',
+  greaterThan: 'أكبر من',
+  lessThanOrEqual: 'أقل من أو يساوي',
+  greaterThanOrEqual: 'أكبر من أو يساوي',
+  inRange: 'في النطاق',
+  contains: 'يحتوي على',
+  notContains: 'لا يحتوي على',
+  startsWith: 'يبدأ بـ',
+  endsWith: 'ينتهي بـ',
+  blank: 'فارغ',
+  notBlank: 'غير فارغ',
+  // Filter buttons
+  applyFilter: 'تطبيق / Apply',
+  resetFilter: 'إعادة تعيين',
+  clearFilter: 'مسح / Clear',
+  cancelFilter: 'إلغاء',
+  // Filter conditions joiners
+  andCondition: 'و / AND',
+  orCondition: 'أو / OR',
+  // Other
+  filterFromValue: 'من',
+  filterToValue: 'إلى',
+  addFilterCondition: '+ إضافة قاعدة / Add Rule',
+  matchAll: 'يطابق الكل / Match All',
+  matchAny: 'يطابق أي / Match Any',
+  // Column menu
+  columns: 'الأعمدة',
+  filters: 'الفلاتر',
+  sortAscending: 'ترتيب تصاعدي',
+  sortDescending: 'ترتيب تنازلي',
+  resetColumns: 'إعادة تعيين',
+  autosizeThiscolumn: 'تغيير حجم العمود',
+  autosizeAllColumns: 'تغيير حجم جميع الأعمدة',
+  pinColumn: 'تثبيت عمود',
+  pinLeft: 'تثبيت يسار',
+  pinRight: 'تثبيت يمين',
+  noPin: 'بدون تثبيت',
+  // Pagination
+  page: 'صفحة',
+  of: 'من',
+  to: 'إلى',
+  more: 'المزيد',
+  next: 'التالي',
+  last: 'الأخير',
+  first: 'الأول',
+  previous: 'السابق',
+  loadingOoo: 'جاري التحميل...',
+  noRowsToShow: 'لا توجد بيانات للعرض',
+  // Floating filter
+  searchOoo: 'بحث...',
+} : {
+  filterOoo: 'Filter...',
+  addFilterCondition: '+ Add Rule / إضافة قاعدة',
+  matchAll: 'Match All / بتطابق مع الكل',
+  matchAny: 'Match Any / يطابق أي',
+  applyFilter: 'Apply / تطبيق',
+  clearFilter: 'Clear / مسح',
+  resetFilter: 'Reset',
+  searchOoo: 'Search...',
+  noRowsToShow: 'No records found',
+};
+
+let gridApi;
+agGrid.createGrid(document.getElementById('invGrid'),{
+  columnDefs:cols, rowData:[], pagination:true, paginationPageSize:10,
+  animateRows:true, enableRtl:IS_AR, defaultColDef:defCol,
+  localeText:AG_LOCALE,
+  onGridReady(p){gridApi=p.api; loadData();},
+  onPaginationChanged(){upd();},
+  getRowStyle(p){return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'};}
+});
+
+function loadData(){fetch(DATA_URL).then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);upd();}).catch(console.error);}
+function upd(){if(!gridApi)return;const c=gridApi.getDisplayedRowCount();document.getElementById('selText').textContent=c+' '+(IS_AR?'فاتورة':'invoices');document.getElementById('pageInfo').textContent=`Showing ${c} entries`;}
+
+function downloadInvoice(id, invNo) {
+  document.getElementById('upload_inv_id').value = id;
+  document.getElementById('upload_inv_no').value = invNo;
+  document.getElementById('upload_result').textContent = '';
+  new bootstrap.Modal(document.getElementById('uploadModal')).show();
+}
+function downloadAs(type) {
+  const id = document.getElementById('upload_inv_id').value;
+  if (type === 'pdf' || type === 'print') {
+    window.open('/invoices/'+id+'/print', '_blank');
+  } else if (type === 'view') {
+    window.location = '/invoices/'+id+'/view';
+  }
+  bootstrap.Modal.getInstance(document.getElementById('uploadModal'))?.hide();
+}
+</script>
+{% endblock %}
