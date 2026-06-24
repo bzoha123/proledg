@@ -244,6 +244,7 @@ class Employee(db.Model):
 
     # Salary Information
     po_rate          = db.Column(db.Float, default=0)
+    po_rate_unit     = db.Column(db.String(10), default='hour')  # hour/day/month
     po_number        = db.Column(db.String(50))
     salary_type      = db.Column(db.String(20), default='salary')  # salary/azad/kafalat
     basic_salary     = db.Column(db.Float, default=0)
@@ -256,9 +257,16 @@ class Employee(db.Model):
 
     # Work Information
     joining_date     = db.Column(db.Date)
+    end_date_work    = db.Column(db.Date)
+    work_status      = db.Column(db.String(20), default='active')
+    work_month       = db.Column(db.String(20))
+    company          = db.Column(db.String(150))
+    company_ar       = db.Column(db.String(150))
     department       = db.Column(db.String(100))
     department_ar    = db.Column(db.String(100))
-    shift_type       = db.Column(db.String(20), default='day')  # day/evening/night
+    section          = db.Column(db.String(100))
+    section_ar       = db.Column(db.String(100))
+    shift_type       = db.Column(db.String(20), default='day')  # day/night/rotating
     forman           = db.Column(db.String(150))
     forman_ar        = db.Column(db.String(150))
 
@@ -515,3 +523,249 @@ class InvoicePayment(db.Model):
     reference    = db.Column(db.String(100))
     created_at   = db.Column(db.DateTime, default=datetime.utcnow)
     created_by   = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+
+# ─────────────────────────────────────────────────────────────────
+# VENDOR REGISTRATION
+# ─────────────────────────────────────────────────────────────────
+class VendorMaster(db.Model):
+    __tablename__ = 'vendors'
+    id               = db.Column(db.Integer, primary_key=True)
+    vendor_code      = db.Column(db.String(20), unique=True)
+    vendor_name_en   = db.Column(db.String(200), nullable=False)
+    vendor_name_ar   = db.Column(db.String(200))
+    vat_number       = db.Column(db.String(50))
+    crn              = db.Column(db.String(50))
+    phone            = db.Column(db.String(30))
+    fax              = db.Column(db.String(30))
+    email            = db.Column(db.String(120))
+    website          = db.Column(db.String(200))
+    contact_person   = db.Column(db.String(150))
+    # Address
+    street_name      = db.Column(db.String(200))
+    street_name_ar   = db.Column(db.String(200))
+    building_number  = db.Column(db.String(50))
+    additional_number= db.Column(db.String(50))
+    postal_code      = db.Column(db.String(20))
+    country          = db.Column(db.String(100), default='Saudi Arabia')
+    country_ar       = db.Column(db.String(100))
+    city             = db.Column(db.String(100))
+    city_ar          = db.Column(db.String(100))
+    district         = db.Column(db.String(100))
+    district_ar      = db.Column(db.String(100))
+    # Bank
+    bank_name        = db.Column(db.String(150))
+    bank_branch      = db.Column(db.String(100))
+    swift_code       = db.Column(db.String(20))
+    account_number   = db.Column(db.String(50))
+    iban             = db.Column(db.String(50))
+    # Invoice link
+    invoice_id       = db.Column(db.Integer, db.ForeignKey('invoices.id'), nullable=True)
+    status           = db.Column(db.String(20), default='active')
+    is_active        = db.Column(db.Boolean, default=True)
+    created_at       = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by       = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    invoice          = db.relationship('Invoice', backref=db.backref('vendors', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'vendor_code': self.vendor_code or '',
+            'vendor_name_en': self.vendor_name_en,
+            'vendor_name_ar': self.vendor_name_ar or '',
+            'vat_number': self.vat_number or '', 'crn': self.crn or '',
+            'phone': self.phone or '', 'email': self.email or '',
+            'city': self.city or '', 'status': self.status or 'active',
+            'invoice_id': self.invoice_id,
+            'invoice_no': self.invoice.invoice_no if self.invoice else '',
+            'contact_person': self.contact_person or '',
+            'is_active': self.is_active,
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# PURCHASE REQUEST
+# ─────────────────────────────────────────────────────────────────
+class PurchaseRequest(db.Model):
+    __tablename__ = 'purchase_requests'
+    id             = db.Column(db.Integer, primary_key=True)
+    doc_no         = db.Column(db.String(20), unique=True)      # 2026-0001
+    requester      = db.Column(db.String(150))
+    requester_name = db.Column(db.String(200))
+    vendor_id      = db.Column(db.Integer, db.ForeignKey('vendors.id'), nullable=True)
+    status         = db.Column(db.String(20), default='Open')
+    posting_date   = db.Column(db.Date)
+    valid_until    = db.Column(db.Date)
+    document_date  = db.Column(db.Date)
+    required_date  = db.Column(db.Date)
+    remarks        = db.Column(db.Text)
+    approved_by    = db.Column(db.String(150))
+    # Totals
+    total_before_discount = db.Column(db.Numeric(14,2), default=0)
+    total_discount        = db.Column(db.Numeric(14,2), default=0)
+    total_freight         = db.Column(db.Numeric(14,2), default=0)
+    total_excl_vat        = db.Column(db.Numeric(14,2), default=0)
+    vat_amount            = db.Column(db.Numeric(14,2), default=0)
+    total_incl_vat        = db.Column(db.Numeric(14,2), default=0)
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by     = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    vendor    = db.relationship('VendorMaster', backref=db.backref('purchase_requests', lazy=True))
+    # items fetched via query in routes
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'doc_no': self.doc_no,
+            'requester': self.requester or '', 'requester_name': self.requester_name or '',
+            'vendor_id': self.vendor_id,
+            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
+            'status': self.status, 'posting_date': str(self.posting_date) if self.posting_date else '',
+            'valid_until': str(self.valid_until) if self.valid_until else '',
+            'document_date': str(self.document_date) if self.document_date else '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'remarks': self.remarks or '', 'approved_by': self.approved_by or '',
+            'total_before_discount': float(self.total_before_discount or 0),
+            'total_discount': float(self.total_discount or 0),
+            'total_freight': float(self.total_freight or 0),
+            'total_excl_vat': float(self.total_excl_vat or 0),
+            'vat_amount': float(self.vat_amount or 0),
+            'total_incl_vat': float(self.total_incl_vat or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# PURCHASE QUOTATION
+# ─────────────────────────────────────────────────────────────────
+class PurchaseQuotation(db.Model):
+    __tablename__ = 'purchase_quotations'
+    id             = db.Column(db.Integer, primary_key=True)
+    doc_no         = db.Column(db.String(20), unique=True)
+    pr_id          = db.Column(db.Integer, db.ForeignKey('purchase_requests.id'), nullable=True)
+    requester      = db.Column(db.String(150))
+    requester_name = db.Column(db.String(200))
+    vendor_id      = db.Column(db.Integer, db.ForeignKey('vendors.id'), nullable=True)
+    status         = db.Column(db.String(20), default='Open')
+    posting_date   = db.Column(db.Date)
+    valid_until    = db.Column(db.Date)
+    document_date  = db.Column(db.Date)
+    required_date  = db.Column(db.Date)
+    remarks        = db.Column(db.Text)
+    approved_by    = db.Column(db.String(150))
+    total_before_discount = db.Column(db.Numeric(14,2), default=0)
+    total_discount        = db.Column(db.Numeric(14,2), default=0)
+    total_freight         = db.Column(db.Numeric(14,2), default=0)
+    total_excl_vat        = db.Column(db.Numeric(14,2), default=0)
+    vat_amount            = db.Column(db.Numeric(14,2), default=0)
+    total_incl_vat        = db.Column(db.Numeric(14,2), default=0)
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by     = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    vendor = db.relationship('VendorMaster', backref=db.backref('purchase_quotations', lazy=True))
+    pr     = db.relationship('PurchaseRequest', backref=db.backref('quotations', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'doc_no': self.doc_no,
+            'pr_id': self.pr_id, 'pr_no': self.pr.doc_no if self.pr else '',
+            'requester': self.requester or '', 'requester_name': self.requester_name or '',
+            'vendor_id': self.vendor_id,
+            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
+            'status': self.status,
+            'posting_date': str(self.posting_date) if self.posting_date else '',
+            'remarks': self.remarks or '', 'approved_by': self.approved_by or '',
+            'total_incl_vat': float(self.total_incl_vat or 0),
+            'total_discount': float(self.total_discount or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# PURCHASE ORDER
+# ─────────────────────────────────────────────────────────────────
+class PurchaseOrder(db.Model):
+    __tablename__ = 'purchase_orders'
+    id              = db.Column(db.Integer, primary_key=True)
+    doc_no          = db.Column(db.String(20), unique=True)
+    pq_id           = db.Column(db.Integer, db.ForeignKey('purchase_quotations.id'), nullable=True)
+    vendor_id       = db.Column(db.Integer, db.ForeignKey('vendors.id'), nullable=True)
+    vendor_ref_no   = db.Column(db.String(100))
+    status          = db.Column(db.String(20), default='Open')
+    posting_date    = db.Column(db.Date)
+    delivery_date   = db.Column(db.Date)
+    document_date   = db.Column(db.Date)
+    total_before_discount = db.Column(db.Numeric(14,2), default=0)
+    total_discount        = db.Column(db.Numeric(14,2), default=0)
+    total_freight         = db.Column(db.Numeric(14,2), default=0)
+    total_excl_vat        = db.Column(db.Numeric(14,2), default=0)
+    vat_amount            = db.Column(db.Numeric(14,2), default=0)
+    total_incl_vat        = db.Column(db.Numeric(14,2), default=0)
+    created_at      = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by      = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    vendor = db.relationship('VendorMaster', backref=db.backref('purchase_orders', lazy=True))
+    pq     = db.relationship('PurchaseQuotation', backref=db.backref('orders', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'doc_no': self.doc_no,
+            'pq_id': self.pq_id, 'pq_no': self.pq.doc_no if self.pq else '',
+            'vendor_id': self.vendor_id,
+            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
+            'vendor_ref_no': self.vendor_ref_no or '',
+            'status': self.status,
+            'posting_date': str(self.posting_date) if self.posting_date else '',
+            'delivery_date': str(self.delivery_date) if self.delivery_date else '',
+            'document_date': str(self.document_date) if self.document_date else '',
+            'total_incl_vat': float(self.total_incl_vat or 0),
+            'total_discount': float(self.total_discount or 0),
+            'total_freight': float(self.total_freight or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# SHARED: PURCHASE LINE ITEMS (PR / PQ / PO)
+# ─────────────────────────────────────────────────────────────────
+class PurchaseLineItem(db.Model):
+    __tablename__ = 'purchase_line_items'
+    id            = db.Column(db.Integer, primary_key=True)
+    doc_type      = db.Column(db.String(5))   # PR / PQ / PO
+    doc_id        = db.Column(db.Integer)
+    item_code     = db.Column(db.String(50))
+    item_desc     = db.Column(db.String(500))
+    required_date = db.Column(db.Date)
+    warehouse     = db.Column(db.String(150))
+    uom           = db.Column(db.String(20), default='unit')
+    quantity      = db.Column(db.Numeric(12,2), default=0)
+    rate          = db.Column(db.Numeric(12,2), default=0)
+    discount      = db.Column(db.Numeric(12,2), default=0)
+    freight       = db.Column(db.Numeric(12,2), default=0)
+    taxable       = db.Column(db.Numeric(12,2), default=0)  # auto = qty*rate
+    tax_code      = db.Column(db.String(20), default='VAT15')
+    tax_amount    = db.Column(db.Numeric(12,2), default=0)
+    total         = db.Column(db.Numeric(12,2), default=0)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'doc_type': self.doc_type, 'doc_id': self.doc_id,
+            'item_code': self.item_code or '', 'item_desc': self.item_desc or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse': self.warehouse or '', 'uom': self.uom,
+            'quantity': float(self.quantity or 0), 'rate': float(self.rate or 0),
+            'discount': float(self.discount or 0), 'freight': float(self.freight or 0),
+            'taxable': float(self.taxable or 0), 'tax_code': self.tax_code or 'VAT15',
+            'tax_amount': float(self.tax_amount or 0), 'total': float(self.total or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# SHARED: PURCHASE ATTACHMENTS
+# ─────────────────────────────────────────────────────────────────
+class PurchaseAttachment(db.Model):
+    __tablename__ = 'purchase_attachments'
+    id         = db.Column(db.Integer, primary_key=True)
+    doc_type   = db.Column(db.String(5))   # PR / PQ / PO / VND
+    doc_id     = db.Column(db.Integer)
+    filename   = db.Column(db.String(300))
+    filepath   = db.Column(db.String(500))
+    file_size  = db.Column(db.Integer)
+    uploaded_at= db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_by= db.Column(db.Integer, db.ForeignKey('users.id'))

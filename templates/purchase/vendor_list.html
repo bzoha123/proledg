@@ -1,0 +1,597 @@
+{% extends "base.html" %}
+{% set ar = current_locale == 'ar' %}
+{% block title %}{% if ar %}تسجيل الموردين{% else %}Vendor Registration{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
+<style>
+/* ── Grid ── */
+.ag-theme-alpine{--ag-font-family:'Segoe UI',Tahoma,sans-serif;--ag-font-size:13px;--ag-header-background-color:#1e3a5f;--ag-header-foreground-color:#fff;--ag-border-color:#e2e8f0;--ag-row-hover-color:#f0f7ff;--ag-header-height:44px;--ag-row-height:44px;}
+.ag-theme-alpine .ag-header-cell-label{font-weight:700;font-size:12px;text-transform:uppercase;}
+/* Filter popup — ProLedg style */
+.ag-theme-alpine .ag-filter{border-radius:10px!important;box-shadow:0 6px 24px rgba(0,0,0,.14)!important;border:1px solid #e2e8f0!important;overflow:hidden;min-width:255px;background:white;}
+.ag-theme-alpine .ag-filter-condition .ag-picker-field-wrapper{border:1.5px solid #d1d5db;border-radius:7px;background:white;padding:5px 10px;font-size:12px;}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input,.ag-theme-alpine .ag-filter-filter .ag-input-field-input{border:1.5px solid #d1d5db!important;border-radius:7px!important;padding:6px 10px!important;font-size:12px!important;width:100%!important;}
+.ag-theme-alpine .ag-filter-apply-panel{padding:8px 10px!important;background:#f8fafc!important;border-top:1px solid #e2e8f0!important;display:flex!important;gap:6px!important;justify-content:space-between!important;}
+.ag-theme-alpine .ag-filter-apply-panel-button{padding:5px 14px!important;border-radius:7px!important;font-size:12px!important;font-weight:600!important;border:none!important;cursor:pointer!important;}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]{background:linear-gradient(135deg,#16a34a,#15803d)!important;color:white!important;}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"]{background:white!important;color:#374151!important;border:1.5px solid #d1d5db!important;}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"]{background:white!important;color:#374151!important;border:1.5px solid #d1d5db!important;}
+.ag-theme-alpine .ag-add-filter-condition{padding:4px 10px!important;border-bottom:1px solid #f1f5f9!important;}
+.ag-theme-alpine .ag-add-filter-condition .ag-button{color:#2563eb!important;font-size:12px!important;font-weight:600!important;background:none!important;border:none!important;cursor:pointer!important;}
+.ag-theme-alpine .ag-floating-filter-input input{border:1px solid #e2e8f0!important;border-radius:5px!important;padding:3px 7px!important;font-size:11px!important;}
+/* Action buttons */
+.ag-ab{width:28px;height:28px;border-radius:7px;border:none;display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all .12s;}
+.ag-ab-view{background:#0ea5e9;color:white;}.ag-ab-edit{background:#f59e0b;color:white;}.ag-ab-del{background:#ef4444;color:white;}
+/* Modal */
+.vnd-hdr{background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:16px 22px;display:flex;justify-content:space-between;align-items:center;}
+.vnd-hdr h5{margin:0;color:white;font-weight:700;font-size:15px;}
+/* Accordion */
+.acc-panel{border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.acc-btn{width:100%;background:white;border:none;padding:12px 16px;text-align:{% if ar %}right{% else %}left{% endif %};font-weight:600;font-size:13px;color:#1e3a5f;cursor:pointer;display:flex;align-items:center;justify-content:space-between;}
+.acc-btn.open{background:#f0f7ff;border-bottom:1.5px solid #e2e8f0;}
+.acc-icon{width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;margin-{% if ar %}left{% else %}right{% endif %}:8px;font-size:11px;background:#e0f2fe;color:#0284c7;}
+.acc-btn.open .acc-icon{background:#2563eb;color:white;}
+.acc-body{padding:16px 18px;display:none;background:white;}
+.acc-body.show{display:block;}
+/* Field grid */
+.f-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.f-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+.f-item{display:flex;flex-direction:column;}
+.f-lbl{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.f-req{color:#ef4444;margin-{% if ar %}right{% else %}left{% endif %}:2px;}
+.f-inp{border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;width:100%;transition:border-color .15s;}
+.f-inp:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:{% if ar %}left{% else %}right{% endif %} 10px center;padding-{% if ar %}left{% else %}right{% endif %}:30px;}
+/* Bilingual field-wrap — same as buyers */
+.field-wrap{position:relative;display:flex;align-items:center;}
+.field-wrap .f-inp{flex:1;padding-right:36px;}
+.field-wrap[dir="rtl"] .f-inp{padding-right:12px;padding-left:36px;}
+.retrans-btn{position:absolute;right:6px;width:24px;height:24px;border-radius:5px;border:1px solid #bfdbfe;background:#eff6ff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;color:#2563eb;flex-shrink:0;}
+.field-wrap[dir="rtl"] .retrans-btn{right:auto;left:6px;background:#f0fdf4;border-color:#bbf7d0;color:#16a34a;}
+.field-spin{position:absolute;right:34px;color:#9ca3af;font-size:11px;pointer-events:none;}
+.field-wrap[dir="rtl"] .field-spin{right:auto;left:34px;}
+/* Footer */
+.vnd-footer{display:flex;justify-content:space-between;padding:12px 20px;background:#f8fafc;border-top:2px solid #e2e8f0;}
+.btn-f{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;}
+.btn-save{background:linear-gradient(135deg,#16a34a,#15803d);color:white;box-shadow:0 2px 8px rgba(22,163,74,.3);}
+.btn-cancel{background:white;color:#374151;border:1.5px solid #d1d5db;}
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
+<li class="breadcrumb-item active">{% if ar %}تسجيل الموردين{% else %}Vendor Registration{% endif %}</li>
+{% endblock %}
+
+{% block content %}
+<div class="proledg-page">
+  <h2 class="page-heading">{% if ar %}تسجيل الموردين{% else %}Vendor Registration{% endif %}</h2>
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button class="tool-btn tool-btn-green" onclick="openAdd()"><i class="fas fa-plus"></i></button>
+      <button class="tool-btn tool-btn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
+      <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null);document.getElementById('qs').value='';gridApi.setGridOption('quickFilterText','')"><i class="fas fa-times-circle"></i></button>
+    </div>
+    <div class="toolbar-right d-flex align-items-center gap-3">
+      <span id="selText" style="font-size:12px;font-weight:600;color:#6b7280;">–</span>
+      <div class="search-form"><i class="fas fa-search search-icon"></i>
+        <input type="text" id="qs" class="search-input" style="width:210px"
+               placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"
+               oninput="gridApi&&gridApi.setGridOption('quickFilterText',this.value)">
+      </div>
+    </div>
+  </div>
+  <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;overflow:hidden;">
+    <div id="vndGrid" class="ag-theme-alpine" style="height:500px;width:100%;"></div>
+  </div>
+  <div class="proledg-pagination"><span class="page-count" id="pageInfo">–</span></div>
+</div>
+
+{# ══ ADD / EDIT MODAL ══ #}
+<div class="modal fade" id="vndModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width:920px;">
+    <div class="modal-content" style="border:none;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+      <div class="vnd-hdr">
+        <h5 id="vndTitle"><i class="fas fa-store me-2"></i>{% if ar %}إضافة مورد{% else %}Add Vendor{% endif %}</h5>
+        <button class="btn-close" style="filter:brightness(0) invert(1);" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;">
+        <input type="hidden" id="v_edit_id">
+        <div style="padding:16px 18px;">
+
+          {# ── Basic Info ── #}
+          <div class="acc-panel">
+            <button type="button" class="acc-btn open" onclick="togAcc('va1')">
+              <div><i class="acc-icon fas fa-store"></i>{% if ar %}معلومات المورد الأساسية / Basic Information{% else %}Basic Vendor Information / معلومات أساسية{% endif %}</div>
+              <i class="fas fa-chevron-up" id="ch_va1" style="color:#2563eb;font-size:11px;"></i>
+            </button>
+            <div class="acc-body show" id="va1">
+
+              {# Vendor name bilingual — same pattern as buyers #}
+              <div class="f-grid2" style="margin-bottom:12px;">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}اسم المورد (EN){% else %}Vendor Name (EN){% endif %} <span class="f-req">*</span></div>
+                  <div class="field-wrap" dir="ltr">
+                    <input type="text" id="v_name_en" class="f-inp" dir="ltr" required
+                           placeholder="e.g. Al Rajhi Trading"
+                           oninput="vTrans('v_name_en','v_name_ar','en')">
+                    {% if not ar %}<button type="button" class="retrans-btn" title="Re-translate to AR" onclick="vRetrans('v_name_ar','v_name_en','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                    <span class="field-spin" id="spin_name"></span>
+                  </div>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl" dir="rtl" style="text-align:right;">{% if ar %}اسم المورد (AR){% else %}Vendor Name (AR){% endif %}</div>
+                  <div class="field-wrap" dir="rtl">
+                    <input type="text" id="v_name_ar" class="f-inp" dir="rtl"
+                           placeholder="مثال: شركة الراجحي التجارية"
+                           oninput="vTrans('v_name_ar','v_name_en','ar')">
+                    {% if ar %}<button type="button" class="retrans-btn" title="إعادة الترجمة للإنجليزية" onclick="vRetrans('v_name_en','v_name_ar','en')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                    <span class="field-spin" id="spin_name_ar"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="f-grid3">
+                <div class="f-item"><div class="f-lbl">{% if ar %}رقم ضريبة القيمة المضافة{% else %}VAT Number{% endif %} <span class="f-req">*</span></div><input type="text" id="v_vat" class="f-inp" dir="ltr" required></div>
+                <div class="f-item"><div class="f-lbl">{% if ar %}السجل التجاري{% else %}CRN{% endif %} <span class="f-req">*</span></div><input type="text" id="v_crn" class="f-inp" dir="ltr" required></div>
+                <div class="f-item"><div class="f-lbl">{% if ar %}شخص الاتصال{% else %}Contact Person{% endif %}</div><input type="text" id="v_contact" class="f-inp"></div>
+              </div>
+
+              <div class="f-grid3">
+                <div class="f-item"><div class="f-lbl">{% if ar %}الهاتف{% else %}Phone{% endif %} <span class="f-req">*</span></div><input type="tel" id="v_phone" class="f-inp" dir="ltr" required></div>
+                <div class="f-item"><div class="f-lbl">{% if ar %}الفاكس{% else %}Fax{% endif %}</div><input type="text" id="v_fax" class="f-inp" dir="ltr"></div>
+                <div class="f-item"><div class="f-lbl">{% if ar %}البريد الإلكتروني{% else %}Email{% endif %}</div><input type="email" id="v_email" class="f-inp" dir="ltr"></div>
+              </div>
+
+              <div class="f-grid2">
+                <div class="f-item"><div class="f-lbl">{% if ar %}الموقع الإلكتروني{% else %}Website{% endif %}</div><input type="text" id="v_website" class="f-inp" dir="ltr"></div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div>
+                  <select id="v_status" class="f-inp">
+                    <option value="active" selected>{% if ar %}نشيط{% else %}Active{% endif %}</option>
+                    <option value="inactive">{% if ar %}غير نشيط{% else %}Inactive{% endif %}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="f-grid2">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}رقم الفاتورة المرتبطة{% else %}Linked Invoice{% endif %}</div>
+                  <select id="v_invoice_id" class="f-inp">
+                    <option value="">-- {% if ar %}بدون ارتباط{% else %}No link{% endif %} --</option>
+                    {% for inv in invoices %}
+                    <option value="{{ inv.id }}">{{ inv.invoice_no }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {# ── Address ── #}
+          <div class="acc-panel">
+            <button type="button" class="acc-btn" onclick="togAcc('va2')">
+              <div><i class="acc-icon fas fa-map-marker-alt"></i>{% if ar %}العنوان / Address{% else %}Address / العنوان{% endif %}</div>
+              <i class="fas fa-chevron-down" id="ch_va2" style="color:#9ca3af;font-size:11px;"></i>
+            </button>
+            <div class="acc-body" id="va2">
+
+              {# Street bilingual #}
+              <div class="f-grid2" style="margin-bottom:12px;">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}اسم الشارع (EN){% else %}Street Name (EN){% endif %}</div>
+                  <div class="field-wrap" dir="ltr">
+                    <input type="text" id="v_street_en" class="f-inp" dir="ltr"
+                           oninput="vTrans('v_street_en','v_street_ar','en')">
+                    {% if not ar %}<button type="button" class="retrans-btn" onclick="vRetrans('v_street_ar','v_street_en','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                    <span class="field-spin" id="spin_street"></span>
+                  </div>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl" dir="rtl" style="text-align:right;">{% if ar %}اسم الشارع (AR){% else %}Street Name (AR){% endif %}</div>
+                  <div class="field-wrap" dir="rtl">
+                    <input type="text" id="v_street_ar" class="f-inp" dir="rtl"
+                           oninput="vTrans('v_street_ar','v_street_en','ar')">
+                    {% if ar %}<button type="button" class="retrans-btn" onclick="vRetrans('v_street_en','v_street_ar','en')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                    <span class="field-spin" id="spin_street_ar"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="f-grid3">
+                <div class="f-item"><div class="f-lbl">{% if ar %}رقم المبنى{% else %}Building No{% endif %}</div><input type="text" id="v_bldg" class="f-inp" dir="ltr"></div>
+                <div class="f-item"><div class="f-lbl">{% if ar %}الرقم الإضافي{% else %}Addl. No{% endif %}</div><input type="text" id="v_addl" class="f-inp" dir="ltr"></div>
+                <div class="f-item"><div class="f-lbl">{% if ar %}الرمز البريدي{% else %}Postal Code{% endif %}</div><input type="text" id="v_postal" class="f-inp" dir="ltr"></div>
+              </div>
+
+              <div class="f-grid3">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}الدولة{% else %}Country{% endif %} <span class="f-req">*</span></div>
+                  <select id="v_country" class="f-inp" onchange="vCountryChange()" required></select>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}المدينة{% else %}City{% endif %} <span class="f-req">*</span></div>
+                  <select id="v_city" class="f-inp" onchange="vCityChange()" required></select>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}الحي{% else %}District{% endif %}</div>
+                  <select id="v_district" class="f-inp"></select>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="vnd-footer">
+        <button class="btn-f btn-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}</button>
+        <button class="btn-f btn-save" id="vndSaveBtn" onclick="saveVendor()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ المورد / Save{% else %}Save Vendor / حفظ{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Delete Confirm #}
+<div class="modal fade" id="delModal" tabindex="-1">
+  <div class="modal-dialog modal-sm"><div class="modal-content" style="border-radius:10px;overflow:hidden;">
+    <div class="modal-header border-0"><h6 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>{% if ar %}تأكيد الحذف{% else %}Confirm Delete{% endif %}</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body"><p id="delTxt" class="fw-semibold mb-0"></p></div>
+    <div class="modal-footer border-0">
+      <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+      <button class="btn btn-sm btn-danger" id="delConfirmBtn">{% if ar %}حذف{% else %}Delete{% endif %}</button>
+    </div>
+  </div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script>
+const IS_AR = {{ 'true' if ar else 'false' }};
+const CSRF  = '{{ csrf_token() }}';
+const TR    = '{{ url_for("sellers.translate_text") }}';
+
+/* ══ Bilingual Translation — same logic as buyers ══ */
+const _vTimers = {};
+function vTrans(srcId, tgtId, sl) {
+  if (!IS_AR && sl === 'ar') return;   // EN portal: only translate EN→AR
+  if ( IS_AR && sl === 'en') return;   // AR portal: only translate AR→EN
+  clearTimeout(_vTimers[tgtId]);
+  const src = document.getElementById(srcId);
+  const tgt = document.getElementById(tgtId);
+  const text = src ? src.value.trim() : '';
+  if (!text) { if (tgt) tgt.value = ''; return; }
+  // spinner
+  const baseId = srcId.replace('v_','').replace('_en','').replace('_ar','');
+  const spin = document.getElementById('spin_' + baseId) || document.getElementById('spin_' + baseId + (sl==='en'?'':'_ar'));
+  if (spin) spin.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
+  _vTimers[tgtId] = setTimeout(() => {
+    fetch(TR, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+                body: JSON.stringify({ text, direction: `${sl}|${sl==='en'?'ar':'en'}` }) })
+    .then(r => r.json())
+    .then(d => { if (d.translated && tgt) tgt.value = d.translated; if (spin) spin.innerHTML = ''; })
+    .catch(() => { if (spin) spin.innerHTML = ''; });
+  }, 700);
+}
+function vRetrans(tgtId, srcId, tl) {
+  const src = document.getElementById(srcId);
+  const tgt = document.getElementById(tgtId);
+  const text = src ? src.value.trim() : '';
+  if (!text || !tgt) return;
+  fetch(TR, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+              body: JSON.stringify({ text, direction: `${tl==='ar'?'en':'ar'}|${tl}` }) })
+  .then(r => r.json())
+  .then(d => { if (d.translated) tgt.value = d.translated; });
+}
+
+/* ══ Geo: Country / City / District ══ */
+const GEO = {
+  'Saudi Arabia': {
+    'Riyadh':     ['Al Olaya','Al Malaz','Al Murabba','Al Naseem','Al Rawdah','Al Sulimaniyah','Al Aqiq','Al Hamra','Al Wazarat','Al Wurud','Al Yarmouk','Al Nakhil','Al Izdihar','Al Sahafah','Al Qirawan','Al Khaleej','Al Badi','Al Shuhada','Al Uqaz','Al Rabwah','Al Nadhim','Al Nafl','Hittin','Qurtubah','Dhahrat Al Badiyah','Al Falah','Al Mursalat','Al Ghadir','Al Rayyan','Al Hair','Al Masif','Other'],
+    'Jeddah':     ['Al Hamra','Al Zahraa','Al Rawdah','Al Andalus','Al Corniche','Al Balad','Al Aziziyah','Al Nahdah','Al Marwah','Al Salamah','Al Shati','Al Khalidiyah','Al Bawadi','Al Ruwais','Al Nuzha','Al Faisaliyah','Al Rehab','Al Waha','Al Amir Fawwaz','Obhur','Al Thaalibah','Al Worood','Al Rabwah','Other'],
+    'Dammam':     ['Al Shatea','Al Faisaliah','Al Nuzha','Al Badiyah','Al Anoud','Al Muraikabat','Al Qazaz','Al Adama','Al Jawharah','Al Hamra','Al Mazoon','Al Jalawiyah','Al Fursan','Al Nahdah','Al Uraija','Al Dawasir','Other'],
+    'Al Khobar':  ['Ath Thuqbah','Al Corniche','Al Ulaya','Al Aqrabiyah','Al Bandariyah','Al Rekah','Al Hamra','Al Waha','Al Doha','Al Yarmouk','Al Shati','Al Aloha','Al Safa','Al Khobar Al Shamaliyah','Other'],
+    'Al Qatif':   ['At Tawbi','Al Anwar','Al Safwa','Saihat','Sihat','Al Awwamiyah','Tarout','Al Darin','Al Qulaibah','Qatif City Center','Other'],
+    'Makkah':     ['Al Aziziyah','Al Massaer','Ajyad','Al Zahir','Al Hindawiyah','Jarwal','Al Kakiyah','Al Awali','Bakhsh','Al Adl','Al Nuzha','Al Rusaifah','Al Khadra','Al Shubaikah','Al Faysaliyah','Other'],
+    'Madinah':    ['Al Anabarat','Al Aziziyah','Al Manakhah','Al Haram','Al Aqoul','Al Sad','Quba','Al Nakhil','Al Jumah','Al Ranuna','Al Safiyyah','Al Iskan','Bani Harithah','Other'],
+    'Taif':       ['Al Hada','Al Shafa','Al Sail Al Kabeer','Al Hawiyah','Al Faisaliyah','Al Nuzha','Al Salamah','Other'],
+    'Abha':       ['Al Manhal','Al Namas','Al Qabel','Al Waroud','Al Manar','Other'],
+    'Tabuk':      ['Al Aziziyah','Al Rabwah','Al Qadsiah','Al Salam','Other'],
+    'Hail':       ['Al Ghadir','Al Simah','Al Hamad','Al Nahdah','Other'],
+    'Jizan':      ['Al Rawdah','Al Corniche','Al Naeem','Other'],
+    'Najran':     ['Al Nahdah','Al Yarmuk','Other'],
+    'Al Jubail':  ['Al Fanateer','Al Munizilyah','Al Rakkah','Al Shulah','Other'],
+    'Yanbu':      ['Al Sinaiyah','Al Sharm','Al Nuzlah','Other'],
+    'Buraydah':   ['Al Rawdah','Al Khuzama','Al Faysaliyah','Other'],
+    'Other':      ['Other'],
+  },
+  'UAE': {
+    'Dubai':      ['Deira','Bur Dubai','Jumeirah','Marina','Al Quoz','Downtown Dubai','Business Bay','DIFC','Jebel Ali','Al Barsha','Al Nahda','Al Rashidiya','Mirdif','Al Karama','Oud Metha','Al Garhoud','Dubai Silicon Oasis','Academic City','Discovery Gardens','International City','Other'],
+    'Abu Dhabi':  ['Al Khalidiyah','Al Mushrif','Al Manhal','Al Maqtaa','Al Reem Island','Al Raha','Khalifa City','Mohammed Bin Zayed City','Masdar City','Yas Island','Saadiyat Island','Al Ain City','Al Reef','Al Bateen','Corniche','Other'],
+    'Sharjah':    ['Al Majaz','Al Nahda','Al Qasimia','Muwaileh','Al Taawun','Al Khan','Industrial Area','Other'],
+    'Ajman':      ['Al Nuaimia','Al Rashidiya','Al Rumailah','Al Jurf','Other'],
+    'Ras Al Khaimah':['Al Nakheel','Al Qawasim Corniche','Al Dhait','Other'],
+    'Fujairah':   ['Fujairah City','Dibba','Khor Fakkan','Other'],
+    'Al Ain':     ['Al Jimi','Al Muwaiji','Hili','Al Ain City','Other'],
+    'Other':      ['Other'],
+  },
+  'Kuwait': {
+    'Kuwait City':['Salmiya','Hawalli','Rumaithiya','Bayan','Mishref','Sabah Al Salem','Jabriya','Abu Halifa','Mangaf','Fahaheel','Other'],
+    'Al Ahmadi':  ['Ahmadi','Fahaheel','Mahboula','Abu Halifa','Other'],
+    'Al Jahra':   ['Jahra City','Sulaibiya','Other'],
+    'Other':      ['Other'],
+  },
+  'Qatar': {
+    'Doha':       ['West Bay','Lusail','Al Sadd','Al Dafna','Al Mansoura','Madinat Khalifa','Al Rayyan','Al Wakrah','Al Khor','The Pearl','Old Airport','Msheireb','Al Muntazah','Other'],
+    'Al Rayyan':  ['Al Rayyan City','Muaither','Al Gharrafa','Other'],
+    'Al Wakrah':  ['Al Wakrah City','Mesaieed','Other'],
+    'Other':      ['Other'],
+  },
+  'Bahrain': {
+    'Manama':     ['Seef','Juffair','Adliya','Hoora','Muharraq','Riffa','Isa Town','Hamad Town','Saar','Budaiya','Other'],
+    'Muharraq':   ['Muharraq City','Hidd','Arad','Other'],
+    'Riffa':      ['East Riffa','West Riffa','Other'],
+    'Other':      ['Other'],
+  },
+  'Oman': {
+    'Muscat':     ['Al Khuwair','Ruwi','Qurum','Al Maabilah','Al Hail','Ghala','Bausher','Muttrah','Wattayah','Al Azaiba','Other'],
+    'Salalah':    ['Al Nahda','Al Rabat','Al Wusta','Other'],
+    'Sohar':      ['Sohar City','Al Falaj','Other'],
+    'Nizwa':      ['Nizwa City','Other'],
+    'Other':      ['Other'],
+  },
+  'Jordan': {
+    'Amman':      ['Abdali','Shmeisani','Sweifieh','Mecca Street','7th Circle','Khalda','Al Rabieh','Aqaba','Zarqa','Other'],
+    'Irbid':      ['Irbid City','Al Husn','Other'],
+    'Zarqa':      ['Zarqa City','Rusaifa','Other'],
+    'Other':      ['Other'],
+  },
+  'Egypt': {
+    'Cairo':      ['Zamalek','Maadi','Nasr City','Heliopolis','New Cairo','October City','Giza','Dokki','Mohandessin','Garden City','Other'],
+    'Alexandria': ['Smouha','Miami','Montazah','Kafr Abdo','Other'],
+    'Giza':       ['Giza City','6 October','Sheikh Zayed','Other'],
+    'Other':      ['Other'],
+  },
+  'Pakistan': {
+    'Karachi':    ['DHA','Clifton','Gulshan-e-Iqbal','PECHS','Nazimabad','North Karachi','Korangi','Landhi','Other'],
+    'Lahore':     ['DHA','Gulberg','Model Town','Johar Town','Garden Town','Other'],
+    'Islamabad':  ['F-6','F-7','F-8','G-9','G-10','Blue Area','Other'],
+    'Other':      ['Other'],
+  },
+  'India': {
+    'Mumbai':     ['Bandra','Andheri','Juhu','Powai','Navi Mumbai','Thane','Other'],
+    'Delhi':      ['Connaught Place','South Delhi','Noida','Gurgaon','Dwarka','Other'],
+    'Bangalore':  ['Koramangala','Indiranagar','Whitefield','Electronic City','Other'],
+    'Other':      ['Other'],
+  },
+  'Philippines': {
+    'Manila':     ['Makati','Bonifacio Global City','Quezon City','Pasig','Taguig','Other'],
+    'Cebu':       ['Cebu City','Mandaue','Lapu-Lapu','Other'],
+    'Other':      ['Other'],
+  },
+  'Bangladesh':   { 'Dhaka':['Gulshan','Banani','Dhanmondi','Uttara','Other'], 'Chittagong':['Agrabad','Panchlaish','Other'], 'Other':['Other'] },
+  'Sri Lanka':    { 'Colombo':['Colombo 1','Colombo 3','Colombo 7','Dehiwela','Nugegoda','Other'], 'Other':['Other'] },
+  'Nepal':        { 'Kathmandu':['Thamel','Patan','Bhaktapur','Other'], 'Other':['Other'] },
+  'United Kingdom':{ 'London':['City','Westminster','Kensington','Canary Wharf','Shoreditch','Other'], 'Manchester':['City Centre','Salford','Other'], 'Other':['Other'] },
+  'United States': { 'New York':['Manhattan','Brooklyn','Queens','Bronx','Other'], 'Los Angeles':['Downtown','Beverly Hills','Santa Monica','Other'], 'Other':['Other'] },
+  'Canada':       { 'Toronto':['Downtown','North York','Scarborough','Other'], 'Vancouver':['Downtown','Burnaby','Other'], 'Other':['Other'] },
+  'Germany':      { 'Berlin':['Mitte','Charlottenburg','Prenzlauer Berg','Other'], 'Munich':['Maxvorstadt','Schwabing','Other'], 'Other':['Other'] },
+  'France':       { 'Paris':['1st Arr.','8th Arr.','16th Arr.','Other'], 'Lyon':['Lyon City','Other'], 'Other':['Other'] },
+  'Turkey':       { 'Istanbul':['Beyoglu','Besiktas','Kadikoy','Sisli','Other'], 'Ankara':['Cankaya','Kecioren','Other'], 'Other':['Other'] },
+  'Malaysia':     { 'Kuala Lumpur':['KLCC','Bukit Bintang','Mont Kiara','PJ','Other'], 'Johor Bahru':['JB City','Other'], 'Other':['Other'] },
+  'Indonesia':    { 'Jakarta':['Central Jakarta','South Jakarta','West Jakarta','Other'], 'Surabaya':['Surabaya City','Other'], 'Other':['Other'] },
+  'Other':        { 'Other':['Other'] },
+};
+
+function initVCountry(selected) {
+  const sel = document.getElementById('v_country');
+  sel.innerHTML = `<option value="">-- ${IS_AR?'اختر':'Select'} --</option>`;
+  Object.keys(GEO).forEach(c => sel.innerHTML += `<option value="${c}"${c===selected?' selected':''}>${c}</option>`);
+  vCountryChange(selected ? '' : null, selected);
+}
+function vCountryChange(preCity, preCountry) {
+  const country = preCountry || document.getElementById('v_country').value;
+  const cities = GEO[country] || {};
+  const sel = document.getElementById('v_city');
+  sel.innerHTML = `<option value="">-- ${IS_AR?'اختر':'Select'} --</option>`;
+  Object.keys(cities).forEach(c => sel.innerHTML += `<option value="${c}"${c===preCity?' selected':''}>${c}</option>`);
+  vCityChange(null, preCity);
+}
+function vCityChange(preDistrict, preCity) {
+  const country = document.getElementById('v_country').value;
+  const city = preCity || document.getElementById('v_city').value;
+  const districts = (GEO[country] || {})[city] || [];
+  const sel = document.getElementById('v_district');
+  sel.innerHTML = `<option value="">-- ${IS_AR?'اختر':'Select'} --</option>`;
+  districts.forEach(d => sel.innerHTML += `<option value="${d}"${d===preDistrict?' selected':''}>${d}</option>`);
+}
+
+/* ══ Accordion ══ */
+function togAcc(id) {
+  const b=document.getElementById(id), btn=b.previousElementSibling, ch=document.getElementById('ch_'+id);
+  const open=b.classList.contains('show');
+  b.classList.toggle('show',!open); btn.classList.toggle('open',!open);
+  if(ch){ch.className=open?'fas fa-chevron-down':'fas fa-chevron-up';ch.style.cssText=open?'color:#9ca3af;font-size:11px;':'color:#2563eb;font-size:11px;';}
+}
+
+/* ══ Helpers ══ */
+const gv = id => document.getElementById(id)?.value?.trim() || '';
+const sv = (id, val) => { const e=document.getElementById(id); if(e) e.value = val||''; };
+
+/* ══ Open Add ══ */
+function openAdd() {
+  document.getElementById('v_edit_id').value = '';
+  document.getElementById('vndTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة مورد / Add Vendor' : 'Add Vendor / إضافة مورد');
+  ['v_name_en','v_name_ar','v_vat','v_crn','v_contact','v_phone','v_fax','v_email','v_website',
+   'v_street_en','v_street_ar','v_bldg','v_addl','v_postal'].forEach(id => sv(id,''));
+  sv('v_status','active');
+  sv('v_invoice_id','');
+  initVCountry('Saudi Arabia');
+  // Open acc1, close acc2
+  ['va1','va2'].forEach((id,i) => {
+    const b=document.getElementById(id), ch=document.getElementById('ch_'+id);
+    b.classList.toggle('show',i===0); b.previousElementSibling.classList.toggle('open',i===0);
+    if(ch){ch.className=i===0?'fas fa-chevron-up':'fas fa-chevron-down';ch.style.cssText=i===0?'color:#2563eb;font-size:11px;':'color:#9ca3af;font-size:11px;';}
+  });
+  new bootstrap.Modal(document.getElementById('vndModal')).show();
+}
+
+/* ══ Open Edit ══ */
+function openEdit(id) {
+  fetch('/purchase/vendors/'+id+'/json').then(r=>r.json()).then(d=>{
+    document.getElementById('v_edit_id').value = id;
+    document.getElementById('vndTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل المورد / Edit Vendor' : 'Edit Vendor / تعديل المورد');
+    sv('v_name_en', d.vendor_name_en); sv('v_name_ar', d.vendor_name_ar);
+    sv('v_vat', d.vat_number); sv('v_crn', d.crn);
+    sv('v_contact', d.contact_person); sv('v_phone', d.phone);
+    sv('v_fax', d.fax); sv('v_email', d.email); sv('v_website', d.website);
+    sv('v_status', d.status || 'active');
+    sv('v_invoice_id', d.invoice_id || '');
+    sv('v_street_en', d.street_name); sv('v_street_ar', d.street_name_ar);
+    sv('v_bldg', d.building_number); sv('v_addl', d.additional_number);
+    sv('v_postal', d.postal_code);
+    initVCountry(d.country || 'Saudi Arabia');
+    setTimeout(() => {
+      vCountryChange(d.city || '', d.country || 'Saudi Arabia');
+      setTimeout(() => { vCityChange(d.district || '', d.city || ''); }, 50);
+    }, 50);
+    new bootstrap.Modal(document.getElementById('vndModal')).show();
+  });
+}
+
+/* ══ Save ══ */
+function saveVendor() {
+  const name = gv('v_name_en');
+  if (!name) { document.getElementById('v_name_en').focus(); alert(IS_AR?'اسم المورد مطلوب':'Vendor name is required'); return; }
+  if (!gv('v_vat')) { document.getElementById('v_vat').focus(); alert(IS_AR?'رقم الضريبة مطلوب':'VAT Number is required'); return; }
+  if (!gv('v_crn')) { document.getElementById('v_crn').focus(); alert(IS_AR?'السجل التجاري مطلوب':'CRN is required'); return; }
+  if (!gv('v_phone')) { document.getElementById('v_phone').focus(); alert(IS_AR?'رقم الهاتف مطلوب':'Phone is required'); return; }
+  if (!gv('v_country')) { alert(IS_AR?'الدولة مطلوبة':'Country is required'); return; }
+  if (!gv('v_city')) { alert(IS_AR?'المدينة مطلوبة':'City is required'); return; }
+
+  const editId = document.getElementById('v_edit_id').value;
+  const url = editId ? `/purchase/vendors/${editId}/edit` : '/purchase/vendors/add';
+  const body = new URLSearchParams({
+    csrf_token: CSRF,
+    vendor_name_en: gv('v_name_en'), vendor_name_ar: gv('v_name_ar'),
+    vat_number: gv('v_vat'), crn: gv('v_crn'),
+    contact_person: gv('v_contact'), phone: gv('v_phone'),
+    fax: gv('v_fax'), email: gv('v_email'), website: gv('v_website'),
+    status: gv('v_status'),
+    invoice_id: gv('v_invoice_id'),
+    street_name: gv('v_street_en'), street_name_ar: gv('v_street_ar'),
+    building_number: gv('v_bldg'), additional_number: gv('v_addl'),
+    postal_code: gv('v_postal'),
+    country: gv('v_country'), city: gv('v_city'), district: gv('v_district'),
+  });
+
+  // Disable button while saving
+  const btn = document.getElementById('vndSaveBtn');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>' + (IS_AR?'جاري الحفظ...':'Saving...');
+  fetch(url, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken':CSRF}, body })
+  .then(r => r.json())
+  .then(d => {
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-save me-1"></i>' + (IS_AR?'حفظ المورد / Save':'Save Vendor / حفظ');
+    if (d.ok) { bootstrap.Modal.getInstance(document.getElementById('vndModal'))?.hide(); loadData(); }
+    else { alert(d.error || (IS_AR?'حدث خطأ':'An error occurred')); }
+  })
+  .catch(() => { btn.disabled=false; btn.innerHTML='<i class="fas fa-save me-1"></i>' + (IS_AR?'حفظ المورد / Save':'Save Vendor / حفظ'); });
+}
+
+/* ══ Delete ══ */
+function confDel(id, name) {
+  document.getElementById('delTxt').textContent = (IS_AR ? 'حذف المورد: ' : 'Delete vendor: ') + name + '?';
+  document.getElementById('delConfirmBtn').onclick = () => {
+    fetch('/purchase/vendors/'+id+'/delete', { method:'POST', headers:{'X-CSRFToken':CSRF}, body: new URLSearchParams({csrf_token:CSRF}) })
+    .then(r=>r.json()).then(d=>{ if(d.ok){bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide();loadData();} });
+  };
+  new bootstrap.Modal(document.getElementById('delModal')).show();
+}
+
+/* ══ AG-Grid ══ */
+function rStatus(p) {
+  const v=p.value||'active';
+  const cfg={'active':['#dcfce7','#15803d'],'inactive':['#f1f5f9','#6b7280']};
+  const [bg,fg]=cfg[v]||cfg['active'];
+  return `<span style="background:${bg};color:${fg};padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;">${IS_AR?(v==='active'?'نشيط':'غير نشيط'):v.charAt(0).toUpperCase()+v.slice(1)}</span>`;
+}
+
+class ActR {
+  init(p) {
+    this.g = document.createElement('div'); this.g.style.cssText='display:flex;align-items:center;gap:3px;';
+    const d = p.data;
+    this.g.innerHTML = `
+      <button class="ag-ab ag-ab-view" onclick="window.location='/purchase/vendors/${d.id}'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
+      <button class="ag-ab ag-ab-edit" onclick="openEdit(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+      <button class="ag-ab ag-ab-del"  onclick="confDel(${d.id},'${(d.vendor_name_en||'').replace(/'/g,"\\'")}') " title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
+  }
+  getGui() { return this.g; }
+}
+
+const AG_LOCALE = IS_AR ? {
+  filterOoo:'تصفية...',equals:'يساوي',notEqual:'لا يساوي',contains:'يحتوي على',
+  notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',
+  blank:'فارغ',notBlank:'غير فارغ',
+  applyFilter:'تطبيق / Apply',clearFilter:'مسح / Clear',resetFilter:'إعادة تعيين',
+  addFilterCondition:'+ إضافة قاعدة / Add Rule',
+  matchAll:'يطابق الكل / Match All',matchAny:'يطابق أي / Match Any',
+  noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...',
+} : {
+  filterOoo:'Filter...',applyFilter:'Apply / تطبيق',clearFilter:'Clear / مسح',
+  resetFilter:'Reset',addFilterCondition:'+ Add Rule / إضافة قاعدة',
+  matchAll:'Match All / بتطابق مع الكل',matchAny:'Match Any / يطابق أي',
+  noRowsToShow:'No records found',
+};
+
+const defCol = {
+  sortable:true, resizable:true, filter:true, floatingFilter:true,
+  filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}
+};
+const cols = [
+  {headerName:'#',field:'id',width:65,floatingFilter:false,suppressMenu:true},
+  {headerName:IS_AR?'الكود':'Code',field:'vendor_code',width:115},
+  {headerName:IS_AR?'اسم المورد':'Vendor Name',field:'vendor_name_en',minWidth:200,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'الاسم بالعربي':'Name (AR)',field:'vendor_name_ar',minWidth:160,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'رقم الضريبة':'VAT Number',field:'vat_number',width:145,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'السجل التجاري':'CRN',field:'crn',width:125,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'الهاتف':'Phone',field:'phone',width:125,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'البريد':'Email',field:'email',width:165,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'المدينة':'City',field:'city',width:110,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'شخص الاتصال':'Contact Person',field:'contact_person',width:140,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'الفاتورة':'Invoice No',field:'invoice_no',width:130,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'الحالة':'Status',field:'status',width:95,cellRenderer:rStatus,floatingFilter:false},
+  {headerName:IS_AR?'إجراءات':'Actions الإجراءات',field:'_a',width:110,pinned:IS_AR?'left':'right',
+   sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,
+   cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 6px'}},
+];
+
+let gridApi;
+agGrid.createGrid(document.getElementById('vndGrid'), {
+  columnDefs:cols, rowData:[], pagination:true, paginationPageSize:10,
+  animateRows:true, enableRtl:IS_AR, defaultColDef:defCol, localeText:AG_LOCALE,
+  onGridReady(p) { gridApi=p.api; loadData(); },
+  onPaginationChanged() { upd(); },
+  getRowStyle(p) { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
+});
+function loadData() { fetch('/purchase/vendors/data').then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);upd();}); }
+function upd() { if(!gridApi)return; const c=gridApi.getDisplayedRowCount(); document.getElementById('selText').textContent=c+' '+(IS_AR?'مورد':'vendors'); document.getElementById('pageInfo').textContent=`${c} entries`; }
+// Auto-open edit modal if ?edit= param present (from vendor view page)
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const editId = params.get('edit');
+  if (editId) {
+    // Wait for grid to load then open edit
+    setTimeout(() => openEdit(parseInt(editId)), 800);
+    // Clean URL
+    history.replaceState({}, '', window.location.pathname);
+  }
+});
+
+</script>
+{% endblock %}

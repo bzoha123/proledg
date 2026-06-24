@@ -46,7 +46,9 @@ def bind_employee(emp, f, files=None):
         'profession','profession_ar','employee_type','education','education_ar',
         'mobile','address','address_ar','email','home_city','home_city_ar',
         'employee_reference','employee_reference_ar',
-        'po_number','salary_type','kafalat_number','department','department_ar','shift_type',
+        'po_number','salary_type','kafalat_number','po_rate_unit',
+        'department','department_ar','section','section_ar',
+        'company','company_ar','work_month','work_status','shift_type',
         'bank_name','bank_name_ar',
         'forman','forman_ar','hostel_name','hostel_name_ar','room_number',
         'hostel_location','hostel_location_ar','bank_name','bank_name_ar',
@@ -62,7 +64,7 @@ def bind_employee(emp, f, files=None):
         try: setattr(emp, field, float(f.get(field,0) or 0))
         except: setattr(emp, field, 0)
 
-    date_fields = ['arrival_date','birth_date','passport_expiry','iqama_expiry','joining_date','insurance_expiry']
+    date_fields = ['arrival_date','birth_date','passport_expiry','iqama_expiry','joining_date','insurance_expiry','end_date_work']
     for field in date_fields:
         setattr(emp, field, parse_date(f.get(field)))
 
@@ -177,13 +179,17 @@ def employee_json(id):
         'mobile':g('mobile'),'address':g('address'),'address_ar':g('address_ar'),'email':g('email'),
         'home_city':g('home_city'),'home_city_ar':g('home_city_ar'),
         'employee_reference':g('employee_reference'),'employee_reference_ar':g('employee_reference_ar'),
-        'po_rate':e.po_rate or 0,'po_number':g('po_number'),'kafalat_number':g('kafalat_number'),
+        'po_rate':e.po_rate or 0,'po_rate_unit':e.po_rate_unit or 'hour','po_number':g('po_number'),'kafalat_number':g('kafalat_number'),
         'salary_type':g('salary_type') or 'salary',
         'basic_salary':e.basic_salary or 0,
         'total_allowances':e.total_allowances or 0,
         'net_salary':e.net_salary or 0,
         'working_hours':e.working_hours or 8,'overtime_ratio':e.overtime_ratio or 1.5,'overtime_rate':e.overtime_rate or 0,
-        'joining_date':d(e.joining_date),'department':g('department'),'department_ar':g('department_ar'),
+        'joining_date':d(e.joining_date),'end_date_work':d(e.end_date_work),
+        'work_month':g('work_month'),'work_status':g('work_status') or 'active',
+        'company':g('company'),'company_ar':g('company_ar'),
+        'section':g('section'),'section_ar':g('section_ar'),
+        'department':g('department'),'department_ar':g('department_ar'),
         'shift_type':g('shift_type') or 'day','forman':g('forman'),'forman_ar':g('forman_ar'),
         'hostel_name':g('hostel_name'),'hostel_name_ar':g('hostel_name_ar'),
         'room_number':g('room_number'),'hostel_location':g('hostel_location'),'hostel_location_ar':g('hostel_location_ar'),

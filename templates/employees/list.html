@@ -124,6 +124,119 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
 .ag-theme-alpine .ag-floating-filter-input .ag-input-field-input:focus{outline:none;border-color:#2563eb;}
 .ag-theme-alpine .ag-filter-add-join-condition .ag-button{color:#2563eb;font-size:12px;font-weight:600;background:none;border:none;cursor:pointer;}
 .ag-theme-alpine .ag-header-icon.ag-header-label-icon.ag-filter-active{color:#fbbf24;}
+
+/* ══ AG-Grid Filter Popup — ProLedg exact style ══ */
+.ag-theme-alpine .ag-filter-toolpanel-header,
+.ag-theme-alpine .ag-filter-body-wrapper{padding:0;}
+.ag-theme-alpine .ag-simple-filter-body-wrapper{padding:6px 8px 0;}
+.ag-theme-alpine .ag-filter{
+  border-radius:10px!important;
+  box-shadow:0 6px 24px rgba(0,0,0,.14)!important;
+  border:1px solid #e2e8f0!important;
+  overflow:hidden;
+  min-width:255px;
+  background:white;
+}
+.ag-theme-alpine .ag-filter-condition{
+  padding:6px 8px;
+  background:#f8fafc;
+  border-bottom:1px solid #f1f5f9;
+}
+.ag-theme-alpine .ag-filter-condition .ag-picker-field-wrapper{
+  border:1.5px solid #d1d5db;
+  border-radius:7px;
+  background:white;
+  padding:5px 10px;
+  font-size:12px;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input,
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input{
+  border:1.5px solid #d1d5db!important;
+  border-radius:7px!important;
+  padding:6px 10px!important;
+  font-size:12px!important;
+  width:100%!important;
+  background:white!important;
+  transition:border-color .15s!important;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus,
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input:focus{
+  outline:none!important;
+  border-color:#2563eb!important;
+  box-shadow:0 0 0 2px rgba(37,99,235,.12)!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel{
+  padding:8px 10px!important;
+  background:#f8fafc!important;
+  border-top:1px solid #e2e8f0!important;
+  display:flex!important;
+  gap:6px!important;
+  justify-content:space-between!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button{
+  padding:5px 14px!important;
+  border-radius:7px!important;
+  font-size:12px!important;
+  font-weight:600!important;
+  border:none!important;
+  cursor:pointer!important;
+  transition:all .12s!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]{
+  background:linear-gradient(135deg,#16a34a,#15803d)!important;
+  color:white!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]:hover{
+  background:linear-gradient(135deg,#15803d,#166534)!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="cancelFilterButton"]{
+  background:white!important;
+  color:#374151!important;
+  border:1.5px solid #d1d5db!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"]:hover{
+  background:#f9fafb!important;
+  border-color:#9ca3af!important;
+}
+/* Add Rule button */
+.ag-theme-alpine .ag-add-filter-condition{
+  padding:4px 10px!important;
+  border-bottom:1px solid #f1f5f9!important;
+}
+.ag-theme-alpine .ag-add-filter-condition .ag-button{
+  color:#2563eb!important;
+  font-size:12px!important;
+  font-weight:600!important;
+  background:none!important;
+  border:none!important;
+  cursor:pointer!important;
+  padding:3px 0!important;
+}
+.ag-theme-alpine .ag-add-filter-condition .ag-button::before{
+  content:'+ ';
+}
+.ag-theme-alpine .ag-add-filter-condition .ag-button:hover{
+  text-decoration:underline!important;
+}
+/* Floating filter row */
+.ag-theme-alpine .ag-floating-filter-input input{
+  border:1px solid #e2e8f0!important;
+  border-radius:5px!important;
+  padding:3px 7px!important;
+  font-size:11px!important;
+  background:white!important;
+}
+.ag-theme-alpine .ag-floating-filter-input input:focus{
+  outline:none!important;
+  border-color:#2563eb!important;
+}
+/* Active filter indicator */
+.ag-theme-alpine .ag-header-icon.ag-filter-icon{
+  color:#fbbf24!important;
+}
+
 </style>
 {% endblock %}
 
@@ -319,7 +432,17 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
               <hr style="border-color:#f1f5f9;margin:16px 0;">
               <div class="field-row">
                 {{ sd('nationality','Nationality','الجنسية') }}
-                {{ sd('profession','Profession','المهنة') }}
+                <div class="field-item">
+                  <div class="field-label" style="display:flex;justify-content:space-between;align-items:center;">
+                    <span>{% if ar %}المهنة{% else %}Profession{% endif %}</span>
+                    <button type="button" onclick="openAddProfModal()"
+                            style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:600;cursor:pointer;">
+                      <i class="fas fa-plus"></i>{% if ar %}إضافة{% else %}Add{% endif %}
+                    </button>
+                  </div>
+                  <select name="profession" id="f_profession" class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"></select>
+                  <input type="hidden" name="profession_ar" id="f_profession_arval">
+                </div>
               </div>
               <div class="field-row">
                 <div class="field-item">
@@ -338,7 +461,11 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
                 {{ sf('entry_number','Entry Number','رقم الدخول') }}
               </div>
               <div class="field-row">
-                {{ sf('birth_date','Birth Date','تاريخ الميلاد','date') }}
+                <div class="field-item">
+                  <div class="field-label">{% if ar %}تاريخ الميلاد{% else %}Birth Date{% endif %}</div>
+                  <input type="date" name="birth_date" id="f_birth_date"
+                         class="field-input" dir="ltr" oninput="calcAge()">
+                </div>
                 <div class="field-item">
                   <div class="field-label">{% if ar %}العمر{% else %}Age{% endif %}</div>
                   <input type="text" id="f_age_display" class="field-input" readonly style="background:#f0fdf4;color:#15803d;font-weight:600" placeholder="{% if ar %}يحسب تلقائياً{% else %}Auto-calculated{% endif %}">
@@ -409,9 +536,15 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
                 {# 1 — PO Rate #}
                 <div>
                   <div class="field-label">{% if ar %}معدل طلب الشراء{% else %}PO Rate{% endif %}</div>
-                  <input type="number" name="po_rate" id="f_po_rate"
-                         class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                         step="0.01" min="0" placeholder="0.00">
+                  <div style="display:flex;gap:6px;">
+                    <input type="number" name="po_rate" id="f_po_rate"
+                           class="field-input" dir="ltr" step="0.01" min="0" placeholder="0.00" style="flex:1;">
+                    <select name="po_rate_unit" id="f_po_rate_unit" class="field-input" style="width:120px;">
+                      <option value="hour">{% if ar %}/ ساعة{% else %}Per Hour{% endif %}</option>
+                      <option value="day">{% if ar %}/ يوم{% else %}Per Day{% endif %}</option>
+                      <option value="month">{% if ar %}/ شهر{% else %}Per Month{% endif %}</option>
+                    </select>
+                  </div>
                 </div>
 
                 {# 2 — PO Number (alpha-numeric) #}
@@ -531,32 +664,75 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
 
           {# ══ 5. WORK INFORMATION ══ #}
           {{ sec('work','info-circle','Work Information','معلومات العمل') }}
+              {# Row 1: Month + Joining Date + End Date — matches Work Allocation form #}
               <div class="field-row">
-                {{ sd('buyer_id','Select Buyer','اختر المشتري') }}
-                {{ sf('joining_date','Joining Date','تاريخ الانضمام','date') }}
+                <div class="field-item">
+                  <div class="field-label">{% if ar %}الشهر{% else %}Month{% endif %}</div>
+                  <input type="text" name="work_month" id="f_work_month" class="field-input"
+                         placeholder="{% if ar %}مثال: يناير/26{% else %}e.g. Jan/26{% endif %}">
+                </div>
+                <div class="field-item">
+                  <div class="field-label">{% if ar %}تاريخ الانضمام{% else %}Joining Date{% endif %}</div>
+                  <input type="date" name="joining_date" id="f_joining_date" class="field-input" dir="ltr">
+                </div>
+                <div class="field-item">
+                  <div class="field-label">{% if ar %}تاريخ الانتهاء{% else %}End Date{% endif %}</div>
+                  <input type="date" name="end_date_work" id="f_end_date_work" class="field-input" dir="ltr">
+                </div>
               </div>
+
+              {# Row 2: Status MCQ + Shift MCQ #}
               <div class="field-row">
-                {{ bf('department','Department','القسم') }}
-              </div>
-              <div class="field-row">
-                {{ bf('forman','Forman','مشرف') }}
-              </div>
-              <div class="field-row one-col">
-                <div class="field-item" style="max-width:100%">
+                <div class="field-item">
+                  <div class="field-label">{% if ar %}الحالة{% else %}Status{% endif %}</div>
+                  <div class="mcq-wrap" id="workStatusGrp">
+                    <label class="mcq-opt chosen" onclick="pickMCQ('workStatusGrp',this,'f_work_status','active')"><input type="radio">{% if ar %}نشيط{% else %}Active{% endif %}</label>
+                    <label class="mcq-opt" onclick="pickMCQ('workStatusGrp',this,'f_work_status','inactive')"><input type="radio">{% if ar %}غير نشيط{% else %}Inactive{% endif %}</label>
+                  </div>
+                  <input type="hidden" name="work_status" id="f_work_status" value="active">
+                </div>
+                <div class="field-item">
                   <div class="field-label">{% if ar %}نوع الوردية{% else %}Shift Type{% endif %}</div>
                   <div class="mcq-wrap" id="shiftGrp">
-                    {% for v,le,la in [('day','Day','نهاري'),('evening','Evening','مسائي'),('night','Night','ليلي')] %}
-                    <label class="mcq-opt" onclick="pickMCQ('shiftGrp',this,'f_shift_type','{{ v }}')"><input type="radio">{% if ar %}{{ la }}{% else %}{{ le }}{% endif %}</label>
-                    {% endfor %}
+                    <label class="mcq-opt chosen" onclick="pickMCQ('shiftGrp',this,'f_shift_type','day')"><input type="radio">{% if ar %}نهاري{% else %}Day{% endif %}</label>
+                    <label class="mcq-opt" onclick="pickMCQ('shiftGrp',this,'f_shift_type','night')"><input type="radio">{% if ar %}ليلي{% else %}Night{% endif %}</label>
+                    <label class="mcq-opt" onclick="pickMCQ('shiftGrp',this,'f_shift_type','rotating')"><input type="radio">{% if ar %}متناوب{% else %}Rotating{% endif %}</label>
                   </div>
                   <input type="hidden" name="shift_type" id="f_shift_type" value="day">
                 </div>
               </div>
-            </div>
-          </div>
 
-          {# ══ 6. HOSTEL INFORMATION ══ #}
-          {{ sec('hostel','home','Hostel Information','معلومات السكن') }}
+              {# Company/HR buyer #}
+              <div class="field-row">
+                <div class="field-item">
+                  <div class="field-label">{% if ar %}الشركة / HR{% else %}Company / HR{% endif %}</div>
+                  <select name="buyer_id" id="f_buyer_id" class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"></select>
+                </div>
+              </div>
+
+              {# Company / Department / Section — bilingual auto-translate #}
+              {% for fid, en_lbl, ar_lbl in [('company','Company','الشركة'),('department','Department','القسم'),('section','Section','القطاع')] %}
+              <div class="field-row" style="margin-bottom:10px;">
+                <div class="field-item">
+                  <div class="field-label">{{ en_lbl }}{% if ar %} (EN){% endif %}</div>
+                  <div style="display:flex;gap:6px;">
+                    <input type="text" name="{{ fid }}" id="f_{{ fid }}_en" class="field-input" dir="ltr" style="flex:1"
+                           oninput="biWrap(this,'f_{{ fid }}_ar','en')">
+                    {% if not ar %}<button type="button" class="bi-btn" title="Translate" onclick="biWrapRetrans(document.getElementById('f_{{ fid }}_ar').value,'f_{{ fid }}_en','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                  </div>
+                </div>
+                <div class="field-item">
+                  <div class="field-label" dir="rtl" style="text-align:right;">{{ ar_lbl }}{% if not ar %} (AR){% endif %}</div>
+                  <div style="display:flex;gap:6px;" dir="rtl">
+                    <input type="text" name="{{ fid }}_ar" id="f_{{ fid }}_ar" class="field-input" dir="rtl" style="flex:1"
+                           oninput="biWrap(this,'f_{{ fid }}_en','ar')">
+                    {% if ar %}<button type="button" class="bi-btn" title="ترجم" onclick="biWrapRetrans(document.getElementById('f_{{ fid }}_en').value,'f_{{ fid }}_ar','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+
+{{ sec('hostel','home','Hostel Information','معلومات السكن') }}
               <div class="field-row">
                 {{ bf('hostel_name','Hostel Name','اسم السكن') }}
               </div>
@@ -727,7 +903,13 @@ select.field-input[dir="rtl"]{background-image:url("data:image/svg+xml,%3Csvg xm
       {# Add form only — grid is shown in the main employee form #}
       <div style="padding:20px 24px;">
         <div style="margin-bottom:14px;">
-          <div class="field-label" style="margin-bottom:6px;">{% if ar %}نوع البدل{% else %}Allowance Type{% endif %} <span style="color:#ef4444">*</span></div>
+          <div class="field-label" style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+            <span>{% if ar %}نوع البدل{% else %}Allowance Type{% endif %} <span style="color:#ef4444">*</span></span>
+            <button type="button" onclick="openAddAllowTypeModal()"
+                    style="background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:600;cursor:pointer;">
+              <i class="fas fa-plus"></i>{% if ar %}إضافة نوع{% else %}Add Type{% endif %}
+            </button>
+          </div>
           <select id="ap_type" class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}">
             <option value="">{% if ar %}-- اختر نوع البدل --{% else %}-- Select Allowance Type --{% endif %}</option>
           </select>
@@ -1315,7 +1497,8 @@ function openEditEmp(id) {
     // Text fields (bilingual)
     const biFields = ['name','kafeel_name','kafeel_reference','education','address','home_city',
                        'employee_reference','department','forman','hostel_name','hostel_location',
-                       'bank_name','bank_branch','crn','insurance_company'];
+                       'bank_name','bank_branch','crn','insurance_company',
+                       'company','section'];
     biFields.forEach(f => {
       const en = document.getElementById('f_'+f);
       const arr = document.getElementById('f_'+f+'_ar');
@@ -1329,7 +1512,8 @@ function openEditEmp(id) {
                            'rate','po_rate','po_number','basic_salary','food_allowance','rent',
                            'working_hours','overtime_ratio','overtime_rate','kafalat_number',
                            'arrival_date','birth_date','passport_expiry','iqama_expiry',
-                           'joining_date','insurance_expiry'];
+                           'joining_date','insurance_expiry',
+                           'end_date_work','work_month'];
     singleFields.forEach(f => {
       const el = document.getElementById('f_'+f);
       if (el) el.value = d[f] || '';
@@ -1342,6 +1526,7 @@ function openEditEmp(id) {
     setMCQ('empTypeGrp', d.employee_type || '', 'f_employee_type');
     setMCQ('salTypeGrp', d.salary_type || 'salary', 'f_salary_type');
     setMCQ('shiftGrp', d.shift_type || 'day', 'f_shift_type');
+    setMCQ('workStatusGrp', d.work_status || 'active', 'f_work_status');
     setMCQ('passLocGrp', d.passport_location || 'IN', 'f_passport_location');
 
     // Load allowances and update badge + total (employee id already set above)
@@ -1351,6 +1536,9 @@ function openEditEmp(id) {
     initNationality(d.nationality || '');
     initProfession(d.profession || '');
     initBuyer(d.buyer_id || '');
+    // Set PO rate unit dropdown
+    const puEl = document.getElementById('f_po_rate_unit');
+    if (puEl && d.po_rate_unit) puEl.value = d.po_rate_unit;
     initDocType(d.document_type || '');
 
     // Age + Hijri
@@ -1975,5 +2163,150 @@ function confDel(url, name) {
 }
 
 document.getElementById('empForm').addEventListener('submit', () => setTimeout(loadData, 700));
+
+/* ══ biWrap — translate on input (for Work Info bilingual fields) ══ */
+function biWrap(el, targetId, dir) {
+  const src = (el instanceof Element ? el : event.target).value.trim();
+  if (!src) return;
+  const tgt = document.getElementById(targetId);
+  if (!tgt || tgt.value.trim()) return; // don't overwrite if already filled
+  const TURL = '{{ url_for("sellers.translate_text") }}';
+  const toLang = dir === 'en' ? 'ar' : 'en';
+  fetch(TURL, {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body: JSON.stringify({text:src, to:toLang})})
+  .then(r=>r.json()).then(d=>{ if(d.translation) tgt.value=d.translation; }).catch(()=>{});
+}
+function biWrapRetrans(srcVal, targetId, toLang) {
+  if (!srcVal) return;
+  const tgt = document.getElementById(targetId);
+  if (!tgt) return;
+  const TURL = '{{ url_for("sellers.translate_text") }}';
+  fetch(TURL, {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body: JSON.stringify({text:srcVal, to:toLang})})
+  .then(r=>r.json()).then(d=>{ if(d.translation) tgt.value=d.translation; }).catch(()=>{});
+}
+
+/* ══ Quick Add Profession ══ */
+function openAddProfModal() {
+  ['qp_name_en','qp_name_ar'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  const errEl=document.getElementById('qp_error'); if(errEl) errEl.style.display='none';
+  new bootstrap.Modal(document.getElementById('addProfModal')).show();
+}
+function saveQuickProfession() {
+  const en=(document.getElementById('qp_name_en')?.value||'').trim();
+  const ar_val=(document.getElementById('qp_name_ar')?.value||'').trim();
+  const errEl=document.getElementById('qp_error');
+  if(!en){if(errEl){errEl.textContent='Name (EN) required';errEl.style.display='block';}return;}
+  fetch('/professions/add-quick',{method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body:JSON.stringify({profession_en:en,profession_ar:ar_val})
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok){
+      _profCache=null;
+      bootstrap.Modal.getInstance(document.getElementById('addProfModal'))?.hide();
+      const curVal=document.getElementById('f_profession')?.value||'';
+      initProfession(curVal);
+      if(d.id) setTimeout(()=>{const s=document.getElementById('f_profession');if(s)s.value=d.id;},500);
+    } else {if(errEl){errEl.textContent=d.error||'Error';errEl.style.display='block';}}
+  }).catch(()=>{if(errEl){errEl.textContent='Server error';errEl.style.display='block';}});
+}
+
+/* ══ Quick Add Allowance Type ══ */
+function openAddAllowTypeModal() {
+  ['qat_code','qat_name_en','qat_name_ar'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  const errEl=document.getElementById('qat_error'); if(errEl) errEl.style.display='none';
+  new bootstrap.Modal(document.getElementById('addAllowTypeModal')).show();
+}
+function saveQuickAllowType() {
+  const code=(document.getElementById('qat_code')?.value||'').trim().toUpperCase();
+  const en=(document.getElementById('qat_name_en')?.value||'').trim();
+  const ar_val=(document.getElementById('qat_name_ar')?.value||'').trim();
+  const errEl=document.getElementById('qat_error');
+  if(!code||!en){if(errEl){errEl.textContent='Code and Name (EN) required';errEl.style.display='block';}return;}
+  fetch('/allowance-types/add-quick',{method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body:JSON.stringify({allowance_code:code,allowance_name_en:en,allowance_name_ar:ar_val})
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok){
+      _atCache=null;
+      bootstrap.Modal.getInstance(document.getElementById('addAllowTypeModal'))?.hide();
+      loadAllowTypes(()=>{});
+    } else {if(errEl){errEl.textContent=d.error||'Error';errEl.style.display='block';}}
+  }).catch(()=>{if(errEl){errEl.textContent='Server error';errEl.style.display='block';}});
+}
+
+/* ══ Set MCQ by value (for restoring work status/shift on edit) ══ */
+function setMCQ(groupId, val) {
+  const grp = document.getElementById(groupId);
+  if (!grp) return;
+  grp.querySelectorAll('.mcq-opt').forEach(lbl=>{
+    const isChosen = lbl.getAttribute('onclick')?.includes("'"+val+"'") || lbl.getAttribute('onclick')?.includes('"'+val+'"');
+    lbl.classList.toggle('chosen', !!isChosen);
+  });
+}
+
 </script>
+
+{# ── Quick Add Profession Modal ── #}
+<div class="modal fade" id="addProfModal" tabindex="-1" style="z-index:1080;">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content" style="border-radius:10px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;">
+        <h6 style="margin:0;color:white;font-weight:700;font-size:13px;"><i class="fas fa-plus-circle me-2"></i>{% if ar %}إضافة مهنة{% else %}Add Profession{% endif %}</h6>
+        <button type="button" class="btn-close" style="filter:brightness(0) invert(1);" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:10px;">
+          <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;">{% if ar %}الاسم (EN){% else %}Name (EN){% endif %} *</div>
+          <input type="text" id="qp_name_en" class="field-input" placeholder="e.g. Welder">
+        </div>
+        <div>
+          <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;text-align:right;" dir="rtl">الاسم (AR)</div>
+          <input type="text" id="qp_name_ar" class="field-input" dir="rtl" placeholder="مثال: لحام">
+        </div>
+        <div id="qp_error" style="color:#dc2626;font-size:11px;margin-top:6px;display:none;"></div>
+      </div>
+      <div class="modal-footer border-0" style="background:#f8fafc;padding:10px 16px;">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button class="btn btn-sm btn-primary fw-bold" onclick="saveQuickProfession()">
+          <i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Quick Add Allowance Type Modal ── #}
+<div class="modal fade" id="addAllowTypeModal" tabindex="-1" style="z-index:1090;">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content" style="border-radius:10px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#16a34a,#15803d);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;">
+        <h6 style="margin:0;color:white;font-weight:700;font-size:13px;"><i class="fas fa-plus-circle me-2"></i>{% if ar %}إضافة نوع بدل{% else %}Add Allowance Type{% endif %}</h6>
+        <button type="button" class="btn-close" style="filter:brightness(0) invert(1);" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:10px;">
+          <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;">{% if ar %}الكود{% else %}Code{% endif %} *</div>
+          <input type="text" id="qat_code" class="field-input" placeholder="e.g. HOU" style="text-transform:uppercase;">
+        </div>
+        <div style="margin-bottom:10px;">
+          <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;">{% if ar %}الاسم (EN){% else %}Name (EN){% endif %} *</div>
+          <input type="text" id="qat_name_en" class="field-input" placeholder="e.g. Housing">
+        </div>
+        <div>
+          <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;text-align:right;" dir="rtl">الاسم (AR)</div>
+          <input type="text" id="qat_name_ar" class="field-input" dir="rtl" placeholder="مثال: بدل السكن">
+        </div>
+        <div id="qat_error" style="color:#dc2626;font-size:11px;margin-top:6px;display:none;"></div>
+      </div>
+      <div class="modal-footer border-0" style="background:#f8fafc;padding:10px 16px;">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button class="btn btn-sm btn-success fw-bold" onclick="saveQuickAllowType()">
+          <i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

@@ -64,22 +64,36 @@
                 </span>
             </li>
             {% if current_user.is_admin() %}
-            <li class="nav-item">
-                <a href="{{ url_for('banks.list_banks') }}" class="nav-link {% if request.endpoint and 'banks.' in request.endpoint %}active{% endif %}">
-                    <i class="fas fa-university"></i>
-                    <span>{% if current_locale=='ar' %}إدارة البنوك{% else %}Bank Master{% endif %}</span>
-                </a>
-            </li>
+            
             {% endif %}
 
             {# ══ PURCHASE ════════════════════════════════════ #}
             <li class="nav-section">{% if current_locale=='ar' %}المشتريات{% else %}Purchase{% endif %}</li>
-            {% for icon, en, ar in [
-                ('store','Vendor Reg','تسجيل المورد'),
-                ('file-alt','Purchase Request','طلب شراء'),
-                ('file-invoice','Purchase Quotation','عرض سعر شراء'),
-                ('shopping-bag','Purchase Order','أمر شراء'),
-                ('truck','Goods Receipt Note','إشعار استلام بضاعة'),
+            <li class="nav-item">
+                <a href="{{ url_for('purchase.vendor_list') }}" class="nav-link {% if request.endpoint and 'vendor' in request.endpoint %}active{% endif %}">
+                    <i class="fas fa-store"></i>
+                    <span>{% if current_locale=='ar' %}تسجيل المورد{% else %}Vendor Reg{% endif %}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('purchase.pr_list') }}" class="nav-link {% if request.endpoint and 'pr_list' in request.endpoint %}active{% endif %}">
+                    <i class="fas fa-file-alt"></i>
+                    <span>{% if current_locale=='ar' %}طلب الشراء{% else %}Purchase Request{% endif %}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('purchase.pq_list') }}" class="nav-link {% if request.endpoint and 'pq_list' in request.endpoint %}active{% endif %}">
+                    <i class="fas fa-file-invoice"></i>
+                    <span>{% if current_locale=='ar' %}عرض سعر الشراء{% else %}Purchase Quotation{% endif %}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('purchase.po_list') }}" class="nav-link {% if request.endpoint and 'po_list' in request.endpoint %}active{% endif %}">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>{% if current_locale=='ar' %}أمر الشراء{% else %}Purchase Order{% endif %}</span>
+                </a>
+            </li>
+            {% for icon, en, ar in [('truck','Goods Receipt Note','إشعار استلام بضاعة'),
                 ('receipt','Purchase Invoice','فاتورة شراء'),
                 ('undo','Goods Return Request','طلب إرجاع بضاعة'),
                 ('dolly','Goods Return Note','إشعار إرجاع بضاعة'),
@@ -135,18 +149,8 @@
                     <span>{% if current_locale=='ar' %}الموظفون{% else %}Employee{% endif %}</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="{{ url_for('lookups.list_professions') }}" class="nav-link {% if request.endpoint == 'lookups.list_professions' %}active{% endif %}">
-                    <i class="fas fa-briefcase"></i>
-                    <span>{% if current_locale=='ar' %}المهن{% else %}Professions{% endif %}</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('lookups.list_allowance_types') }}" class="nav-link {% if request.endpoint == 'lookups.list_allowance_types' %}active{% endif %}">
-                    <i class="fas fa-tags"></i>
-                    <span>{% if current_locale=='ar' %}أنواع البدلات{% else %}Allowance Types{% endif %}</span>
-                </a>
-            </li>
+            
+            
             <li class="nav-item">
                 <a href="{{ url_for('work_allocations.list_wa') }}" class="nav-link {% if request.endpoint and 'work_allocations.' in request.endpoint %}active{% endif %}">
                     <i class="fas fa-tasks"></i>

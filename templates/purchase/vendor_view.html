@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% set ar = current_locale == 'ar' %}
+{% block title %}{{ vendor.vendor_name_en }} — {% if ar %}مورد{% else %}Vendor{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Page layout ── */
+.vnd-view-page{max-width:1100px;margin:0 auto;}
+/* ── Header card ── */
+.vnd-hero{background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 60%,#3b82f6 100%);border-radius:14px;padding:28px 32px;color:white;display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:20px;box-shadow:0 4px 20px rgba(37,99,235,.25);}
+.vnd-hero-left{display:flex;align-items:center;gap:20px;}
+.vnd-avatar{width:72px;height:72px;border-radius:14px;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:white;flex-shrink:0;border:2px solid rgba(255,255,255,.3);}
+.vnd-hero-name{font-size:22px;font-weight:800;margin:0 0 4px;}
+.vnd-hero-name-ar{font-size:15px;font-weight:600;opacity:.85;margin:0 0 10px;direction:rtl;}
+.vnd-hero-badges{display:flex;flex-wrap:wrap;gap:6px;}
+.vnd-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 12px;border-radius:10px;font-size:12px;font-weight:700;background:rgba(255,255,255,.2);color:white;}
+.vnd-badge.active{background:rgba(34,197,94,.3);}
+.vnd-badge.inactive{background:rgba(107,114,128,.4);}
+.vnd-hero-right{text-align:right;flex-shrink:0;}
+.vnd-code{font-size:13px;opacity:.7;margin-bottom:4px;}
+.vnd-inv-link{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;color:white;text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-top:8px;}
+.vnd-inv-link:hover{background:rgba(255,255,255,.25);color:white;}
+/* ── Action bar ── */
+.act-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+.btn-act{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;text-decoration:none;transition:all .12s;}
+.btn-act-back{background:white;color:#374151;border:1.5px solid #d1d5db;}
+.btn-act-edit{background:#f59e0b;color:white;}.btn-act-edit:hover{background:#d97706;color:white;}
+.btn-act-del{background:#ef4444;color:white;}.btn-act-del:hover{background:#dc2626;color:white;}
+/* ── Info cards grid ── */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.info-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.info-card{background:white;border-radius:12px;border:1.5px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.04);}
+.info-card.full{grid-column:1/-1;}
+.info-card-hdr{padding:12px 18px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:1.5px solid #e2e8f0;display:flex;align-items:center;gap:8px;}
+.info-card-hdr i{width:26px;height:26px;border-radius:6px;background:#eff6ff;color:#2563eb;display:inline-flex;align-items:center;justify-content:center;font-size:11px;}
+.info-card-hdr span{font-size:12px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:.4px;}
+.info-card-body{padding:16px 18px;}
+/* ── Detail rows ── */
+.d-row{display:flex;padding:8px 0;border-bottom:1px dashed #f1f5f9;font-size:13px;}
+.d-row:last-child{border-bottom:none;padding-bottom:0;}
+.d-lbl{width:140px;font-weight:600;color:#6b7280;flex-shrink:0;font-size:12px;text-transform:uppercase;letter-spacing:.3px;padding-top:1px;}
+.d-val{color:#111827;font-weight:500;flex:1;word-break:break-word;}
+.d-val.empty{color:#d1d5db;font-style:italic;}
+.d-val.highlight{color:#2563eb;font-weight:700;}
+/* ── Map placeholder ── */
+.map-placeholder{height:140px;background:linear-gradient(135deg,#f0f7ff,#e0f2fe);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#60a5fa;font-size:13px;border:1.5px dashed #bfdbfe;margin-top:10px;}
+/* ── Invoice link card ── */
+.inv-link-card{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #86efac;border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;}
+.inv-link-card .inv-no{font-size:16px;font-weight:700;color:#15803d;}
+/* ── Status ── */
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 14px;border-radius:12px;font-size:12px;font-weight:700;}
+.status-active{background:#dcfce7;color:#15803d;}
+.status-inactive{background:#f1f5f9;color:#6b7280;}
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('purchase.vendor_list') }}">{% if ar %}تسجيل الموردين{% else %}Vendor Registration{% endif %}</a></li>
+<li class="breadcrumb-item active">{{ vendor.vendor_name_en }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="proledg-page vnd-view-page">
+
+  {# ── Action bar ── #}
+  <div class="act-bar">
+    <a href="{{ url_for('purchase.vendor_list') }}" class="btn-act btn-act-back">
+      <i class="fas fa-arrow-{% if ar %}right{% else %}left{% endif %}"></i>
+      {% if ar %}رجوع{% else %}Back{% endif %}
+    </a>
+    <button type="button" class="btn-act btn-act-edit" onclick="openEditModal()">
+      <i class="fas fa-pencil-alt"></i>{% if ar %}تعديل{% else %}Edit{% endif %}
+    </button>
+    <button type="button" class="btn-act btn-act-del" onclick="confDel()">
+      <i class="fas fa-trash"></i>{% if ar %}حذف{% else %}Delete{% endif %}
+    </button>
+  </div>
+
+  {# ── Hero card ── #}
+  <div class="vnd-hero">
+    <div class="vnd-hero-left">
+      <div class="vnd-avatar">{{ vendor.vendor_name_en[:2].upper() }}</div>
+      <div>
+        <div class="vnd-hero-name">{{ vendor.vendor_name_en }}</div>
+        {% if vendor.vendor_name_ar %}
+        <div class="vnd-hero-name-ar">{{ vendor.vendor_name_ar }}</div>
+        {% endif %}
+        <div class="vnd-hero-badges">
+          <span class="vnd-badge {{ vendor.status or 'active' }}">
+            <i class="fas fa-circle" style="font-size:7px;"></i>
+            {% if ar %}{{ 'نشيط' if (vendor.status or 'active') == 'active' else 'غير نشيط' }}{% else %}{{ (vendor.status or 'Active')|title }}{% endif %}
+          </span>
+          {% if vendor.vat_number %}
+          <span class="vnd-badge"><i class="fas fa-hashtag" style="font-size:9px;"></i>VAT: {{ vendor.vat_number }}</span>
+          {% endif %}
+          {% if vendor.crn %}
+          <span class="vnd-badge"><i class="fas fa-building" style="font-size:9px;"></i>CRN: {{ vendor.crn }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="vnd-hero-right">
+      <div class="vnd-code">{{ vendor.vendor_code }}</div>
+      {% if vendor.city %}
+      <div style="font-size:14px;opacity:.85;"><i class="fas fa-map-marker-alt me-1"></i>{{ vendor.city }}{% if vendor.country %}, {{ vendor.country }}{% endif %}</div>
+      {% endif %}
+      {% if vendor.invoice %}
+      <a href="{{ url_for('invoices.list_invoices') }}" class="vnd-inv-link">
+        <i class="fas fa-file-invoice-dollar"></i>{{ vendor.invoice.invoice_no }}
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Info grid ── #}
+  <div class="info-grid">
+
+    {# Contact Information #}
+    <div class="info-card">
+      <div class="info-card-hdr">
+        <i class="fas fa-address-card"></i>
+        <span>{% if ar %}معلومات الاتصال{% else %}Contact Information{% endif %}</span>
+      </div>
+      <div class="info-card-body">
+        {% macro drow(lbl, lbl_ar, val) %}
+        <div class="d-row">
+          <div class="d-lbl">{% if ar %}{{ lbl_ar }}{% else %}{{ lbl }}{% endif %}</div>
+          <div class="d-val {% if not val %}empty{% endif %}">{{ val or ('—' if not ar else '—') }}</div>
+        </div>
+        {% endmacro %}
+        {{ drow('Contact Person','شخص الاتصال', vendor.contact_person) }}
+        {{ drow('Phone','الهاتف', vendor.phone) }}
+        {{ drow('Fax','الفاكس', vendor.fax) }}
+        {% if vendor.email %}
+        <div class="d-row">
+          <div class="d-lbl">{% if ar %}البريد{% else %}Email{% endif %}</div>
+          <div class="d-val"><a href="mailto:{{ vendor.email }}" style="color:#2563eb;">{{ vendor.email }}</a></div>
+        </div>
+        {% else %}
+        <div class="d-row"><div class="d-lbl">{% if ar %}البريد{% else %}Email{% endif %}</div><div class="d-val empty">—</div></div>
+        {% endif %}
+        {% if vendor.website %}
+        <div class="d-row">
+          <div class="d-lbl">{% if ar %}الموقع{% else %}Website{% endif %}</div>
+          <div class="d-val"><a href="{{ vendor.website }}" target="_blank" style="color:#2563eb;">{{ vendor.website }}</a></div>
+        </div>
+        {% else %}
+        <div class="d-row"><div class="d-lbl">{% if ar %}الموقع{% else %}Website{% endif %}</div><div class="d-val empty">—</div></div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Registration #}
+    <div class="info-card">
+      <div class="info-card-hdr">
+        <i class="fas fa-id-card"></i>
+        <span>{% if ar %}بيانات التسجيل{% else %}Registration Details{% endif %}</span>
+      </div>
+      <div class="info-card-body">
+        <div class="d-row">
+          <div class="d-lbl">{% if ar %}كود المورد{% else %}Vendor Code{% endif %}</div>
+          <div class="d-val highlight">{{ vendor.vendor_code or '—' }}</div>
+        </div>
+        <div class="d-row">
+          <div class="d-lbl">{% if ar %}رقم الضريبة{% else %}VAT Number{% endif %}</div>
+          <div class="d-val">{{ vendor.vat_number or '—' }}</div>
+        </div>
+        <div class="d-row">
+          <div class="d-lbl">{% if ar %}السجل التجاري{% else %}CRN{% endif %}</div>
+          <div class="d-val">{{ vendor.crn or '—' }}</div>
+        </div>
+        <div class="d-row">
+          <div class="d-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div>
+          <div class="d-val">
+            <span class="status-pill status-{{ vendor.status or 'active' }}">
+              {% if ar %}{{ 'نشيط' if (vendor.status or 'active') == 'active' else 'غير نشيط' }}{% else %}{{ (vendor.status or 'Active')|title }}{% endif %}
+            </span>
+          </div>
+        </div>
+        <div class="d-row">
+          <div class="d-lbl">{% if ar %}تاريخ الإنشاء{% else %}Created{% endif %}</div>
+          <div class="d-val">{{ vendor.created_at.strftime('%d %b %Y') if vendor.created_at else '—' }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  {# ── Address full width ── #}
+  <div class="info-grid-3">
+    <div class="info-card full" style="grid-column:1/-1;">
+      <div class="info-card-hdr">
+        <i class="fas fa-map-marker-alt"></i>
+        <span>{% if ar %}العنوان{% else %}Address{% endif %}</span>
+      </div>
+      <div class="info-card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 24px;">
+          <div>
+            <div class="d-row">
+              <div class="d-lbl">{% if ar %}الدولة{% else %}Country{% endif %}</div>
+              <div class="d-val">{{ vendor.country or '—' }}</div>
+            </div>
+            <div class="d-row">
+              <div class="d-lbl">{% if ar %}المدينة{% else %}City{% endif %}</div>
+              <div class="d-val">{{ vendor.city or '—' }}</div>
+            </div>
+            <div class="d-row">
+              <div class="d-lbl">{% if ar %}الحي{% else %}District{% endif %}</div>
+              <div class="d-val">{{ vendor.district or '—' }}</div>
+            </div>
+          </div>
+          <div>
+            <div class="d-row">
+              <div class="d-lbl">{% if ar %}الشارع{% else %}Street{% endif %}</div>
+              <div class="d-val">{{ vendor.street_name or '—' }}</div>
+            </div>
+            {% if vendor.street_name_ar %}
+            <div class="d-row">
+              <div class="d-lbl">{% if ar %}الشارع (AR){% else %}Street (AR){% endif %}</div>
+              <div class="d-val" dir="rtl">{{ vendor.street_name_ar }}</div>
+            </div>
+            {% endif %}
+            <div class="d-row">
+              <div class="d-lbl">{% if ar %}رقم المبنى{% else %}Building No{% endif %}</div>
+              <div class="d-val">{{ vendor.building_number or '—' }}</div>
+            </div>
+          </div>
+          <div>
+            <div class="d-row">
+              <div class="d-lbl">{% if ar %}الرقم الإضافي{% else %}Addl. No{% endif %}</div>
+              <div class="d-val">{{ vendor.additional_number or '—' }}</div>
+            </div>
+            <div class="d-row">
+              <div class="d-lbl">{% if ar %}الرمز البريدي{% else %}Postal Code{% endif %}</div>
+              <div class="d-val">{{ vendor.postal_code or '—' }}</div>
+            </div>
+            {% if vendor.invoice %}
+            <div class="d-row">
+              <div class="d-lbl">{% if ar %}الفاتورة{% else %}Invoice{% endif %}</div>
+              <div class="d-val highlight">{{ vendor.invoice.invoice_no }}</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% if vendor.city and vendor.country %}
+        <div class="map-placeholder">
+          <i class="fas fa-map-marker-alt me-2"></i>
+          {{ vendor.city }}, {{ vendor.country }}
+          {% if vendor.postal_code %} — {{ vendor.postal_code }}{% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# ── Invoice link (if present) ── #}
+  {% if vendor.invoice %}
+  <div class="inv-link-card" style="margin-bottom:16px;">
+    <div>
+      <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">
+        {% if ar %}الفاتورة المرتبطة{% else %}Linked Invoice{% endif %}
+      </div>
+      <div class="inv-no">{{ vendor.invoice.invoice_no }}</div>
+      <div style="font-size:12px;color:#374151;margin-top:3px;">
+        {{ vendor.invoice.invoice_date.strftime('%d %b %Y') if vendor.invoice.invoice_date else '' }}
+        &nbsp;|&nbsp; {{ vendor.invoice.dr_cr_type }}
+        &nbsp;|&nbsp; SAR {{ '{:,.2f}'.format(vendor.invoice.total_amount or 0) }}
+      </div>
+    </div>
+    <a href="{{ url_for('invoices.list_invoices') }}" class="btn-act btn-act-edit" style="background:#16a34a;">
+      <i class="fas fa-external-link-alt"></i>{% if ar %}عرض الفاتورة{% else %}View Invoice{% endif %}
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+
+{# Delete Confirm Modal #}
+<div class="modal fade" id="delModal" tabindex="-1">
+  <div class="modal-dialog modal-sm"><div class="modal-content" style="border-radius:10px;overflow:hidden;">
+    <div class="modal-header border-0 pb-0"><h6 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>{% if ar %}تأكيد الحذف{% else %}Confirm Delete{% endif %}</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <p class="fw-semibold">{% if ar %}حذف المورد:{% else %}Delete vendor:{% endif %} {{ vendor.vendor_name_en }}?</p>
+      <p class="text-muted small mb-0">{% if ar %}لا يمكن التراجع عن هذه العملية{% else %}This action cannot be undone{% endif %}</p>
+    </div>
+    <div class="modal-footer border-0 pt-0">
+      <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+      <button class="btn btn-sm btn-danger" onclick="doDelete()">{% if ar %}حذف{% else %}Delete{% endif %}</button>
+    </div>
+  </div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = '{{ csrf_token() }}';
+
+function openEditModal() {
+  // Navigate to list page and trigger edit modal via URL param
+  window.location = '{{ url_for("purchase.vendor_list") }}?edit={{ vendor.id }}';
+}
+
+function confDel() {
+  new bootstrap.Modal(document.getElementById('delModal')).show();
+}
+
+function doDelete() {
+  fetch('/purchase/vendors/{{ vendor.id }}/delete', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF },
+    body: new URLSearchParams({ csrf_token: CSRF })
+  }).then(r => r.json()).then(d => {
+    if (d.ok) window.location = '{{ url_for("purchase.vendor_list") }}';
+  });
+}
+</script>
+{% endblock %}

@@ -116,6 +116,119 @@ select.li-inp{appearance:none;padding-right:22px;background-image:url("data:imag
 .inv-stat{background:white;border:1.5px solid #e2e8f0;border-radius:8px;padding:10px 16px;min-width:120px;text-align:center;}
 .inv-stat .stat-num{font-size:18px;font-weight:700;color:#1e3a5f;}
 .inv-stat .stat-lbl{font-size:11px;color:#6b7280;margin-top:2px;}
+
+/* ══ AG-Grid Filter Popup — ProLedg exact style ══ */
+.ag-theme-alpine .ag-filter-toolpanel-header,
+.ag-theme-alpine .ag-filter-body-wrapper{padding:0;}
+.ag-theme-alpine .ag-simple-filter-body-wrapper{padding:6px 8px 0;}
+.ag-theme-alpine .ag-filter{
+  border-radius:10px!important;
+  box-shadow:0 6px 24px rgba(0,0,0,.14)!important;
+  border:1px solid #e2e8f0!important;
+  overflow:hidden;
+  min-width:255px;
+  background:white;
+}
+.ag-theme-alpine .ag-filter-condition{
+  padding:6px 8px;
+  background:#f8fafc;
+  border-bottom:1px solid #f1f5f9;
+}
+.ag-theme-alpine .ag-filter-condition .ag-picker-field-wrapper{
+  border:1.5px solid #d1d5db;
+  border-radius:7px;
+  background:white;
+  padding:5px 10px;
+  font-size:12px;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input,
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input{
+  border:1.5px solid #d1d5db!important;
+  border-radius:7px!important;
+  padding:6px 10px!important;
+  font-size:12px!important;
+  width:100%!important;
+  background:white!important;
+  transition:border-color .15s!important;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus,
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input:focus{
+  outline:none!important;
+  border-color:#2563eb!important;
+  box-shadow:0 0 0 2px rgba(37,99,235,.12)!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel{
+  padding:8px 10px!important;
+  background:#f8fafc!important;
+  border-top:1px solid #e2e8f0!important;
+  display:flex!important;
+  gap:6px!important;
+  justify-content:space-between!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button{
+  padding:5px 14px!important;
+  border-radius:7px!important;
+  font-size:12px!important;
+  font-weight:600!important;
+  border:none!important;
+  cursor:pointer!important;
+  transition:all .12s!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]{
+  background:linear-gradient(135deg,#16a34a,#15803d)!important;
+  color:white!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]:hover{
+  background:linear-gradient(135deg,#15803d,#166534)!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="cancelFilterButton"]{
+  background:white!important;
+  color:#374151!important;
+  border:1.5px solid #d1d5db!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"]:hover{
+  background:#f9fafb!important;
+  border-color:#9ca3af!important;
+}
+/* Add Rule button */
+.ag-theme-alpine .ag-add-filter-condition{
+  padding:4px 10px!important;
+  border-bottom:1px solid #f1f5f9!important;
+}
+.ag-theme-alpine .ag-add-filter-condition .ag-button{
+  color:#2563eb!important;
+  font-size:12px!important;
+  font-weight:600!important;
+  background:none!important;
+  border:none!important;
+  cursor:pointer!important;
+  padding:3px 0!important;
+}
+.ag-theme-alpine .ag-add-filter-condition .ag-button::before{
+  content:'+ ';
+}
+.ag-theme-alpine .ag-add-filter-condition .ag-button:hover{
+  text-decoration:underline!important;
+}
+/* Floating filter row */
+.ag-theme-alpine .ag-floating-filter-input input{
+  border:1px solid #e2e8f0!important;
+  border-radius:5px!important;
+  padding:3px 7px!important;
+  font-size:11px!important;
+  background:white!important;
+}
+.ag-theme-alpine .ag-floating-filter-input input:focus{
+  outline:none!important;
+  border-color:#2563eb!important;
+}
+/* Active filter indicator */
+.ag-theme-alpine .ag-header-icon.ag-filter-icon{
+  color:#fbbf24!important;
+}
+
 </style>
 {% endblock %}
 
@@ -345,7 +458,7 @@ select.li-inp{appearance:none;padding-right:22px;background-image:url("data:imag
                         <th style="width:85px;">{% if ar %}الكمية{% else %}Qty{% endif %}</th>
                         <th style="width:85px;">{% if ar %}السعر{% else %}Rate{% endif %}</th>
                         <th style="width:80px;">{% if ar %}الخصم{% else %}Discount{% endif %}</th>
-                        <th style="width:65px;text-align:center;">{% if ar %}خاضع{% else %}Taxable{% endif %}</th>
+                        <th style="width:80px;">{% if ar %}المبلغ الخاضع{% else %}Taxable Amt{% endif %}</th>
                         <th style="width:65px;">{% if ar %}ضريبة%{% else %}Tax %{% endif %}</th>
                         <th style="width:85px;">{% if ar %}مبلغ الضريبة{% else %}Tax Amt{% endif %}</th>
                         <th style="width:90px;">{% if ar %}الإجمالي{% else %}Total{% endif %}</th>
@@ -574,9 +687,11 @@ function addLineItem(data) {
     <td><input type="number" class="li-inp" name="li_qty[]" value="${d.quantity||0}" min="0" step="0.01" oninput="recalcRow(${idx})" style="width:75px;"></td>
     <td><input type="number" class="li-inp" name="li_rate[]" id="rate_${idx}" value="${d.rate||0}" min="0" step="0.01" oninput="recalcRow(${idx})" style="width:75px;"></td>
     <td><input type="number" class="li-inp" name="li_discount[]" value="${d.discount||0}" min="0" step="0.01" oninput="recalcRow(${idx})" style="width:70px;"></td>
-    <td style="text-align:center;">
-      <input type="checkbox" id="tax_cb_${idx}" ${d.taxable===false?'':'checked'} style="width:15px;height:15px;cursor:pointer;">
-      <input type="hidden" id="taxable_hid_${idx}" name="li_taxable[]" value="${d.taxable===false?'false':'true'}">
+    <td>
+      <input type="number" class="li-inp" id="taxable_amt_${idx}" name="li_taxable_amount[]"
+             value="${d.taxable_amount||0}" readonly style="width:75px;background:#fffbeb;color:#92400e;font-weight:600;"
+             title="Taxable = Qty × Rate">
+      <input type="hidden" id="taxable_hid_${idx}" name="li_taxable[]" value="true">
     </td>
     <td><input type="number" class="li-inp" name="li_tax_rate[]" id="taxrate_${idx}" value="${d.tax_rate||15}" min="0" max="100" step="0.01" oninput="recalcRow(${idx})" style="width:55px;"></td>
     <td><input type="number" class="li-inp" id="taxamt_${idx}" name="li_tax_amount[]" value="${d.tax_amount||0}" readonly style="width:75px;background:#f3f4f6;"></td>
@@ -586,9 +701,6 @@ function addLineItem(data) {
       <i class="fas fa-times" style="font-size:9px;"></i></button></td>
   </tr>`;
   document.getElementById('liBody').insertAdjacentHTML('beforeend', row);
-  const cb = document.getElementById('tax_cb_'+idx);
-  const hid = document.getElementById('taxable_hid_'+idx);
-  cb.onchange = ()=>{ hid.value = cb.checked?'true':'false'; recalcRow(idx); };
   recalcRow(idx);
 }
 
@@ -600,11 +712,17 @@ function recalcRow(idx) {
   const row=document.getElementById('li_'+idx); if(!row) return;
   const get=name=>parseFloat(row.querySelector(`[name="${name}[]"]`)?.value||0)||0;
   const qty=get('li_qty'), rate=get('li_rate'), disc=get('li_discount');
-  const taxable=document.getElementById('tax_cb_'+idx)?.checked??true;
   const tax_rate=get('li_tax_rate');
-  const subtotal=qty*rate-disc;
-  const tax_amt=taxable?Math.round(subtotal*tax_rate/100*100)/100:0;
-  const total=subtotal+tax_amt;
+  // Taxable = Qty × Rate  (gross amount before discount, subject to tax)
+  const taxable_amt = Math.round(qty * rate * 100) / 100;
+  const taxable_el = document.getElementById('taxable_amt_'+idx);
+  if(taxable_el) taxable_el.value = taxable_amt.toFixed(2);
+  // Subtotal after discount = Taxable - Discount
+  const subtotal = Math.max(0, taxable_amt - disc);
+  // VAT = Subtotal × Tax%
+  const tax_amt = Math.round(subtotal * tax_rate / 100 * 100) / 100;
+  // Total = Subtotal + VAT
+  const total = subtotal + tax_amt;
   const ta=document.getElementById('taxamt_'+idx); if(ta) ta.value=tax_amt.toFixed(2);
   const tt=document.getElementById('total_'+idx); if(tt) tt.value=total.toFixed(2);
   recalcSummary();
@@ -614,10 +732,11 @@ function recalcSummary() {
   let gross=0,disc=0,vat=0;
   document.querySelectorAll('#liBody tr').forEach(row=>{
     const get=name=>parseFloat(row.querySelector(`[name="${name}[]"]`)?.value||0)||0;
-    gross+=get('li_qty')*get('li_rate');
+    gross+=get('li_qty')*get('li_rate'); // Taxable (Qty×Rate)
     disc+=get('li_discount');
     vat+=parseFloat(row.querySelector('[name="li_tax_amount[]"]')?.value||0)||0;
   });
+  // excl VAT = gross (taxable) - discount
   const excl=gross-disc, incl=excl+vat;
   const ret_pct=parseFloat(document.getElementById('s_ret_pct')?.value||0)||0;
   const ret_amt=Math.round(incl*ret_pct/100*100)/100;
@@ -671,8 +790,11 @@ function openAddInv() {
   recalcSummary();
   // Open acc1, close rest
   ['acc1','acc2','acc3','acc4'].forEach((id,i)=>{
-    const b=document.getElementById(id); const ch=document.getElementById('ch_'+id);
-    b.classList.toggle('show',i===0); b.previousElementSibling.classList.toggle('open',i===0);
+    const b=document.getElementById(id);
+    const btn=b ? b.previousElementSibling : null;
+    const ch=document.getElementById('ch_'+id);
+    if(b) b.classList.toggle('show',i===0);
+    if(btn) btn.classList.toggle('open',i===0);
     if(ch){ch.className=i===0?'fas fa-chevron-up':'fas fa-chevron-down';ch.style.cssText=i===0?'color:#2563eb;font-size:11px;':'color:#9ca3af;font-size:11px;';}
   });
   addLineItem();

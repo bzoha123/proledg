@@ -84,6 +84,262 @@ select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .ag-theme-alpine .ag-floating-filter-input .ag-input-field-input:focus{outline:none;border-color:#2563eb;}
 .ag-theme-alpine .ag-filter-add-join-condition .ag-button{color:#2563eb;font-size:12px;font-weight:600;background:none;border:none;cursor:pointer;}
 .ag-theme-alpine .ag-header-icon.ag-header-label-icon.ag-filter-active{color:#fbbf24;}
+
+/* ══ AG-Grid Filter Popup — ProLedg exact style ══ */
+.ag-theme-alpine .ag-filter-toolpanel-header,
+.ag-theme-alpine .ag-filter-body-wrapper{padding:0;}
+.ag-theme-alpine .ag-simple-filter-body-wrapper{padding:6px 8px 0;}
+.ag-theme-alpine .ag-filter{
+  border-radius:10px!important;
+  box-shadow:0 6px 24px rgba(0,0,0,.14)!important;
+  border:1px solid #e2e8f0!important;
+  overflow:hidden;
+  min-width:255px;
+  background:white;
+}
+.ag-theme-alpine .ag-filter-condition{
+  padding:6px 8px;
+  background:#f8fafc;
+  border-bottom:1px solid #f1f5f9;
+}
+.ag-theme-alpine .ag-filter-condition .ag-picker-field-wrapper{
+  border:1.5px solid #d1d5db;
+  border-radius:7px;
+  background:white;
+  padding:5px 10px;
+  font-size:12px;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input,
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input{
+  border:1.5px solid #d1d5db!important;
+  border-radius:7px!important;
+  padding:6px 10px!important;
+  font-size:12px!important;
+  width:100%!important;
+  background:white!important;
+  transition:border-color .15s!important;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus,
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input:focus{
+  outline:none!important;
+  border-color:#2563eb!important;
+  box-shadow:0 0 0 2px rgba(37,99,235,.12)!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel{
+  padding:8px 10px!important;
+  background:#f8fafc!important;
+  border-top:1px solid #e2e8f0!important;
+  display:flex!important;
+  gap:6px!important;
+  justify-content:space-between!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button{
+  padding:5px 14px!important;
+  border-radius:7px!important;
+  font-size:12px!important;
+  font-weight:600!important;
+  border:none!important;
+  cursor:pointer!important;
+  transition:all .12s!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]{
+  background:linear-gradient(135deg,#16a34a,#15803d)!important;
+  color:white!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]:hover{
+  background:linear-gradient(135deg,#15803d,#166534)!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="cancelFilterButton"]{
+  background:white!important;
+  color:#374151!important;
+  border:1.5px solid #d1d5db!important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"]:hover{
+  background:#f9fafb!important;
+  border-color:#9ca3af!important;
+}
+/* Add Rule button */
+.ag-theme-alpine .ag-add-filter-condition{
+  padding:4px 10px!important;
+  border-bottom:1px solid #f1f5f9!important;
+}
+.ag-theme-alpine .ag-add-filter-condition .ag-button{
+  color:#2563eb!important;
+  font-size:12px!important;
+  font-weight:600!important;
+  background:none!important;
+  border:none!important;
+  cursor:pointer!important;
+  padding:3px 0!important;
+}
+.ag-theme-alpine .ag-add-filter-condition .ag-button::before{
+  content:'+ ';
+}
+.ag-theme-alpine .ag-add-filter-condition .ag-button:hover{
+  text-decoration:underline!important;
+}
+/* Floating filter row */
+.ag-theme-alpine .ag-floating-filter-input input{
+  border:1px solid #e2e8f0!important;
+  border-radius:5px!important;
+  padding:3px 7px!important;
+  font-size:11px!important;
+  background:white!important;
+}
+.ag-theme-alpine .ag-floating-filter-input input:focus{
+  outline:none!important;
+  border-color:#2563eb!important;
+}
+/* Active filter indicator */
+.ag-theme-alpine .ag-header-icon.ag-filter-icon{
+  color:#fbbf24!important;
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   PROLEDG BEAUTIFIED AG-GRID THEME
+═══════════════════════════════════════════════════════ */
+.ag-theme-alpine {
+  --ag-font-family: 'Segoe UI', Tahoma, system-ui, sans-serif;
+  --ag-font-size: 13px;
+  --ag-header-background-color: #1e3a5f;
+  --ag-header-foreground-color: #ffffff;
+  --ag-border-color: #e2e8f0;
+  --ag-row-border-color: #f1f5f9;
+  --ag-odd-row-background-color: #ffffff;
+  --ag-even-row-background-color: #fafbfc;
+  --ag-row-hover-color: #eff6ff;
+  --ag-selected-row-background-color: #dbeafe;
+  --ag-header-height: 46px;
+  --ag-row-height: 46px;
+  --ag-cell-horizontal-padding: 12px;
+  --ag-header-column-separator-display: block;
+  --ag-header-column-separator-color: rgba(255,255,255,0.15);
+  border-radius: 0 0 10px 10px;
+}
+.ag-theme-alpine .ag-header-cell-label {
+  font-weight: 700;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.ag-theme-alpine .ag-header-cell:hover {
+  background: rgba(255,255,255,0.08) !important;
+}
+.ag-theme-alpine .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-sort-descending-icon,
+.ag-theme-alpine .ag-sort-none-icon {
+  color: rgba(255,255,255,0.7);
+}
+.ag-theme-alpine .ag-header-icon { color: rgba(255,255,255,0.6); }
+.ag-theme-alpine .ag-header-icon.ag-filter-active { color: #fbbf24 !important; }
+/* Filter popup */
+.ag-theme-alpine .ag-filter {
+  border-radius: 10px !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15) !important;
+  border: 1px solid #e2e8f0 !important;
+  overflow: hidden;
+  min-width: 260px;
+  background: white;
+}
+.ag-theme-alpine .ag-filter-condition .ag-picker-field-wrapper {
+  border: 1.5px solid #d1d5db;
+  border-radius: 7px;
+  background: white;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input,
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input {
+  border: 1.5px solid #d1d5db !important;
+  border-radius: 7px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  width: 100% !important;
+  transition: border-color 0.15s !important;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus,
+.ag-theme-alpine .ag-filter-filter .ag-input-field-input:focus {
+  outline: none !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.12) !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel {
+  padding: 8px 10px !important;
+  background: #f8fafc !important;
+  border-top: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  gap: 6px !important;
+  justify-content: space-between !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button {
+  padding: 5px 14px !important;
+  border-radius: 7px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.12s !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"] {
+  background: linear-gradient(135deg,#16a34a,#15803d) !important;
+  color: white !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"] {
+  background: white !important;
+  color: #374151 !important;
+  border: 1.5px solid #d1d5db !important;
+}
+.ag-theme-alpine .ag-add-filter-condition { padding: 4px 10px !important; border-bottom: 1px solid #f1f5f9 !important; }
+.ag-theme-alpine .ag-add-filter-condition .ag-button {
+  color: #2563eb !important; font-size: 12px !important; font-weight: 600 !important;
+  background: none !important; border: none !important; cursor: pointer !important;
+}
+/* Floating filter */
+.ag-theme-alpine .ag-floating-filter-input input {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 5px !important;
+  padding: 3px 7px !important;
+  font-size: 11px !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input:focus {
+  outline: none !important; border-color: #2563eb !important;
+}
+/* Rows */
+.ag-theme-alpine .ag-row-even { background: white; }
+.ag-theme-alpine .ag-row-odd  { background: #fafbfc; }
+.ag-theme-alpine .ag-row-hover { background: #eff6ff !important; }
+.ag-theme-alpine .ag-cell { border-right: 1px solid #f1f5f9 !important; }
+/* Action buttons — ProLedg exact */
+.pl-act { display:flex; align-items:center; gap:3px; }
+.pl-btn { width:28px; height:28px; border-radius:7px; border:none; display:inline-flex;
+           align-items:center; justify-content:center; font-size:11px; cursor:pointer;
+           transition:all 0.12s; flex-shrink:0; }
+.pl-btn:hover { transform:translateY(-1px); box-shadow:0 2px 6px rgba(0,0,0,0.2); }
+.pl-view  { background:#0ea5e9; color:white; }
+.pl-edit  { background:#f59e0b; color:white; }
+.pl-del   { background:#ef4444; color:white; }
+.pl-pay   { background:#6b7280; color:white; }
+.pl-pay.on{ background:#f59e0b; color:white; }
+.pl-dl    { background:#8b5cf6; color:white; }
+.pl-print { background:#16a34a; color:white; }
+/* Status pills */
+.st-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 10px;
+            border-radius:10px; font-size:11px; font-weight:700; }
+.st-active   { background:#dcfce7; color:#15803d; }
+.st-inactive { background:#f1f5f9; color:#6b7280; }
+.st-open     { background:#dbeafe; color:#1d4ed8; }
+.st-approved { background:#dcfce7; color:#15803d; }
+.st-pending  { background:#fef3c7; color:#92400e; }
+.st-closed   { background:#f1f5f9; color:#6b7280; }
+.st-cancelled{ background:#fee2e2; color:#b91c1c; }
+/* Code badge */
+.code-badge { background:#eff6ff; color:#1d4ed8; padding:2px 8px;
+               border-radius:5px; font-size:11px; font-weight:700; font-family:monospace; }
+
 </style>
 {% endblock %}
 
@@ -700,9 +956,9 @@ class ActR {
     const d=p.data;
     const nm=(IS_AR&&d.name_ar?d.name_ar:d.name||'').replace(/'/g,"\\'");
     this.g.innerHTML=`
-      <button class="ag-ab ag-ab-view" onclick="openViewWA(${d.id})" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
-      <button class="ag-ab ag-ab-edit" onclick="openEditWA(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-      <button class="ag-ab ag-ab-del"  onclick="confDel('/work-allocations/${d.id}/delete','${nm}')" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
+      <button class="pl-btn pl-view" onclick="openViewWA(${d.id})" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
+      <button class="pl-btn pl-edit" onclick="openEditWA(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+      <button class="pl-btn pl-del"  onclick="confDel('/work-allocations/${d.id}/delete','${nm}')" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
   }
   getGui(){return this.g;}
 }
@@ -727,6 +983,26 @@ const mainCols=[
   {headerName:IS_AR?'الوردية':'Shift',field:'shift_type',width:90,filter:'agTextColumnFilter'},
 ];
 if(ADM) mainCols.push({headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:120,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 8px'}});
+
+
+/* ── Status pill renderer ── */
+function rStatusPill(p) {
+  const v = (p.value || '').toLowerCase();
+  const cls = v === 'active' || v === 'approved' ? 'st-active' :
+              v === 'inactive' ? 'st-inactive' :
+              v === 'pending'  ? 'st-pending'  :
+              v === 'open'     ? 'st-open'     :
+              v === 'closed'   ? 'st-closed'   :
+              v === 'cancelled'? 'st-cancelled' : 'st-active';
+  const label = IS_AR ? {
+    active:'نشيط', inactive:'غير نشيط', approved:'معتمد',
+    pending:'معلق', open:'مفتوح', closed:'مغلق', cancelled:'ملغي'
+  }[v] || p.value : (p.value || '');
+  return `<span class="st-pill ${cls}"><i class="fas fa-circle" style="font-size:6px;"></i>${label}</span>`;
+}
+function rCodeBadge(p) {
+  return p.value ? `<span class="code-badge">${p.value}</span>` : '';
+}
 
 let gridApi;
 agGrid.createGrid(document.getElementById('waGrid'),{

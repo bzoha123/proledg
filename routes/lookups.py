@@ -436,3 +436,41 @@ def _recalc(emp):
     total = sum(a.amount for a in emp.allowance_rows.all())
     emp.total_allowances = total
     emp.net_salary = (emp.basic_salary or 0) + total
+
+
+@lookups_bp.route('/professions/add-quick', methods=['POST'])
+@login_required
+def add_profession_quick():
+    from flask import request as req
+    data = req.get_json() or {}
+    en = (data.get('profession_en') or '').strip()
+    ar = (data.get('profession_ar') or '').strip()
+    if not en:
+        return jsonify({'ok': False, 'error': 'Name required'})
+    # Check duplicate
+    existing = ProfessionMaster.query.filter_by(profession_en=en).first()
+    if existing:
+        return jsonify({'ok': True, 'id': existing.id, 'exists': True})
+    p = ProfessionMaster(profession_en=en, profession_ar=ar or en)
+    db.session.add(p)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': p.id, 'profession_en': p.profession_en, 'profession_ar': p.profession_ar})
+
+
+@lookups_bp.route('/allowance-types/add-quick', methods=['POST'])
+@login_required
+def add_allowance_type_quick():
+    from flask import request as req
+    data = req.get_json() or {}
+    code = (data.get('allowance_code') or '').strip().upper()
+    en   = (data.get('allowance_name_en') or '').strip()
+    ar   = (data.get('allowance_name_ar') or '').strip()
+    if not code or not en:
+        return jsonify({'ok': False, 'error': 'Code and Name required'})
+    existing = AllowanceType.query.filter_by(allowance_code=code).first()
+    if existing:
+        return jsonify({'ok': True, 'id': existing.id, 'exists': True})
+    at = AllowanceType(allowance_code=code, allowance_name_en=en, allowance_name_ar=ar or en, is_active=True)
+    db.session.add(at)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': at.id})
