@@ -93,20 +93,31 @@
                     <span>{% if current_locale=='ar' %}أمر الشراء{% else %}Purchase Order{% endif %}</span>
                 </a>
             </li>
-            {% for icon, en, ar in [('truck','Goods Receipt Note','إشعار استلام بضاعة'),
-                ('receipt','Purchase Invoice','فاتورة شراء'),
-                ('undo','Goods Return Request','طلب إرجاع بضاعة'),
-                ('dolly','Goods Return Note','إشعار إرجاع بضاعة'),
-                ('file-invoice-dollar','Invoice Debit Memo','مذكرة الخصم'),
-            ] %}
-            <li class="nav-item nav-item-coming">
-                <span class="nav-link nav-link-disabled">
-                    <i class="fas fa-{{ icon }}"></i>
-                    <span>{% if current_locale=='ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</span>
-                    <span class="nav-soon">{% if current_locale=='ar' %}قريباً{% else %}Soon{% endif %}</span>
-                </span>
+            <li class="nav-item">
+                <a href="{{ url_for('purchase.grn_list') }}" class="nav-link {% if request.endpoint and 'grn' in request.endpoint %}active{% endif %}">
+                    <i class="fas fa-truck"></i>
+                    <span>{% if current_locale=='ar' %}إيصال الاستلام{% else %}Goods Receipt Note{% endif %}</span>
+                </a>
             </li>
-            {% endfor %}
+            <li class="nav-item">
+                <a href="{{ url_for('purchase.pinv_list') }}" class="nav-link {% if request.endpoint and 'pinv' in request.endpoint %}active{% endif %}">
+                    <i class="fas fa-receipt"></i>
+                    <span>{% if current_locale=='ar' %}فاتورة الشراء{% else %}Purchase Invoice{% endif %}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('purchase.grr_list') }}" class="nav-link {% if request.endpoint and 'grr' in request.endpoint %}active{% endif %}">
+                    <i class="fas fa-undo"></i>
+                    <span>{% if current_locale=='ar' %}طلب إرجاع البضاعة{% else %}Goods Return Request{% endif %}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('purchase.pdm_list') }}" class="nav-link {% if request.endpoint and 'pdm' in request.endpoint %}active{% endif %}">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>{% if current_locale=='ar' %}مذكرة الخصم{% else %}Purchase Debit Memo{% endif %}</span>
+                </a>
+            </li>
+
 
             {# ══ SALE ════════════════════════════════════════ #}
             <li class="nav-section">{% if current_locale=='ar' %}المبيعات{% else %}Sale{% endif %}</li>

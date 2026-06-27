@@ -29,8 +29,7 @@
 .pur-tab{padding:10px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;}
 .pur-tab:hover{color:#2563eb;}
 .pur-tab.active{color:#2563eb;border-bottom-color:#2563eb;}
-.pur-tab-pane{display:none;padding:0;}
-.pur-tab-pane.active{display:block;}
+/* tab panes use inline display */
 /* Collapsible sections */
 .pur-section{border:1.5px solid #e2e8f0;border-radius:10px;margin:14px 18px 0;overflow:hidden;}
 .pur-section-hdr{width:100%;background:white;border:none;padding:12px 16px;text-align:left;font-weight:700;font-size:13px;color:#1e3a5f;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .1s;}
@@ -137,12 +136,12 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
         </button>
       </div>
 
-      <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;">
+      <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;height:600px;">
         <form id="prForm">
         <input type="hidden" id="po_id">
 
         {# ══ TAB 1: CONTENT ══ #}
-        <div class="pur-tab-pane active" id="tab_content">
+        <div id="tab_content" style="display:block;">
 
           {# ── Section 1: Request Info ── #}
           <div class="pur-section">
@@ -348,25 +347,28 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
         </div>{# end tab_content #}
 
         {# ══ TAB 2: ATTACHMENTS ══ #}
-        <div class="pur-tab-pane" id="tab_attach">
-          <div style="padding:16px 18px;">
-            <div class="att-drop" id="attDrop" onclick="document.getElementById('attInput').click()"
-                 ondragover="event.preventDefault();this.style.borderColor='#2563eb'"
-                 ondragleave="this.style.borderColor='#bfdbfe'"
-                 ondrop="event.preventDefault();this.style.borderColor='#bfdbfe';handleFiles(event.dataTransfer.files)">
-              <i class="fas fa-cloud-upload-alt"></i>
-              <div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;">
-                {% if ar %}اسحب الملفات هنا أو انقر للاختيار{% else %}Drag & drop files here or click to browse{% endif %}
+        <div id="tab_attach" style="display:none;">
+          <div style="padding:20px;">
+            <div id="attDrop"
+                 style="border:2px dashed #bfdbfe;border-radius:12px;padding:40px 24px;
+                        text-align:center;background:#f0f9ff;cursor:pointer;
+                        display:flex;flex-direction:column;align-items:center;justify-content:center;
+                        min-height:180px;transition:all 0.15s;"
+                 onclick="document.getElementById('attInput').click()"
+                 ondragover="event.preventDefault();this.style.borderColor='#2563eb';this.style.background='#eff6ff';"
+                 ondragleave="this.style.borderColor='#bfdbfe';this.style.background='#f0f9ff';"
+                 ondrop="event.preventDefault();this.style.borderColor='#bfdbfe';this.style.background='#f0f9ff';handleFiles(event.dataTransfer.files);">
+              <i class="fas fa-cloud-upload-alt" style="font-size:36px;color:#60a5fa;margin-bottom:12px;"></i>
+              <div style="font-size:15px;font-weight:600;color:#374151;margin-bottom:6px;">
+                {% if ar %}اسحب الملفات هنا أو انقر للتصفح{% else %}Drag & drop files here or click to browse{% endif %}
               </div>
               <div style="font-size:12px;color:#9ca3af;">PDF, Word, Excel, Images (max 20MB each)</div>
               <input type="file" id="attInput" multiple
                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
                      style="display:none;" onchange="handleFiles(this.files)">
             </div>
-            <div class="att-list" id="attList"></div>
-
-            {# Existing attachments (edit mode) #}
-            <div id="existAttList" style="margin-top:10px;"></div>
+            <div id="attList" style="margin-top:12px;display:flex;flex-direction:column;gap:6px;"></div>
+            <div id="existAttList" style="margin-top:8px;"></div>
           </div>
         </div>
 
@@ -421,9 +423,13 @@ function togSec(btn) {
 
 /* ══ Tab switch ══ */
 function switchTab(tabId, btn) {
-  document.querySelectorAll('.pur-tab-pane').forEach(p => p.classList.remove('active'));
+  ['tab_content', 'tab_attach'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
   document.querySelectorAll('.pur-tab').forEach(b => b.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
+  const target = document.getElementById(tabId);
+  if (target) target.style.display = 'block';
   btn.classList.add('active');
 }
 
@@ -504,13 +510,15 @@ function recalcLi(idx) {
   const fr   = g('plf_'+idx);
   const tcEl = document.getElementById('pltc_'+idx);
   const taxRate = tcEl && tcEl.value === 'VAT15' ? 15 : 0;
-  // Taxable = Qty × Rate − Discount  (amount subject to tax)
-  const taxable  = Math.max(0, qty * rate - disc);
-  const taxAmt   = Math.round(taxable * taxRate / 100 * 100) / 100;
-  const total    = taxable + fr + taxAmt;
+  // Taxable = (Qty × Rate − Discount) + Freight
+  const taxable = Math.max(0, (qty * rate - disc) + fr);
+  // Tax = Taxable × Tax%
+  const taxAmt  = Math.round(taxable * taxRate / 100 * 100) / 100;
+  // Total = Taxable + Tax
+  const total   = taxable + taxAmt;
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v.toFixed(2); };
-  set('plt_'+idx,  taxable);
-  set('plta_'+idx, taxAmt);
+  set('plt_'+idx,   taxable);
+  set('plta_'+idx,  taxAmt);
   set('pltot_'+idx, total);
   recalcSummary();
 }
@@ -524,8 +532,12 @@ function recalcSummary() {
     fr   += g('li_freight');
     vat  += parseFloat(row.querySelector('[name="li_tax_amount_disp[]"]')?.value || 0) || 0;
   });
-  const excl = bd - disc;
-  const incl = excl + fr + vat;
+  // Total before discount = Σ(Qty × Rate)
+  // Total discount = Σ(Discount)
+  // Freight = Σ(Freight)
+  // Excl. VAT = (Total before discount - Discount) + Freight  = (bd - disc) + fr
+  const excl = (bd - disc) + fr;
+  const incl = excl + vat;
   const fmt  = n => 'SAR ' + n.toLocaleString('en-SA', {minimumFractionDigits:2, maximumFractionDigits:2});
   const s    = id => document.getElementById(id);
   if (s('s_total_bd'))   s('s_total_bd').textContent   = fmt(bd);
@@ -725,7 +737,7 @@ class ActR {
     this.g.innerHTML = `
       <button class="ag-ab ag-ab-view" onclick="window.location='/purchase/orders/${d.id}/view'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
       <button class="ag-ab ag-ab-edit" onclick="openEditPO(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-      <button class="ag-ab ag-ab-del"  onclick="confDel(${d.id},'${(d.doc_no||'').replace(/'/g,"\\'")}') " title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
+      <button class="ag-ab ag-ab-del"   onclick="confDelPO(${d.id}, d.doc_no || '')" title="Delete"><i class="fas fa-trash"></i></button>`
   }
   getGui() { return this.g; }
 }

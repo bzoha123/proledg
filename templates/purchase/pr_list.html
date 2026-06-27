@@ -29,8 +29,8 @@
 .pur-tab{padding:10px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;}
 .pur-tab:hover{color:#2563eb;}
 .pur-tab.active{color:#2563eb;border-bottom-color:#2563eb;}
-.pur-tab-pane{display:none;padding:0;}
-.pur-tab-pane.active{display:block;}
+.pur-tab-pane{display:none!important;padding:0;}
+.pur-tab-pane.active{display:block!important;}
 /* Collapsible sections */
 .pur-section{border:1.5px solid #e2e8f0;border-radius:10px;margin:14px 18px 0;overflow:hidden;}
 .pur-section-hdr{width:100%;background:white;border:none;padding:12px 16px;text-align:left;font-weight:700;font-size:13px;color:#1e3a5f;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .1s;}
@@ -137,7 +137,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
         </button>
       </div>
 
-      <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;">
+      <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;min-height:420px;">
         <form id="prForm">
         <input type="hidden" id="pr_id">
 
@@ -458,13 +458,15 @@ function recalcLi(idx) {
   const fr   = g('plf_'+idx);
   const tcEl = document.getElementById('pltc_'+idx);
   const taxRate = tcEl && tcEl.value === 'VAT15' ? 15 : 0;
-  // Taxable = Qty × Rate − Discount  (amount subject to tax)
-  const taxable  = Math.max(0, qty * rate - disc);
-  const taxAmt   = Math.round(taxable * taxRate / 100 * 100) / 100;
-  const total    = taxable + fr + taxAmt;
+  // Taxable = (Qty × Rate − Discount) + Freight
+  const taxable = Math.max(0, (qty * rate - disc) + fr);
+  // Tax = Taxable × Tax%
+  const taxAmt  = Math.round(taxable * taxRate / 100 * 100) / 100;
+  // Total = Taxable + Tax
+  const total   = taxable + taxAmt;
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v.toFixed(2); };
-  set('plt_'+idx,  taxable);
-  set('plta_'+idx, taxAmt);
+  set('plt_'+idx,   taxable);
+  set('plta_'+idx,  taxAmt);
   set('pltot_'+idx, total);
   recalcSummary();
 }
@@ -478,8 +480,12 @@ function recalcSummary() {
     fr   += g('li_freight');
     vat  += parseFloat(row.querySelector('[name="li_tax_amount_disp[]"]')?.value || 0) || 0;
   });
-  const excl = bd - disc;
-  const incl = excl + fr + vat;
+  // Total before discount = Σ(Qty × Rate)
+  // Total discount = Σ(Discount)
+  // Freight = Σ(Freight)
+  // Excl. VAT = (Total before discount - Discount) + Freight  = (bd - disc) + fr
+  const excl = (bd - disc) + fr;
+  const incl = excl + vat;
   const fmt  = n => 'SAR ' + n.toLocaleString('en-SA', {minimumFractionDigits:2, maximumFractionDigits:2});
   const s    = id => document.getElementById(id);
   if (s('s_total_bd'))   s('s_total_bd').textContent   = fmt(bd);

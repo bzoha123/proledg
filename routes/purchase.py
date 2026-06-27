@@ -60,10 +60,11 @@ def _save_line_items(doc_type, doc_id, f):
             fr   = Decimal(freights[i] if i<len(freights) else '0')
             tax_code = tcodes[i] if i<len(tcodes) else 'VAT15'
             tax_rate = Decimal('15') if '15' in tax_code else Decimal('0')
-            taxable  = qty * rate
-            subtotal = taxable - disc
-            tax_amt  = (subtotal * tax_rate / 100).quantize(Decimal('0.01'))
-            total    = subtotal + fr + tax_amt
+            # Taxable = (Qty × Rate - Discount) + Freight
+            taxable  = max(Decimal('0'), (qty * rate - disc) + fr)
+            tax_amt  = (taxable * tax_rate / 100).quantize(Decimal('0.01'))
+            # Total = Taxable + Tax
+            total    = taxable + tax_amt
             li = PurchaseLineItem(
                 doc_type=doc_type, doc_id=doc_id,
                 item_code=codes[i] if i<len(codes) else '',
@@ -82,14 +83,15 @@ def _save_line_items(doc_type, doc_id, f):
             total_vat  += tax_amt
         except: pass
 
-    excl = total_bd - total_disc
+    # Excl VAT = (Total before disc - discount) + freight
+    excl = (total_bd - total_disc) + total_fr
     return {
         'total_before_discount': total_bd,
         'total_discount': total_disc,
         'total_freight': total_fr,
         'total_excl_vat': excl,
         'vat_amount': total_vat,
-        'total_incl_vat': excl + total_fr + total_vat,
+        'total_incl_vat': excl + total_vat,
     }
 
 def _save_attachments(doc_type, doc_id, files):
@@ -475,3 +477,306 @@ def po_delete(id):
     po = PurchaseOrder.query.get_or_404(id)
     db.session.delete(po); db.session.commit()
     return jsonify({'ok': True})
+
+# ══════════════════════════════════════════════════════════════════
+# GOODS RECEIPT NOTE
+# ══════════════════════════════════════════════════════════════════
+from models import GoodsReceiptNote, PurchaseInvoice, GoodsReturnRequest, PurchaseDebitMemo
+
+@pur_bp.route('/purchase/grn')
+@login_required
+def grn_list():
+    pos = [{'id':p.id,'doc_no':p.doc_no} for p in PurchaseOrder.query.order_by(PurchaseOrder.id.desc()).all()]
+    return render_template('purchase/grn_list.html', vendors=_vendor_list(), pos=pos)
+
+@pur_bp.route('/purchase/grn/data')
+@login_required
+def grn_data():
+    return jsonify([r.to_dict() for r in GoodsReceiptNote.query.order_by(GoodsReceiptNote.id.desc()).all()])
+
+@pur_bp.route('/purchase/grn/<int:id>/json')
+@login_required
+def grn_json(id):
+    doc = GoodsReceiptNote.query.get_or_404(id)
+    d = doc.to_dict()
+    d['items'] = [i.to_dict() for i in PurchaseLineItem.query.filter_by(doc_type='GRN', doc_id=id).all()]
+    d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='GRN', doc_id=id).all()]
+    return jsonify(d)
+
+@pur_bp.route('/purchase/grn/add', methods=['POST'])
+@login_required
+def grn_add():
+    f = request.form
+    doc = GoodsReceiptNote(
+        doc_no=_next_doc_no('GRN', GoodsReceiptNote),
+        po_id=int(f.get('po_id')) if f.get('po_id') else None,
+        vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
+        contact_person=f.get('contact_person','').strip(),
+        vendor_ref_no=f.get('vendor_ref_no','').strip(),
+        status=f.get('status','Open'),
+        posting_date=pd(f.get('posting_date')), delivery_date=pd(f.get('delivery_date')),
+        document_date=pd(f.get('document_date')), created_by=current_user.id,
+    )
+    db.session.add(doc); db.session.flush()
+    tots = _save_line_items('GRN', doc.id, f)
+    for k,v in tots.items(): setattr(doc, k, v)
+    _save_attachments('GRN', doc.id, request.files.getlist('attachments'))
+    db.session.commit()
+    return jsonify({'ok':True,'id':doc.id,'doc_no':doc.doc_no})
+
+@pur_bp.route('/purchase/grn/<int:id>/edit', methods=['POST'])
+@login_required
+def grn_edit(id):
+    doc = GoodsReceiptNote.query.get_or_404(id); f = request.form
+    doc.po_id=int(f.get('po_id')) if f.get('po_id') else None
+    doc.vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None
+    doc.contact_person=f.get('contact_person','').strip()
+    doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
+    doc.status=f.get('status','Open')
+    for df in ['posting_date','delivery_date','document_date']: setattr(doc, df, pd(f.get(df)))
+    tots = _save_line_items('GRN', id, f)
+    for k,v in tots.items(): setattr(doc, k, v)
+    _save_attachments('GRN', id, request.files.getlist('attachments'))
+    db.session.commit(); return jsonify({'ok':True})
+
+@pur_bp.route('/purchase/grn/<int:id>/delete', methods=['POST'])
+@login_required
+def grn_delete(id):
+    PurchaseLineItem.query.filter_by(doc_type='GRN', doc_id=id).delete()
+    PurchaseAttachment.query.filter_by(doc_type='GRN', doc_id=id).delete()
+    db.session.delete(GoodsReceiptNote.query.get_or_404(id)); db.session.commit()
+    return jsonify({'ok':True})
+
+@pur_bp.route('/purchase/grn/<int:id>/view')
+@login_required
+def grn_view(id):
+    doc = GoodsReceiptNote.query.get_or_404(id)
+    return render_template('purchase/grn_view.html', doc=doc,
+        items=PurchaseLineItem.query.filter_by(doc_type='GRN', doc_id=id).all(),
+        attachments=PurchaseAttachment.query.filter_by(doc_type='GRN', doc_id=id).all())
+
+# ══════════════════════════════════════════════════════════════════
+# PURCHASE INVOICE
+# ══════════════════════════════════════════════════════════════════
+@pur_bp.route('/purchase/invoices')
+@login_required
+def pinv_list():
+    pos = [{'id':p.id,'doc_no':p.doc_no} for p in PurchaseOrder.query.order_by(PurchaseOrder.id.desc()).all()]
+    return render_template('purchase/pinv_list.html', vendors=_vendor_list(), pos=pos)
+
+@pur_bp.route('/purchase/invoices/data')
+@login_required
+def pinv_data():
+    return jsonify([r.to_dict() for r in PurchaseInvoice.query.order_by(PurchaseInvoice.id.desc()).all()])
+
+@pur_bp.route('/purchase/invoices/<int:id>/json')
+@login_required
+def pinv_json(id):
+    doc = PurchaseInvoice.query.get_or_404(id)
+    d = doc.to_dict()
+    d['items'] = [i.to_dict() for i in PurchaseLineItem.query.filter_by(doc_type='PINV', doc_id=id).all()]
+    d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='PINV', doc_id=id).all()]
+    return jsonify(d)
+
+@pur_bp.route('/purchase/invoices/add', methods=['POST'])
+@login_required
+def pinv_add():
+    f = request.form
+    doc = PurchaseInvoice(
+        doc_no=_next_doc_no('PINV', PurchaseInvoice),
+        po_id=int(f.get('po_id')) if f.get('po_id') else None,
+        vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
+        vendor_ref_no=f.get('vendor_ref_no','').strip(),
+        status=f.get('status','Open'),
+        posting_date=pd(f.get('posting_date')), delivery_date=pd(f.get('delivery_date')),
+        document_date=pd(f.get('document_date')), created_by=current_user.id,
+    )
+    db.session.add(doc); db.session.flush()
+    tots = _save_line_items('PINV', doc.id, f)
+    for k,v in tots.items(): setattr(doc, k, v)
+    _save_attachments('PINV', doc.id, request.files.getlist('attachments'))
+    db.session.commit(); return jsonify({'ok':True,'id':doc.id,'doc_no':doc.doc_no})
+
+@pur_bp.route('/purchase/invoices/<int:id>/edit', methods=['POST'])
+@login_required
+def pinv_edit(id):
+    doc = PurchaseInvoice.query.get_or_404(id); f = request.form
+    doc.po_id=int(f.get('po_id')) if f.get('po_id') else None
+    doc.vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None
+    doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
+    doc.status=f.get('status','Open')
+    for df in ['posting_date','delivery_date','document_date']: setattr(doc, df, pd(f.get(df)))
+    tots = _save_line_items('PINV', id, f)
+    for k,v in tots.items(): setattr(doc, k, v)
+    _save_attachments('PINV', id, request.files.getlist('attachments'))
+    db.session.commit(); return jsonify({'ok':True})
+
+@pur_bp.route('/purchase/invoices/<int:id>/delete', methods=['POST'])
+@login_required
+def pinv_delete(id):
+    PurchaseLineItem.query.filter_by(doc_type='PINV', doc_id=id).delete()
+    PurchaseAttachment.query.filter_by(doc_type='PINV', doc_id=id).delete()
+    db.session.delete(PurchaseInvoice.query.get_or_404(id)); db.session.commit()
+    return jsonify({'ok':True})
+
+@pur_bp.route('/purchase/invoices/<int:id>/view')
+@login_required
+def pinv_view(id):
+    doc = PurchaseInvoice.query.get_or_404(id)
+    return render_template('purchase/pinv_view.html', doc=doc,
+        items=PurchaseLineItem.query.filter_by(doc_type='PINV', doc_id=id).all(),
+        attachments=PurchaseAttachment.query.filter_by(doc_type='PINV', doc_id=id).all())
+
+# ══════════════════════════════════════════════════════════════════
+# GOODS RETURN REQUEST
+# ══════════════════════════════════════════════════════════════════
+@pur_bp.route('/purchase/returns')
+@login_required
+def grr_list():
+    pos  = [{'id':p.id,'doc_no':p.doc_no} for p in PurchaseOrder.query.order_by(PurchaseOrder.id.desc()).all()]
+    pins = [{'id':p.id,'doc_no':p.doc_no} for p in PurchaseInvoice.query.order_by(PurchaseInvoice.id.desc()).all()]
+    return render_template('purchase/grr_list.html', vendors=_vendor_list(), pos=pos, pinvs=pins)
+
+@pur_bp.route('/purchase/returns/data')
+@login_required
+def grr_data():
+    return jsonify([r.to_dict() for r in GoodsReturnRequest.query.order_by(GoodsReturnRequest.id.desc()).all()])
+
+@pur_bp.route('/purchase/returns/<int:id>/json')
+@login_required
+def grr_json(id):
+    doc = GoodsReturnRequest.query.get_or_404(id)
+    d = doc.to_dict()
+    d['items'] = [i.to_dict() for i in PurchaseLineItem.query.filter_by(doc_type='GRR', doc_id=id).all()]
+    d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='GRR', doc_id=id).all()]
+    return jsonify(d)
+
+@pur_bp.route('/purchase/returns/add', methods=['POST'])
+@login_required
+def grr_add():
+    f = request.form
+    doc = GoodsReturnRequest(
+        doc_no=_next_doc_no('GRR', GoodsReturnRequest),
+        pi_id=int(f.get('pi_id')) if f.get('pi_id') else None,
+        po_id=int(f.get('po_id')) if f.get('po_id') else None,
+        vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
+        contact_person=f.get('contact_person','').strip(),
+        vendor_ref_no=f.get('vendor_ref_no','').strip(),
+        status=f.get('status','Open'),
+        posting_date=pd(f.get('posting_date')), delivery_date=pd(f.get('delivery_date')),
+        document_date=pd(f.get('document_date')), created_by=current_user.id,
+    )
+    db.session.add(doc); db.session.flush()
+    tots = _save_line_items('GRR', doc.id, f)
+    for k,v in tots.items(): setattr(doc, k, v)
+    _save_attachments('GRR', doc.id, request.files.getlist('attachments'))
+    db.session.commit(); return jsonify({'ok':True,'id':doc.id,'doc_no':doc.doc_no})
+
+@pur_bp.route('/purchase/returns/<int:id>/edit', methods=['POST'])
+@login_required
+def grr_edit(id):
+    doc = GoodsReturnRequest.query.get_or_404(id); f = request.form
+    doc.pi_id=int(f.get('pi_id')) if f.get('pi_id') else None
+    doc.po_id=int(f.get('po_id')) if f.get('po_id') else None
+    doc.vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None
+    doc.contact_person=f.get('contact_person','').strip()
+    doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
+    doc.status=f.get('status','Open')
+    for df in ['posting_date','delivery_date','document_date']: setattr(doc, df, pd(f.get(df)))
+    tots = _save_line_items('GRR', id, f)
+    for k,v in tots.items(): setattr(doc, k, v)
+    _save_attachments('GRR', id, request.files.getlist('attachments'))
+    db.session.commit(); return jsonify({'ok':True})
+
+@pur_bp.route('/purchase/returns/<int:id>/delete', methods=['POST'])
+@login_required
+def grr_delete(id):
+    PurchaseLineItem.query.filter_by(doc_type='GRR', doc_id=id).delete()
+    PurchaseAttachment.query.filter_by(doc_type='GRR', doc_id=id).delete()
+    db.session.delete(GoodsReturnRequest.query.get_or_404(id)); db.session.commit()
+    return jsonify({'ok':True})
+
+@pur_bp.route('/purchase/returns/<int:id>/view')
+@login_required
+def grr_view(id):
+    doc = GoodsReturnRequest.query.get_or_404(id)
+    return render_template('purchase/grr_view.html', doc=doc,
+        items=PurchaseLineItem.query.filter_by(doc_type='GRR', doc_id=id).all(),
+        attachments=PurchaseAttachment.query.filter_by(doc_type='GRR', doc_id=id).all())
+
+# ══════════════════════════════════════════════════════════════════
+# PURCHASE DEBIT MEMO
+# ══════════════════════════════════════════════════════════════════
+@pur_bp.route('/purchase/debit-memos')
+@login_required
+def pdm_list():
+    pos  = [{'id':p.id,'doc_no':p.doc_no} for p in PurchaseOrder.query.order_by(PurchaseOrder.id.desc()).all()]
+    grrs = [{'id':p.id,'doc_no':p.doc_no} for p in GoodsReturnRequest.query.order_by(GoodsReturnRequest.id.desc()).all()]
+    return render_template('purchase/pdm_list.html', vendors=_vendor_list(), pos=pos, grrs=grrs)
+
+@pur_bp.route('/purchase/debit-memos/data')
+@login_required
+def pdm_data():
+    return jsonify([r.to_dict() for r in PurchaseDebitMemo.query.order_by(PurchaseDebitMemo.id.desc()).all()])
+
+@pur_bp.route('/purchase/debit-memos/<int:id>/json')
+@login_required
+def pdm_json(id):
+    doc = PurchaseDebitMemo.query.get_or_404(id)
+    d = doc.to_dict()
+    d['items'] = [i.to_dict() for i in PurchaseLineItem.query.filter_by(doc_type='PDM', doc_id=id).all()]
+    d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='PDM', doc_id=id).all()]
+    return jsonify(d)
+
+@pur_bp.route('/purchase/debit-memos/add', methods=['POST'])
+@login_required
+def pdm_add():
+    f = request.form
+    doc = PurchaseDebitMemo(
+        doc_no=_next_doc_no('PDM', PurchaseDebitMemo),
+        po_id=int(f.get('po_id')) if f.get('po_id') else None,
+        grr_id=int(f.get('grr_id')) if f.get('grr_id') else None,
+        vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
+        contact_person=f.get('contact_person','').strip(),
+        vendor_ref_no=f.get('vendor_ref_no','').strip(),
+        status=f.get('status','Open'),
+        posting_date=pd(f.get('posting_date')), delivery_date=pd(f.get('delivery_date')),
+        document_date=pd(f.get('document_date')), created_by=current_user.id,
+    )
+    db.session.add(doc); db.session.flush()
+    tots = _save_line_items('PDM', doc.id, f)
+    for k,v in tots.items(): setattr(doc, k, v)
+    _save_attachments('PDM', doc.id, request.files.getlist('attachments'))
+    db.session.commit(); return jsonify({'ok':True,'id':doc.id,'doc_no':doc.doc_no})
+
+@pur_bp.route('/purchase/debit-memos/<int:id>/edit', methods=['POST'])
+@login_required
+def pdm_edit(id):
+    doc = PurchaseDebitMemo.query.get_or_404(id); f = request.form
+    doc.po_id=int(f.get('po_id')) if f.get('po_id') else None
+    doc.grr_id=int(f.get('grr_id')) if f.get('grr_id') else None
+    doc.vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None
+    doc.contact_person=f.get('contact_person','').strip()
+    doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
+    doc.status=f.get('status','Open')
+    for df in ['posting_date','delivery_date','document_date']: setattr(doc, df, pd(f.get(df)))
+    tots = _save_line_items('PDM', id, f)
+    for k,v in tots.items(): setattr(doc, k, v)
+    _save_attachments('PDM', id, request.files.getlist('attachments'))
+    db.session.commit(); return jsonify({'ok':True})
+
+@pur_bp.route('/purchase/debit-memos/<int:id>/delete', methods=['POST'])
+@login_required
+def pdm_delete(id):
+    PurchaseLineItem.query.filter_by(doc_type='PDM', doc_id=id).delete()
+    PurchaseAttachment.query.filter_by(doc_type='PDM', doc_id=id).delete()
+    db.session.delete(PurchaseDebitMemo.query.get_or_404(id)); db.session.commit()
+    return jsonify({'ok':True})
+
+@pur_bp.route('/purchase/debit-memos/<int:id>/view')
+@login_required
+def pdm_view(id):
+    doc = PurchaseDebitMemo.query.get_or_404(id)
+    return render_template('purchase/pdm_view.html', doc=doc,
+        items=PurchaseLineItem.query.filter_by(doc_type='PDM', doc_id=id).all(),
+        attachments=PurchaseAttachment.query.filter_by(doc_type='PDM', doc_id=id).all())
