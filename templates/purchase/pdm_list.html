@@ -29,7 +29,9 @@
 .pur-tab{padding:10px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;}
 .pur-tab:hover{color:#2563eb;}
 .pur-tab.active{color:#2563eb;border-bottom-color:#2563eb;}
-/* tab panes use inline display */
+/* CRITICAL: Tab panes MUST use this exact pattern */
+.pur-tab-pane{display:none!important;padding:0;}
+.pur-tab-pane.active{display:block!important;}
 /* Collapsible sections */
 .pur-section{border:1.5px solid #e2e8f0;border-radius:10px;margin:14px 18px 0;overflow:hidden;}
 .pur-section-hdr{width:100%;background:white;border:none;padding:12px 16px;text-align:left;font-weight:700;font-size:13px;color:#1e3a5f;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .1s;}
@@ -68,7 +70,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 .sum-total-row{background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;padding:10px 14px;border-radius:8px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;}
 .sum-total-row span{color:white;}
 .sum-doc-row{margin-top:8px;padding-top:8px;border-top:1px dashed #bfdbfe;display:flex;justify-content:space-between;align-items:center;font-size:13px;}
-/* Attachment */
+/* Attachment - EXACT COPY FROM WORKING GRN */
 .att-drop{border:2px dashed #bfdbfe;border-radius:10px;padding:24px;text-align:center;background:#f0f9ff;cursor:pointer;}
 .att-drop:hover{border-color:#2563eb;background:#eff6ff;}
 .att-drop i{font-size:28px;color:#60a5fa;margin-bottom:8px;display:block;}
@@ -136,19 +138,19 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
         </button>
       </div>
 
-      <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;height:600px;">
-        <form id="prForm">
+      <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;min-height:420px;">
+        <form id="pdmForm">
         <input type="hidden" id="pdm_id">
 
         {# ══ TAB 1: CONTENT ══ #}
-        <div id="tab_content" style="display:block;">
+        <div class="pur-tab-pane active" id="tab_content">
 
           {# ── Section 1: Request Info ── #}
           <div class="pur-section">
             <button type="button" class="pur-section-hdr open" onclick="togSec(this)">
               <div style="display:flex;align-items:center;">
                 <i class="pur-sec-icon fas fa-info-circle"></i>
-                {% if ar %}معلومات الطلب / Request Information{% else %}Purchase Debit Memo Info{% endif %}
+                {% if ar %}معلومات مذكرة الخصم{% else %}Purchase Debit Memo Info{% endif %}
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
@@ -222,6 +224,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                   <textarea id="pdm_remarks" class="f-inp" rows="2" style="resize:vertical;"></textarea>
                 </div>
               </div>
+            </div>
           </div>
 
           {# ── Section 2: Line Items ── #}
@@ -229,7 +232,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             <button type="button" class="pur-section-hdr open" onclick="togSec(this)">
               <div style="display:flex;align-items:center;">
                 <i class="pur-sec-icon fas fa-list-ul"></i>
-                {% if ar %}بنود الطلب / Line Items{% else %}Line Items / بنود الطلب{% endif %}
+                {% if ar %}بنود المذكرة{% else %}Debit Memo Items{% endif %}
                 <span id="liCount" style="background:#eff6ff;color:#2563eb;padding:1px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:8px;">0</span>
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
@@ -284,7 +287,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             <button type="button" class="pur-section-hdr open" onclick="togSec(this)">
               <div style="display:flex;align-items:center;">
                 <i class="pur-sec-icon fas fa-calculator"></i>
-                {% if ar %}ملخص مذكرة خصم / Purchase Debit Memo Summary{% else %}Purchase Debit Memo Summary / ملخص مذكرة خصم{% endif %}
+                {% if ar %}ملخص مذكرة خصم{% else %}Purchase Debit Memo Summary{% endif %}
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
@@ -325,29 +328,24 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 
         </div>{# end tab_content #}
 
-        {# ══ TAB 2: ATTACHMENTS ══ #}
-        <div id="tab_attach" style="display:none;">
-          <div style="padding:20px;">
-            <div id="attDrop"
-                 style="border:2px dashed #bfdbfe;border-radius:12px;padding:40px 24px;
-                        text-align:center;background:#f0f9ff;cursor:pointer;
-                        display:flex;flex-direction:column;align-items:center;justify-content:center;
-                        min-height:180px;transition:all 0.15s;"
-                 onclick="document.getElementById('attInput').click()"
-                 ondragover="event.preventDefault();this.style.borderColor='#2563eb';this.style.background='#eff6ff';"
-                 ondragleave="this.style.borderColor='#bfdbfe';this.style.background='#f0f9ff';"
-                 ondrop="event.preventDefault();this.style.borderColor='#bfdbfe';this.style.background='#f0f9ff';handleFiles(event.dataTransfer.files);">
-              <i class="fas fa-cloud-upload-alt" style="font-size:36px;color:#60a5fa;margin-bottom:12px;"></i>
-              <div style="font-size:15px;font-weight:600;color:#374151;margin-bottom:6px;">
-                {% if ar %}اسحب الملفات هنا أو انقر للتصفح{% else %}Drag & drop files here or click to browse{% endif %}
+        {# ══ TAB 2: ATTACHMENTS - FIXED (removed id="attDrop") ══ #}
+        <div class="pur-tab-pane" id="tab_attach">
+          <div style="padding:16px 18px;">
+            <div class="att-drop" onclick="document.getElementById('attInput').click()"
+                 ondragover="event.preventDefault();this.style.borderColor='#2563eb'"
+                 ondragleave="this.style.borderColor='#bfdbfe'"
+                 ondrop="event.preventDefault();this.style.borderColor='#bfdbfe';handleFiles(event.dataTransfer.files)">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;">
+                {% if ar %}اسحب الملفات هنا أو انقر للاختيار{% else %}Drag & drop files here or click to browse{% endif %}
               </div>
               <div style="font-size:12px;color:#9ca3af;">PDF, Word, Excel, Images (max 20MB each)</div>
               <input type="file" id="attInput" multiple
                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
                      style="display:none;" onchange="handleFiles(this.files)">
             </div>
-            <div id="attList" style="margin-top:12px;display:flex;flex-direction:column;gap:6px;"></div>
-            <div id="existAttList" style="margin-top:8px;"></div>
+            <div class="att-list" id="attList"></div>
+            <div id="existAttList" style="margin-top:10px;"></div>
           </div>
         </div>
 
@@ -356,10 +354,10 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 
       <div class="pur-footer">
         <button class="btn-f btn-cancel" data-bs-dismiss="modal">
-          <i class="fas fa-times me-1"></i>{% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}
+          <i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}
         </button>
         <button class="btn-f btn-save" onclick="savePDM()">
-          <i class="fas fa-save me-1"></i>{% if ar %}حفظ مذكرة الخصم / Save{% else %}Save Purchase Debit Memo / حفظ{% endif %}
+          <i class="fas fa-save me-1"></i>{% if ar %}حفظ مذكرة الخصم{% else %}Save Purchase Debit Memo{% endif %}
         </button>
       </div>
 
@@ -409,15 +407,11 @@ function togSec(btn) {
   if (ch) ch.style.cssText = open ? 'color:#9ca3af;font-size:11px;' : 'color:#2563eb;font-size:11px;';
 }
 
-/* ══ Tab switch ══ */
+/* ══ Tab switch - SAME AS WORKING GRN ══ */
 function switchTab(tabId, btn) {
-  ['tab_content', 'tab_attach'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
+  document.querySelectorAll('.pur-tab-pane').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.pur-tab').forEach(b => b.classList.remove('active'));
-  const target = document.getElementById(tabId);
-  if (target) target.style.display = 'block';
+  document.getElementById(tabId).classList.add('active');
   btn.classList.add('active');
 }
 
@@ -518,7 +512,7 @@ function updLiCount() {
   if (el) el.textContent = n;
 }
 
-/* ══ Attachments ══ */
+/* ══ Attachments - SAME AS WORKING GRN ══ */
 function handleFiles(files) {
   for (const f of files) {
     if (_attachments.find(x => x.name === f.name)) continue;
@@ -553,8 +547,8 @@ function updDocCount() {
 function openAddPDM() {
   _liIdx = 0; _attachments = [];
   document.getElementById('pdm_id').value = '';
-  document.getElementById('pdmTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة' : 'Add Purchase Debit Memo');
-  ['pdm_vendor_name','pdm_vendor_ref','pdm_remarks'].forEach(id => {
+  document.getElementById('pdmTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة مذكرة خصم' : 'Add Purchase Debit Memo');
+  ['pdm_vendor_name','pdm_vendor_ref','pdm_remarks','pdm_contact'].forEach(id => {
     const e = document.getElementById(id); if (e) e.value = '';
   });
   const today = new Date().toISOString().split('T')[0];
@@ -565,7 +559,7 @@ function openAddPDM() {
   document.getElementById('pdm_vendor').value = '';
   document.getElementById('pdm_doc_no').value = '';
   document.getElementById('pdmDocBadge').textContent = 'NEW';
-  ['pdm_po_id','pdm_grr_id','pdm_contact'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['pdm_po_id','pdm_grr_id'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('liBody').innerHTML = '';
   document.getElementById('attList').innerHTML = '';
   document.getElementById('existAttList').innerHTML = '';
@@ -586,7 +580,7 @@ function openEditPDM(id) {
   fetch('/purchase/debit-memos/' + id + '/json').then(r => r.json()).then(d => {
     _liIdx = 0; _attachments = [];
     document.getElementById('pdm_id').value = id;
-    document.getElementById('pdmTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل' : 'Edit Purchase Debit Memo');
+    document.getElementById('pdmTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل مذكرة خصم' : 'Edit Purchase Debit Memo');
     document.getElementById('pdm_doc_no').value = d.doc_no || '';
     document.getElementById('pdmDocBadge').textContent = d.doc_no || '';
     document.getElementById('pdm_status').value = d.status || 'Open';
@@ -703,7 +697,7 @@ class ActR {
     this.g.innerHTML = `
       <button class="ag-ab ag-ab-view"  onclick="window.location='/purchase/debit-memos/${d.id}/view'" title="View"><i class="fas fa-eye"></i></button>
       <button class="ag-ab ag-ab-edit"  onclick="openEditPDM(${d.id})" title="Edit"><i class="fas fa-pencil-alt"></i></button>
-      <button class="ag-ab ag-ab-del"   onclick="confDelPDM(${d.id}, d.doc_no || '')" title="Delete"><i class="fas fa-trash"></i></button>`
+      <button class="ag-ab ag-ab-del"   onclick="confDelPDM(${d.id}, '${d.doc_no || ''}')" title="Delete"><i class="fas fa-trash"></i></button>`
   }
   getGui() { return this.g; }
 }
@@ -744,6 +738,5 @@ function upd() {
   document.getElementById('pageInfo').textContent = `${c} entries`;
 }
 
-</script>
 </script>
 {% endblock %}

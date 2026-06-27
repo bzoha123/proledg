@@ -1,7 +1,13 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, session
 from flask_login import login_required, current_user
-from models import db, VendorMaster, PurchaseRequest, PurchaseQuotation, PurchaseOrder, \
-    PurchaseLineItem, PurchaseAttachment, Invoice
+from models import (
+    db, VendorMaster, VendorBank, VendorDocument,
+    PurchaseRequest, PurchaseQuotation, PurchaseOrder, GoodsReceiptNote,
+    PurchaseInvoice, GoodsReturnRequest, PurchaseDebitMemo,
+    PurchaseLineItem, PurchaseAttachment, Invoice,
+    PurchaseRequestLineItem, PurchaseQuotationLineItem, PurchaseOrderLineItem,
+    GoodsReceiptLineItem, PurchaseInvoiceLineItem, GoodsReturnLineItem, PurchaseDebitMemoLineItem,
+)
 from datetime import datetime, date
 from decimal import Decimal
 import os, re
@@ -37,61 +43,75 @@ def _next_doc_no(doc_type, model):
     return f'{prefix}-{year}-{n:04d}'
 
 def _save_line_items(doc_type, doc_id, f):
+    """Save line items for any purchase document. Returns summary totals dict."""
     PurchaseLineItem.query.filter_by(doc_type=doc_type, doc_id=doc_id).delete()
-    codes  = f.getlist('li_item_code[]')
-    descs  = f.getlist('li_item_desc[]')
-    rdates = f.getlist('li_required_date[]')
-    whs    = f.getlist('li_warehouse[]')
-    uoms   = f.getlist('li_uom[]')
-    qtys   = f.getlist('li_qty[]')
-    rates  = f.getlist('li_rate[]')
-    discs  = f.getlist('li_discount[]')
-    freights = f.getlist('li_freight[]')
-    tcodes = f.getlist('li_tax_code[]')
 
-    total_bd=Decimal(0); total_disc=Decimal(0); total_fr=Decimal(0)
-    total_vat=Decimal(0)
+    # Accept both hidden field (li_item_code[]) and select field
+    codes    = f.getlist('li_item_code[]')
+    names    = f.getlist('li_item_desc[]')   # item_name / description from select
+    rdates   = f.getlist('li_required_date[]')
+    whs      = f.getlist('li_warehouse[]')
+    uoms     = f.getlist('li_uom[]')
+    qtys     = f.getlist('li_qty[]')
+    rates    = f.getlist('li_rate[]')
+    discs    = f.getlist('li_discount[]')
+    freights = f.getlist('li_freight[]')
+    tcodes   = f.getlist('li_tax_code[]')
+
+    total_bd=Decimal(0); total_disc=Decimal(0); total_fr=Decimal(0); total_vat=Decimal(0)
 
     for i in range(len(qtys)):
         try:
-            qty  = Decimal(qtys[i] or '0')
-            rate = Decimal(rates[i] if i<len(rates) else '0')
-            disc = Decimal(discs[i] if i<len(discs) else '0')
-            fr   = Decimal(freights[i] if i<len(freights) else '0')
-            tax_code = tcodes[i] if i<len(tcodes) else 'VAT15'
+            qty      = Decimal(qtys[i] or '0')
+            rate     = Decimal(rates[i]    if i < len(rates)    else '0')
+            disc     = Decimal(discs[i]    if i < len(discs)    else '0')
+            fr       = Decimal(freights[i] if i < len(freights) else '0')
+            tax_code = tcodes[i] if i < len(tcodes) else 'VAT15'
             tax_rate = Decimal('15') if '15' in tax_code else Decimal('0')
-            # Taxable = (Qty × Rate - Discount) + Freight
+            # Formula: Taxable = (Qty × Rate − Discount) + Freight
             taxable  = max(Decimal('0'), (qty * rate - disc) + fr)
+            # Tax = Taxable × Tax%
             tax_amt  = (taxable * tax_rate / 100).quantize(Decimal('0.01'))
             # Total = Taxable + Tax
             total    = taxable + tax_amt
+
+            raw_name = names[i] if i < len(names) else ''
             li = PurchaseLineItem(
-                doc_type=doc_type, doc_id=doc_id,
-                item_code=codes[i] if i<len(codes) else '',
-                item_desc=descs[i] if i<len(descs) else '',
-                required_date=pd(rdates[i]) if i<len(rdates) else None,
-                warehouse=whs[i] if i<len(whs) else '',
-                uom=uoms[i] if i<len(uoms) else 'unit',
-                quantity=qty, rate=rate, discount=disc, freight=fr,
-                taxable=taxable, tax_code=tax_code,
-                tax_amount=tax_amt, total=total,
+                doc_type      = doc_type,
+                doc_id        = doc_id,
+                line_number   = i + 1,
+                item_code     = codes[i] if i < len(codes) else '',
+                item_name     = raw_name,
+                description   = raw_name,
+                required_date = pd(rdates[i]) if i < len(rdates) else None,
+                warehouse     = whs[i] if i < len(whs) else '',
+                uom           = uoms[i] if i < len(uoms) else 'unit',
+                quantity      = qty,
+                rate          = rate,
+                discount      = disc,
+                freight       = fr,
+                taxable       = taxable,
+                tax_code      = tax_code,
+                tax_amount    = tax_amt,
+                total         = total,
             )
             db.session.add(li)
-            total_bd   += qty*rate
+            total_bd   += qty * rate
             total_disc += disc
             total_fr   += fr
             total_vat  += tax_amt
-        except: pass
+        except Exception:
+            pass
 
-    # Excl VAT = (Total before disc - discount) + freight
+    # Summary calculations
     excl = (total_bd - total_disc) + total_fr
     return {
         'total_before_discount': total_bd,
-        'total_discount': total_disc,
-        'total_freight': total_fr,
-        'total_excl_vat': excl,
-        'vat_amount': total_vat,
-        'total_incl_vat': excl + total_vat,
+        'total_discount':        total_disc,
+        'total_freight':         total_fr,
+        'total_excl_vat':        excl,
+        'vat_amount':            total_vat,
+        'total_incl_vat':        excl + total_vat,
     }
 
 def _save_attachments(doc_type, doc_id, files):
@@ -243,7 +263,6 @@ def vendor_edit(id):
                 'district','district_ar','bank_name','bank_branch','swift_code',
                 'account_number','iban']:
         setattr(v, fld, f.get(fld,'').strip() or None)
-    v.invoice_id = int(f.get('invoice_id')) if f.get('invoice_id') else None
     v.status = f.get('status','active')
     db.session.commit()
     return jsonify({'ok': True})
@@ -275,10 +294,78 @@ def pr_data():
 def pr_json(id):
     pr = PurchaseRequest.query.get_or_404(id)
     d = pr.to_dict()
-    d['items'] = [i.to_dict() for i in PurchaseLineItem.query.filter_by(doc_type='PR', doc_id=id).all()]
+    d['items'] = [i.to_dict() for i in PurchaseRequestLineItem.query.filter_by(pr_id=id).order_by(PurchaseRequestLineItem.line_number).all()]
     d['attachments'] = [{'filename':a.filename,'filepath':a.filepath} for a in
                         PurchaseAttachment.query.filter_by(doc_type='PR', doc_id=id).all()]
     return jsonify(d)
+
+def _save_pr_line_items(pr_id, f):
+    """Save Purchase Request line items into dedicated table. Returns summary totals."""
+    PurchaseRequestLineItem.query.filter_by(pr_id=pr_id).delete()
+
+    codes    = f.getlist('li_item_code[]')
+    descs    = f.getlist('li_item_desc[]')
+    rdates   = f.getlist('li_required_date[]')
+    whs      = f.getlist('li_warehouse[]')
+    uoms     = f.getlist('li_uom[]')
+    qtys     = f.getlist('li_qty[]')
+    rates    = f.getlist('li_rate[]')
+    discs    = f.getlist('li_discount[]')
+    freights = f.getlist('li_freight[]')
+    tcodes   = f.getlist('li_tax_code[]')
+
+    total_bd = Decimal(0); total_disc = Decimal(0)
+    total_fr = Decimal(0); total_vat  = Decimal(0)
+
+    for i in range(len(qtys)):
+        try:
+            qty      = Decimal(qtys[i]     or '0')
+            rate     = Decimal(rates[i]    if i < len(rates)    else '0')
+            disc     = Decimal(discs[i]    if i < len(discs)    else '0')
+            fr       = Decimal(freights[i] if i < len(freights) else '0')
+            tax_code = tcodes[i] if i < len(tcodes) else 'VAT15'
+            tax_rate = Decimal('15') if '15' in tax_code else Decimal('0')
+            # Taxable = (Qty × Rate − Discount) + Freight
+            taxable  = max(Decimal('0'), (qty * rate - disc) + fr)
+            # Tax = Taxable × Tax%
+            tax_amt  = (taxable * tax_rate / 100).quantize(Decimal('0.01'))
+            # Total = Taxable + Tax
+            total    = taxable + tax_amt
+
+            li = PurchaseRequestLineItem(
+                pr_id         = pr_id,
+                line_number   = i + 1,
+                item_code     = codes[i]  if i < len(codes)  else '',
+                description   = descs[i]  if i < len(descs)  else '',
+                required_date = pd(rdates[i]) if i < len(rdates) and rdates[i] else None,
+                warehouse     = whs[i]    if i < len(whs)    else '',
+                unit_of_measure = uoms[i]   if i < len(uoms)   else 'unit',
+                quantity      = qty,
+                rate          = rate,
+                discount      = disc,
+                freight       = fr,
+                taxable_amount  = taxable,
+                tax_code      = tax_code,
+                tax_amount    = tax_amt,
+                total_amount    = total,
+            )
+            db.session.add(li)
+            total_bd   += qty * rate
+            total_disc += disc
+            total_fr   += fr
+            total_vat  += tax_amt
+        except Exception:
+            pass
+
+    excl = (total_bd - total_disc) + total_fr
+    return {
+        'total_before_discount': total_bd,
+        'total_discount':        total_disc,
+        'total_freight':         total_fr,
+        'total_excl_vat':        excl,
+        'vat_amount':            total_vat,
+        'total_incl_vat':        excl + total_vat,
+    }
 
 @pur_bp.route('/purchase/requests/add', methods=['POST'])
 @login_required
@@ -299,7 +386,7 @@ def pr_add():
         created_by=current_user.id,
     )
     db.session.add(pr); db.session.flush()
-    tots = _save_line_items('PR', pr.id, f)
+    tots = _save_pr_line_items(pr.id, f)
     for k,v in tots.items(): setattr(pr, k, v)
     _save_attachments('PR', pr.id, request.files.getlist('attachments'))
     db.session.commit()
@@ -315,7 +402,7 @@ def pr_edit(id):
     pr.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
     for df in ['posting_date','valid_until','document_date','required_date']:
         setattr(pr, df, pd(f.get(df)))
-    tots = _save_line_items('PR', id, f)
+    tots = _save_pr_line_items(id, f)
     for k,v in tots.items(): setattr(pr, k, v)
     _save_attachments('PR', id, request.files.getlist('attachments'))
     db.session.commit()
@@ -333,6 +420,77 @@ def pr_delete(id):
 # ══════════════════════════════════════════════════════════════════
 # PURCHASE QUOTATION
 # ══════════════════════════════════════════════════════════════════
+def _save_doc_line_items(LIModel, fk_field, fk_value, f):
+    """Generic save for any dedicated line item model.
+    LIModel   = the SQLAlchemy model class
+    fk_field  = the FK column name string  e.g. 'purchase_order_id'
+    fk_value  = the parent document id
+    f         = request.form
+    Returns summary totals dict.
+    """
+    LIModel.query.filter_by(**{fk_field: fk_value}).delete()
+
+    codes    = f.getlist('li_item_code[]')
+    descs    = f.getlist('li_item_desc[]')
+    rdates   = f.getlist('li_required_date[]')
+    whs      = f.getlist('li_warehouse[]')
+    uoms     = f.getlist('li_uom[]')
+    qtys     = f.getlist('li_qty[]')
+    rates    = f.getlist('li_rate[]')
+    discs    = f.getlist('li_discount[]')
+    freights = f.getlist('li_freight[]')
+    tcodes   = f.getlist('li_tax_code[]')
+
+    total_bd = Decimal(0); total_disc = Decimal(0)
+    total_fr = Decimal(0); total_vat  = Decimal(0)
+
+    for i in range(len(qtys)):
+        try:
+            qty      = Decimal(qtys[i]     or '0')
+            rate     = Decimal(rates[i]    if i < len(rates)    else '0')
+            disc     = Decimal(discs[i]    if i < len(discs)    else '0')
+            fr       = Decimal(freights[i] if i < len(freights) else '0')
+            tax_code = tcodes[i] if i < len(tcodes) else 'VAT15'
+            tax_rate = Decimal('15') if '15' in tax_code else Decimal('0')
+            taxable  = max(Decimal('0'), (qty * rate - disc) + fr)
+            tax_amt  = (taxable * tax_rate / 100).quantize(Decimal('0.01'))
+            total    = taxable + tax_amt
+
+            li = LIModel(**{
+                fk_field:        fk_value,
+                'line_number':   i + 1,
+                'item_code':     codes[i]  if i < len(codes)  else '',
+                'description':   descs[i]  if i < len(descs)  else '',
+                'required_date': pd(rdates[i]) if i < len(rdates) and rdates[i] else None,
+                'warehouse':     whs[i]    if i < len(whs)    else '',
+                'unit_of_measure': uoms[i] if i < len(uoms)   else 'unit',
+                'quantity':      qty,
+                'rate':          rate,
+                'discount':      disc,
+                'freight':       fr,
+                'taxable_amount': taxable,
+                'tax_code':      tax_code,
+                'tax_amount':    tax_amt,
+                'total_amount':  total,
+            })
+            db.session.add(li)
+            total_bd   += qty * rate
+            total_disc += disc
+            total_fr   += fr
+            total_vat  += tax_amt
+        except Exception:
+            pass
+
+    excl = (total_bd - total_disc) + total_fr
+    return {
+        'total_before_discount': total_bd,
+        'total_discount':        total_disc,
+        'total_freight':         total_fr,
+        'total_excl_vat':        excl,
+        'vat_amount':            total_vat,
+        'total_incl_vat':        excl + total_vat,
+    }
+
 @pur_bp.route('/purchase/quotations')
 @login_required
 def pq_list():
@@ -350,7 +508,7 @@ def pq_data():
 def pq_json(id):
     pq = PurchaseQuotation.query.get_or_404(id)
     d = pq.to_dict()
-    d['items'] = [i.to_dict() for i in PurchaseLineItem.query.filter_by(doc_type='PQ', doc_id=id).all()]
+    d['items'] = [i.to_dict() for i in PurchaseQuotationLineItem.query.filter_by(purchase_quotation_id=id).order_by(PurchaseQuotationLineItem.line_number).all()]
     d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='PQ', doc_id=id).all()]
     return jsonify(d)
 
@@ -374,7 +532,7 @@ def pq_add():
         created_by=current_user.id,
     )
     db.session.add(pq); db.session.flush()
-    tots = _save_line_items('PQ', pq.id, f)
+    tots = _save_doc_line_items(PurchaseQuotationLineItem, 'purchase_quotation_id', pq.id, f)
     for k,v in tots.items(): setattr(pq, k, v)
     _save_attachments('PQ', pq.id, request.files.getlist('attachments'))
     db.session.commit()
@@ -391,7 +549,7 @@ def pq_edit(id):
     pq.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
     for df in ['posting_date','valid_until','document_date','required_date']:
         setattr(pq, df, pd(f.get(df)))
-    tots = _save_line_items('PQ', id, f)
+    tots = _save_doc_line_items(PurchaseQuotationLineItem, 'purchase_quotation_id', id, f)
     for k,v in tots.items(): setattr(pq, k, v)
     _save_attachments('PQ', id, request.files.getlist('attachments'))
     db.session.commit()
@@ -426,9 +584,20 @@ def po_data():
 def po_json(id):
     po = PurchaseOrder.query.get_or_404(id)
     d = po.to_dict()
-    d['items'] = [i.to_dict() for i in PurchaseLineItem.query.filter_by(doc_type='PO', doc_id=id).all()]
+    d['items'] = [i.to_dict() for i in PurchaseOrderLineItem.query.filter_by(purchase_order_id=id).order_by(PurchaseOrderLineItem.line_number).all()]
     d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='PO', doc_id=id).all()]
     return jsonify(d)
+
+@pur_bp.route('/purchase/orders/<int:id>/summary')
+@login_required
+def po_summary(id):
+    """Lightweight PO data for auto-filling Purchase Invoice form"""
+    po = PurchaseOrder.query.get_or_404(id)
+    d  = po.to_dict()
+    # Include line items so PINV can prefill them
+    d['items'] = [i.to_dict() for i in PurchaseOrderLineItem.query.filter_by(purchase_order_id=id).order_by(PurchaseOrderLineItem.line_number).all()]
+    return jsonify(d)
+
 
 @pur_bp.route('/purchase/orders/add', methods=['POST'])
 @login_required
@@ -446,7 +615,7 @@ def po_add():
         created_by=current_user.id,
     )
     db.session.add(po); db.session.flush()
-    tots = _save_line_items('PO', po.id, f)
+    tots = _save_doc_line_items(PurchaseOrderLineItem, 'purchase_order_id', po.id, f)
     for k,v in tots.items(): setattr(po, k, v)
     _save_attachments('PO', po.id, request.files.getlist('attachments'))
     db.session.commit()
@@ -463,7 +632,7 @@ def po_edit(id):
     po.status = f.get('status','Open')
     for df in ['posting_date','delivery_date','document_date']:
         setattr(po, df, pd(f.get(df)))
-    tots = _save_line_items('PO', id, f)
+    tots = _save_doc_line_items(PurchaseOrderLineItem, 'purchase_order_id', id, f)
     for k,v in tots.items(): setattr(po, k, v)
     _save_attachments('PO', id, request.files.getlist('attachments'))
     db.session.commit()
@@ -499,7 +668,7 @@ def grn_data():
 def grn_json(id):
     doc = GoodsReceiptNote.query.get_or_404(id)
     d = doc.to_dict()
-    d['items'] = [i.to_dict() for i in PurchaseLineItem.query.filter_by(doc_type='GRN', doc_id=id).all()]
+    d['items'] = [i.to_dict() for i in GoodsReceiptLineItem.query.filter_by(goods_receipt_note_id=id).order_by(GoodsReceiptLineItem.line_number).all()]
     d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='GRN', doc_id=id).all()]
     return jsonify(d)
 
@@ -518,7 +687,7 @@ def grn_add():
         document_date=pd(f.get('document_date')), created_by=current_user.id,
     )
     db.session.add(doc); db.session.flush()
-    tots = _save_line_items('GRN', doc.id, f)
+    tots = _save_doc_line_items(GoodsReceiptLineItem, 'goods_receipt_note_id', doc.id, f)
     for k,v in tots.items(): setattr(doc, k, v)
     _save_attachments('GRN', doc.id, request.files.getlist('attachments'))
     db.session.commit()
@@ -534,7 +703,7 @@ def grn_edit(id):
     doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
     doc.status=f.get('status','Open')
     for df in ['posting_date','delivery_date','document_date']: setattr(doc, df, pd(f.get(df)))
-    tots = _save_line_items('GRN', id, f)
+    tots = _save_doc_line_items(GoodsReceiptLineItem, 'goods_receipt_note_id', id, f)
     for k,v in tots.items(): setattr(doc, k, v)
     _save_attachments('GRN', id, request.files.getlist('attachments'))
     db.session.commit(); return jsonify({'ok':True})
@@ -574,7 +743,7 @@ def pinv_data():
 def pinv_json(id):
     doc = PurchaseInvoice.query.get_or_404(id)
     d = doc.to_dict()
-    d['items'] = [i.to_dict() for i in PurchaseLineItem.query.filter_by(doc_type='PINV', doc_id=id).all()]
+    d['items'] = [i.to_dict() for i in PurchaseInvoiceLineItem.query.filter_by(purchase_invoice_id=id).order_by(PurchaseInvoiceLineItem.line_number).all()]
     d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='PINV', doc_id=id).all()]
     return jsonify(d)
 
@@ -592,7 +761,7 @@ def pinv_add():
         document_date=pd(f.get('document_date')), created_by=current_user.id,
     )
     db.session.add(doc); db.session.flush()
-    tots = _save_line_items('PINV', doc.id, f)
+    tots = _save_doc_line_items(PurchaseInvoiceLineItem, 'purchase_invoice_id', doc.id, f)
     for k,v in tots.items(): setattr(doc, k, v)
     _save_attachments('PINV', doc.id, request.files.getlist('attachments'))
     db.session.commit(); return jsonify({'ok':True,'id':doc.id,'doc_no':doc.doc_no})
@@ -606,7 +775,7 @@ def pinv_edit(id):
     doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
     doc.status=f.get('status','Open')
     for df in ['posting_date','delivery_date','document_date']: setattr(doc, df, pd(f.get(df)))
-    tots = _save_line_items('PINV', id, f)
+    tots = _save_doc_line_items(PurchaseInvoiceLineItem, 'purchase_invoice_id', id, f)
     for k,v in tots.items(): setattr(doc, k, v)
     _save_attachments('PINV', id, request.files.getlist('attachments'))
     db.session.commit(); return jsonify({'ok':True})
@@ -647,7 +816,7 @@ def grr_data():
 def grr_json(id):
     doc = GoodsReturnRequest.query.get_or_404(id)
     d = doc.to_dict()
-    d['items'] = [i.to_dict() for i in PurchaseLineItem.query.filter_by(doc_type='GRR', doc_id=id).all()]
+    d['items'] = [i.to_dict() for i in GoodsReturnLineItem.query.filter_by(goods_return_request_id=id).order_by(GoodsReturnLineItem.line_number).all()]
     d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='GRR', doc_id=id).all()]
     return jsonify(d)
 
@@ -667,7 +836,7 @@ def grr_add():
         document_date=pd(f.get('document_date')), created_by=current_user.id,
     )
     db.session.add(doc); db.session.flush()
-    tots = _save_line_items('GRR', doc.id, f)
+    tots = _save_doc_line_items(GoodsReturnLineItem, 'goods_return_request_id', doc.id, f)
     for k,v in tots.items(): setattr(doc, k, v)
     _save_attachments('GRR', doc.id, request.files.getlist('attachments'))
     db.session.commit(); return jsonify({'ok':True,'id':doc.id,'doc_no':doc.doc_no})
@@ -683,7 +852,7 @@ def grr_edit(id):
     doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
     doc.status=f.get('status','Open')
     for df in ['posting_date','delivery_date','document_date']: setattr(doc, df, pd(f.get(df)))
-    tots = _save_line_items('GRR', id, f)
+    tots = _save_doc_line_items(GoodsReturnLineItem, 'goods_return_request_id', id, f)
     for k,v in tots.items(): setattr(doc, k, v)
     _save_attachments('GRR', id, request.files.getlist('attachments'))
     db.session.commit(); return jsonify({'ok':True})
@@ -724,7 +893,7 @@ def pdm_data():
 def pdm_json(id):
     doc = PurchaseDebitMemo.query.get_or_404(id)
     d = doc.to_dict()
-    d['items'] = [i.to_dict() for i in PurchaseLineItem.query.filter_by(doc_type='PDM', doc_id=id).all()]
+    d['items'] = [i.to_dict() for i in PurchaseDebitMemoLineItem.query.filter_by(purchase_debit_memo_id=id).order_by(PurchaseDebitMemoLineItem.line_number).all()]
     d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='PDM', doc_id=id).all()]
     return jsonify(d)
 
@@ -744,7 +913,7 @@ def pdm_add():
         document_date=pd(f.get('document_date')), created_by=current_user.id,
     )
     db.session.add(doc); db.session.flush()
-    tots = _save_line_items('PDM', doc.id, f)
+    tots = _save_doc_line_items(PurchaseDebitMemoLineItem, 'purchase_debit_memo_id', doc.id, f)
     for k,v in tots.items(): setattr(doc, k, v)
     _save_attachments('PDM', doc.id, request.files.getlist('attachments'))
     db.session.commit(); return jsonify({'ok':True,'id':doc.id,'doc_no':doc.doc_no})
@@ -760,7 +929,7 @@ def pdm_edit(id):
     doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
     doc.status=f.get('status','Open')
     for df in ['posting_date','delivery_date','document_date']: setattr(doc, df, pd(f.get(df)))
-    tots = _save_line_items('PDM', id, f)
+    tots = _save_doc_line_items(PurchaseDebitMemoLineItem, 'purchase_debit_memo_id', id, f)
     for k,v in tots.items(): setattr(doc, k, v)
     _save_attachments('PDM', id, request.files.getlist('attachments'))
     db.session.commit(); return jsonify({'ok':True})
@@ -780,3 +949,167 @@ def pdm_view(id):
     return render_template('purchase/pdm_view.html', doc=doc,
         items=PurchaseLineItem.query.filter_by(doc_type='PDM', doc_id=id).all(),
         attachments=PurchaseAttachment.query.filter_by(doc_type='PDM', doc_id=id).all())
+
+@pur_bp.route('/purchase/returns/<int:id>/summary')
+@login_required
+def grr_summary(id):
+    """Lightweight GRR data for PDM auto-fill"""
+    doc = GoodsReturnRequest.query.get_or_404(id)
+    d = doc.to_dict()
+    d['items'] = [i.to_dict() for i in GoodsReturnLineItem.query.filter_by(goods_return_request_id=id).order_by(GoodsReturnLineItem.line_number).all()]
+    return jsonify(d)
+
+@pur_bp.route('/purchase/invoices/<int:id>/summary')
+@login_required
+def pinv_summary(id):
+    """Lightweight PINV data for GRR auto-fill"""
+    doc = PurchaseInvoice.query.get_or_404(id)
+    d = doc.to_dict()
+    d['items'] = [i.to_dict() for i in PurchaseInvoiceLineItem.query.filter_by(purchase_invoice_id=id).order_by(PurchaseInvoiceLineItem.line_number).all()]
+    return jsonify(d)
+
+# ══════════════════════════════════════════════════════════════════
+# VENDOR BANKS
+# ══════════════════════════════════════════════════════════════════
+@pur_bp.route('/purchase/vendors/<int:vendor_id>/banks')
+@login_required
+def vendor_banks(vendor_id):
+    banks = VendorBank.query.filter_by(vendor_id=vendor_id).order_by(VendorBank.is_primary.desc()).all()
+    return jsonify([b.to_dict() for b in banks])
+
+@pur_bp.route('/purchase/vendors/<int:vendor_id>/banks/add', methods=['POST'])
+@login_required
+def vendor_bank_add(vendor_id):
+    f = request.form
+    # Ensure only one primary
+    if f.get('is_primary') == '1':
+        VendorBank.query.filter_by(vendor_id=vendor_id, is_primary=True).update({'is_primary': False})
+    bank = VendorBank(
+        vendor_id      = vendor_id,
+        bank_name_en   = f.get('bank_name_en','').strip(),
+        bank_name_ar   = f.get('bank_name_ar','').strip() or None,
+        account_number = f.get('account_number','').strip() or None,
+        branch_en      = f.get('branch_en','').strip() or None,
+        branch_ar      = f.get('branch_ar','').strip() or None,
+        swift_code     = f.get('swift_code','').strip() or None,
+        iban           = f.get('iban','').strip() or None,
+        is_primary     = f.get('is_primary') == '1',
+    )
+    db.session.add(bank)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': bank.id})
+
+@pur_bp.route('/purchase/vendors/banks/<int:bank_id>/edit', methods=['POST'])
+@login_required
+def vendor_bank_edit(bank_id):
+    bank = VendorBank.query.get_or_404(bank_id)
+    f = request.form
+    if f.get('is_primary') == '1':
+        VendorBank.query.filter_by(vendor_id=bank.vendor_id, is_primary=True).update({'is_primary': False})
+    bank.bank_name_en   = f.get('bank_name_en','').strip()
+    bank.bank_name_ar   = f.get('bank_name_ar','').strip() or None
+    bank.account_number = f.get('account_number','').strip() or None
+    bank.branch_en      = f.get('branch_en','').strip() or None
+    bank.branch_ar      = f.get('branch_ar','').strip() or None
+    bank.swift_code     = f.get('swift_code','').strip() or None
+    bank.iban           = f.get('iban','').strip() or None
+    bank.is_primary     = f.get('is_primary') == '1'
+    db.session.commit()
+    return jsonify({'ok': True})
+
+@pur_bp.route('/purchase/vendors/banks/<int:bank_id>/delete', methods=['POST'])
+@login_required
+def vendor_bank_delete(bank_id):
+    bank = VendorBank.query.get_or_404(bank_id)
+    db.session.delete(bank)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+@pur_bp.route('/purchase/vendors/banks/<int:bank_id>/set-primary', methods=['POST'])
+@login_required
+def vendor_bank_set_primary(bank_id):
+    bank = VendorBank.query.get_or_404(bank_id)
+    VendorBank.query.filter_by(vendor_id=bank.vendor_id, is_primary=True).update({'is_primary': False})
+    bank.is_primary = True
+    db.session.commit()
+    return jsonify({'ok': True})
+
+# ══════════════════════════════════════════════════════════════════
+# VENDOR DOCUMENTS
+# ══════════════════════════════════════════════════════════════════
+from werkzeug.utils import secure_filename as _sf
+import uuid as _uuid
+
+VENDOR_DOC_TYPES = [
+    'CR / سجل تجاري', 'VAT Certificate / شهادة ضريبة', 'ID / هوية',
+    'Contract / عقد', 'License / رخصة', 'Insurance / تأمين',
+    'Bank Letter / خطاب بنكي', 'Other / أخرى',
+]
+VENDOR_ALLOWED_EXT = {'pdf','doc','docx','xls','xlsx','jpg','jpeg','png','gif','txt'}
+
+def _vendor_doc_save(file, vendor_id):
+    """Save uploaded file, return relative path"""
+    import current_app
+    ext    = file.filename.rsplit('.', 1)[-1].lower()
+    name   = f'{_uuid.uuid4().hex}.{ext}'
+    folder = os.path.join('uploads', 'vendors', str(vendor_id))
+    os.makedirs(folder, exist_ok=True)
+    full   = os.path.join(folder, name)
+    file.save(full)
+    return os.path.join('vendors', str(vendor_id), name)
+
+@pur_bp.route('/purchase/vendors/<int:vendor_id>/documents')
+@login_required
+def vendor_documents(vendor_id):
+    docs = VendorDocument.query.filter_by(vendor_id=vendor_id).order_by(VendorDocument.uploaded_at.desc()).all()
+    return jsonify([d.to_dict() for d in docs])
+
+@pur_bp.route('/purchase/vendors/<int:vendor_id>/documents/upload', methods=['POST'])
+@login_required
+def vendor_doc_upload(vendor_id):
+    from flask import current_app
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return jsonify({'ok': False, 'error': 'No file selected'}), 400
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in VENDOR_ALLOWED_EXT:
+        return jsonify({'ok': False, 'error': f'File type .{ext} not allowed'}), 400
+    # Save file
+    unique_name = f'{_uuid.uuid4().hex}.{ext}'
+    folder = os.path.join('uploads', 'vendors', str(vendor_id))
+    os.makedirs(folder, exist_ok=True)
+    full_path = os.path.join(folder, unique_name)
+    file.save(full_path)
+    rel_path = os.path.join('vendors', str(vendor_id), unique_name)
+    doc = VendorDocument(
+        vendor_id     = vendor_id,
+        document_type = request.form.get('document_type', 'Other / أخرى'),
+        document_name = request.form.get('document_name', file.filename).strip() or file.filename,
+        file_path     = rel_path,
+        file_size     = os.path.getsize(full_path),
+        expiry_date   = datetime.strptime(request.form['expiry_date'], '%Y-%m-%d').date() if request.form.get('expiry_date') else None,
+        uploaded_by   = current_user.id,
+    )
+    db.session.add(doc)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': doc.id, 'doc': doc.to_dict()})
+
+@pur_bp.route('/purchase/vendors/documents/<int:doc_id>/download')
+@login_required
+def vendor_doc_download(doc_id):
+    from flask import current_app, send_from_directory
+    doc    = VendorDocument.query.get_or_404(doc_id)
+    folder = os.path.join('uploads', os.path.dirname(doc.file_path))
+    fname  = os.path.basename(doc.file_path)
+    return send_from_directory(os.path.abspath(folder), fname, as_attachment=True, download_name=doc.document_name)
+
+@pur_bp.route('/purchase/vendors/documents/<int:doc_id>/delete', methods=['POST'])
+@login_required
+def vendor_doc_delete(doc_id):
+    doc = VendorDocument.query.get_or_404(doc_id)
+    full = os.path.join('uploads', doc.file_path)
+    if os.path.exists(full):
+        os.remove(full)
+    db.session.delete(doc)
+    db.session.commit()
+    return jsonify({'ok': True})

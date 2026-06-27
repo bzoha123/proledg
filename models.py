@@ -553,20 +553,11 @@ class VendorMaster(db.Model):
     city_ar          = db.Column(db.String(100))
     district         = db.Column(db.String(100))
     district_ar      = db.Column(db.String(100))
-    # Bank
-    bank_name        = db.Column(db.String(150))
-    bank_branch      = db.Column(db.String(100))
-    swift_code       = db.Column(db.String(20))
-    account_number   = db.Column(db.String(50))
-    iban             = db.Column(db.String(50))
-    # Invoice link
-    invoice_id       = db.Column(db.Integer, db.ForeignKey('invoices.id'), nullable=True)
+    # (bank fields moved to vendor_banks table)
     status           = db.Column(db.String(20), default='active')
     is_active        = db.Column(db.Boolean, default=True)
     created_at       = db.Column(db.DateTime, default=datetime.utcnow)
     created_by       = db.Column(db.Integer, db.ForeignKey('users.id'))
-
-    invoice          = db.relationship('Invoice', backref=db.backref('vendors', lazy=True))
 
     def to_dict(self):
         return {
@@ -576,12 +567,74 @@ class VendorMaster(db.Model):
             'vat_number': self.vat_number or '', 'crn': self.crn or '',
             'phone': self.phone or '', 'email': self.email or '',
             'city': self.city or '', 'status': self.status or 'active',
-            'invoice_id': self.invoice_id,
-            'invoice_no': self.invoice.invoice_no if self.invoice else '',
+
             'contact_person': self.contact_person or '',
             'is_active': self.is_active,
         }
 
+
+# ─────────────────────────────────────────────────────────────────
+# VENDOR BANK
+# ─────────────────────────────────────────────────────────────────
+class VendorBank(db.Model):
+    __tablename__ = 'vendor_banks'
+    id             = db.Column(db.Integer, primary_key=True)
+    vendor_id      = db.Column(db.Integer, db.ForeignKey('vendors.id'), nullable=False)
+    bank_name_en   = db.Column(db.String(150), nullable=False)
+    bank_name_ar   = db.Column(db.String(150))
+    account_number = db.Column(db.String(50))
+    branch_en      = db.Column(db.String(100))
+    branch_ar      = db.Column(db.String(100))
+    swift_code     = db.Column(db.String(20))
+    iban           = db.Column(db.String(50))
+    is_primary     = db.Column(db.Boolean, default=False)
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+
+    vendor = db.relationship('VendorMaster', backref=db.backref('banks', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'vendor_id': self.vendor_id,
+            'bank_name_en': self.bank_name_en,
+            'bank_name_ar': self.bank_name_ar or '',
+            'account_number': self.account_number or '',
+            'branch_en': self.branch_en or '',
+            'branch_ar': self.branch_ar or '',
+            'swift_code': self.swift_code or '',
+            'iban': self.iban or '',
+            'is_primary': self.is_primary,
+        }
+
+# ─────────────────────────────────────────────────────────────────
+# VENDOR DOCUMENT
+# ─────────────────────────────────────────────────────────────────
+class VendorDocument(db.Model):
+    __tablename__ = 'vendor_documents'
+    id            = db.Column(db.Integer, primary_key=True)
+    vendor_id     = db.Column(db.Integer, db.ForeignKey('vendors.id'), nullable=False)
+    document_type = db.Column(db.String(100), nullable=False)
+    document_name = db.Column(db.String(200), nullable=False)
+    file_path     = db.Column(db.String(500), nullable=False)
+    file_size     = db.Column(db.Integer)
+    expiry_date   = db.Column(db.Date)
+    uploaded_at   = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_by   = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    vendor = db.relationship('VendorMaster', backref=db.backref('documents', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'vendor_id': self.vendor_id,
+            'document_type': self.document_type,
+            'document_name': self.document_name,
+            'file_path': self.file_path,
+            'file_size': self.file_size or 0,
+            'file_size_kb': round((self.file_size or 0) / 1024, 1),
+            'expiry_date': str(self.expiry_date) if self.expiry_date else '',
+            'uploaded_at': self.uploaded_at.strftime('%Y-%m-%d %H:%M') if self.uploaded_at else '',
+        }
 
 # ─────────────────────────────────────────────────────────────────
 # PURCHASE REQUEST
@@ -632,6 +685,54 @@ class PurchaseRequest(db.Model):
             'total_incl_vat': float(self.total_incl_vat or 0),
         }
 
+
+# ─────────────────────────────────────────────────────────────────
+# PURCHASE REQUEST LINE ITEMS
+# ─────────────────────────────────────────────────────────────────
+class PurchaseRequestLineItem(db.Model):
+    __tablename__ = 'purchase_request_line_items'
+    id            = db.Column(db.Integer, primary_key=True)
+    pr_id         = db.Column(db.Integer, db.ForeignKey('purchase_requests.id', ondelete='CASCADE'), nullable=False)
+    line_number   = db.Column(db.Integer, nullable=False, default=1)
+    item_code     = db.Column(db.String(50))
+    description   = db.Column(db.String(500))
+    required_date = db.Column(db.Date)
+    warehouse     = db.Column(db.String(150))
+    unit_of_measure = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity        = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    rate            = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    discount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    freight         = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable_amount  = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    tax_code        = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total_amount    = db.Column(db.Numeric(14,2), nullable=False, default=0)
+
+    pr = db.relationship('PurchaseRequest', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id':            self.id,
+            'pr_id':         self.pr_id,
+            'line_number':   self.line_number,
+            'item_code':     self.item_code   or '',
+            'item_desc':     self.description or '',   # JS compat alias
+            'description':   self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse':     self.warehouse   or '',
+            'unit_of_measure': self.unit_of_measure,
+            'uom':           self.unit_of_measure,
+            'quantity':      float(self.quantity        or 0),
+            'rate':          float(self.rate             or 0),
+            'discount':      float(self.discount         or 0),
+            'freight':       float(self.freight          or 0),
+            'taxable':       float(self.taxable_amount   or 0),
+            'taxable_amount':float(self.taxable_amount   or 0),
+            'tax_code':      self.tax_code,
+            'tax_amount':    float(self.tax_amount       or 0),
+            'total':         float(self.total_amount     or 0),
+            'total_amount':  float(self.total_amount     or 0),
+        }
 
 # ─────────────────────────────────────────────────────────────────
 # PURCHASE QUOTATION
@@ -727,32 +828,49 @@ class PurchaseOrder(db.Model):
 class PurchaseLineItem(db.Model):
     __tablename__ = 'purchase_line_items'
     id            = db.Column(db.Integer, primary_key=True)
-    doc_type      = db.Column(db.String(5))   # PR / PQ / PO
-    doc_id        = db.Column(db.Integer)
+    doc_type      = db.Column(db.String(10), nullable=False)  # PR/PQ/PO/GRN/PINV/GRR/PDM
+    doc_id        = db.Column(db.Integer, nullable=False)
+    line_number   = db.Column(db.Integer, default=1)          # row order within document
+    # Item identification
     item_code     = db.Column(db.String(50))
-    item_desc     = db.Column(db.String(500))
+    item_name     = db.Column(db.String(200))                 # name from item master
+    description   = db.Column(db.String(500))                 # description / notes
+    # Logistics
     required_date = db.Column(db.Date)
     warehouse     = db.Column(db.String(150))
-    uom           = db.Column(db.String(20), default='unit')
+    uom           = db.Column(db.String(20), default='unit')  # unit of measure
+    # Pricing
     quantity      = db.Column(db.Numeric(12,2), default=0)
     rate          = db.Column(db.Numeric(12,2), default=0)
     discount      = db.Column(db.Numeric(12,2), default=0)
     freight       = db.Column(db.Numeric(12,2), default=0)
-    taxable       = db.Column(db.Numeric(12,2), default=0)  # auto = qty*rate
+    # Calculated
+    taxable       = db.Column(db.Numeric(12,2), default=0)    # (qty*rate - discount) + freight
     tax_code      = db.Column(db.String(20), default='VAT15')
-    tax_amount    = db.Column(db.Numeric(12,2), default=0)
-    total         = db.Column(db.Numeric(12,2), default=0)
+    tax_amount    = db.Column(db.Numeric(12,2), default=0)    # taxable * tax%
+    total         = db.Column(db.Numeric(12,2), default=0)    # taxable + tax_amount
 
     def to_dict(self):
         return {
-            'id': self.id, 'doc_type': self.doc_type, 'doc_id': self.doc_id,
-            'item_code': self.item_code or '', 'item_desc': self.item_desc or '',
+            'id': self.id,
+            'doc_type': self.doc_type,
+            'doc_id': self.doc_id,
+            'line_number': self.line_number or 1,
+            'item_code': self.item_code or '',
+            'item_name': self.item_name or '',
+            'item_desc': self.description or '',   # alias for backward compat with JS
+            'description': self.description or '',
             'required_date': str(self.required_date) if self.required_date else '',
-            'warehouse': self.warehouse or '', 'uom': self.uom,
-            'quantity': float(self.quantity or 0), 'rate': float(self.rate or 0),
-            'discount': float(self.discount or 0), 'freight': float(self.freight or 0),
-            'taxable': float(self.taxable or 0), 'tax_code': self.tax_code or 'VAT15',
-            'tax_amount': float(self.tax_amount or 0), 'total': float(self.total or 0),
+            'warehouse': self.warehouse or '',
+            'uom': self.uom or 'unit',
+            'quantity': float(self.quantity or 0),
+            'rate': float(self.rate or 0),
+            'discount': float(self.discount or 0),
+            'freight': float(self.freight or 0),
+            'taxable': float(self.taxable or 0),
+            'tax_code': self.tax_code or 'VAT15',
+            'tax_amount': float(self.tax_amount or 0),
+            'total': float(self.total or 0),
         }
 
 
@@ -909,3 +1027,380 @@ class PurchaseDebitMemo(db.Model):
                 'vendor_id':self.vendor_id,'vendor_name':self.vendor.vendor_name_en if self.vendor else '',
                 'status':self.status,'posting_date':str(self.posting_date) if self.posting_date else '',
                 'total_incl_vat':float(self.total_incl_vat or 0)}
+
+# ─────────────────────────────────────────────────────────────────
+# PURCHASEQUOTATIONLINE ITEMS
+# ─────────────────────────────────────────────────────────────────
+class PurchaseQuotationLineItem(db.Model):
+    __tablename__ = 'purchase_quotation_line_items'
+    id                  = db.Column(db.Integer, primary_key=True)
+    purchase_quotation_id            = db.Column(db.Integer, db.ForeignKey('purchase_quotations.id', ondelete='CASCADE'), nullable=False)
+    line_number         = db.Column(db.Integer, nullable=False, default=1)
+    item_code           = db.Column(db.String(50))
+    description         = db.Column(db.String(500))
+    required_date       = db.Column(db.Date)
+    warehouse           = db.Column(db.String(150))
+    unit_of_measure     = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity            = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    rate                = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    discount            = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    freight             = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    tax_code            = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount          = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total_amount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+
+    purchase_quotation = db.relationship('PurchaseQuotation', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id':            self.id,
+            'purchase_quotation_id':      getattr(self, 'purchase_quotation_id'),
+            'line_number':   self.line_number,
+            'item_code':     self.item_code   or '',
+            'item_desc':     self.description or '',
+            'description':   self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse':     self.warehouse   or '',
+            'unit_of_measure': self.unit_of_measure,
+            'uom':           self.unit_of_measure,
+            'quantity':      float(self.quantity        or 0),
+            'rate':          float(self.rate             or 0),
+            'discount':      float(self.discount         or 0),
+            'freight':       float(self.freight          or 0),
+            'taxable':       float(self.taxable_amount   or 0),
+            'taxable_amount':float(self.taxable_amount   or 0),
+            'tax_code':      self.tax_code,
+            'tax_amount':    float(self.tax_amount       or 0),
+            'total':         float(self.total_amount     or 0),
+            'total_amount':  float(self.total_amount     or 0),
+        }
+
+# ─────────────────────────────────────────────────────────────────
+# PURCHASEORDERLINE ITEMS
+# ─────────────────────────────────────────────────────────────────
+class PurchaseOrderLineItem(db.Model):
+    __tablename__ = 'purchase_order_line_items'
+    id                  = db.Column(db.Integer, primary_key=True)
+    purchase_order_id            = db.Column(db.Integer, db.ForeignKey('purchase_orders.id', ondelete='CASCADE'), nullable=False)
+    line_number         = db.Column(db.Integer, nullable=False, default=1)
+    item_code           = db.Column(db.String(50))
+    description         = db.Column(db.String(500))
+    required_date       = db.Column(db.Date)
+    warehouse           = db.Column(db.String(150))
+    unit_of_measure     = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity            = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    rate                = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    discount            = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    freight             = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    tax_code            = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount          = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total_amount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+
+    purchase_order = db.relationship('PurchaseOrder', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id':            self.id,
+            'purchase_order_id':      getattr(self, 'purchase_order_id'),
+            'line_number':   self.line_number,
+            'item_code':     self.item_code   or '',
+            'item_desc':     self.description or '',
+            'description':   self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse':     self.warehouse   or '',
+            'unit_of_measure': self.unit_of_measure,
+            'uom':           self.unit_of_measure,
+            'quantity':      float(self.quantity        or 0),
+            'rate':          float(self.rate             or 0),
+            'discount':      float(self.discount         or 0),
+            'freight':       float(self.freight          or 0),
+            'taxable':       float(self.taxable_amount   or 0),
+            'taxable_amount':float(self.taxable_amount   or 0),
+            'tax_code':      self.tax_code,
+            'tax_amount':    float(self.tax_amount       or 0),
+            'total':         float(self.total_amount     or 0),
+            'total_amount':  float(self.total_amount     or 0),
+        }
+
+# ─────────────────────────────────────────────────────────────────
+# GOODSRECEIPTLINE ITEMS
+# ─────────────────────────────────────────────────────────────────
+class GoodsReceiptLineItem(db.Model):
+    __tablename__ = 'goods_receipt_line_items'
+    id                  = db.Column(db.Integer, primary_key=True)
+    goods_receipt_note_id            = db.Column(db.Integer, db.ForeignKey('goods_receipt_notes.id', ondelete='CASCADE'), nullable=False)
+    line_number         = db.Column(db.Integer, nullable=False, default=1)
+    item_code           = db.Column(db.String(50))
+    description         = db.Column(db.String(500))
+    required_date       = db.Column(db.Date)
+    warehouse           = db.Column(db.String(150))
+    unit_of_measure     = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity            = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    rate                = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    discount            = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    freight             = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    tax_code            = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount          = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total_amount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+
+    goods_receipt_note = db.relationship('GoodsReceiptNote', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id':            self.id,
+            'goods_receipt_note_id':      getattr(self, 'goods_receipt_note_id'),
+            'line_number':   self.line_number,
+            'item_code':     self.item_code   or '',
+            'item_desc':     self.description or '',
+            'description':   self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse':     self.warehouse   or '',
+            'unit_of_measure': self.unit_of_measure,
+            'uom':           self.unit_of_measure,
+            'quantity':      float(self.quantity        or 0),
+            'rate':          float(self.rate             or 0),
+            'discount':      float(self.discount         or 0),
+            'freight':       float(self.freight          or 0),
+            'taxable':       float(self.taxable_amount   or 0),
+            'taxable_amount':float(self.taxable_amount   or 0),
+            'tax_code':      self.tax_code,
+            'tax_amount':    float(self.tax_amount       or 0),
+            'total':         float(self.total_amount     or 0),
+            'total_amount':  float(self.total_amount     or 0),
+        }
+
+# ─────────────────────────────────────────────────────────────────
+# PURCHASEINVOICELINE ITEMS
+# ─────────────────────────────────────────────────────────────────
+class PurchaseInvoiceLineItem(db.Model):
+    __tablename__ = 'purchase_invoice_line_items'
+    id                  = db.Column(db.Integer, primary_key=True)
+    purchase_invoice_id            = db.Column(db.Integer, db.ForeignKey('purchase_invoices.id', ondelete='CASCADE'), nullable=False)
+    line_number         = db.Column(db.Integer, nullable=False, default=1)
+    item_code           = db.Column(db.String(50))
+    description         = db.Column(db.String(500))
+    required_date       = db.Column(db.Date)
+    warehouse           = db.Column(db.String(150))
+    unit_of_measure     = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity            = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    rate                = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    discount            = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    freight             = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    tax_code            = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount          = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total_amount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+
+    purchase_invoice = db.relationship('PurchaseInvoice', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id':            self.id,
+            'purchase_invoice_id':      getattr(self, 'purchase_invoice_id'),
+            'line_number':   self.line_number,
+            'item_code':     self.item_code   or '',
+            'item_desc':     self.description or '',
+            'description':   self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse':     self.warehouse   or '',
+            'unit_of_measure': self.unit_of_measure,
+            'uom':           self.unit_of_measure,
+            'quantity':      float(self.quantity        or 0),
+            'rate':          float(self.rate             or 0),
+            'discount':      float(self.discount         or 0),
+            'freight':       float(self.freight          or 0),
+            'taxable':       float(self.taxable_amount   or 0),
+            'taxable_amount':float(self.taxable_amount   or 0),
+            'tax_code':      self.tax_code,
+            'tax_amount':    float(self.tax_amount       or 0),
+            'total':         float(self.total_amount     or 0),
+            'total_amount':  float(self.total_amount     or 0),
+        }
+
+# ─────────────────────────────────────────────────────────────────
+# GOODSRETURNLINE ITEMS
+# ─────────────────────────────────────────────────────────────────
+class GoodsReturnLineItem(db.Model):
+    __tablename__ = 'goods_return_line_items'
+    id                  = db.Column(db.Integer, primary_key=True)
+    goods_return_request_id            = db.Column(db.Integer, db.ForeignKey('goods_return_requests.id', ondelete='CASCADE'), nullable=False)
+    line_number         = db.Column(db.Integer, nullable=False, default=1)
+    item_code           = db.Column(db.String(50))
+    description         = db.Column(db.String(500))
+    required_date       = db.Column(db.Date)
+    warehouse           = db.Column(db.String(150))
+    unit_of_measure     = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity            = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    rate                = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    discount            = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    freight             = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    tax_code            = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount          = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total_amount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+
+    goods_return_request = db.relationship('GoodsReturnRequest', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id':            self.id,
+            'goods_return_request_id':      getattr(self, 'goods_return_request_id'),
+            'line_number':   self.line_number,
+            'item_code':     self.item_code   or '',
+            'item_desc':     self.description or '',
+            'description':   self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse':     self.warehouse   or '',
+            'unit_of_measure': self.unit_of_measure,
+            'uom':           self.unit_of_measure,
+            'quantity':      float(self.quantity        or 0),
+            'rate':          float(self.rate             or 0),
+            'discount':      float(self.discount         or 0),
+            'freight':       float(self.freight          or 0),
+            'taxable':       float(self.taxable_amount   or 0),
+            'taxable_amount':float(self.taxable_amount   or 0),
+            'tax_code':      self.tax_code,
+            'tax_amount':    float(self.tax_amount       or 0),
+            'total':         float(self.total_amount     or 0),
+            'total_amount':  float(self.total_amount     or 0),
+        }
+
+# ─────────────────────────────────────────────────────────────────
+# PURCHASEDEBITMEMOLINE ITEMS
+# ─────────────────────────────────────────────────────────────────
+class PurchaseDebitMemoLineItem(db.Model):
+    __tablename__ = 'purchase_debit_memo_line_items'
+    id                  = db.Column(db.Integer, primary_key=True)
+    purchase_debit_memo_id            = db.Column(db.Integer, db.ForeignKey('purchase_debit_memos.id', ondelete='CASCADE'), nullable=False)
+    line_number         = db.Column(db.Integer, nullable=False, default=1)
+    item_code           = db.Column(db.String(50))
+    description         = db.Column(db.String(500))
+    required_date       = db.Column(db.Date)
+    warehouse           = db.Column(db.String(150))
+    unit_of_measure     = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity            = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    rate                = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    discount            = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    freight             = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    tax_code            = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount          = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total_amount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+
+    purchase_debit_memo = db.relationship('PurchaseDebitMemo', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id':            self.id,
+            'purchase_debit_memo_id':      getattr(self, 'purchase_debit_memo_id'),
+            'line_number':   self.line_number,
+            'item_code':     self.item_code   or '',
+            'item_desc':     self.description or '',
+            'description':   self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse':     self.warehouse   or '',
+            'unit_of_measure': self.unit_of_measure,
+            'uom':           self.unit_of_measure,
+            'quantity':      float(self.quantity        or 0),
+            'rate':          float(self.rate             or 0),
+            'discount':      float(self.discount         or 0),
+            'freight':       float(self.freight          or 0),
+            'taxable':       float(self.taxable_amount   or 0),
+            'taxable_amount':float(self.taxable_amount   or 0),
+            'tax_code':      self.tax_code,
+            'tax_amount':    float(self.tax_amount       or 0),
+            'total':         float(self.total_amount     or 0),
+            'total_amount':  float(self.total_amount     or 0),
+        }
+
+# ─────────────────────────────────────────────────────────────────
+# ITEM MASTER (Line Items Lookup)
+# ─────────────────────────────────────────────────────────────────
+class ItemCategory(db.Model):
+    __tablename__ = 'item_categories'
+    id          = db.Column(db.Integer, primary_key=True)
+    name_en     = db.Column(db.String(100), nullable=False)
+    name_ar     = db.Column(db.String(100))
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+    sub_categories = db.relationship('ItemSubCategory', backref='category', lazy=True, cascade='all,delete-orphan')
+    def to_dict(self):
+        return {'id':self.id,'name_en':self.name_en,'name_ar':self.name_ar or ''}
+
+class ItemSubCategory(db.Model):
+    __tablename__ = 'item_sub_categories'
+    id          = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('item_categories.id'), nullable=False)
+    name_en     = db.Column(db.String(100), nullable=False)
+    name_ar     = db.Column(db.String(100))
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+    def to_dict(self):
+        return {'id':self.id,'category_id':self.category_id,'name_en':self.name_en,'name_ar':self.name_ar or ''}
+
+class TaxCategory(db.Model):
+    __tablename__ = 'tax_categories'
+    id          = db.Column(db.Integer, primary_key=True)
+    name_en     = db.Column(db.String(100), nullable=False)
+    name_ar     = db.Column(db.String(100))
+    rate        = db.Column(db.Numeric(5,2), default=0)
+    def to_dict(self):
+        return {'id':self.id,'name_en':self.name_en,'name_ar':self.name_ar or '','rate':float(self.rate or 0)}
+
+class ItemMaster(db.Model):
+    __tablename__ = 'item_master'
+    id              = db.Column(db.Integer, primary_key=True)
+    item_code       = db.Column(db.String(50), unique=True, nullable=False)
+    article_no      = db.Column(db.String(50))
+    name_en         = db.Column(db.String(200), nullable=False)
+    name_ar         = db.Column(db.String(200))
+    print_name      = db.Column(db.String(200))
+    uom             = db.Column(db.String(20), default='unit')
+    item_desc       = db.Column(db.Text)
+    category_id     = db.Column(db.Integer, db.ForeignKey('item_categories.id'), nullable=True)
+    sub_category_id = db.Column(db.Integer, db.ForeignKey('item_sub_categories.id'), nullable=True)
+    tax_category_id = db.Column(db.Integer, db.ForeignKey('tax_categories.id'), nullable=True)
+    vendor_id       = db.Column(db.Integer, db.ForeignKey('vendors.id'), nullable=True)
+    main_rate       = db.Column(db.Numeric(14,2), default=0)
+    last_purchase_rate = db.Column(db.Numeric(14,2), default=0)
+    retail_rate     = db.Column(db.Numeric(14,2), default=0)
+    wholesale_rate  = db.Column(db.Numeric(14,2), default=0)
+    special_rate    = db.Column(db.Numeric(14,2), default=0)
+    mrp             = db.Column(db.Numeric(14,2), default=0)
+    minimum_sp      = db.Column(db.Numeric(14,2), default=0)
+    is_active       = db.Column(db.Boolean, default=True)
+    created_at      = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by      = db.Column(db.Integer, db.ForeignKey('users.id'))
+    category        = db.relationship('ItemCategory',    backref=db.backref('items', lazy=True))
+    sub_category    = db.relationship('ItemSubCategory', backref=db.backref('items', lazy=True))
+    tax_category    = db.relationship('TaxCategory',     backref=db.backref('items', lazy=True))
+    vendor          = db.relationship('VendorMaster',    backref=db.backref('items', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'item_code': self.item_code,
+            'article_no': self.article_no or '',
+            'name_en': self.name_en,
+            'name_ar': self.name_ar or '',
+            'print_name': self.print_name or '',
+            'uom': self.uom or 'unit',
+            'item_desc': self.item_desc or '',
+            'category_id': self.category_id,
+            'category_name': self.category.name_en if self.category else '',
+            'sub_category_id': self.sub_category_id,
+            'sub_category_name': self.sub_category.name_en if self.sub_category else '',
+            'tax_category_id': self.tax_category_id,
+            'tax_category_name': self.tax_category.name_en if self.tax_category else '',
+            'vendor_id': self.vendor_id,
+            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
+            'main_rate': float(self.main_rate or 0),
+            'last_purchase_rate': float(self.last_purchase_rate or 0),
+            'retail_rate': float(self.retail_rate or 0),
+            'wholesale_rate': float(self.wholesale_rate or 0),
+            'special_rate': float(self.special_rate or 0),
+            'mrp': float(self.mrp or 0),
+            'minimum_sp': float(self.minimum_sp or 0),
+            'is_active': self.is_active,
+        }

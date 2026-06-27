@@ -158,16 +158,7 @@ select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
               </div>
 
               <div class="f-grid2">
-                <div class="f-item">
-                  <div class="f-lbl">{% if ar %}رقم الفاتورة المرتبطة{% else %}Linked Invoice{% endif %}</div>
-                  <select id="v_invoice_id" class="f-inp">
-                    <option value="">-- {% if ar %}بدون ارتباط{% else %}No link{% endif %} --</option>
-                    {% for inv in invoices %}
-                    <option value="{{ inv.id }}">{{ inv.invoice_no }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-              </div>
+
 
             </div>
           </div>
@@ -232,6 +223,73 @@ select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
       <div class="vnd-footer">
         <button class="btn-f btn-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}</button>
         <button class="btn-f btn-save" id="vndSaveBtn" onclick="saveVendor()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ المورد / Save{% else %}Save Vendor / حفظ{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{# ══ VENDOR BANK ADD/EDIT MODAL ══ #}
+<div class="modal fade" id="bankModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border:none;border-radius:12px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;">
+        <h6 id="bankModalTitle" style="margin:0;color:white;font-weight:700;font-size:14px;">
+          <i class="fas fa-university me-2"></i>Add Bank Account
+        </h6>
+        <button class="btn-close" style="filter:brightness(0)invert(1);" data-bs-dismiss="modal"></button>
+      </div>
+      <div style="padding:20px;background:#f8fafc;">
+        <input type="hidden" id="bank_id">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Bank Name (EN) <span style="color:#ef4444;">*</span></div>
+            <input type="text" id="bank_name_en" class="f-inp" placeholder="e.g. Al Rajhi Bank">
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">اسم البنك (AR)</div>
+            <input type="text" id="bank_name_ar" class="f-inp" dir="rtl" placeholder="مثال: بنك الراجحي">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Branch (EN)</div>
+            <input type="text" id="bank_branch_en" class="f-inp" placeholder="Branch name">
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">الفرع (AR)</div>
+            <input type="text" id="bank_branch_ar" class="f-inp" dir="rtl" placeholder="اسم الفرع">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Account Number</div>
+            <input type="text" id="bank_account_number" class="f-inp" placeholder="Account number">
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">SWIFT Code</div>
+            <input type="text" id="bank_swift" class="f-inp" placeholder="e.g. RJHISARI" style="text-transform:uppercase;">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">IBAN</div>
+            <input type="text" id="bank_iban" class="f-inp" placeholder="e.g. SA1234567890123456789012">
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Primary Account</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+                <input type="checkbox" id="bank_is_primary" style="width:16px;height:16px;cursor:pointer;accent-color:#2563eb;">
+                <span>Set as primary account</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#f8fafc;border-top:2px solid #e2e8f0;">
+        <button class="btn-f btn-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Cancel</button>
+        <button class="btn-f btn-save" onclick="saveBank()"><i class="fas fa-save me-1"></i>Save Bank</button>
       </div>
     </div>
   </div>
@@ -593,5 +651,127 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+
+/* ══ VENDOR BANKS ══ */
+let _currentVendorId = null;
+
+function loadBanks(vendorId) {
+  if (!vendorId) { document.getElementById('bankListWrap').innerHTML = ''; return; }
+  _currentVendorId = vendorId;
+  fetch('/purchase/vendors/' + vendorId + '/banks')
+    .then(r => r.json())
+    .then(banks => renderBankList(banks));
+}
+
+function renderBankList(banks) {
+  const wrap = document.getElementById('bankListWrap');
+  if (!wrap) return;
+  if (!banks.length) {
+    wrap.innerHTML = '<div style="color:#9ca3af;font-size:12px;padding:8px 0;">No bank accounts added yet</div>';
+    return;
+  }
+  wrap.innerHTML = banks.map(b => `
+    <div style="background:white;border:1.5px solid ${b.is_primary ? '#86efac' : '#e2e8f0'};border-radius:9px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-weight:700;font-size:13px;color:#1e3a5f;display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-university" style="color:#2563eb;"></i>
+          ${b.bank_name_en}${b.bank_name_ar ? ' / ' + b.bank_name_ar : ''}
+          ${b.is_primary ? '<span style="background:#dcfce7;color:#15803d;padding:1px 8px;border-radius:8px;font-size:10px;font-weight:700;">PRIMARY</span>' : ''}
+        </div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;display:flex;gap:16px;">
+          ${b.branch_en ? '<span><i class="fas fa-code-branch me-1"></i>' + b.branch_en + '</span>' : ''}
+          ${b.account_number ? '<span><i class="fas fa-hashtag me-1"></i>' + b.account_number + '</span>' : ''}
+          ${b.iban ? '<span><i class="fas fa-credit-card me-1"></i>' + b.iban + '</span>' : ''}
+          ${b.swift_code ? '<span><i class="fas fa-globe me-1"></i>' + b.swift_code + '</span>' : ''}
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;">
+        ${!b.is_primary ? `<button onclick="setBankPrimary(${b.id})" style="padding:4px 10px;background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Set Primary</button>` : ''}
+        <button onclick="openEditBank(${b.id})" style="width:28px;height:28px;background:#fef3c7;color:#d97706;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><i class="fas fa-pencil-alt" style="font-size:10px;"></i></button>
+        <button onclick="deleteBank(${b.id})" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><i class="fas fa-trash" style="font-size:10px;"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function openAddBank() {
+  document.getElementById('bank_id').value = '';
+  document.getElementById('bankModalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>Add Bank Account';
+  ['bank_name_en','bank_name_ar','bank_branch_en','bank_branch_ar',
+   'bank_account_number','bank_swift','bank_iban'].forEach(id => {
+    const e = document.getElementById(id); if(e) e.value = '';
+  });
+  document.getElementById('bank_is_primary').checked = false;
+  new bootstrap.Modal(document.getElementById('bankModal')).show();
+}
+
+function openEditBank(bankId) {
+  const wrap = document.getElementById('bankListWrap');
+  // Re-fetch to get latest data
+  fetch('/purchase/vendors/' + _currentVendorId + '/banks')
+    .then(r => r.json())
+    .then(banks => {
+      const b = banks.find(x => x.id === bankId);
+      if (!b) return;
+      document.getElementById('bank_id').value = bankId;
+      document.getElementById('bankModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Edit Bank Account';
+      document.getElementById('bank_name_en').value         = b.bank_name_en || '';
+      document.getElementById('bank_name_ar').value         = b.bank_name_ar || '';
+      document.getElementById('bank_branch_en').value       = b.branch_en || '';
+      document.getElementById('bank_branch_ar').value       = b.branch_ar || '';
+      document.getElementById('bank_account_number').value  = b.account_number || '';
+      document.getElementById('bank_swift').value           = b.swift_code || '';
+      document.getElementById('bank_iban').value            = b.iban || '';
+      document.getElementById('bank_is_primary').checked   = b.is_primary;
+      new bootstrap.Modal(document.getElementById('bankModal')).show();
+    });
+}
+
+async function saveBank() {
+  const bankId     = document.getElementById('bank_id').value;
+  const vendorId   = _currentVendorId || document.getElementById('v_id').value;
+  if (!vendorId) { alert('Please save the vendor first before adding bank accounts'); return; }
+  if (!document.getElementById('bank_name_en').value.trim()) {
+    alert('Bank name (EN) is required'); return;
+  }
+  const url = bankId
+    ? '/purchase/vendors/banks/' + bankId + '/edit'
+    : '/purchase/vendors/' + vendorId + '/banks/add';
+  const fd = new FormData();
+  fd.set('csrf_token',     CSRF);
+  fd.set('bank_name_en',   document.getElementById('bank_name_en').value.trim());
+  fd.set('bank_name_ar',   document.getElementById('bank_name_ar').value.trim());
+  fd.set('branch_en',      document.getElementById('bank_branch_en').value.trim());
+  fd.set('branch_ar',      document.getElementById('bank_branch_ar').value.trim());
+  fd.set('account_number', document.getElementById('bank_account_number').value.trim());
+  fd.set('swift_code',     document.getElementById('bank_swift').value.trim().toUpperCase());
+  fd.set('iban',           document.getElementById('bank_iban').value.trim());
+  fd.set('is_primary',     document.getElementById('bank_is_primary').checked ? '1' : '0');
+  const res  = await fetch(url, {method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd});
+  const data = await res.json();
+  if (data.ok) {
+    bootstrap.Modal.getInstance(document.getElementById('bankModal'))?.hide();
+    loadBanks(vendorId);
+  } else {
+    alert(data.error || 'Error saving bank');
+  }
+}
+
+async function deleteBank(bankId) {
+  if (!confirm('Delete this bank account?')) return;
+  const res  = await fetch('/purchase/vendors/banks/' + bankId + '/delete', {
+    method:'POST', headers:{'X-CSRFToken':CSRF}, body:new URLSearchParams({csrf_token:CSRF})
+  });
+  const data = await res.json();
+  if (data.ok) loadBanks(_currentVendorId);
+}
+
+async function setBankPrimary(bankId) {
+  const res  = await fetch('/purchase/vendors/banks/' + bankId + '/set-primary', {
+    method:'POST', headers:{'X-CSRFToken':CSRF}, body:new URLSearchParams({csrf_token:CSRF})
+  });
+  const data = await res.json();
+  if (data.ok) loadBanks(_currentVendorId);
+}
+
 </script>
-{% endblock %}
+{% endblock %}document.getElementById('bankListWrap').innerHTML = '<div style="color:#9ca3af;font-size:12px;padding:8px 0;">Save vendor first, then add bank accounts</div>';

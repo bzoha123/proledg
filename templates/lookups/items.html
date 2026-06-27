@@ -1,0 +1,483 @@
+{% extends "base.html" %}
+{% block title %}{% if ar %}بنود البضاعة{% else %}Item Master{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.min.css">
+<style>
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.page-title{font-size:22px;font-weight:800;color:#1e3a5f;}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.tool-btn{width:34px;height:34px;border-radius:8px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:14px;transition:all .12s;}
+.tool-btn-green{background:#16a34a;color:#fff;} .tool-btn-green:hover{background:#15803d;}
+.tool-btn-blue{background:#2563eb;color:#fff;} .tool-btn-blue:hover{background:#1d4ed8;}
+.tool-btn-gray{background:#e5e7eb;color:#374151;} .tool-btn-gray:hover{background:#d1d5db;}
+.sel-text{font-size:13px;color:#6b7280;margin-left:auto;}
+.grid-wrap{border-radius:10px;overflow:hidden;border:1.5px solid #e2e8f0;background:#fff;}
+#itemGrid{width:100%;height:520px;}
+.ag-theme-alpine .ag-header{background:#1e3a5f!important;}
+.ag-theme-alpine .ag-header-cell-text{color:#fff!important;font-weight:700;font-size:12px;}
+.ag-theme-alpine .ag-header-icon{color:#93c5fd!important;}
+.ag-ab{width:26px;height:26px;border-radius:6px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin:0 2px;}
+.ag-ab-edit{background:#fef3c7;color:#d97706;} .ag-ab-del{background:#fee2e2;color:#dc2626;}
+
+/* Modal */
+.item-modal .modal-dialog{max-width:820px;}
+.item-modal .modal-content{border:none;border-radius:12px;overflow:hidden;}
+.item-hdr{background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:16px 22px;display:flex;align-items:center;justify-content:space-between;}
+.item-hdr h5{color:#fff;font-weight:700;font-size:15px;margin:0;}
+.item-hdr .btn-close{filter:brightness(0)invert(1);opacity:.8;}
+.item-body{padding:0;background:#f8fafc;max-height:78vh;overflow-y:auto;}
+/* Sections */
+.isec{margin:16px;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;}
+.isec-hdr{padding:12px 16px;background:#f8fafc;border-bottom:1.5px solid #e2e8f0;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+.isec-hdr-icon{width:28px;height:28px;border-radius:7px;background:#e0f2fe;color:#0284c7;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.isec-hdr-title{font-size:13px;font-weight:700;color:#1e3a5f;flex:1;}
+.isec-body{padding:16px;}
+/* Fields */
+.f-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.f-grid1{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px;}
+.f-lbl{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.f-lbl-req{color:#ef4444;}
+.f-inp{width:100%;border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;transition:border-color .15s;box-sizing:border-box;background:#fff;}
+.f-inp:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
+textarea.f-inp{resize:vertical;min-height:80px;}
+.f-inp[disabled]{background:#f3f4f6;color:#9ca3af;}
+/* Footer */
+.item-footer{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#f8fafc;border-top:2px solid #e2e8f0;}
+.btn-save{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:9px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+.btn-cancel{background:#fff;color:#374151;border:1.5px solid #d1d5db;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
+/* Pricing grid */
+.p-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.p-grid1{display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:14px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding:24px;">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">{% if ar %}بنود البضاعة{% else %}Item Master{% endif %}</div>
+      <div style="font-size:13px;color:#9ca3af;margin-top:2px;">{% if ar %}إدارة بنود المخزون والخدمات{% else %}Manage inventory items and services{% endif %}</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar" style="margin-bottom:14px;">
+    <button class="tool-btn tool-btn-green" onclick="openAddItem()" title="Add Item"><i class="fas fa-plus"></i></button>
+    <button class="tool-btn tool-btn-blue"  onclick="loadData()" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+    <button class="tool-btn tool-btn-gray"  onclick="gridApi.setFilterModel(null)" title="Clear Filters"><i class="fas fa-times"></i></button>
+    <div style="flex:1;"></div>
+    <span id="selText" style="font-size:13px;color:#6b7280;"></span>
+    <div style="position:relative;">
+      <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:12px;"></i>
+      <input type="text" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"
+             style="padding:7px 12px 7px 30px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;width:200px;"
+             oninput="gridApi.setQuickFilter(this.value)">
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div class="grid-wrap ag-theme-alpine">
+    <div id="itemGrid"></div>
+  </div>
+</div>
+
+<!-- ══ ADD/EDIT MODAL ══ -->
+<div class="modal fade item-modal" id="itemModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <!-- Header -->
+      <div class="item-hdr">
+        <h5 id="itemModalTitle"><i class="fas fa-plus-circle me-2"></i>{% if ar %}إضافة بند{% else %}Add Line Item{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <!-- Body -->
+      <div class="item-body" id="itemModalBody">
+        <input type="hidden" id="item_id">
+        <form id="itemForm">
+
+          <!-- ── Section 1: Basic Information ── -->
+          <div class="isec">
+            <div class="isec-hdr" onclick="togSec(this)">
+              <div class="isec-hdr-icon"><i class="fas fa-box"></i></div>
+              <div class="isec-hdr-title">{% if ar %}المعلومات الأساسية{% else %}Basic Information{% endif %} / <span style="color:#6b7280;">{% if ar %}Basic Information{% else %}المعلومات الأساسية{% endif %}</span></div>
+              <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
+            </div>
+            <div class="isec-body">
+              <div class="f-grid2">
+                <div>
+                  <div class="f-lbl">Item Code <span class="f-lbl-req">*</span></div>
+                  <input type="text" id="i_item_code" class="f-inp" placeholder="e.g. ITM-001" required>
+                </div>
+                <div>
+                  <div class="f-lbl">Article No <span class="f-lbl-req">*</span></div>
+                  <input type="text" id="i_article_no" class="f-inp" placeholder="e.g. ART-001">
+                </div>
+              </div>
+              <div class="f-grid2">
+                <div>
+                  <div class="f-lbl">Name (EN) <span class="f-lbl-req">*</span></div>
+                  <input type="text" id="i_name_en" class="f-inp" placeholder="Item name in English" oninput="autoTranslate()">
+                </div>
+                <div style="direction:rtl;">
+                  <div class="f-lbl" style="text-align:right;">الاسم <span class="f-lbl-req">*</span></div>
+                  <input type="text" id="i_name_ar" class="f-inp" placeholder="اسم البند بالعربي" dir="rtl">
+                </div>
+              </div>
+              <div class="f-grid2">
+                <div>
+                  <div class="f-lbl">Print Name <span class="f-lbl-req">*</span></div>
+                  <input type="text" id="i_print_name" class="f-inp" placeholder="Name on documents">
+                </div>
+                <div>
+                  <div class="f-lbl">Unit of Measure (UOM) <span class="f-lbl-req">*</span></div>
+                  <select id="i_uom" class="f-inp">
+                    {% for u in uoms %}
+                    <option value="{{ u }}">{{ u | capitalize }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="f-grid1">
+                <div>
+                  <div class="f-lbl">Item Description <span class="f-lbl-req">*</span></div>
+                  <textarea id="i_item_desc" class="f-inp" rows="3" placeholder="Detailed description of the item..."></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Section 2: Classification & Flags ── -->
+          <div class="isec">
+            <div class="isec-hdr" onclick="togSec(this)">
+              <div class="isec-hdr-icon"><i class="fas fa-tags"></i></div>
+              <div class="isec-hdr-title">{% if ar %}التصنيف والإعدادات{% else %}Classification & Flags{% endif %} / <span style="color:#6b7280;">{% if ar %}Classification & Flags{% else %}التصنيف والإعدادات{% endif %}</span></div>
+              <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
+            </div>
+            <div class="isec-body">
+              <div class="f-grid2">
+                <div>
+                  <div class="f-lbl">Category <span class="f-lbl-req">*</span></div>
+                  <select id="i_category" class="f-inp" onchange="loadSubCats()">
+                    <option value="">-- Select Category / اختر الفئة --</option>
+                    {% for c in cats %}
+                    <option value="{{ c.id }}">{{ c.name_en }}{% if c.name_ar %} / {{ c.name_ar }}{% endif %}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div>
+                  <div class="f-lbl">Sub-Category <span class="f-lbl-req">*</span></div>
+                  <select id="i_sub_category" class="f-inp" disabled>
+                    <option value="">-- Select Category first / اختر الفئة أولاً --</option>
+                  </select>
+                </div>
+              </div>
+              <div class="f-grid2">
+                <div>
+                  <div class="f-lbl">Tax Category</div>
+                  <select id="i_tax_category" class="f-inp">
+                    <option value="">-- Select Tax Category / اختر فئة الضريبة --</option>
+                    {% for t in taxcats %}
+                    <option value="{{ t.id }}">{{ t.name_en }}{% if t.rate %} ({{ t.rate }}%){% endif %}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div>
+                  <div class="f-lbl">Vendor <span class="f-lbl-req">*</span></div>
+                  <select id="i_vendor" class="f-inp">
+                    <option value="">-- Select Vendor / اختر المورد --</option>
+                    {% for v in vendors %}
+                    <option value="{{ v.id }}">{{ v.vendor_name_en }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="f-grid2">
+                <div>
+                  <div class="f-lbl">Status</div>
+                  <select id="i_is_active" class="f-inp">
+                    <option value="1">Active / نشط</option>
+                    <option value="0">Inactive / غير نشط</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Section 3: Pricing ── -->
+          <div class="isec">
+            <div class="isec-hdr" onclick="togSec(this)">
+              <div class="isec-hdr-icon"><i class="fas fa-dollar-sign"></i></div>
+              <div class="isec-hdr-title">{% if ar %}الأسعار{% else %}Pricing{% endif %} / <span style="color:#6b7280;">{% if ar %}Pricing{% else %}الأسعار{% endif %}</span></div>
+              <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
+            </div>
+            <div class="isec-body">
+              <div class="p-grid2">
+                <div>
+                  <div class="f-lbl">Main Rate / السعر الرئيسي</div>
+                  <input type="number" id="i_main_rate" class="f-inp" value="0.00" min="0" step="0.01">
+                </div>
+                <div>
+                  <div class="f-lbl">Last Purchase Rate / آخر سعر شراء</div>
+                  <input type="number" id="i_last_purchase_rate" class="f-inp" value="0.00" min="0" step="0.01">
+                </div>
+              </div>
+              <div class="p-grid2">
+                <div>
+                  <div class="f-lbl">Retail Rate / سعر التجزئة</div>
+                  <input type="number" id="i_retail_rate" class="f-inp" value="0.00" min="0" step="0.01">
+                </div>
+                <div>
+                  <div class="f-lbl">Wholesale Rate / سعر الجملة</div>
+                  <input type="number" id="i_wholesale_rate" class="f-inp" value="0.00" min="0" step="0.01">
+                </div>
+              </div>
+              <div class="p-grid2">
+                <div>
+                  <div class="f-lbl">Special Rate / السعر الخاص</div>
+                  <input type="number" id="i_special_rate" class="f-inp" value="0.00" min="0" step="0.01">
+                </div>
+                <div>
+                  <div class="f-lbl">MRP / الحد الأقصى للسعر</div>
+                  <input type="number" id="i_mrp" class="f-inp" value="0.00" min="0" step="0.01">
+                </div>
+              </div>
+              <div class="p-grid2">
+                <div>
+                  <div class="f-lbl">Minimum SP / الحد الأدنى لسعر البيع</div>
+                  <input type="number" id="i_minimum_sp" class="f-inp" value="0.00" min="0" step="0.01">
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+      <!-- Footer -->
+      <div class="item-footer">
+        <button class="btn-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button class="btn-save" onclick="saveItem()">
+          <i class="fas fa-save me-1"></i>{% if ar %}حفظ البند{% else %}Save Item{% endif %} / {% if ar %}Save Item{% else %}حفظ البند{% endif %}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm modal -->
+<div class="modal fade" id="delModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+      <div style="background:#fee2e2;padding:16px 20px;border-bottom:1px solid #fecaca;">
+        <div style="font-weight:700;color:#dc2626;font-size:14px;"><i class="fas fa-trash me-2"></i>{% if ar %}تأكيد الحذف{% else %}Confirm Delete{% endif %}</div>
+      </div>
+      <div style="padding:16px 20px;">
+        <p id="delTxt" style="font-size:13px;color:#374151;margin:0;"></p>
+      </div>
+      <div style="padding:12px 20px;display:flex;justify-content:flex-end;gap:8px;background:#f8fafc;">
+        <button class="btn-cancel" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button id="delBtn" style="background:#dc2626;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">{% if ar %}حذف{% else %}Delete{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script>
+const IS_AR = {{ 'true' if ar else 'false' }};
+const CSRF  = '{{ csrf_token() }}';
+
+/* ══ Section toggle ══ */
+function togSec(hdr) {
+  const body = hdr.nextElementSibling;
+  const ch   = hdr.querySelector('.fa-chevron-up,.fa-chevron-down');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (ch) ch.className = open ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+  if (ch) ch.style.color = open ? '#9ca3af' : '#2563eb';
+}
+
+/* ══ Sub-category cascade ══ */
+async function loadSubCats(selectedId) {
+  const catId = document.getElementById('i_category').value;
+  const sub   = document.getElementById('i_sub_category');
+  sub.innerHTML = '<option value="">-- Select / اختر --</option>';
+  sub.disabled  = !catId;
+  if (!catId) return;
+  const data = await fetch('/items/sub-categories/' + catId).then(r => r.json());
+  data.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id;
+    o.textContent = s.name_en + (s.name_ar ? ' / ' + s.name_ar : '');
+    if (selectedId && s.id == selectedId) o.selected = true;
+    sub.appendChild(o);
+  });
+  sub.disabled = false;
+}
+
+/* ══ Auto-translate name (stub) ══ */
+function autoTranslate() {
+  const en = document.getElementById('i_name_en').value;
+  const pr = document.getElementById('i_print_name');
+  if (pr && !pr.value) pr.value = en;
+}
+
+/* ══ Open Add ══ */
+function openAddItem() {
+  document.getElementById('item_id').value = '';
+  document.getElementById('itemModalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>Add Line Item / إضافة بند';
+  document.getElementById('itemForm').reset();
+  ['i_main_rate','i_last_purchase_rate','i_retail_rate','i_wholesale_rate',
+   'i_special_rate','i_mrp','i_minimum_sp'].forEach(id => {
+    const e = document.getElementById(id); if(e) e.value = '0.00';
+  });
+  document.getElementById('i_sub_category').disabled = true;
+  document.getElementById('i_sub_category').innerHTML = '<option value="">-- Select Category first / اختر الفئة أولاً --</option>';
+  new bootstrap.Modal(document.getElementById('itemModal')).show();
+}
+
+/* ══ Open Edit ══ */
+function openEditItem(id) {
+  fetch('/items/' + id + '/json').then(r => r.json()).then(async d => {
+    document.getElementById('item_id').value = id;
+    document.getElementById('itemModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Edit Item / تعديل البند';
+    document.getElementById('i_item_code').value  = d.item_code || '';
+    document.getElementById('i_article_no').value = d.article_no || '';
+    document.getElementById('i_name_en').value    = d.name_en || '';
+    document.getElementById('i_name_ar').value    = d.name_ar || '';
+    document.getElementById('i_print_name').value = d.print_name || '';
+    document.getElementById('i_uom').value        = d.uom || 'unit';
+    document.getElementById('i_item_desc').value  = d.item_desc || '';
+    document.getElementById('i_category').value   = d.category_id || '';
+    if (d.category_id) await loadSubCats(d.sub_category_id);
+    document.getElementById('i_sub_category').value = d.sub_category_id || '';
+    document.getElementById('i_tax_category').value = d.tax_category_id || '';
+    document.getElementById('i_vendor').value        = d.vendor_id || '';
+    document.getElementById('i_is_active').value     = d.is_active ? '1' : '0';
+    document.getElementById('i_main_rate').value          = d.main_rate.toFixed(2);
+    document.getElementById('i_last_purchase_rate').value = d.last_purchase_rate.toFixed(2);
+    document.getElementById('i_retail_rate').value        = d.retail_rate.toFixed(2);
+    document.getElementById('i_wholesale_rate').value     = d.wholesale_rate.toFixed(2);
+    document.getElementById('i_special_rate').value       = d.special_rate.toFixed(2);
+    document.getElementById('i_mrp').value                = d.mrp.toFixed(2);
+    document.getElementById('i_minimum_sp').value         = d.minimum_sp.toFixed(2);
+    new bootstrap.Modal(document.getElementById('itemModal')).show();
+  });
+}
+
+/* ══ Save ══ */
+async function saveItem() {
+  const id  = document.getElementById('item_id').value;
+  const url = id ? '/items/' + id + '/edit' : '/items/add';
+  const fd  = new FormData();
+  fd.set('csrf_token',         CSRF);
+  fd.set('item_code',          document.getElementById('i_item_code').value.trim());
+  fd.set('article_no',         document.getElementById('i_article_no').value.trim());
+  fd.set('name_en',            document.getElementById('i_name_en').value.trim());
+  fd.set('name_ar',            document.getElementById('i_name_ar').value.trim());
+  fd.set('print_name',         document.getElementById('i_print_name').value.trim());
+  fd.set('uom',                document.getElementById('i_uom').value);
+  fd.set('item_desc',          document.getElementById('i_item_desc').value.trim());
+  fd.set('category_id',        document.getElementById('i_category').value);
+  fd.set('sub_category_id',    document.getElementById('i_sub_category').value);
+  fd.set('tax_category_id',    document.getElementById('i_tax_category').value);
+  fd.set('vendor_id',          document.getElementById('i_vendor').value);
+  fd.set('is_active',          document.getElementById('i_is_active').value);
+  fd.set('main_rate',          document.getElementById('i_main_rate').value);
+  fd.set('last_purchase_rate', document.getElementById('i_last_purchase_rate').value);
+  fd.set('retail_rate',        document.getElementById('i_retail_rate').value);
+  fd.set('wholesale_rate',     document.getElementById('i_wholesale_rate').value);
+  fd.set('special_rate',       document.getElementById('i_special_rate').value);
+  fd.set('mrp',                document.getElementById('i_mrp').value);
+  fd.set('minimum_sp',         document.getElementById('i_minimum_sp').value);
+
+  if (!fd.get('item_code')) { alert('Item Code is required'); return; }
+  if (!fd.get('name_en'))   { alert('Item Name is required'); return; }
+
+  const res  = await fetch(url, { method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd });
+  const data = await res.json();
+  if (data.ok) {
+    bootstrap.Modal.getInstance(document.getElementById('itemModal'))?.hide();
+    loadData();
+  } else {
+    alert(data.error || 'Error saving item');
+  }
+}
+
+/* ══ Delete ══ */
+function confDelItem(id, name) {
+  document.getElementById('delTxt').textContent = 'Delete item: ' + name + '?';
+  document.getElementById('delBtn').onclick = () => {
+    fetch('/items/' + id + '/delete', {
+      method:'POST', headers:{'X-CSRFToken':CSRF}, body:new URLSearchParams({csrf_token:CSRF})
+    }).then(r => r.json()).then(d => {
+      if (d.ok) { bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide(); loadData(); }
+      else alert(d.error || 'Cannot delete');
+    });
+  };
+  new bootstrap.Modal(document.getElementById('delModal')).show();
+}
+
+/* ══ AG-Grid ══ */
+const rStatus = p => {
+  const active = p.value;
+  const bg = active ? '#dcfce7' : '#f1f5f9';
+  const fg = active ? '#15803d' : '#6b7280';
+  const txt = active ? 'Active' : 'Inactive';
+  return `<span style="background:${bg};color:${fg};padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;">${txt}</span>`;
+};
+const rSAR = p => p.value != null ? `<span style="font-weight:600;">${parseFloat(p.value).toFixed(2)}</span>` : '';
+
+class ActR {
+  init(p) {
+    this.g = document.createElement('div');
+    this.g.style.cssText = 'display:flex;align-items:center;gap:3px;';
+    const d = p.data;
+    this.g.innerHTML =
+      `<button class="ag-ab ag-ab-edit" onclick="openEditItem(${d.id})" title="Edit"><i class="fas fa-pencil-alt"></i></button>` +
+      `<button class="ag-ab ag-ab-del"  onclick="confDelItem(${d.id}, '${(d.name_en||'').replace(/'/g, '')}')" title="Delete"><i class="fas fa-trash"></i></button>`;
+  }
+  getGui() { return this.g; }
+}
+
+const defCol = { sortable:true, resizable:true, filter:'agTextColumnFilter',
+  floatingFilter:true, filterParams:{buttons:['apply','reset'],closeOnApply:true} };
+
+const cols = [
+  {headerName:'#', field:'id', width:65, floatingFilter:false, suppressMenu:true},
+  {headerName:'Item Code', field:'item_code', width:120},
+  {headerName:'Article No', field:'article_no', width:110},
+  {headerName:'Name', field:'name_en', minWidth:180},
+  {headerName:'اسم', field:'name_ar', minWidth:150},
+  {headerName:'UOM', field:'uom', width:80},
+  {headerName:'Category', field:'category_name', width:130},
+  {headerName:'Sub-Category', field:'sub_category_name', width:130},
+  {headerName:'Vendor', field:'vendor_name', width:150},
+  {headerName:'Main Rate', field:'main_rate', width:110, cellRenderer:rSAR, floatingFilter:false},
+  {headerName:'Status', field:'is_active', width:90, cellRenderer:rStatus, floatingFilter:false},
+  {headerName:'Actions', field:'_a', width:90, pinned:IS_AR?'left':'right',
+   sortable:false, suppressMenu:true, floatingFilter:false, resizable:false,
+   cellRenderer:ActR, cellStyle:{overflow:'visible',padding:'0 6px'}},
+];
+
+let gridApi;
+agGrid.createGrid(document.getElementById('itemGrid'), {
+  columnDefs:cols, rowData:[], pagination:true, paginationPageSize:15,
+  animateRows:true, enableRtl:IS_AR, defaultColDef:defCol,
+  onGridReady(p) { gridApi=p.api; loadData(); },
+  getRowStyle(p) { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
+});
+
+function loadData() {
+  fetch('/items/data').then(r=>r.json()).then(d => {
+    gridApi.setGridOption('rowData', d);
+    document.getElementById('selText').textContent = d.length + ' items';
+  });
+}
+</script>
+{% endblock %}

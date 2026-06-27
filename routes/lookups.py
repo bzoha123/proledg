@@ -474,3 +474,103 @@ def add_allowance_type_quick():
     db.session.add(at)
     db.session.commit()
     return jsonify({'ok': True, 'id': at.id})
+
+# ══════════════════════════════════════════════════════════════════
+# ITEM MASTER
+# ══════════════════════════════════════════════════════════════════
+from models import ItemMaster, ItemCategory, ItemSubCategory, TaxCategory, VendorMaster
+
+@lookups_bp.route('/items')
+@login_required
+def items_list():
+    cats    = ItemCategory.query.order_by(ItemCategory.name_en).all()
+    subcats = ItemSubCategory.query.order_by(ItemSubCategory.name_en).all()
+    taxcats = TaxCategory.query.order_by(TaxCategory.name_en).all()
+    vendors = VendorMaster.query.order_by(VendorMaster.vendor_name_en).all()
+    uoms    = ['unit','hour','day','month','kg','gram','meter','liter','box','piece','set','pair','dozen']
+    return render_template('lookups/items.html',
+        cats=cats, subcats=subcats, taxcats=taxcats, vendors=vendors, uoms=uoms)
+
+@lookups_bp.route('/items/data')
+@login_required
+def items_data():
+    return jsonify([i.to_dict() for i in ItemMaster.query.order_by(ItemMaster.id.desc()).all()])
+
+@lookups_bp.route('/items/<int:id>/json')
+@login_required
+def item_json(id):
+    return jsonify(ItemMaster.query.get_or_404(id).to_dict())
+
+@lookups_bp.route('/items/add', methods=['POST'])
+@login_required
+def item_add():
+    f = request.form
+    item = ItemMaster(
+        item_code   = f.get('item_code','').strip(),
+        article_no  = f.get('article_no','').strip(),
+        name_en     = f.get('name_en','').strip(),
+        name_ar     = f.get('name_ar','').strip(),
+        print_name  = f.get('print_name','').strip(),
+        uom         = f.get('uom','unit'),
+        item_desc   = f.get('item_desc','').strip(),
+        category_id     = int(f['category_id'])     if f.get('category_id')     else None,
+        sub_category_id = int(f['sub_category_id']) if f.get('sub_category_id') else None,
+        tax_category_id = int(f['tax_category_id']) if f.get('tax_category_id') else None,
+        vendor_id       = int(f['vendor_id'])        if f.get('vendor_id')       else None,
+        main_rate       = float(f.get('main_rate','0') or 0),
+        last_purchase_rate = float(f.get('last_purchase_rate','0') or 0),
+        retail_rate     = float(f.get('retail_rate','0') or 0),
+        wholesale_rate  = float(f.get('wholesale_rate','0') or 0),
+        special_rate    = float(f.get('special_rate','0') or 0),
+        mrp             = float(f.get('mrp','0') or 0),
+        minimum_sp      = float(f.get('minimum_sp','0') or 0),
+        is_active       = f.get('is_active','1') == '1',
+        created_by      = current_user.id,
+    )
+    db.session.add(item); db.session.commit()
+    return jsonify({'ok': True, 'id': item.id})
+
+@lookups_bp.route('/items/<int:id>/edit', methods=['POST'])
+@login_required
+def item_edit(id):
+    item = ItemMaster.query.get_or_404(id)
+    f = request.form
+    item.item_code   = f.get('item_code','').strip()
+    item.article_no  = f.get('article_no','').strip()
+    item.name_en     = f.get('name_en','').strip()
+    item.name_ar     = f.get('name_ar','').strip()
+    item.print_name  = f.get('print_name','').strip()
+    item.uom         = f.get('uom','unit')
+    item.item_desc   = f.get('item_desc','').strip()
+    item.category_id     = int(f['category_id'])     if f.get('category_id')     else None
+    item.sub_category_id = int(f['sub_category_id']) if f.get('sub_category_id') else None
+    item.tax_category_id = int(f['tax_category_id']) if f.get('tax_category_id') else None
+    item.vendor_id       = int(f['vendor_id'])        if f.get('vendor_id')       else None
+    item.main_rate       = float(f.get('main_rate','0') or 0)
+    item.last_purchase_rate = float(f.get('last_purchase_rate','0') or 0)
+    item.retail_rate     = float(f.get('retail_rate','0') or 0)
+    item.wholesale_rate  = float(f.get('wholesale_rate','0') or 0)
+    item.special_rate    = float(f.get('special_rate','0') or 0)
+    item.mrp             = float(f.get('mrp','0') or 0)
+    item.minimum_sp      = float(f.get('minimum_sp','0') or 0)
+    item.is_active       = f.get('is_active','1') == '1'
+    db.session.commit()
+    return jsonify({'ok': True})
+
+@lookups_bp.route('/items/<int:id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def item_delete(id):
+    db.session.delete(ItemMaster.query.get_or_404(id))
+    db.session.commit()
+    return jsonify({'ok': True})
+
+@lookups_bp.route('/items/categories/data')
+@login_required
+def item_cats_data():
+    return jsonify([c.to_dict() for c in ItemCategory.query.order_by(ItemCategory.name_en).all()])
+
+@lookups_bp.route('/items/sub-categories/<int:cat_id>')
+@login_required
+def item_subcats(cat_id):
+    return jsonify([s.to_dict() for s in ItemSubCategory.query.filter_by(category_id=cat_id).all()])

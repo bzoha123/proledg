@@ -210,7 +210,6 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                 </div>
               </div>
 
-              {# ── Row 3: Document Date ── #}
               <div class="f-grid4" style="margin-bottom:12px;">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ المستند{% else %}Document Date{% endif %}</div>
@@ -219,24 +218,6 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                 <div class="f-item"></div>
                 <div class="f-item"></div>
                 <div class="f-item"></div>
-              </div>
-              <div class="f-grid4">
-                <div class="f-item">
-                  <div class="f-lbl">{% if ar %}تاريخ الترحيل{% else %}Posting Date{% endif %}</div>
-                  <input type="date" id="po_posting_date" class="f-inp" dir="ltr">
-                </div>
-                <div class="f-item">
-                  <div class="f-lbl">{% if ar %}تاريخ التسليم{% else %}Delivery Date{% endif %}</div>
-                  <input type="date" id="po_delivery_date" class="f-inp" dir="ltr">
-                </div>
-                <div class="f-item">
-                  <div class="f-lbl">{% if ar %}تاريخ المستند{% else %}Document Date{% endif %}</div>
-                  <input type="date" id="po_doc_date" class="f-inp" dir="ltr">
-                </div>
-                <div class="f-item">
-                  <div class="f-lbl">{% if ar %}التاريخ المطلوب{% else %}Required Date{% endif %}</div>
-                  <input type="date" id="po_req_date2" class="f-inp" dir="ltr">
-                </div>
               </div>
               <div class="f-item">
                 <div class="f-lbl">{% if ar %}ملاحظات{% else %}Remarks{% endif %}</div>
@@ -737,7 +718,7 @@ class ActR {
     this.g.innerHTML = `
       <button class="ag-ab ag-ab-view" onclick="window.location='/purchase/orders/${d.id}/view'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
       <button class="ag-ab ag-ab-edit" onclick="openEditPO(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-      <button class="ag-ab ag-ab-del"   onclick="confDelPO(${d.id}, d.doc_no || '')" title="Delete"><i class="fas fa-trash"></i></button>`
+      <button class="ag-ab ag-ab-del"   onclick="confDel(${d.id}, '${d.doc_no || ""}')" title="Delete"><i class="fas fa-trash"></i></button>`
   }
   getGui() { return this.g; }
 }

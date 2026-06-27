@@ -20,18 +20,13 @@
 .ag-theme-alpine .ag-floating-filter-input input{border:1px solid #e2e8f0!important;border-radius:5px!important;padding:3px 7px!important;font-size:11px!important;}
 .ag-ab{width:28px;height:28px;border-radius:7px;border:none;display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all .12s;}
 .ag-ab-view{background:#0ea5e9;color:white;}.ag-ab-edit{background:#f59e0b;color:white;}.ag-ab-del{background:#ef4444;color:white;}
-/* Modal */
 .pur-hdr{background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:16px 22px;display:flex;justify-content:space-between;align-items:center;}
 .pur-hdr h5{margin:0;color:white;font-weight:700;font-size:15px;}
 .pur-badge{background:rgba(255,255,255,.2);color:white;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;margin-left:8px;}
-/* Tabs */
 .pur-tabs{display:flex;border-bottom:2px solid #e2e8f0;padding:0 18px;background:white;}
 .pur-tab{padding:10px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;}
 .pur-tab:hover{color:#2563eb;}
 .pur-tab.active{color:#2563eb;border-bottom-color:#2563eb;}
-.pur-tab-pane{display:none!important;padding:0;}
-.pur-tab-pane.active{display:block!important;}
-/* Collapsible sections */
 .pur-section{border:1.5px solid #e2e8f0;border-radius:10px;margin:14px 18px 0;overflow:hidden;}
 .pur-section-hdr{width:100%;background:white;border:none;padding:12px 16px;text-align:left;font-weight:700;font-size:13px;color:#1e3a5f;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .1s;}
 .pur-section-hdr:hover{background:#f8fafc;}
@@ -40,17 +35,22 @@
 .pur-section-hdr.open .pur-sec-icon{background:#2563eb;color:white;}
 .pur-section-body{padding:16px 18px;display:none;background:white;}
 .pur-section-body.open{display:block;}
-/* Field grids */
 .f-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
 .f-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
 .f-grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
 .f-item{display:flex;flex-direction:column;}
 .f-lbl{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
-.f-inp{border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;width:100%;transition:border-color .15s;}
+.f-req{color:#ef4444;}
+.f-inp{border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;width:100%;transition:border-color .15s;box-sizing:border-box;}
 .f-inp:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
 .f-inp[readonly]{background:#f8fafc;color:#374151;}
+.f-inp.required-field{border-color:#fca5a5;}
 select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
-/* Line items table */
+/* PO selected highlight */
+.po-selected-banner{background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:none;align-items:center;gap:10px;font-size:13px;}
+.po-selected-banner i{color:#16a34a;font-size:16px;}
+.po-selected-banner strong{color:#15803d;}
+/* Line items */
 .li-wrap{overflow-x:auto;border-radius:8px;border:1.5px solid #e2e8f0;}
 .li-table{width:100%;border-collapse:collapse;font-size:11.5px;min-width:1150px;}
 .li-table thead tr{background:#1e3a5f;}
@@ -62,21 +62,14 @@ select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .li-inp:focus{outline:none;border-color:#2563eb;}
 .li-inp[readonly]{background:#f3f4f6;color:#374151;}
 select.li-inp{appearance:none;padding-right:16px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center;}
-/* Summary */
 .pur-summary{background:linear-gradient(135deg,#f8fafc,#f0f7ff);border:1.5px solid #bfdbfe;border-radius:10px;padding:16px 18px;}
 .sum-line{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed #e2e8f0;font-size:13px;}
 .sum-line:last-child{border-bottom:none;}
 .sum-total-row{background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;padding:10px 14px;border-radius:8px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;}
 .sum-total-row span{color:white;}
 .sum-doc-row{margin-top:8px;padding-top:8px;border-top:1px dashed #bfdbfe;display:flex;justify-content:space-between;align-items:center;font-size:13px;}
-/* Attachment - SAME AS GRN */
-.att-drop{border:2px dashed #bfdbfe;border-radius:10px;padding:24px;text-align:center;background:#f0f9ff;cursor:pointer;}
-.att-drop:hover{border-color:#2563eb;background:#eff6ff;}
-.att-drop i{font-size:28px;color:#60a5fa;margin-bottom:8px;display:block;}
-.att-list{margin-top:12px;display:flex;flex-direction:column;gap:6px;}
-.att-item{display:flex;justify-content:space-between;align-items:center;background:white;border:1px solid #e2e8f0;border-radius:7px;padding:7px 12px;font-size:12px;}
+.att-item{display:flex;justify-content:space-between;align-items:center;background:white;border:1px solid #e2e8f0;border-radius:7px;padding:7px 12px;font-size:12px;margin-bottom:6px;}
 .att-rm{cursor:pointer;color:#ef4444;background:none;border:none;padding:0;}
-/* Footer */
 .pur-footer{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#f8fafc;border-top:2px solid #e2e8f0;}
 .btn-f{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;}
 .btn-save{background:linear-gradient(135deg,#16a34a,#15803d);color:white;box-shadow:0 2px 8px rgba(22,163,74,.3);}
@@ -95,7 +88,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
   <div class="toolbar">
     <div class="toolbar-left">
       <button class="tool-btn tool-btn-green" onclick="openAddPINV()"><i class="fas fa-plus"></i></button>
-      <button class="tool-btn tool-btn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
+      <button class="tool-btn tool-btn-blue"  onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
       <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null);document.getElementById('qs').value='';gridApi.setGridOption('quickFilterText','')"><i class="fas fa-times-circle"></i></button>
     </div>
     <div class="toolbar-right d-flex align-items-center gap-3">
@@ -120,13 +113,12 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 
       <div class="pur-hdr">
         <div style="display:flex;align-items:center;">
-          <h5 id="pinvTitle"><i class="fas fa-file-alt me-2"></i>{% if ar %}إضافة فاتورة شراء{% else %}Add Purchase Invoice{% endif %}</h5>
+          <h5 id="pinvTitle"><i class="fas fa-file-invoice me-2"></i>Add Purchase Invoice</h5>
           <span class="pur-badge" id="pinvDocBadge">NEW</span>
         </div>
         <button class="btn-close" style="filter:brightness(0) invert(1);" data-bs-dismiss="modal"></button>
       </div>
 
-      {# Tabs #}
       <div class="pur-tabs">
         <button class="pur-tab active" onclick="switchTab('tab_content',this)">
           <i class="fas fa-file-alt me-1"></i>{% if ar %}المحتوى{% else %}Content{% endif %}
@@ -137,57 +129,89 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
         </button>
       </div>
 
-      <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;min-height:420px;">
+      <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;height:600px;">
         <form id="pinvForm">
         <input type="hidden" id="pinv_id">
 
         {# ══ TAB 1: CONTENT ══ #}
-        <div class="pur-tab-pane active" id="tab_content">
+        <div id="tab_content" style="display:block;">
 
-          {# ── Section 1: Request Info ── #}
+          {# ── Section 1: Invoice Info ── #}
           <div class="pur-section">
             <button type="button" class="pur-section-hdr open" onclick="togSec(this)">
               <div style="display:flex;align-items:center;">
                 <i class="pur-sec-icon fas fa-info-circle"></i>
-                {% if ar %}معلومات الفاتورة{% else %}Purchase Invoice Info{% endif %}
+                {% if ar %}معلومات الفاتورة / Purchase Invoice Info{% else %}Purchase Invoice Info / معلومات الفاتورة{% endif %}
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
             <div class="pur-section-body open">
-              <div class="f-item" style="margin-bottom:12px;">
-                <div class="f-lbl">{% if ar %}رقم أمر الشراء{% else %}Purchase Order ID{% endif %}</div>
-                <select id="pinv_po_id" class="f-inp">
-                  <option value="">-- {% if ar %}اختياري{% else %}Optional{% endif %} --</option>
+
+              {# ── PO selector with required badge ── #}
+              <div class="f-item" style="margin-bottom:14px;">
+                <div class="f-lbl">
+                  {% if ar %}رقم أمر الشراء{% else %}Purchase Order ID{% endif %}
+                  <span class="f-req">*</span>
+                  <span id="po_status_badge" style="display:none;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:6px;font-size:10px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">
+                    <i class="fas fa-check-circle me-1"></i><span id="po_status_text"></span>
+                  </span>
+                </div>
+                <select id="pinv_po_id" class="f-inp required-field" onchange="onPOChange()" required>
+                  <option value="">-- {% if ar %}اختر أمر الشراء{% else %}Select Purchase Order{% endif %} --</option>
                   {% for po in pos %}<option value="{{ po.id }}">{{ po.doc_no }}</option>{% endfor %}
                 </select>
+                <div id="po_hint" style="font-size:11px;color:#9ca3af;margin-top:4px;">
+                  {% if ar %}مطلوب — اختر أمر الشراء لملء الحقول تلقائياً{% else %}Required — selecting a PO will auto-fill all fields below{% endif %}
+                </div>
               </div>
+
+              {# ── Auto-fill banner ── #}
+              <div id="po_filled_banner" class="po-selected-banner">
+                <i class="fas fa-magic"></i>
+                <span>{% if ar %}تم ملء الحقول تلقائياً من أمر الشراء:{% else %}Fields auto-filled from Purchase Order:{% endif %}
+                  <strong id="po_filled_docno"></strong>
+                </span>
+                <button type="button" onclick="clearPO()"
+                        style="margin-left:auto;background:none;border:1px solid #86efac;border-radius:6px;padding:2px 10px;font-size:11px;color:#15803d;cursor:pointer;">
+                  <i class="fas fa-times me-1"></i>{% if ar %}مسح{% else %}Clear{% endif %}
+                </button>
+              </div>
+
+              {# ── Vendor row ── #}
               <div class="f-grid3" style="margin-bottom:12px;">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div>
-                  <select id="pinv_vendor" class="f-inp" onchange="onPINVVendorChange()">
+                  <select id="pinv_vendor" class="f-inp" onchange="onVendorChange()">
                     <option value="">-- {% if ar %}اختر المورد{% else %}Select Vendor{% endif %} --</option>
                     {% for v in vendors %}<option value="{{ v.id }}">{{ v.name }}</option>{% endfor %}
                   </select>
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}اسم المورد{% else %}Vendor Name{% endif %}</div>
-                  <input type="text" id="pinv_vendor_name" class="f-inp" readonly style="background:#f8fafc;" placeholder="{% if ar %}يملأ تلقائياً{% else %}Auto-filled{% endif %}">
+                  <input type="text" id="pinv_vendor_name" class="f-inp" readonly
+                         style="background:#f8fafc;" placeholder="{% if ar %}يملأ تلقائياً{% else %}Auto-filled{% endif %}">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}رقم مرجع المورد{% else %}Vendor Ref No{% endif %}</div>
                   <input type="text" id="pinv_vendor_ref" class="f-inp">
                 </div>
               </div>
+
+              {# ── Doc No + Status + Dates ── #}
               <div class="f-grid4" style="margin-bottom:12px;">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}رقم المستند{% else %}No{% endif %}</div>
-                  <input type="text" id="pinv_doc_no" class="f-inp" readonly style="background:#f0fdf4;color:#15803d;font-weight:700;">
+                  <input type="text" id="pinv_doc_no" class="f-inp" readonly
+                         style="background:#f0fdf4;color:#15803d;font-weight:700;font-size:14px;letter-spacing:.5px;"
+                         placeholder="{% if ar %}تلقائي{% else %}Auto{% endif %}">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div>
                   <select id="pinv_status" class="f-inp">
-                    <option value="Open" selected>Open</option><option value="Pending">Pending</option>
-                    <option value="Approved">Approved</option><option value="Closed">Closed</option>
+                    <option value="Open" selected>Open</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Closed">Closed</option>
                     <option value="Cancelled">Cancelled</option>
                   </select>
                 </div>
@@ -218,7 +242,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             <button type="button" class="pur-section-hdr open" onclick="togSec(this)">
               <div style="display:flex;align-items:center;">
                 <i class="pur-sec-icon fas fa-list-ul"></i>
-                {% if ar %}بنود الفاتورة{% else %}Invoice Items{% endif %}
+                {% if ar %}بنود الفاتورة / Invoice Items{% else %}Invoice Items / بنود الفاتورة{% endif %}
                 <span id="liCount" style="background:#eff6ff;color:#2563eb;padding:1px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:8px;">0</span>
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
@@ -231,7 +255,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                 </button>
                 <span style="font-size:11px;color:#6b7280;">
                   <i class="fas fa-info-circle me-1"></i>
-                  {% if ar %}المبلغ الخاضع = الكمية × السعر — الخصم{% else %}Taxable = Qty × Rate − Discount{% endif %}
+                  Taxable = (Qty × Rate − Discount) + Freight
                 </span>
               </div>
               <div class="li-wrap">
@@ -273,40 +297,24 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             <button type="button" class="pur-section-hdr open" onclick="togSec(this)">
               <div style="display:flex;align-items:center;">
                 <i class="pur-sec-icon fas fa-calculator"></i>
-                {% if ar %}ملخص فاتورة شراء{% else %}Purchase Invoice Summary{% endif %}
+                {% if ar %}ملخص فاتورة الشراء{% else %}Purchase Invoice Summary{% endif %}
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
             <div class="pur-section-body open">
               <div class="pur-summary">
-                <div class="sum-line">
-                  <span>{% if ar %}الإجمالي قبل الخصم{% else %}Total before discount{% endif %}</span>
-                  <span id="s_total_bd" style="font-weight:600;">SAR 0.00</span>
-                </div>
-                <div class="sum-line">
-                  <span>{% if ar %}إجمالي الخصم{% else %}Total discount{% endif %}</span>
-                  <span id="s_total_disc" style="font-weight:600;">SAR 0.00</span>
-                </div>
-                <div class="sum-line">
-                  <span>{% if ar %}الشحن{% else %}Freight{% endif %}</span>
-                  <span id="s_total_fr" style="font-weight:600;">SAR 0.00</span>
-                </div>
-                <div class="sum-line">
-                  <span>{% if ar %}الإجمالي بدون ضريبة{% else %}Total Excl. VAT (SAR){% endif %}</span>
-                  <span id="s_excl_vat" style="font-weight:600;">SAR 0.00</span>
-                </div>
-                <div class="sum-line">
-                  <span>{% if ar %}مبلغ ضريبة القيمة المضافة{% else %}VAT Amount (SAR){% endif %}</span>
-                  <span id="s_vat_amt" style="font-weight:600;">SAR 0.00</span>
-                </div>
+                <div class="sum-line"><span>{% if ar %}الإجمالي قبل الخصم{% else %}Total before discount{% endif %}</span><span id="s_total_bd" style="font-weight:600;">SAR 0.00</span></div>
+                <div class="sum-line"><span>{% if ar %}إجمالي الخصم{% else %}Total discount{% endif %}</span><span id="s_total_disc" style="font-weight:600;">SAR 0.00</span></div>
+                <div class="sum-line"><span>{% if ar %}الشحن{% else %}Freight{% endif %}</span><span id="s_total_fr" style="font-weight:600;">SAR 0.00</span></div>
+                <div class="sum-line"><span>{% if ar %}الإجمالي بدون ضريبة{% else %}Total Excl. VAT (SAR){% endif %}</span><span id="s_excl_vat" style="font-weight:600;">SAR 0.00</span></div>
+                <div class="sum-line"><span>{% if ar %}مبلغ ضريبة القيمة المضافة{% else %}VAT Amount (SAR){% endif %}</span><span id="s_vat_amt" style="font-weight:600;">SAR 0.00</span></div>
                 <div class="sum-total-row">
                   <span style="font-weight:700;font-size:14px;">{% if ar %}الإجمالي شامل الضريبة{% else %}Total Incl. VAT (SAR){% endif %}</span>
                   <span id="s_incl_vat" style="font-size:18px;font-weight:800;">SAR 0.00</span>
                 </div>
                 <div class="sum-doc-row">
                   <span style="color:#374151;">{% if ar %}المرفقات{% else %}Documents Attached{% endif %}</span>
-                  <span id="s_doc_count"
-                        style="background:#eff6ff;color:#2563eb;padding:3px 12px;border-radius:10px;font-size:12px;font-weight:700;">0</span>
+                  <span id="s_doc_count" style="background:#eff6ff;color:#2563eb;padding:3px 12px;border-radius:10px;font-size:12px;font-weight:700;">0</span>
                 </div>
               </div>
             </div>
@@ -314,24 +322,29 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 
         </div>{# end tab_content #}
 
-        {# ══ TAB 2: ATTACHMENTS - SAME AS GRN (NO id="attDrop") ══ #}
-        <div class="pur-tab-pane" id="tab_attach">
-          <div style="padding:16px 18px;">
-            <div class="att-drop" onclick="document.getElementById('attInput').click()"
-                 ondragover="event.preventDefault();this.style.borderColor='#2563eb'"
-                 ondragleave="this.style.borderColor='#bfdbfe'"
-                 ondrop="event.preventDefault();this.style.borderColor='#bfdbfe';handleFiles(event.dataTransfer.files)">
-              <i class="fas fa-cloud-upload-alt"></i>
-              <div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;">
-                {% if ar %}اسحب الملفات هنا أو انقر للاختيار{% else %}Drag & drop files here or click to browse{% endif %}
+        {# ══ TAB 2: ATTACHMENTS ══ #}
+        <div id="tab_attach" style="display:none;">
+          <div style="padding:20px;">
+            <div id="attDrop"
+                 style="border:2px dashed #bfdbfe;border-radius:12px;padding:40px 24px;
+                        text-align:center;background:#f0f9ff;cursor:pointer;
+                        display:flex;flex-direction:column;align-items:center;justify-content:center;
+                        min-height:180px;transition:all 0.15s;"
+                 onclick="document.getElementById('attInput').click()"
+                 ondragover="event.preventDefault();this.style.borderColor='#2563eb';this.style.background='#eff6ff';"
+                 ondragleave="this.style.borderColor='#bfdbfe';this.style.background='#f0f9ff';"
+                 ondrop="event.preventDefault();this.style.borderColor='#bfdbfe';this.style.background='#f0f9ff';handleFiles(event.dataTransfer.files);">
+              <i class="fas fa-cloud-upload-alt" style="font-size:36px;color:#60a5fa;margin-bottom:12px;"></i>
+              <div style="font-size:15px;font-weight:600;color:#374151;margin-bottom:6px;">
+                {% if ar %}اسحب الملفات هنا أو انقر للتصفح{% else %}Drag & drop files here or click to browse{% endif %}
               </div>
               <div style="font-size:12px;color:#9ca3af;">PDF, Word, Excel, Images (max 20MB each)</div>
               <input type="file" id="attInput" multiple
                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
                      style="display:none;" onchange="handleFiles(this.files)">
             </div>
-            <div class="att-list" id="attList"></div>
-            <div id="existAttList" style="margin-top:10px;"></div>
+            <div id="attList" style="margin-top:12px;display:flex;flex-direction:column;gap:6px;"></div>
+            <div id="existAttList" style="margin-top:8px;"></div>
           </div>
         </div>
 
@@ -343,7 +356,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
           <i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}
         </button>
         <button class="btn-f btn-save" onclick="savePINV()">
-          <i class="fas fa-save me-1"></i>{% if ar %}حفظ فاتورة الشراء{% else %}Save Purchase Invoice{% endif %}
+          <i class="fas fa-save me-1"></i>{% if ar %}حفظ فاتورة الشراء / Save{% else %}Save Purchase Invoice / حفظ{% endif %}
         </button>
       </div>
 
@@ -367,19 +380,115 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
-
 <script>
 const IS_AR = {{ 'true' if ar else 'false' }};
 const CSRF  = '{{ csrf_token() }}';
 let _liIdx = 0;
 let _attachments = [];
 
-/* ══ Vendor Map & change handler ══ */
-const _pinvVendorMap = { {% for v in vendors %}{{ v.id }}: '{{ v.name }}',{% endfor %} };
-function onPINVVendorChange() {
+/* ══ Vendor map ══ */
+const _vendorMap = { {% for v in vendors %}{{ v.id }}: '{{ v.name }}',{% endfor %} };
+
+function onVendorChange() {
   const s = document.getElementById('pinv_vendor');
   const n = document.getElementById('pinv_vendor_name');
-  if(n) n.value = s.value ? (_pinvVendorMap[s.value] || s.options[s.selectedIndex]?.text || '') : '';
+  if (n) n.value = s.value ? (_vendorMap[s.value] || s.options[s.selectedIndex]?.text || '') : '';
+}
+
+/* ══ PO SELECTION → AUTO-FILL ALL FIELDS ══ */
+async function onPOChange() {
+  const poId  = document.getElementById('pinv_po_id').value;
+  const sel   = document.getElementById('pinv_po_id');
+  const banner = document.getElementById('po_filled_banner');
+  const badge  = document.getElementById('po_status_badge');
+  const hint   = document.getElementById('po_hint');
+
+  // Mark field as valid/invalid
+  sel.classList.toggle('required-field', !poId);
+  sel.classList.toggle('f-inp', true);
+
+  if (!poId) {
+    banner.style.display = 'none';
+    badge.style.display  = 'none';
+    hint.style.display   = 'block';
+    return;
+  }
+
+  // Fetch PO data
+  let po;
+  try {
+    const res = await fetch('/purchase/orders/' + poId + '/summary');
+    po = await res.json();
+  } catch(e) {
+    console.error('Failed to load PO:', e);
+    return;
+  }
+
+  // ── Auto-fill all fields ──
+  // Vendor
+  const vendorSel = document.getElementById('pinv_vendor');
+  if (vendorSel && po.vendor_id) {
+    vendorSel.value = po.vendor_id;
+    const vnEl = document.getElementById('pinv_vendor_name');
+    if (vnEl) vnEl.value = po.vendor_name || '';
+  }
+
+  // Vendor ref
+  const vref = document.getElementById('pinv_vendor_ref');
+  if (vref && po.vendor_ref_no) vref.value = po.vendor_ref_no;
+
+  // Status
+  const statusEl = document.getElementById('pinv_status');
+  if (statusEl && po.status) statusEl.value = po.status;
+
+  // Dates
+  const today = new Date().toISOString().split('T')[0];
+  const setDate = (id, val) => {
+    const e = document.getElementById(id);
+    if (e) e.value = val || today;
+  };
+  setDate('pinv_posting_date',  po.posting_date);
+  setDate('pinv_delivery_date', po.delivery_date);
+  setDate('pinv_doc_date',      po.document_date);
+
+  // Line items — copy from PO
+  document.getElementById('liBody').innerHTML = '';
+  _liIdx = 0;
+  if (po.items && po.items.length > 0) {
+    po.items.forEach(li => addLiRow(li));
+  } else {
+    addLiRow();
+  }
+  recalcSummary();
+  updLiCount();
+
+  // Show banner
+  document.getElementById('po_filled_docno').textContent = po.doc_no || '';
+  document.getElementById('po_status_text').textContent  = po.status || '';
+  banner.style.display = 'flex';
+  badge.style.display  = 'inline-flex';
+  hint.style.display   = 'none';
+
+  // Remove red border from PO selector
+  sel.style.borderColor = '#86efac';
+}
+
+function clearPO() {
+  document.getElementById('pinv_po_id').value = '';
+  document.getElementById('po_filled_banner').style.display = 'none';
+  document.getElementById('po_status_badge').style.display  = 'none';
+  document.getElementById('po_hint').style.display          = 'block';
+  document.getElementById('pinv_po_id').classList.add('required-field');
+  document.getElementById('pinv_po_id').style.borderColor = '';
+  // Clear auto-filled fields
+  ['pinv_vendor_name','pinv_vendor_ref'].forEach(id => {
+    const e = document.getElementById(id); if (e) e.value = '';
+  });
+  document.getElementById('pinv_vendor').value = '';
+  document.getElementById('liBody').innerHTML = '';
+  _liIdx = 0;
+  addLiRow();
+  recalcSummary(); updLiCount();
 }
 
 /* ══ Section toggle ══ */
@@ -389,15 +498,17 @@ function togSec(btn) {
   const open = body.classList.contains('open');
   body.classList.toggle('open', !open);
   btn.classList.toggle('open', !open);
-  if (ch) ch.className = open ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+  if (ch) ch.className  = open ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
   if (ch) ch.style.cssText = open ? 'color:#9ca3af;font-size:11px;' : 'color:#2563eb;font-size:11px;';
 }
 
-/* ══ Tab switch - SAME AS GRN ══ */
+/* ══ Tab switch ══ */
 function switchTab(tabId, btn) {
-  document.querySelectorAll('.pur-tab-pane').forEach(p => p.classList.remove('active'));
+  ['tab_content','tab_attach'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
   document.querySelectorAll('.pur-tab').forEach(b => b.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
+  const t = document.getElementById(tabId); if (t) t.style.display = 'block';
   btn.classList.add('active');
 }
 
@@ -446,27 +557,20 @@ function addLiRow(d) {
 }
 
 function removeLi(idx) {
-  const r = document.getElementById('plr_'+idx);
-  if (r) r.remove();
-  recalcSummary();
-  updLiCount();
+  const r = document.getElementById('plr_'+idx); if (r) r.remove();
+  recalcSummary(); updLiCount();
 }
 
 function recalcLi(idx) {
   const g = id => parseFloat(document.getElementById(id)?.value || 0) || 0;
-  const qty  = g('plq_'+idx);
-  const rate = g('plrt_'+idx);
-  const disc = g('pld_'+idx);
-  const fr   = g('plf_'+idx);
+  const qty = g('plq_'+idx), rate = g('plrt_'+idx), disc = g('pld_'+idx), fr = g('plf_'+idx);
   const tcEl = document.getElementById('pltc_'+idx);
   const taxRate = tcEl && tcEl.value === 'VAT15' ? 15 : 0;
   const taxable = Math.max(0, (qty * rate - disc) + fr);
   const taxAmt  = Math.round(taxable * taxRate / 100 * 100) / 100;
   const total   = taxable + taxAmt;
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v.toFixed(2); };
-  set('plt_'+idx,   taxable);
-  set('plta_'+idx,  taxAmt);
-  set('pltot_'+idx, total);
+  set('plt_'+idx, taxable); set('plta_'+idx, taxAmt); set('pltot_'+idx, total);
   recalcSummary();
 }
 
@@ -474,37 +578,32 @@ function recalcSummary() {
   let bd=0, disc=0, fr=0, vat=0;
   document.querySelectorAll('#liBody tr').forEach(row => {
     const g = n => parseFloat(row.querySelector(`[name="${n}[]"]`)?.value || 0) || 0;
-    bd   += g('li_qty') * g('li_rate');
-    disc += g('li_discount');
-    fr   += g('li_freight');
-    vat  += parseFloat(row.querySelector('[name="li_tax_amount_disp[]"]')?.value || 0) || 0;
+    bd += g('li_qty') * g('li_rate'); disc += g('li_discount'); fr += g('li_freight');
+    vat += parseFloat(row.querySelector('[name="li_tax_amount_disp[]"]')?.value || 0) || 0;
   });
-  const excl = (bd - disc) + fr;
-  const incl = excl + vat;
-  const fmt  = n => 'SAR ' + n.toLocaleString('en-SA', {minimumFractionDigits:2, maximumFractionDigits:2});
-  const s    = id => document.getElementById(id);
-  if (s('s_total_bd'))   s('s_total_bd').textContent   = fmt(bd);
-  if (s('s_total_disc')) s('s_total_disc').textContent = fmt(disc);
-  if (s('s_total_fr'))   s('s_total_fr').textContent   = fmt(fr);
-  if (s('s_excl_vat'))   s('s_excl_vat').textContent   = fmt(excl);
-  if (s('s_vat_amt'))    s('s_vat_amt').textContent     = fmt(vat);
-  if (s('s_incl_vat'))   s('s_incl_vat').textContent   = fmt(incl);
-  if (s('li_grand_total')) s('li_grand_total').textContent = fmt(incl);
+  const excl = (bd - disc) + fr, incl = excl + vat;
+  const fmt = n => 'SAR ' + n.toLocaleString('en-SA',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const s = id => document.getElementById(id);
+  if(s('s_total_bd'))   s('s_total_bd').textContent   = fmt(bd);
+  if(s('s_total_disc')) s('s_total_disc').textContent = fmt(disc);
+  if(s('s_total_fr'))   s('s_total_fr').textContent   = fmt(fr);
+  if(s('s_excl_vat'))   s('s_excl_vat').textContent   = fmt(excl);
+  if(s('s_vat_amt'))    s('s_vat_amt').textContent     = fmt(vat);
+  if(s('s_incl_vat'))   s('s_incl_vat').textContent   = fmt(incl);
+  if(s('li_grand_total')) s('li_grand_total').textContent = fmt(incl);
 }
 
 function updLiCount() {
   const n = document.querySelectorAll('#liBody tr').length;
-  const el = document.getElementById('liCount');
-  if (el) el.textContent = n;
+  const el = document.getElementById('liCount'); if (el) el.textContent = n;
 }
 
-/* ══ Attachments - SAME AS GRN ══ */
+/* ══ Attachments ══ */
 function handleFiles(files) {
   for (const f of files) {
     if (_attachments.find(x => x.name === f.name)) continue;
     _attachments.push(f);
-    const div = document.createElement('div');
-    div.className = 'att-item';
+    const div = document.createElement('div'); div.className = 'att-item';
     div.id = 'att_' + f.name.replace(/[^a-z0-9]/gi,'_');
     div.innerHTML = `<span><i class="fas fa-file me-2" style="color:#60a5fa;"></i><strong>${f.name}</strong>
       <span style="color:#9ca3af;margin-left:8px;font-size:11px;">${(f.size/1024).toFixed(1)} KB</span></span>
@@ -523,29 +622,35 @@ function removeAtt(name) {
 
 function updDocCount() {
   const total = _attachments.length + document.querySelectorAll('#existAttList .att-item').length;
-  const el = document.getElementById('s_doc_count');
-  const badge = document.getElementById('attBadge');
-  if (el) el.textContent = total;
-  if (badge) badge.textContent = total;
+  const el = document.getElementById('s_doc_count'), badge = document.getElementById('attBadge');
+  if (el) el.textContent = total; if (badge) badge.textContent = total;
 }
 
 /* ══ Open Add ══ */
 function openAddPINV() {
   _liIdx = 0; _attachments = [];
   document.getElementById('pinv_id').value = '';
-  document.getElementById('pinvTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة فاتورة شراء' : 'Add Purchase Invoice');
+  document.getElementById('pinvTitle').innerHTML = '<i class="fas fa-file-invoice me-2"></i>' + (IS_AR ? 'إضافة فاتورة شراء' : 'Add Purchase Invoice');
+  // Reset PO selector to required state
+  const poSel = document.getElementById('pinv_po_id');
+  poSel.value = '';
+  poSel.style.borderColor = '';
+  poSel.classList.add('required-field');
+  document.getElementById('po_filled_banner').style.display = 'none';
+  document.getElementById('po_status_badge').style.display  = 'none';
+  document.getElementById('po_hint').style.display          = 'block';
+  // Clear fields
   ['pinv_vendor_name','pinv_vendor_ref','pinv_remarks'].forEach(id => {
     const e = document.getElementById(id); if (e) e.value = '';
   });
+  document.getElementById('pinv_vendor').value = '';
+  document.getElementById('pinv_doc_no').value = '';
+  document.getElementById('pinvDocBadge').textContent = 'NEW';
+  document.getElementById('pinv_status').value = 'Open';
   const today = new Date().toISOString().split('T')[0];
   ['pinv_posting_date','pinv_delivery_date','pinv_doc_date'].forEach(id => {
     const e = document.getElementById(id); if (e) e.value = today;
   });
-  document.getElementById('pinv_status').value = 'Open';
-  document.getElementById('pinv_vendor').value = '';
-  document.getElementById('pinv_doc_no').value = '';
-  document.getElementById('pinvDocBadge').textContent = 'NEW';
-  const _pp=document.getElementById('pinv_po_id');if(_pp)_pp.value='';
   document.getElementById('liBody').innerHTML = '';
   document.getElementById('attList').innerHTML = '';
   document.getElementById('existAttList').innerHTML = '';
@@ -567,17 +672,25 @@ function openEditPINV(id) {
     _liIdx = 0; _attachments = [];
     document.getElementById('pinv_id').value = id;
     document.getElementById('pinvTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل فاتورة شراء' : 'Edit Purchase Invoice');
+    // PO - set without triggering auto-fill
+    const poSel = document.getElementById('pinv_po_id');
+    poSel.value = d.po_id || '';
+    poSel.style.borderColor = d.po_id ? '#86efac' : '';
+    poSel.classList.toggle('required-field', !d.po_id);
+    document.getElementById('po_filled_banner').style.display = d.po_no ? 'flex' : 'none';
+    document.getElementById('po_filled_docno').textContent = d.po_no || '';
+    document.getElementById('po_hint').style.display = d.po_id ? 'none' : 'block';
+    // Other fields
     document.getElementById('pinv_doc_no').value = d.doc_no || '';
     document.getElementById('pinvDocBadge').textContent = d.doc_no || '';
     document.getElementById('pinv_status').value = d.status || 'Open';
     document.getElementById('pinv_vendor').value = d.vendor_id || '';
     const vn = document.getElementById('pinv_vendor_name'); if(vn) vn.value = d.vendor_name||'';
-    const vr = document.getElementById('pinv_vendor_ref'); if(vr) vr.value = d.vendor_ref_no||'';
-    const rm = document.getElementById('pinv_remarks'); if(rm) rm.value = d.remarks||'';
+    const vr = document.getElementById('pinv_vendor_ref');  if(vr) vr.value = d.vendor_ref_no||'';
+    const rm = document.getElementById('pinv_remarks');     if(rm) rm.value = d.remarks||'';
     document.getElementById('pinv_posting_date').value  = d.posting_date  || '';
     document.getElementById('pinv_delivery_date').value = d.delivery_date || '';
     document.getElementById('pinv_doc_date').value      = d.document_date || '';
-    const pp=document.getElementById('pinv_po_id');if(pp)pp.value=d.po_id||'';
     document.getElementById('liBody').innerHTML = '';
     (d.items || []).forEach(li => addLiRow(li));
     if (!d.items?.length) addLiRow();
@@ -601,18 +714,27 @@ function openEditPINV(id) {
 
 /* ══ Save ══ */
 async function savePINV() {
+  // Validate PO is required
+  const poId = document.getElementById('pinv_po_id').value;
+  if (!poId) {
+    document.getElementById('pinv_po_id').classList.add('required-field');
+    document.getElementById('pinv_po_id').focus();
+    document.getElementById('pinv_po_id').style.borderColor = '#ef4444';
+    alert(IS_AR ? 'الرجاء اختيار أمر الشراء أولاً' : 'Please select a Purchase Order first');
+    return;
+  }
   const id  = document.getElementById('pinv_id').value;
   const url = id ? `/purchase/invoices/${id}/edit` : '/purchase/invoices/add';
   const fd  = new FormData();
-  fd.set('csrf_token', CSRF);
-  fd.set('status',        document.getElementById('pinv_status').value);
-  fd.set('vendor_id',     document.getElementById('pinv_vendor').value);
-  fd.set('vendor_ref_no', document.getElementById('pinv_vendor_ref')?.value||'');
-  fd.set('remarks',       document.getElementById('pinv_remarks')?.value||'');
-  fd.set('posting_date',  document.getElementById('pinv_posting_date').value);
-  fd.set('delivery_date', document.getElementById('pinv_delivery_date').value);
-  fd.set('document_date', document.getElementById('pinv_doc_date').value);
-  fd.set('po_id', document.getElementById('pinv_po_id')?.value||'');
+  fd.set('csrf_token',     CSRF);
+  fd.set('po_id',          poId);
+  fd.set('status',         document.getElementById('pinv_status').value);
+  fd.set('vendor_id',      document.getElementById('pinv_vendor').value);
+  fd.set('vendor_ref_no',  document.getElementById('pinv_vendor_ref')?.value||'');
+  fd.set('remarks',        document.getElementById('pinv_remarks')?.value||'');
+  fd.set('posting_date',   document.getElementById('pinv_posting_date').value);
+  fd.set('delivery_date',  document.getElementById('pinv_delivery_date').value);
+  fd.set('document_date',  document.getElementById('pinv_doc_date').value);
   document.querySelectorAll('#liBody tr').forEach(row => {
     const g = n => row.querySelector(`[name="${n}[]"]`)?.value || '';
     fd.append('li_item_code[]',     g('li_item_code'));
@@ -627,7 +749,7 @@ async function savePINV() {
     fd.append('li_tax_code[]',      g('li_tax_code'));
   });
   _attachments.forEach(f => fd.append('attachments', f));
-  const res = await fetch(url, {method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd});
+  const res  = await fetch(url, {method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd});
   const data = await res.json();
   if (data.ok) {
     bootstrap.Modal.getInstance(document.getElementById('pinvModal'))?.hide();
@@ -662,9 +784,8 @@ const AG_LOCALE = IS_AR ? {
 };
 
 function rStatus(p) {
-  const cfg = { Open:'#dbeafe:#2563eb', Pending:'#fef3c7:#d97706',
-    Approved:'#dcfce7:#15803d', Closed:'#f1f5f9:#6b7280', Cancelled:'#fee2e2:#dc2626' };
-  const [bg,fg] = (cfg[p.value] || cfg.Open).split(':');
+  const cfg = {Open:'#dbeafe:#2563eb',Pending:'#fef3c7:#d97706',Approved:'#dcfce7:#15803d',Closed:'#f1f5f9:#6b7280',Cancelled:'#fee2e2:#dc2626'};
+  const [bg,fg] = (cfg[p.value]||cfg.Open).split(':');
   return `<span style="background:${bg};color:${fg};padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;">${p.value||'Open'}</span>`;
 }
 function rSAR(p) {
@@ -676,10 +797,10 @@ class ActR {
     this.g = document.createElement('div');
     this.g.style.cssText = 'display:flex;align-items:center;gap:3px;';
     const d = p.data;
-    this.g.innerHTML = `
-      <button class="ag-ab ag-ab-view"  onclick="window.location='/purchase/invoices/${d.id}/view'" title="View"><i class="fas fa-eye"></i></button>
-      <button class="ag-ab ag-ab-edit"  onclick="openEditPINV(${d.id})" title="Edit"><i class="fas fa-pencil-alt"></i></button>
-      <button class="ag-ab ag-ab-del"   onclick="confDelPINV(${d.id},'${(d.doc_no||'').replace(/'/g,"\\'")}')" title="Delete"><i class="fas fa-trash"></i></button>`;
+    this.g.innerHTML =
+      `<button class="ag-ab ag-ab-view" onclick="window.location='/purchase/invoices/${d.id}/view'" title="View"><i class="fas fa-eye"></i></button>` +
+      `<button class="ag-ab ag-ab-edit" onclick="openEditPINV(${d.id})" title="Edit"><i class="fas fa-pencil-alt"></i></button>` +
+      `<button class="ag-ab ag-ab-del"  onclick="confDelPINV(${d.id}, '${d.doc_no || ""}')" title="Delete"><i class="fas fa-trash"></i></button>`;
   }
   getGui() { return this.g; }
 }
@@ -697,7 +818,9 @@ const cols = [
   {headerName:IS_AR?'الحالة':'Status',field:'status',width:100,cellRenderer:rStatus,floatingFilter:false},
   {headerName:IS_AR?'تاريخ الترحيل':'Posting Date',field:'posting_date',width:120},
   {headerName:IS_AR?'الإجمالي':'Total Incl. VAT',field:'total_incl_vat',width:140,cellRenderer:rSAR,floatingFilter:false},
-  {headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:110,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 6px'}},
+  {headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:110,pinned:IS_AR?'left':'right',
+   sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,
+   cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 6px'}},
 ];
 
 let gridApi;
@@ -710,15 +833,13 @@ agGrid.createGrid(document.getElementById('pinvGrid'), {
 });
 function loadData() {
   fetch('/purchase/invoices/data').then(r=>r.json())
-    .then(d => { gridApi.setGridOption('rowData',d); upd(); })
-    .catch(console.error);
+    .then(d => { gridApi.setGridOption('rowData',d); upd(); }).catch(console.error);
 }
 function upd() {
   if (!gridApi) return;
   const c = gridApi.getDisplayedRowCount();
-  document.getElementById('selText').textContent = c + ' ' + (IS_AR ? 'سجل' : 'pinvs');
+  document.getElementById('selText').textContent = c + ' ' + (IS_AR ? 'سجل' : 'invoices');
   document.getElementById('pageInfo').textContent = `${c} entries`;
 }
-
 </script>
 {% endblock %}
