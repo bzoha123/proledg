@@ -698,15 +698,15 @@ class PurchaseRequestLineItem(db.Model):
     description   = db.Column(db.String(500))
     required_date = db.Column(db.Date)
     warehouse     = db.Column(db.String(150))
-    unit_of_measure = db.Column(db.String(20),    nullable=False, default='unit')
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
     quantity        = db.Column(db.Numeric(14,4), nullable=False, default=0)
     rate            = db.Column(db.Numeric(14,4), nullable=False, default=0)
     discount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
     freight         = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    taxable_amount  = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable         = db.Column(db.Numeric(14,2), nullable=False, default=0)
     tax_code        = db.Column(db.String(20),    nullable=False, default='VAT15')
     tax_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    total_amount    = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total           = db.Column(db.Numeric(14,2), nullable=False, default=0)
 
     pr = db.relationship('PurchaseRequest', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
 
@@ -720,18 +720,15 @@ class PurchaseRequestLineItem(db.Model):
             'description':   self.description or '',
             'required_date': str(self.required_date) if self.required_date else '',
             'warehouse':     self.warehouse   or '',
-            'unit_of_measure': self.unit_of_measure,
-            'uom':           self.unit_of_measure,
-            'quantity':      float(self.quantity        or 0),
-            'rate':          float(self.rate             or 0),
-            'discount':      float(self.discount         or 0),
-            'freight':       float(self.freight          or 0),
-            'taxable':       float(self.taxable_amount   or 0),
-            'taxable_amount':float(self.taxable_amount   or 0),
-            'tax_code':      self.tax_code,
-            'tax_amount':    float(self.tax_amount       or 0),
-            'total':         float(self.total_amount     or 0),
-            'total_amount':  float(self.total_amount     or 0),
+                                    'uom':        self.uom,
+            'quantity':   float(self.quantity   or 0),
+            'rate':       float(self.rate        or 0),
+            'discount':   float(self.discount    or 0),
+            'freight':    float(self.freight     or 0),
+            'taxable':    float(self.taxable     or 0),
+            'tax_code':   self.tax_code,
+            'tax_amount': float(self.tax_amount  or 0),
+            'total':      float(self.total       or 0),
         }
 
 # ─────────────────────────────────────────────────────────────────
@@ -1040,15 +1037,15 @@ class PurchaseQuotationLineItem(db.Model):
     description         = db.Column(db.String(500))
     required_date       = db.Column(db.Date)
     warehouse           = db.Column(db.String(150))
-    unit_of_measure     = db.Column(db.String(20),    nullable=False, default='unit')
-    quantity            = db.Column(db.Numeric(14,4), nullable=False, default=0)
-    rate                = db.Column(db.Numeric(14,4), nullable=False, default=0)
-    discount            = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    freight             = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    taxable_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    tax_code            = db.Column(db.String(20),    nullable=False, default='VAT15')
-    tax_amount          = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    total_amount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity        = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    rate            = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    discount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    freight         = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable         = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    tax_code        = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total           = db.Column(db.Numeric(14,2), nullable=False, default=0)
 
     purchase_quotation = db.relationship('PurchaseQuotation', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
 
@@ -1062,18 +1059,15 @@ class PurchaseQuotationLineItem(db.Model):
             'description':   self.description or '',
             'required_date': str(self.required_date) if self.required_date else '',
             'warehouse':     self.warehouse   or '',
-            'unit_of_measure': self.unit_of_measure,
-            'uom':           self.unit_of_measure,
-            'quantity':      float(self.quantity        or 0),
-            'rate':          float(self.rate             or 0),
-            'discount':      float(self.discount         or 0),
-            'freight':       float(self.freight          or 0),
-            'taxable':       float(self.taxable_amount   or 0),
-            'taxable_amount':float(self.taxable_amount   or 0),
-            'tax_code':      self.tax_code,
-            'tax_amount':    float(self.tax_amount       or 0),
-            'total':         float(self.total_amount     or 0),
-            'total_amount':  float(self.total_amount     or 0),
+                                    'uom':        self.uom,
+            'quantity':   float(self.quantity   or 0),
+            'rate':       float(self.rate        or 0),
+            'discount':   float(self.discount    or 0),
+            'freight':    float(self.freight     or 0),
+            'taxable':    float(self.taxable     or 0),
+            'tax_code':   self.tax_code,
+            'tax_amount': float(self.tax_amount  or 0),
+            'total':      float(self.total       or 0),
         }
 
 # ─────────────────────────────────────────────────────────────────
@@ -1088,15 +1082,15 @@ class PurchaseOrderLineItem(db.Model):
     description         = db.Column(db.String(500))
     required_date       = db.Column(db.Date)
     warehouse           = db.Column(db.String(150))
-    unit_of_measure     = db.Column(db.String(20),    nullable=False, default='unit')
-    quantity            = db.Column(db.Numeric(14,4), nullable=False, default=0)
-    rate                = db.Column(db.Numeric(14,4), nullable=False, default=0)
-    discount            = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    freight             = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    taxable_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    tax_code            = db.Column(db.String(20),    nullable=False, default='VAT15')
-    tax_amount          = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    total_amount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity        = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    rate            = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    discount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    freight         = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable         = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    tax_code        = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total           = db.Column(db.Numeric(14,2), nullable=False, default=0)
 
     purchase_order = db.relationship('PurchaseOrder', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
 
@@ -1110,18 +1104,15 @@ class PurchaseOrderLineItem(db.Model):
             'description':   self.description or '',
             'required_date': str(self.required_date) if self.required_date else '',
             'warehouse':     self.warehouse   or '',
-            'unit_of_measure': self.unit_of_measure,
-            'uom':           self.unit_of_measure,
-            'quantity':      float(self.quantity        or 0),
-            'rate':          float(self.rate             or 0),
-            'discount':      float(self.discount         or 0),
-            'freight':       float(self.freight          or 0),
-            'taxable':       float(self.taxable_amount   or 0),
-            'taxable_amount':float(self.taxable_amount   or 0),
-            'tax_code':      self.tax_code,
-            'tax_amount':    float(self.tax_amount       or 0),
-            'total':         float(self.total_amount     or 0),
-            'total_amount':  float(self.total_amount     or 0),
+                                    'uom':        self.uom,
+            'quantity':   float(self.quantity   or 0),
+            'rate':       float(self.rate        or 0),
+            'discount':   float(self.discount    or 0),
+            'freight':    float(self.freight     or 0),
+            'taxable':    float(self.taxable     or 0),
+            'tax_code':   self.tax_code,
+            'tax_amount': float(self.tax_amount  or 0),
+            'total':      float(self.total       or 0),
         }
 
 # ─────────────────────────────────────────────────────────────────
@@ -1136,15 +1127,15 @@ class GoodsReceiptLineItem(db.Model):
     description         = db.Column(db.String(500))
     required_date       = db.Column(db.Date)
     warehouse           = db.Column(db.String(150))
-    unit_of_measure     = db.Column(db.String(20),    nullable=False, default='unit')
-    quantity            = db.Column(db.Numeric(14,4), nullable=False, default=0)
-    rate                = db.Column(db.Numeric(14,4), nullable=False, default=0)
-    discount            = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    freight             = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    taxable_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    tax_code            = db.Column(db.String(20),    nullable=False, default='VAT15')
-    tax_amount          = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    total_amount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity        = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    rate            = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    discount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    freight         = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable         = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    tax_code        = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total           = db.Column(db.Numeric(14,2), nullable=False, default=0)
 
     goods_receipt_note = db.relationship('GoodsReceiptNote', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
 
@@ -1158,18 +1149,15 @@ class GoodsReceiptLineItem(db.Model):
             'description':   self.description or '',
             'required_date': str(self.required_date) if self.required_date else '',
             'warehouse':     self.warehouse   or '',
-            'unit_of_measure': self.unit_of_measure,
-            'uom':           self.unit_of_measure,
-            'quantity':      float(self.quantity        or 0),
-            'rate':          float(self.rate             or 0),
-            'discount':      float(self.discount         or 0),
-            'freight':       float(self.freight          or 0),
-            'taxable':       float(self.taxable_amount   or 0),
-            'taxable_amount':float(self.taxable_amount   or 0),
-            'tax_code':      self.tax_code,
-            'tax_amount':    float(self.tax_amount       or 0),
-            'total':         float(self.total_amount     or 0),
-            'total_amount':  float(self.total_amount     or 0),
+                                    'uom':        self.uom,
+            'quantity':   float(self.quantity   or 0),
+            'rate':       float(self.rate        or 0),
+            'discount':   float(self.discount    or 0),
+            'freight':    float(self.freight     or 0),
+            'taxable':    float(self.taxable     or 0),
+            'tax_code':   self.tax_code,
+            'tax_amount': float(self.tax_amount  or 0),
+            'total':      float(self.total       or 0),
         }
 
 # ─────────────────────────────────────────────────────────────────
@@ -1184,15 +1172,15 @@ class PurchaseInvoiceLineItem(db.Model):
     description         = db.Column(db.String(500))
     required_date       = db.Column(db.Date)
     warehouse           = db.Column(db.String(150))
-    unit_of_measure     = db.Column(db.String(20),    nullable=False, default='unit')
-    quantity            = db.Column(db.Numeric(14,4), nullable=False, default=0)
-    rate                = db.Column(db.Numeric(14,4), nullable=False, default=0)
-    discount            = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    freight             = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    taxable_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    tax_code            = db.Column(db.String(20),    nullable=False, default='VAT15')
-    tax_amount          = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    total_amount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity        = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    rate            = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    discount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    freight         = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable         = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    tax_code        = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total           = db.Column(db.Numeric(14,2), nullable=False, default=0)
 
     purchase_invoice = db.relationship('PurchaseInvoice', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
 
@@ -1206,18 +1194,15 @@ class PurchaseInvoiceLineItem(db.Model):
             'description':   self.description or '',
             'required_date': str(self.required_date) if self.required_date else '',
             'warehouse':     self.warehouse   or '',
-            'unit_of_measure': self.unit_of_measure,
-            'uom':           self.unit_of_measure,
-            'quantity':      float(self.quantity        or 0),
-            'rate':          float(self.rate             or 0),
-            'discount':      float(self.discount         or 0),
-            'freight':       float(self.freight          or 0),
-            'taxable':       float(self.taxable_amount   or 0),
-            'taxable_amount':float(self.taxable_amount   or 0),
-            'tax_code':      self.tax_code,
-            'tax_amount':    float(self.tax_amount       or 0),
-            'total':         float(self.total_amount     or 0),
-            'total_amount':  float(self.total_amount     or 0),
+                                    'uom':        self.uom,
+            'quantity':   float(self.quantity   or 0),
+            'rate':       float(self.rate        or 0),
+            'discount':   float(self.discount    or 0),
+            'freight':    float(self.freight     or 0),
+            'taxable':    float(self.taxable     or 0),
+            'tax_code':   self.tax_code,
+            'tax_amount': float(self.tax_amount  or 0),
+            'total':      float(self.total       or 0),
         }
 
 # ─────────────────────────────────────────────────────────────────
@@ -1232,15 +1217,15 @@ class GoodsReturnLineItem(db.Model):
     description         = db.Column(db.String(500))
     required_date       = db.Column(db.Date)
     warehouse           = db.Column(db.String(150))
-    unit_of_measure     = db.Column(db.String(20),    nullable=False, default='unit')
-    quantity            = db.Column(db.Numeric(14,4), nullable=False, default=0)
-    rate                = db.Column(db.Numeric(14,4), nullable=False, default=0)
-    discount            = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    freight             = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    taxable_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    tax_code            = db.Column(db.String(20),    nullable=False, default='VAT15')
-    tax_amount          = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    total_amount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity        = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    rate            = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    discount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    freight         = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable         = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    tax_code        = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total           = db.Column(db.Numeric(14,2), nullable=False, default=0)
 
     goods_return_request = db.relationship('GoodsReturnRequest', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
 
@@ -1254,18 +1239,15 @@ class GoodsReturnLineItem(db.Model):
             'description':   self.description or '',
             'required_date': str(self.required_date) if self.required_date else '',
             'warehouse':     self.warehouse   or '',
-            'unit_of_measure': self.unit_of_measure,
-            'uom':           self.unit_of_measure,
-            'quantity':      float(self.quantity        or 0),
-            'rate':          float(self.rate             or 0),
-            'discount':      float(self.discount         or 0),
-            'freight':       float(self.freight          or 0),
-            'taxable':       float(self.taxable_amount   or 0),
-            'taxable_amount':float(self.taxable_amount   or 0),
-            'tax_code':      self.tax_code,
-            'tax_amount':    float(self.tax_amount       or 0),
-            'total':         float(self.total_amount     or 0),
-            'total_amount':  float(self.total_amount     or 0),
+                                    'uom':        self.uom,
+            'quantity':   float(self.quantity   or 0),
+            'rate':       float(self.rate        or 0),
+            'discount':   float(self.discount    or 0),
+            'freight':    float(self.freight     or 0),
+            'taxable':    float(self.taxable     or 0),
+            'tax_code':   self.tax_code,
+            'tax_amount': float(self.tax_amount  or 0),
+            'total':      float(self.total       or 0),
         }
 
 # ─────────────────────────────────────────────────────────────────
@@ -1280,15 +1262,15 @@ class PurchaseDebitMemoLineItem(db.Model):
     description         = db.Column(db.String(500))
     required_date       = db.Column(db.Date)
     warehouse           = db.Column(db.String(150))
-    unit_of_measure     = db.Column(db.String(20),    nullable=False, default='unit')
-    quantity            = db.Column(db.Numeric(14,4), nullable=False, default=0)
-    rate                = db.Column(db.Numeric(14,4), nullable=False, default=0)
-    discount            = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    freight             = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    taxable_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    tax_code            = db.Column(db.String(20),    nullable=False, default='VAT15')
-    tax_amount          = db.Column(db.Numeric(14,2), nullable=False, default=0)
-    total_amount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity        = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    rate            = db.Column(db.Numeric(14,4), nullable=False, default=0)
+    discount        = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    freight         = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    taxable         = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    tax_code        = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount      = db.Column(db.Numeric(14,2), nullable=False, default=0)
+    total           = db.Column(db.Numeric(14,2), nullable=False, default=0)
 
     purchase_debit_memo = db.relationship('PurchaseDebitMemo', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
 
@@ -1302,18 +1284,15 @@ class PurchaseDebitMemoLineItem(db.Model):
             'description':   self.description or '',
             'required_date': str(self.required_date) if self.required_date else '',
             'warehouse':     self.warehouse   or '',
-            'unit_of_measure': self.unit_of_measure,
-            'uom':           self.unit_of_measure,
-            'quantity':      float(self.quantity        or 0),
-            'rate':          float(self.rate             or 0),
-            'discount':      float(self.discount         or 0),
-            'freight':       float(self.freight          or 0),
-            'taxable':       float(self.taxable_amount   or 0),
-            'taxable_amount':float(self.taxable_amount   or 0),
-            'tax_code':      self.tax_code,
-            'tax_amount':    float(self.tax_amount       or 0),
-            'total':         float(self.total_amount     or 0),
-            'total_amount':  float(self.total_amount     or 0),
+                                    'uom':        self.uom,
+            'quantity':   float(self.quantity   or 0),
+            'rate':       float(self.rate        or 0),
+            'discount':   float(self.discount    or 0),
+            'freight':    float(self.freight     or 0),
+            'taxable':    float(self.taxable     or 0),
+            'tax_code':   self.tax_code,
+            'tax_amount': float(self.tax_amount  or 0),
+            'total':      float(self.total       or 0),
         }
 
 # ─────────────────────────────────────────────────────────────────

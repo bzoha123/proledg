@@ -339,15 +339,15 @@ def _save_pr_line_items(pr_id, f):
                 description   = descs[i]  if i < len(descs)  else '',
                 required_date = pd(rdates[i]) if i < len(rdates) and rdates[i] else None,
                 warehouse     = whs[i]    if i < len(whs)    else '',
-                unit_of_measure = uoms[i]   if i < len(uoms)   else 'unit',
+                uom           = uoms[i]   if i < len(uoms)   else 'unit',
                 quantity      = qty,
                 rate          = rate,
                 discount      = disc,
                 freight       = fr,
-                taxable_amount  = taxable,
+                taxable       = taxable,
                 tax_code      = tax_code,
                 tax_amount    = tax_amt,
-                total_amount    = total,
+                total         = total,
             )
             db.session.add(li)
             total_bd   += qty * rate
@@ -463,15 +463,15 @@ def _save_doc_line_items(LIModel, fk_field, fk_value, f):
                 'description':   descs[i]  if i < len(descs)  else '',
                 'required_date': pd(rdates[i]) if i < len(rdates) and rdates[i] else None,
                 'warehouse':     whs[i]    if i < len(whs)    else '',
-                'unit_of_measure': uoms[i] if i < len(uoms)   else 'unit',
+                'uom':           uoms[i]   if i < len(uoms)   else 'unit',
                 'quantity':      qty,
                 'rate':          rate,
                 'discount':      disc,
                 'freight':       fr,
-                'taxable_amount': taxable,
+                'taxable':       taxable,
                 'tax_code':      tax_code,
                 'tax_amount':    tax_amt,
-                'total_amount':  total,
+                'total':         total,
             })
             db.session.add(li)
             total_bd   += qty * rate
