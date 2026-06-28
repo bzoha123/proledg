@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, session
 from flask_login import login_required, current_user
-from models import db, Invoice, InvoiceLineItem, InvoicePayment, Seller, BuyerMaster, Employee
+from models import db, InvoiceBank, Invoice, InvoiceLineItem, InvoicePayment, Seller, BuyerMaster, Employee
 from datetime import datetime
 from decimal import Decimal
 
@@ -303,3 +303,58 @@ def _parse_line_items(f):
         except Exception as e:
             pass
     return items
+
+
+# ══════════════════════════════════════════════════════════════════
+# INVOICE BANK ROUTES  →  invoice_banks table
+# ══════════════════════════════════════════════════════════════════
+@inv_bp.route('/invoices/<int:invoice_id>/banks')
+@login_required
+def invoice_banks(invoice_id):
+    banks = InvoiceBank.query.filter_by(invoice_id=invoice_id).order_by(InvoiceBank.id).all()
+    return jsonify([b.to_dict() for b in banks])
+
+@inv_bp.route('/invoices/<int:invoice_id>/banks/add', methods=['POST'])
+@login_required
+def add_invoice_bank(invoice_id):
+    data = request.get_json() or {}
+    if not data.get('bank_name','').strip():
+        return jsonify({'ok': False, 'error': 'Bank name required'}), 400
+    if data.get('is_primary'):
+        InvoiceBank.query.filter_by(invoice_id=invoice_id, is_primary=True).update({'is_primary': False})
+    b = InvoiceBank(
+        invoice_id     = invoice_id,
+        bank_name      = data.get('bank_name','').strip(),
+        account_number = data.get('account_number','').strip(),
+        branch         = data.get('branch','').strip(),
+        swift_code     = data.get('swift_code','').strip(),
+        iban           = data.get('iban','').strip(),
+        is_primary     = bool(data.get('is_primary', False)),
+    )
+    db.session.add(b)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': b.id, 'bank': b.to_dict()})
+
+@inv_bp.route('/invoices/banks/<int:bank_id>/edit', methods=['POST'])
+@login_required
+def edit_invoice_bank(bank_id):
+    b    = InvoiceBank.query.get_or_404(bank_id)
+    data = request.get_json() or {}
+    if data.get('is_primary'):
+        InvoiceBank.query.filter_by(invoice_id=b.invoice_id, is_primary=True).update({'is_primary': False})
+    b.bank_name      = data.get('bank_name', b.bank_name).strip()
+    b.account_number = data.get('account_number', b.account_number or '').strip()
+    b.branch         = data.get('branch', b.branch or '').strip()
+    b.swift_code     = data.get('swift_code', b.swift_code or '').strip()
+    b.iban           = data.get('iban', b.iban or '').strip()
+    b.is_primary     = bool(data.get('is_primary', b.is_primary))
+    db.session.commit()
+    return jsonify({'ok': True, 'bank': b.to_dict()})
+
+@inv_bp.route('/invoices/banks/<int:bank_id>/delete', methods=['POST'])
+@login_required
+def delete_invoice_bank(bank_id):
+    b = InvoiceBank.query.get_or_404(bank_id)
+    db.session.delete(b)
+    db.session.commit()
+    return jsonify({'ok': True})

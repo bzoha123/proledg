@@ -3,7 +3,7 @@ from datetime import datetime, date
 from flask import (Blueprint, render_template, redirect, url_for, flash,
                    request, current_app, jsonify, session)
 from flask_login import login_required, current_user
-from models import db, Employee, EmployeeAllowance, AllowanceType, BankMaster, ProfessionMaster, BuyerMaster
+from models import db, Employee, EmployeeAllowance, AllowanceType, EmployeeBank, ProfessionMaster, BuyerMaster
 from functools import wraps
 
 employees_bp = Blueprint('employees', __name__)

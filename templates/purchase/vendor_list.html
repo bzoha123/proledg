@@ -6,57 +6,216 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
-/* ── Grid ── */
-.ag-theme-alpine{--ag-font-family:'Segoe UI',Tahoma,sans-serif;--ag-font-size:13px;--ag-header-background-color:#1e3a5f;--ag-header-foreground-color:#fff;--ag-border-color:#e2e8f0;--ag-row-hover-color:#f0f7ff;--ag-header-height:44px;--ag-row-height:44px;}
-.ag-theme-alpine .ag-header-cell-label{font-weight:700;font-size:12px;text-transform:uppercase;}
-/* Filter popup — ProLedg style */
-.ag-theme-alpine .ag-filter{border-radius:10px!important;box-shadow:0 6px 24px rgba(0,0,0,.14)!important;border:1px solid #e2e8f0!important;overflow:hidden;min-width:255px;background:white;}
-.ag-theme-alpine .ag-filter-condition .ag-picker-field-wrapper{border:1.5px solid #d1d5db;border-radius:7px;background:white;padding:5px 10px;font-size:12px;}
-.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input,.ag-theme-alpine .ag-filter-filter .ag-input-field-input{border:1.5px solid #d1d5db!important;border-radius:7px!important;padding:6px 10px!important;font-size:12px!important;width:100%!important;}
-.ag-theme-alpine .ag-filter-apply-panel{padding:8px 10px!important;background:#f8fafc!important;border-top:1px solid #e2e8f0!important;display:flex!important;gap:6px!important;justify-content:space-between!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button{padding:5px 14px!important;border-radius:7px!important;font-size:12px!important;font-weight:600!important;border:none!important;cursor:pointer!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]{background:linear-gradient(135deg,#16a34a,#15803d)!important;color:white!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"]{background:white!important;color:#374151!important;border:1.5px solid #d1d5db!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"]{background:white!important;color:#374151!important;border:1.5px solid #d1d5db!important;}
-.ag-theme-alpine .ag-add-filter-condition{padding:4px 10px!important;border-bottom:1px solid #f1f5f9!important;}
-.ag-theme-alpine .ag-add-filter-condition .ag-button{color:#2563eb!important;font-size:12px!important;font-weight:600!important;background:none!important;border:none!important;cursor:pointer!important;}
-.ag-theme-alpine .ag-floating-filter-input input{border:1px solid #e2e8f0!important;border-radius:5px!important;padding:3px 7px!important;font-size:11px!important;}
-/* Action buttons */
-.ag-ab{width:28px;height:28px;border-radius:7px;border:none;display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all .12s;}
-.ag-ab-view{background:#0ea5e9;color:white;}.ag-ab-edit{background:#f59e0b;color:white;}.ag-ab-del{background:#ef4444;color:white;}
-/* Modal */
-.vnd-hdr{background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:16px 22px;display:flex;justify-content:space-between;align-items:center;}
-.vnd-hdr h5{margin:0;color:white;font-weight:700;font-size:15px;}
-/* Accordion */
-.acc-panel{border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden;}
-.acc-btn{width:100%;background:white;border:none;padding:12px 16px;text-align:{% if ar %}right{% else %}left{% endif %};font-weight:600;font-size:13px;color:#1e3a5f;cursor:pointer;display:flex;align-items:center;justify-content:space-between;}
-.acc-btn.open{background:#f0f7ff;border-bottom:1.5px solid #e2e8f0;}
-.acc-icon{width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;margin-{% if ar %}left{% else %}right{% endif %}:8px;font-size:11px;background:#e0f2fe;color:#0284c7;}
-.acc-btn.open .acc-icon{background:#2563eb;color:white;}
-.acc-body{padding:16px 18px;display:none;background:white;}
-.acc-body.show{display:block;}
-/* Field grid */
-.f-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
-.f-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
-.f-item{display:flex;flex-direction:column;}
-.f-lbl{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
-.f-req{color:#ef4444;margin-{% if ar %}right{% else %}left{% endif %}:2px;}
-.f-inp{border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;width:100%;transition:border-color .15s;}
-.f-inp:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
-select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:{% if ar %}left{% else %}right{% endif %} 10px center;padding-{% if ar %}left{% else %}right{% endif %}:30px;}
-/* Bilingual field-wrap — same as buyers */
-.field-wrap{position:relative;display:flex;align-items:center;}
-.field-wrap .f-inp{flex:1;padding-right:36px;}
-.field-wrap[dir="rtl"] .f-inp{padding-right:12px;padding-left:36px;}
-.retrans-btn{position:absolute;right:6px;width:24px;height:24px;border-radius:5px;border:1px solid #bfdbfe;background:#eff6ff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;color:#2563eb;flex-shrink:0;}
-.field-wrap[dir="rtl"] .retrans-btn{right:auto;left:6px;background:#f0fdf4;border-color:#bbf7d0;color:#16a34a;}
-.field-spin{position:absolute;right:34px;color:#9ca3af;font-size:11px;pointer-events:none;}
-.field-wrap[dir="rtl"] .field-spin{right:auto;left:34px;}
-/* Footer */
-.vnd-footer{display:flex;justify-content:space-between;padding:12px 20px;background:#f8fafc;border-top:2px solid #e2e8f0;}
-.btn-f{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;}
-.btn-save{background:linear-gradient(135deg,#16a34a,#15803d);color:white;box-shadow:0 2px 8px rgba(22,163,74,.3);}
-.btn-cancel{background:white;color:#374151;border:1.5px solid #d1d5db;}
+
+/* ═══════════════════════════════════════════════════════
+   PROLEDG FORM DESIGN SYSTEM  v2
+   Used across: Sellers, Employees, Buyers, Vendors
+═══════════════════════════════════════════════════════ */
+
+/* ── Modal shell ── */
+.pf-modal .modal-dialog { max-width: 960px; }
+.pf-modal .modal-content { border: none; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,.22); }
+
+/* ── Modal header ── */
+.pf-hdr {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+  padding: 16px 22px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pf-hdr h5 { margin: 0; color: #fff; font-size: 15px; font-weight: 700; letter-spacing: .2px; display: flex; align-items: center; gap: 8px; }
+.pf-hdr .btn-close { filter: brightness(0) invert(1); opacity: .85; }
+.pf-hdr .btn-close:hover { opacity: 1; }
+
+/* ── Tab nav inside modal ── */
+.pf-tabs { display: flex; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; padding: 0 20px; gap: 2px; }
+.pf-tab {
+  padding: 10px 18px; font-size: 12px; font-weight: 600; color: #6b7280;
+  border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all .15s; white-space: nowrap; display: flex; align-items: center; gap: 6px;
+}
+.pf-tab:hover { color: #2563eb; background: rgba(37,99,235,.06); border-radius: 6px 6px 0 0; }
+.pf-tab.active { color: #2563eb; border-bottom-color: #2563eb; background: white; border-radius: 6px 6px 0 0; }
+.pf-tab i { font-size: 11px; }
+
+/* ── Tab panes ── */
+.pf-pane { display: none; padding: 22px 24px; }
+.pf-pane.active { display: block; }
+
+/* ── Section header ── */
+.pf-section-hdr {
+  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px;
+  color: #1e3a5f; margin: 0 0 14px; padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 7px;
+}
+.pf-section-hdr i { color: #2563eb; font-size: 13px; }
+
+/* ── Field grid ── */
+.pf-row { display: grid; gap: 14px; margin-bottom: 14px; }
+.pf-row.cols-1 { grid-template-columns: 1fr; }
+.pf-row.cols-2 { grid-template-columns: 1fr 1fr; }
+.pf-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.pf-row.cols-2-1 { grid-template-columns: 2fr 1fr; }
+.pf-row.cols-1-2 { grid-template-columns: 1fr 2fr; }
+@media (max-width: 640px) {
+  .pf-row.cols-2, .pf-row.cols-3, .pf-row.cols-2-1, .pf-row.cols-1-2 { grid-template-columns: 1fr; }
+}
+
+/* ── Field ── */
+.pf-field {}
+.pf-label {
+  font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px;
+  display: flex; align-items: center; gap: 4px; text-transform: uppercase; letter-spacing: .3px;
+}
+.pf-label .req { color: #ef4444; font-size: 13px; line-height: 1; }
+.pf-input {
+  width: 100%; padding: 8px 11px; font-size: 13px; color: #1f2937;
+  border: 1.5px solid #d1d5db; border-radius: 8px; background: white;
+  transition: border-color .15s, box-shadow .15s; outline: none;
+  font-family: inherit;
+}
+.pf-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.pf-input:disabled { background: #f9fafb; color: #9ca3af; cursor: not-allowed; }
+.pf-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; padding-right: 32px; }
+
+/* ── Bilingual input wrap ── */
+.pf-bilingual { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pf-bilingual-lbl { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px; letter-spacing: .3px; }
+@media (max-width: 640px) { .pf-bilingual { grid-template-columns: 1fr; } }
+
+/* ── Translate button ── */
+.pf-retrans {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 22px; background: #eff6ff; color: #2563eb;
+  border: none; border-radius: 5px; cursor: pointer; font-size: 10px;
+  display: flex; align-items: center; justify-content: center; opacity: .7;
+  transition: opacity .15s;
+}
+.pf-retrans:hover { opacity: 1; }
+.pf-input-wrap { position: relative; }
+.pf-input-wrap .pf-input { padding-right: 34px; }
+
+/* ── Modal footer ── */
+.pf-footer {
+  padding: 14px 22px; background: #f8fafc; border-top: 1.5px solid #e2e8f0;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.pf-btn {
+  padding: 9px 22px; border-radius: 9px; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 7px;
+  transition: all .15s;
+}
+.pf-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.15); }
+.pf-btn.primary { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: white; }
+.pf-btn.secondary { background: white; color: #374151; border: 1.5px solid #d1d5db; }
+.pf-btn.danger { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+.pf-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ── Bank list inside modal ── */
+.pf-bank-card {
+  background: white; border: 1.5px solid #e2e8f0; border-radius: 10px;
+  padding: 13px 16px; margin-bottom: 8px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  transition: border-color .15s;
+}
+.pf-bank-card.primary { border-color: #86efac; background: #f0fdf4; }
+.pf-bank-card-name { font-weight: 700; font-size: 13px; color: #1e3a5f; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pf-bank-card-meta { font-size: 11px; color: #6b7280; margin-top: 5px; display: flex; flex-wrap: wrap; gap: 12px; }
+.pf-bank-card-meta span { display: flex; align-items: center; gap: 4px; }
+.pf-badge-primary { background: #dcfce7; color: #15803d; padding: 2px 9px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+.pf-badge-blue { background: #eff6ff; color: #2563eb; padding: 2px 9px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+.pf-bank-actions { display: flex; gap: 5px; flex-shrink: 0; }
+
+/* ── Bank popup modal ── */
+.pf-bank-modal .modal-dialog { max-width: 620px; }
+.pf-bank-modal .modal-content { border: none; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+
+/* ── Empty state ── */
+.pf-empty { text-align: center; padding: 28px; color: #9ca3af; font-size: 13px; }
+.pf-empty i { font-size: 32px; margin-bottom: 10px; display: block; opacity: .4; }
+
+/* ── AG Grid tweaks ── */
+.ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif; --ag-font-size:13px; --ag-header-background-color:#1e3a5f; --ag-header-foreground-color:#fff; --ag-border-color:#e2e8f0; --ag-row-border-color:#f1f5f9; --ag-row-hover-color:#eff6ff; --ag-selected-row-background-color:#dbeafe; --ag-header-height:46px; --ag-row-height:46px; --ag-cell-horizontal-padding:12px; }
+.ag-theme-alpine .ag-header-cell-label { font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; }
+.ag-theme-alpine .ag-header-cell:hover { background:rgba(255,255,255,.08) !important; }
+.ag-theme-alpine .ag-sort-ascending-icon, .ag-theme-alpine .ag-sort-descending-icon, .ag-theme-alpine .ag-sort-none-icon { color:rgba(255,255,255,.7); }
+.ag-theme-alpine .ag-header-icon { color:rgba(255,255,255,.6); }
+.ag-theme-alpine .ag-filter { border-radius:10px !important; box-shadow:0 8px 30px rgba(0,0,0,.15) !important; border:1px solid #e2e8f0 !important; overflow:hidden; min-width:260px; background:white; }
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input { border:1.5px solid #d1d5db !important; border-radius:7px !important; padding:6px 10px !important; font-size:12px !important; }
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus { outline:none !important; border-color:#2563eb !important; box-shadow:0 0 0 2px rgba(37,99,235,.12) !important; }
+.ag-theme-alpine .ag-filter-apply-panel { padding:8px 10px !important; background:#f8fafc !important; border-top:1px solid #e2e8f0 !important; display:flex !important; gap:6px !important; justify-content:space-between !important; }
+.ag-theme-alpine .ag-filter-apply-panel-button { padding:5px 14px !important; border-radius:7px !important; font-size:12px !important; font-weight:600 !important; border:none !important; cursor:pointer !important; }
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"] { background:linear-gradient(135deg,#16a34a,#15803d) !important; color:white !important; }
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"], .ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"] { background:white !important; color:#374151 !important; border:1.5px solid #d1d5db !important; }
+.ag-theme-alpine .ag-floating-filter-input input { border:1px solid #e2e8f0 !important; border-radius:5px !important; padding:3px 7px !important; font-size:11px !important; }
+.ag-theme-alpine .ag-floating-filter-input input:focus { outline:none !important; border-color:#2563eb !important; }
+.ag-theme-alpine .ag-row-even { background:white; }
+.ag-theme-alpine .ag-row-odd { background:#fafbfc; }
+.ag-theme-alpine .ag-row-hover { background:#eff6ff !important; }
+.ag-theme-alpine .ag-cell { border-right:1px solid #f1f5f9 !important; }
+
+/* ── Action buttons ── */
+.pl-act { display:flex; align-items:center; gap:3px; }
+.pl-btn { width:28px; height:28px; border-radius:7px; border:none; display:inline-flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; transition:all .12s; }
+.pl-btn:hover { transform:translateY(-1px); box-shadow:0 2px 6px rgba(0,0,0,.2); }
+.pl-view  { background:#0ea5e9; color:white; }
+.pl-edit  { background:#f59e0b; color:white; }
+.pl-del   { background:#ef4444; color:white; }
+.pl-print { background:#16a34a; color:white; }
+
+/* ── Status pills ── */
+.st-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:10px; font-size:11px; font-weight:700; }
+.st-active   { background:#dcfce7; color:#15803d; }
+.st-inactive { background:#f1f5f9; color:#6b7280; }
+.code-badge  { background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:5px; font-size:11px; font-weight:700; font-family:monospace; }
+
+/* ── Page toolbar ── */
+.pl-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+.pl-toolbar-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.pl-add-btn { padding:9px 20px; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; border:none; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:7px; transition:all .15s; }
+.pl-add-btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(37,99,235,.35); }
+.pl-search-wrap { position:relative; }
+.pl-search { padding:8px 12px 8px 36px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; color:#374151; width:240px; outline:none; transition:border-color .15s; }
+.pl-search:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+.pl-search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:13px; }
+
+/* ── Vendor-specific ── */
+.vnd-hdr { background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:16px 22px;display:flex;align-items:center;justify-content:space-between; }
+.vnd-hdr h5 { margin:0;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px; }
+.acc-panel { background:white;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:10px; }
+.acc-btn { display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 16px;background:#f8fafc;border:none;cursor:pointer;font-size:12px;font-weight:700;color:#374151;transition:background .15s; }
+.acc-btn:hover { background:#eff6ff; }
+.acc-btn.open { background:#eff6ff;color:#2563eb; }
+.acc-body { padding:16px;display:none; }
+.acc-body.show { display:block; }
+.acc-icon { width:22px;height:22px;background:#eff6ff;color:#2563eb;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;font-size:11px; }
+.f-grid2 { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+.f-grid3 { display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px; }
+.f-grid4 { display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px; }
+@media(max-width:640px){ .f-grid2,.f-grid3,.f-grid4{ grid-template-columns:1fr; } }
+.f-item { display:flex;flex-direction:column; }
+.f-lbl { font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px; }
+.f-req { color:#ef4444; }
+.f-inp { width:100%;padding:8px 11px;font-size:13px;color:#1f2937;border:1.5px solid #d1d5db;border-radius:8px;background:white;outline:none;transition:border-color .15s,box-shadow .15s;font-family:inherit; }
+.f-inp:focus { border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+.field-wrap { position:relative; }
+.retrans-btn { position:absolute;right:6px;top:50%;transform:translateY(-50%);width:22px;height:22px;background:#eff6ff;color:#2563eb;border:none;border-radius:5px;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;opacity:.7;transition:opacity .15s; }
+.retrans-btn:hover { opacity:1; }
+.field-spin { position:absolute;right:32px;top:50%;transform:translateY(-50%); }
+.btn-f { padding:9px 20px;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px;transition:all .15s; }
+.btn-save { background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white; }
+.btn-save:hover { transform:translateY(-1px);box-shadow:0 3px 10px rgba(37,99,235,.35); }
+.btn-cancel { background:white;color:#374151;border:1.5px solid #d1d5db; }
+.btn-cancel:hover { background:#f9fafb; }
+.pur-section { background:white;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:10px; }
+.pur-section-hdr { display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8fafc;cursor:pointer;border:none;width:100%;font-size:12px;font-weight:700;color:#374151; }
+.pur-section-body { padding:14px;display:none; }
+.pur-section-body.open { display:block; }
+.pur-sec-icon { width:20px;height:20px;background:#eff6ff;color:#2563eb;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;font-size:10px; }
+.ag-ab { width:28px;height:28px;border-radius:7px;border:none;display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all .12s; }
+.ag-ab:hover { transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.2); }
+.ag-ab-view { background:#0ea5e9;color:white; }
+.ag-ab-edit { background:#f59e0b;color:white; }
+.ag-ab-del  { background:#ef4444;color:white; }
 </style>
 {% endblock %}
 
@@ -652,11 +811,130 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+/* ══ VENDOR DOCUMENTS ══ */
+function loadDocs(vendorId) {
+  if (!vendorId) { renderDocList([]); return; }
+  fetch('/purchase/vendors/' + vendorId + '/documents')
+    .then(r => r.json())
+    .then(docs => renderDocList(docs));
+}
+
+function renderDocList(docs) {
+  const wrap = document.getElementById('docListWrap');
+  const badge = document.getElementById('docBadge');
+  if (badge) badge.textContent = docs.length;
+  if (!wrap) return;
+  if (!docs.length) {
+    wrap.innerHTML = '<div style="color:#9ca3af;font-size:12px;padding:4px 0;">No documents uploaded yet</div>';
+    return;
+  }
+  const icons = {pdf:'fa-file-pdf',doc:'fa-file-word',docx:'fa-file-word',
+    xls:'fa-file-excel',xlsx:'fa-file-excel',jpg:'fa-file-image',jpeg:'fa-file-image',
+    png:'fa-file-image',gif:'fa-file-image'};
+  wrap.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead>
+      <tr style="background:#f8fafc;border-bottom:1.5px solid #e2e8f0;">
+        <th style="padding:8px 10px;text-align:left;font-weight:700;color:#6b7280;text-transform:uppercase;font-size:10px;">Document</th>
+        <th style="padding:8px 10px;text-align:left;font-weight:700;color:#6b7280;text-transform:uppercase;font-size:10px;">Type</th>
+        <th style="padding:8px 10px;text-align:left;font-weight:700;color:#6b7280;text-transform:uppercase;font-size:10px;">Size</th>
+        <th style="padding:8px 10px;text-align:left;font-weight:700;color:#6b7280;text-transform:uppercase;font-size:10px;">Expiry</th>
+        <th style="padding:8px 10px;text-align:left;font-weight:700;color:#6b7280;text-transform:uppercase;font-size:10px;">Uploaded</th>
+        <th style="width:80px;"></th>
+      </tr>
+    </thead>
+    <tbody>${docs.map(d => {
+      const ext  = d.file_path.split('.').pop().toLowerCase();
+      const icon = {pdf:'fa-file-pdf',doc:'fa-file-word',docx:'fa-file-word',
+        xls:'fa-file-excel',xlsx:'fa-file-excel',jpg:'fa-file-image',jpeg:'fa-file-image',
+        png:'fa-file-image',gif:'fa-file-image'}[ext] || 'fa-file';
+      const iconColor = {pdf:'#ef4444',doc:'#2563eb',docx:'#2563eb',
+        xls:'#16a34a',xlsx:'#16a34a',jpg:'#f59e0b',jpeg:'#f59e0b',
+        png:'#f59e0b',gif:'#f59e0b'}[ext] || '#6b7280';
+      const expiry = d.expiry_date ? d.expiry_date : '—';
+      const expired = d.expiry_date && new Date(d.expiry_date) < new Date();
+      return `<tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:9px 10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <i class="fas ${icon}" style="font-size:18px;color:${iconColor};"></i>
+            <div>
+              <div style="font-weight:600;color:#374151;">${d.document_name}</div>
+              <div style="color:#9ca3af;font-size:10px;">${ext.toUpperCase()}</div>
+            </div>
+          </div>
+        </td>
+        <td style="padding:9px 10px;"><span style="background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600;">${d.document_type}</span></td>
+        <td style="padding:9px 10px;color:#6b7280;">${d.file_size_kb} KB</td>
+        <td style="padding:9px 10px;">
+          <span style="color:${expired ? '#dc2626' : '#374151'};font-weight:${expired ? '700' : '400'};">
+            ${expired ? '⚠️ ' : ''}${expiry}
+          </span>
+        </td>
+        <td style="padding:9px 10px;color:#9ca3af;">${d.uploaded_at}</td>
+        <td style="padding:9px 10px;white-space:nowrap;">
+          <a href="/purchase/vendors/documents/${d.id}/download"
+             style="width:26px;height:26px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-right:3px;"
+             title="Download"><i class="fas fa-download" style="font-size:10px;"></i></a>
+          <button onclick="deleteVendorDoc(${d.id})"
+                  style="width:26px;height:26px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"
+                  title="Delete"><i class="fas fa-trash" style="font-size:10px;"></i></button>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+async function uploadVendorDoc(input) {
+  const vendorId = _currentVendorId || document.getElementById('v_id')?.value;
+  if (!vendorId) {
+    alert('Please save the vendor first before uploading documents.');
+    input.value = '';
+    return;
+  }
+  if (!input.files.length) return;
+  const file     = input.files[0];
+  const progress = document.getElementById('docUploadProgress');
+  if (progress) progress.style.display = 'block';
+  const fd = new FormData();
+  fd.append('csrf_token',    CSRF);
+  fd.append('file',          file);
+  fd.append('document_type', document.getElementById('doc_type_sel')?.value || 'Other / أخرى');
+  fd.append('document_name', document.getElementById('doc_name_inp')?.value?.trim() || file.name);
+  fd.append('expiry_date',   document.getElementById('doc_expiry_inp')?.value || '');
+  try {
+    const res  = await fetch('/purchase/vendors/' + vendorId + '/documents/upload',
+      {method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd});
+    const data = await res.json();
+    if (data.ok) {
+      loadDocs(vendorId);
+      // Reset upload fields
+      if (document.getElementById('doc_name_inp')) document.getElementById('doc_name_inp').value = '';
+      if (document.getElementById('doc_expiry_inp')) document.getElementById('doc_expiry_inp').value = '';
+    } else {
+      alert(data.error || 'Upload failed');
+    }
+  } catch(e) {
+    alert('Upload failed: ' + e.message);
+  } finally {
+    if (progress) progress.style.display = 'none';
+    input.value = '';
+  }
+}
+
+async function deleteVendorDoc(docId) {
+  if (!confirm('Delete this document?')) return;
+  const res  = await fetch('/purchase/vendors/documents/' + docId + '/delete',
+    {method:'POST', headers:{'X-CSRFToken':CSRF}, body:new URLSearchParams({csrf_token:CSRF})});
+  const data = await res.json();
+  if (data.ok) loadDocs(_currentVendorId);
+}
+
 /* ══ VENDOR BANKS ══ */
 let _currentVendorId = null;
 
 function loadBanks(vendorId) {
-  if (!vendorId) { document.getElementById('bankListWrap').innerHTML = ''; return; }
+  if (!vendorId) { document.getElementById('docListWrap').innerHTML = '<div style="color:#9ca3af;font-size:12px;padding:4px 0;">Save vendor first, then upload documents</div>';
+  document.getElementById('docBadge').textContent = '0';
+  document.getElementById('bankListWrap').innerHTML = ''; return; }
   _currentVendorId = vendorId;
   fetch('/purchase/vendors/' + vendorId + '/banks')
     .then(r => r.json())
@@ -693,85 +971,106 @@ function renderBankList(banks) {
     </div>`).join('');
 }
 
-function openAddBank() {
-  document.getElementById('bank_id').value = '';
-  document.getElementById('bankModalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>Add Bank Account';
-  ['bank_name_en','bank_name_ar','bank_branch_en','bank_branch_ar',
-   'bank_account_number','bank_swift','bank_iban'].forEach(id => {
-    const e = document.getElementById(id); if(e) e.value = '';
+function openVendorBank(bankId){
+  const mid='bankModal';
+  document.getElementById(mid+'_bank_id').value=bankId||'';
+  document.getElementById(mid+'Title').innerHTML=bankId?'<i class="fas fa-edit me-2"></i>Edit Bank Account':'<i class="fas fa-university me-2"></i>Add Bank Account';
+  if(!bankId){['bank_name_en','bank_name_ar','bank_branch_en','bank_branch_ar','bank_account_number','bank_swift','bank_iban'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('bank_is_primary').checked=false;}
+  new bootstrap.Modal(document.getElementById(mid)).show();
+}
+
+// Alias for backward compat
+const openAddBank = openVendorBank;
+
+function openEditBank(bankId){
+  fetch('/purchase/vendors/'+_currentVendorId+'/banks').then(r=>r.json()).then(banks=>{
+    const b=banks.find(x=>x.id===bankId);
+    if(!b)return;
+    document.getElementById('bank_id').value=bankId;
+    document.getElementById('bankModalTitle').innerHTML='<i class="fas fa-edit me-2"></i>Edit Bank Account';
+    document.getElementById('bank_name_en').value=b.bank_name_en||'';
+    document.getElementById('bank_name_ar').value=b.bank_name_ar||'';
+    document.getElementById('bank_branch_en').value=b.branch_en||'';
+    document.getElementById('bank_branch_ar').value=b.branch_ar||'';
+    document.getElementById('bank_account_number').value=b.account_number||'';
+    document.getElementById('bank_swift').value=b.swift_code||'';
+    document.getElementById('bank_iban').value=b.iban||'';
+    document.getElementById('bank_is_primary').checked=b.is_primary;
+    new bootstrap.Modal(document.getElementById('bankModal')).show();
   });
-  document.getElementById('bank_is_primary').checked = false;
-  new bootstrap.Modal(document.getElementById('bankModal')).show();
 }
 
-function openEditBank(bankId) {
-  const wrap = document.getElementById('bankListWrap');
-  // Re-fetch to get latest data
-  fetch('/purchase/vendors/' + _currentVendorId + '/banks')
-    .then(r => r.json())
-    .then(banks => {
-      const b = banks.find(x => x.id === bankId);
-      if (!b) return;
-      document.getElementById('bank_id').value = bankId;
-      document.getElementById('bankModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Edit Bank Account';
-      document.getElementById('bank_name_en').value         = b.bank_name_en || '';
-      document.getElementById('bank_name_ar').value         = b.bank_name_ar || '';
-      document.getElementById('bank_branch_en').value       = b.branch_en || '';
-      document.getElementById('bank_branch_ar').value       = b.branch_ar || '';
-      document.getElementById('bank_account_number').value  = b.account_number || '';
-      document.getElementById('bank_swift').value           = b.swift_code || '';
-      document.getElementById('bank_iban').value            = b.iban || '';
-      document.getElementById('bank_is_primary').checked   = b.is_primary;
-      new bootstrap.Modal(document.getElementById('bankModal')).show();
-    });
+function renderBankList(banks){
+  const wrap=document.getElementById('bankListWrap');
+  const badge=document.getElementById('bankBadge_vendor');
+  if(badge)badge.textContent=banks.length;
+  if(!wrap)return;
+  if(!banks.length){wrap.innerHTML='<div class="pf-empty"><i class="fas fa-university"></i>No bank accounts yet</div>';return;}
+  wrap.innerHTML=banks.map(b=>`<div class="pf-bank-card ${b.is_primary?'primary':''}"><div><div class="pf-bank-card-name"><i class="fas fa-university" style="color:#2563eb;font-size:14px;"></i>${b.bank_name_en||'—'}${b.bank_name_ar?' / '+b.bank_name_ar:''}${b.is_primary?'<span class="pf-badge-primary">PRIMARY</span>':''}</div><div class="pf-bank-card-meta">${b.account_number?`<span><i class="fas fa-hashtag"></i>${b.account_number}</span>`:''} ${b.branch_en?`<span><i class="fas fa-map-marker-alt"></i>${b.branch_en}</span>`:''} ${b.swift_code?`<span><i class="fas fa-globe"></i>${b.swift_code}</span>`:''} ${b.iban?`<span><i class="fas fa-credit-card"></i>${b.iban}</span>`:''}</div></div><div class="pf-bank-actions">${!b.is_primary?`<button onclick="setBankPrimary(${b.id})" style="padding:4px 10px;background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Primary</button>`:''}<button onclick="openEditBank(${b.id})" style="width:28px;height:28px;background:#fef3c7;color:#d97706;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-pencil-alt"></i></button><button onclick="deleteBank(${b.id})" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-trash"></i></button></div></div>`).join('');
 }
 
-async function saveBank() {
-  const bankId     = document.getElementById('bank_id').value;
-  const vendorId   = _currentVendorId || document.getElementById('v_id').value;
-  if (!vendorId) { alert('Please save the vendor first before adding bank accounts'); return; }
-  if (!document.getElementById('bank_name_en').value.trim()) {
-    alert('Bank name (EN) is required'); return;
-  }
-  const url = bankId
-    ? '/purchase/vendors/banks/' + bankId + '/edit'
-    : '/purchase/vendors/' + vendorId + '/banks/add';
-  const fd = new FormData();
-  fd.set('csrf_token',     CSRF);
-  fd.set('bank_name_en',   document.getElementById('bank_name_en').value.trim());
-  fd.set('bank_name_ar',   document.getElementById('bank_name_ar').value.trim());
-  fd.set('branch_en',      document.getElementById('bank_branch_en').value.trim());
-  fd.set('branch_ar',      document.getElementById('bank_branch_ar').value.trim());
-  fd.set('account_number', document.getElementById('bank_account_number').value.trim());
-  fd.set('swift_code',     document.getElementById('bank_swift').value.trim().toUpperCase());
-  fd.set('iban',           document.getElementById('bank_iban').value.trim());
-  fd.set('is_primary',     document.getElementById('bank_is_primary').checked ? '1' : '0');
-  const res  = await fetch(url, {method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd});
-  const data = await res.json();
-  if (data.ok) {
-    bootstrap.Modal.getInstance(document.getElementById('bankModal'))?.hide();
-    loadBanks(vendorId);
-  } else {
-    alert(data.error || 'Error saving bank');
-  }
-}
 
-async function deleteBank(bankId) {
-  if (!confirm('Delete this bank account?')) return;
-  const res  = await fetch('/purchase/vendors/banks/' + bankId + '/delete', {
-    method:'POST', headers:{'X-CSRFToken':CSRF}, body:new URLSearchParams({csrf_token:CSRF})
-  });
-  const data = await res.json();
-  if (data.ok) loadBanks(_currentVendorId);
-}
-
-async function setBankPrimary(bankId) {
-  const res  = await fetch('/purchase/vendors/banks/' + bankId + '/set-primary', {
-    method:'POST', headers:{'X-CSRFToken':CSRF}, body:new URLSearchParams({csrf_token:CSRF})
-  });
-  const data = await res.json();
-  if (data.ok) loadBanks(_currentVendorId);
-}
 
 </script>
-{% endblock %}document.getElementById('bankListWrap').innerHTML = '<div style="color:#9ca3af;font-size:12px;padding:8px 0;">Save vendor first, then add bank accounts</div>';
+{% endblock %}document.getElementById('docListWrap').innerHTML = '<div style="color:#9ca3af;font-size:12px;padding:4px 0;">Save vendor first, then upload documents</div>';
+  document.getElementById('docBadge').textContent = '0';
+  document.getElementById('bankListWrap').innerHTML = '<div style="color:#9ca3af;font-size:12px;padding:8px 0;">Save vendor first, then add bank accounts</div>';
+  
+          {# ── Vendor Documents Sub-section ── #}
+          <div class="pur-section" style="margin:10px 0 16px;">
+            <button type="button" class="pur-section-hdr open" onclick="togSec(this)">
+              <div style="display:flex;align-items:center;">
+                <i class="pur-sec-icon fas fa-file-alt"></i>
+                {% if ar %}المستندات{% else %}Documents{% endif %}
+                <span id="docBadge" style="background:#eff6ff;color:#2563eb;padding:1px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:8px;">0</span>
+              </div>
+              <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
+            </button>
+            <div class="pur-section-body open">
+
+              {# Upload row #}
+              <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;padding:14px;background:#f8fafc;border-radius:8px;border:1.5px solid #e2e8f0;">
+                <div style="flex:1;min-width:160px;">
+                  <div class="f-lbl">{% if ar %}نوع المستند{% else %}Document Type{% endif %}</div>
+                  <select id="doc_type_sel" class="f-inp">
+                    <option value="CR / سجل تجاري">CR / سجل تجاري</option>
+                    <option value="VAT Certificate / شهادة ضريبة">VAT Certificate / شهادة ضريبة</option>
+                    <option value="ID / هوية">ID / هوية</option>
+                    <option value="Contract / عقد">Contract / عقد</option>
+                    <option value="License / رخصة">License / رخصة</option>
+                    <option value="Insurance / تأمين">Insurance / تأمين</option>
+                    <option value="Bank Letter / خطاب بنكي">Bank Letter / خطاب بنكي</option>
+                    <option value="Other / أخرى">Other / أخرى</option>
+                  </select>
+                </div>
+                <div style="flex:1;min-width:160px;">
+                  <div class="f-lbl">{% if ar %}اسم المستند{% else %}Document Name{% endif %}</div>
+                  <input type="text" id="doc_name_inp" class="f-inp" placeholder="{% if ar %}اسم وصفي{% else %}Descriptive name{% endif %}">
+                </div>
+                <div style="flex:0 0 140px;">
+                  <div class="f-lbl">{% if ar %}تاريخ الانتهاء{% else %}Expiry Date{% endif %}</div>
+                  <input type="date" id="doc_expiry_inp" class="f-inp" dir="ltr">
+                </div>
+                <div style="flex:0 0 auto;display:flex;align-items:flex-end;gap:6px;">
+                  <label style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;">
+                    <i class="fas fa-paperclip"></i>
+                    {% if ar %}اختر ملف{% else %}Choose File{% endif %}
+                    <input type="file" id="doc_file_inp" style="display:none;"
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+                           onchange="uploadVendorDoc(this)">
+                  </label>
+                </div>
+              </div>
+
+              {# Upload progress #}
+              <div id="docUploadProgress" style="display:none;margin-bottom:10px;">
+                <div style="background:#f0f9ff;border:1px solid #bfdbfe;border-radius:7px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+                  <i class="fas fa-spinner fa-spin" style="color:#2563eb;"></i>
+                  <span style="font-size:13px;color:#374151;">{% if ar %}جارٍ الرفع...{% else %}Uploading...{% endif %}</span>
+                </div>
+              </div>
+
+              {# Document list #}
+              <div id="docListWrap"></div>
+            </div>
+          </div>

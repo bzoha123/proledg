@@ -246,13 +246,10 @@ def add_bank(id):
     )
     db.session.add(bank)
     db.session.commit()
-    return jsonify({'success': True, 'id': bank.id, 'bank_name': bank.bank_name,
-                    'account_number': bank.account_number, 'branch': bank.branch,
-                    'swift_code': bank.swift_code, 'iban': bank.iban,
-                    'is_primary': bank.is_primary})
+    return jsonify({'ok': True, 'id': bank.id, 'bank': bank.to_dict()})
 
 
-@sellers_bp.route('/banks/<int:bid>/delete', methods=['POST'])
+@sellers_bp.route('/sellers/banks/<int:bid>/delete', methods=['POST'])
 @login_required
 @admin_required
 def delete_bank(bid):
@@ -263,6 +260,30 @@ def delete_bank(bid):
 
 
 # ── Documents ─────────────────────────────────────────────────────────
+
+
+@sellers_bp.route('/sellers/<int:id>/banks')
+@login_required
+def list_seller_banks(id):
+    banks = SellerBank.query.filter_by(seller_id=id).order_by(SellerBank.id).all()
+    return jsonify([b.to_dict() for b in banks])
+
+@sellers_bp.route('/sellers/banks/<int:bid>/edit', methods=['POST'])
+@login_required
+def edit_seller_bank(bid):
+    b    = SellerBank.query.get_or_404(bid)
+    data = request.get_json() or request.form
+    if data.get('is_primary') in [True,'true','1','on']:
+        SellerBank.query.filter_by(seller_id=b.seller_id).update({'is_primary':False})
+    b.bank_name      = data.get('bank_name',      b.bank_name)
+    b.account_number = data.get('account_number', b.account_number or '')
+    b.branch         = data.get('branch',         b.branch or '')
+    b.swift_code     = data.get('swift_code',     b.swift_code or '')
+    b.iban           = data.get('iban',            b.iban or '')
+    b.is_primary     = data.get('is_primary') in [True,'true','1','on']
+    db.session.commit()
+    return jsonify({'ok': True, 'bank': b.to_dict()})
+
 @sellers_bp.route('/sellers/<int:id>/documents/upload', methods=['POST'])
 @login_required
 def upload_document(id):

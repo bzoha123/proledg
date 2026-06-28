@@ -6,150 +6,185 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
-/* Grid */
 
 /* ═══════════════════════════════════════════════════════
-   PROLEDG BEAUTIFIED AG-GRID THEME
+   PROLEDG FORM DESIGN SYSTEM  v2
+   Used across: Sellers, Employees, Buyers, Vendors
 ═══════════════════════════════════════════════════════ */
-.ag-theme-alpine {
-  --ag-font-family: 'Segoe UI', Tahoma, system-ui, sans-serif;
-  --ag-font-size: 13px;
-  --ag-header-background-color: #1e3a5f;
-  --ag-header-foreground-color: #ffffff;
-  --ag-border-color: #e2e8f0;
-  --ag-row-border-color: #f1f5f9;
-  --ag-odd-row-background-color: #ffffff;
-  --ag-even-row-background-color: #fafbfc;
-  --ag-row-hover-color: #eff6ff;
-  --ag-selected-row-background-color: #dbeafe;
-  --ag-header-height: 46px;
-  --ag-row-height: 46px;
-  --ag-cell-horizontal-padding: 12px;
-  --ag-header-column-separator-display: block;
-  --ag-header-column-separator-color: rgba(255,255,255,0.15);
-  border-radius: 0 0 10px 10px;
+
+/* ── Modal shell ── */
+.pf-modal .modal-dialog { max-width: 960px; }
+.pf-modal .modal-content { border: none; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,.22); }
+
+/* ── Modal header ── */
+.pf-hdr {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+  padding: 16px 22px;
+  display: flex; align-items: center; justify-content: space-between;
 }
-.ag-theme-alpine .ag-header-cell-label {
-  font-weight: 700;
-  font-size: 11.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+.pf-hdr h5 { margin: 0; color: #fff; font-size: 15px; font-weight: 700; letter-spacing: .2px; display: flex; align-items: center; gap: 8px; }
+.pf-hdr .btn-close { filter: brightness(0) invert(1); opacity: .85; }
+.pf-hdr .btn-close:hover { opacity: 1; }
+
+/* ── Tab nav inside modal ── */
+.pf-tabs { display: flex; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; padding: 0 20px; gap: 2px; }
+.pf-tab {
+  padding: 10px 18px; font-size: 12px; font-weight: 600; color: #6b7280;
+  border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all .15s; white-space: nowrap; display: flex; align-items: center; gap: 6px;
 }
-.ag-theme-alpine .ag-header-cell:hover {
-  background: rgba(255,255,255,0.08) !important;
+.pf-tab:hover { color: #2563eb; background: rgba(37,99,235,.06); border-radius: 6px 6px 0 0; }
+.pf-tab.active { color: #2563eb; border-bottom-color: #2563eb; background: white; border-radius: 6px 6px 0 0; }
+.pf-tab i { font-size: 11px; }
+
+/* ── Tab panes ── */
+.pf-pane { display: none; padding: 22px 24px; }
+.pf-pane.active { display: block; }
+
+/* ── Section header ── */
+.pf-section-hdr {
+  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px;
+  color: #1e3a5f; margin: 0 0 14px; padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 7px;
 }
-.ag-theme-alpine .ag-sort-ascending-icon,
-.ag-theme-alpine .ag-sort-descending-icon,
-.ag-theme-alpine .ag-sort-none-icon {
-  color: rgba(255,255,255,0.7);
+.pf-section-hdr i { color: #2563eb; font-size: 13px; }
+
+/* ── Field grid ── */
+.pf-row { display: grid; gap: 14px; margin-bottom: 14px; }
+.pf-row.cols-1 { grid-template-columns: 1fr; }
+.pf-row.cols-2 { grid-template-columns: 1fr 1fr; }
+.pf-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.pf-row.cols-2-1 { grid-template-columns: 2fr 1fr; }
+.pf-row.cols-1-2 { grid-template-columns: 1fr 2fr; }
+@media (max-width: 640px) {
+  .pf-row.cols-2, .pf-row.cols-3, .pf-row.cols-2-1, .pf-row.cols-1-2 { grid-template-columns: 1fr; }
 }
-.ag-theme-alpine .ag-header-icon { color: rgba(255,255,255,0.6); }
-.ag-theme-alpine .ag-header-icon.ag-filter-active { color: #fbbf24 !important; }
-/* Filter popup */
-.ag-theme-alpine .ag-filter {
-  border-radius: 10px !important;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15) !important;
-  border: 1px solid #e2e8f0 !important;
-  overflow: hidden;
-  min-width: 260px;
-  background: white;
+
+/* ── Field ── */
+.pf-field {}
+.pf-label {
+  font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px;
+  display: flex; align-items: center; gap: 4px; text-transform: uppercase; letter-spacing: .3px;
 }
-.ag-theme-alpine .ag-filter-condition .ag-picker-field-wrapper {
-  border: 1.5px solid #d1d5db;
-  border-radius: 7px;
-  background: white;
-  padding: 5px 10px;
-  font-size: 12px;
+.pf-label .req { color: #ef4444; font-size: 13px; line-height: 1; }
+.pf-input {
+  width: 100%; padding: 8px 11px; font-size: 13px; color: #1f2937;
+  border: 1.5px solid #d1d5db; border-radius: 8px; background: white;
+  transition: border-color .15s, box-shadow .15s; outline: none;
+  font-family: inherit;
 }
-.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input,
-.ag-theme-alpine .ag-filter-filter .ag-input-field-input {
-  border: 1.5px solid #d1d5db !important;
-  border-radius: 7px !important;
-  padding: 6px 10px !important;
-  font-size: 12px !important;
-  width: 100% !important;
-  transition: border-color 0.15s !important;
+.pf-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.pf-input:disabled { background: #f9fafb; color: #9ca3af; cursor: not-allowed; }
+.pf-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; padding-right: 32px; }
+
+/* ── Bilingual input wrap ── */
+.pf-bilingual { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pf-bilingual-lbl { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px; letter-spacing: .3px; }
+@media (max-width: 640px) { .pf-bilingual { grid-template-columns: 1fr; } }
+
+/* ── Translate button ── */
+.pf-retrans {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 22px; background: #eff6ff; color: #2563eb;
+  border: none; border-radius: 5px; cursor: pointer; font-size: 10px;
+  display: flex; align-items: center; justify-content: center; opacity: .7;
+  transition: opacity .15s;
 }
-.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus,
-.ag-theme-alpine .ag-filter-filter .ag-input-field-input:focus {
-  outline: none !important;
-  border-color: #2563eb !important;
-  box-shadow: 0 0 0 2px rgba(37,99,235,0.12) !important;
+.pf-retrans:hover { opacity: 1; }
+.pf-input-wrap { position: relative; }
+.pf-input-wrap .pf-input { padding-right: 34px; }
+
+/* ── Modal footer ── */
+.pf-footer {
+  padding: 14px 22px; background: #f8fafc; border-top: 1.5px solid #e2e8f0;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
-.ag-theme-alpine .ag-filter-apply-panel {
-  padding: 8px 10px !important;
-  background: #f8fafc !important;
-  border-top: 1px solid #e2e8f0 !important;
-  display: flex !important;
-  gap: 6px !important;
-  justify-content: space-between !important;
+.pf-btn {
+  padding: 9px 22px; border-radius: 9px; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 7px;
+  transition: all .15s;
 }
-.ag-theme-alpine .ag-filter-apply-panel-button {
-  padding: 5px 14px !important;
-  border-radius: 7px !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  border: none !important;
-  cursor: pointer !important;
-  transition: all 0.12s !important;
+.pf-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.15); }
+.pf-btn.primary { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: white; }
+.pf-btn.secondary { background: white; color: #374151; border: 1.5px solid #d1d5db; }
+.pf-btn.danger { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+.pf-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ── Bank list inside modal ── */
+.pf-bank-card {
+  background: white; border: 1.5px solid #e2e8f0; border-radius: 10px;
+  padding: 13px 16px; margin-bottom: 8px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  transition: border-color .15s;
 }
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"] {
-  background: linear-gradient(135deg,#16a34a,#15803d) !important;
-  color: white !important;
-}
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"],
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"] {
-  background: white !important;
-  color: #374151 !important;
-  border: 1.5px solid #d1d5db !important;
-}
-.ag-theme-alpine .ag-add-filter-condition { padding: 4px 10px !important; border-bottom: 1px solid #f1f5f9 !important; }
-.ag-theme-alpine .ag-add-filter-condition .ag-button {
-  color: #2563eb !important; font-size: 12px !important; font-weight: 600 !important;
-  background: none !important; border: none !important; cursor: pointer !important;
-}
-/* Floating filter */
-.ag-theme-alpine .ag-floating-filter-input input {
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 5px !important;
-  padding: 3px 7px !important;
-  font-size: 11px !important;
-}
-.ag-theme-alpine .ag-floating-filter-input input:focus {
-  outline: none !important; border-color: #2563eb !important;
-}
-/* Rows */
-.ag-theme-alpine .ag-row-even { background: white; }
-.ag-theme-alpine .ag-row-odd  { background: #fafbfc; }
-.ag-theme-alpine .ag-row-hover { background: #eff6ff !important; }
-.ag-theme-alpine .ag-cell { border-right: 1px solid #f1f5f9 !important; }
-/* Action buttons — ProLedg exact */
+.pf-bank-card.primary { border-color: #86efac; background: #f0fdf4; }
+.pf-bank-card-name { font-weight: 700; font-size: 13px; color: #1e3a5f; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pf-bank-card-meta { font-size: 11px; color: #6b7280; margin-top: 5px; display: flex; flex-wrap: wrap; gap: 12px; }
+.pf-bank-card-meta span { display: flex; align-items: center; gap: 4px; }
+.pf-badge-primary { background: #dcfce7; color: #15803d; padding: 2px 9px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+.pf-badge-blue { background: #eff6ff; color: #2563eb; padding: 2px 9px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+.pf-bank-actions { display: flex; gap: 5px; flex-shrink: 0; }
+
+/* ── Bank popup modal ── */
+.pf-bank-modal .modal-dialog { max-width: 620px; }
+.pf-bank-modal .modal-content { border: none; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+
+/* ── Empty state ── */
+.pf-empty { text-align: center; padding: 28px; color: #9ca3af; font-size: 13px; }
+.pf-empty i { font-size: 32px; margin-bottom: 10px; display: block; opacity: .4; }
+
+/* ── AG Grid tweaks ── */
+.ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif; --ag-font-size:13px; --ag-header-background-color:#1e3a5f; --ag-header-foreground-color:#fff; --ag-border-color:#e2e8f0; --ag-row-border-color:#f1f5f9; --ag-row-hover-color:#eff6ff; --ag-selected-row-background-color:#dbeafe; --ag-header-height:46px; --ag-row-height:46px; --ag-cell-horizontal-padding:12px; }
+.ag-theme-alpine .ag-header-cell-label { font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; }
+.ag-theme-alpine .ag-header-cell:hover { background:rgba(255,255,255,.08) !important; }
+.ag-theme-alpine .ag-sort-ascending-icon, .ag-theme-alpine .ag-sort-descending-icon, .ag-theme-alpine .ag-sort-none-icon { color:rgba(255,255,255,.7); }
+.ag-theme-alpine .ag-header-icon { color:rgba(255,255,255,.6); }
+.ag-theme-alpine .ag-filter { border-radius:10px !important; box-shadow:0 8px 30px rgba(0,0,0,.15) !important; border:1px solid #e2e8f0 !important; overflow:hidden; min-width:260px; background:white; }
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input { border:1.5px solid #d1d5db !important; border-radius:7px !important; padding:6px 10px !important; font-size:12px !important; }
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus { outline:none !important; border-color:#2563eb !important; box-shadow:0 0 0 2px rgba(37,99,235,.12) !important; }
+.ag-theme-alpine .ag-filter-apply-panel { padding:8px 10px !important; background:#f8fafc !important; border-top:1px solid #e2e8f0 !important; display:flex !important; gap:6px !important; justify-content:space-between !important; }
+.ag-theme-alpine .ag-filter-apply-panel-button { padding:5px 14px !important; border-radius:7px !important; font-size:12px !important; font-weight:600 !important; border:none !important; cursor:pointer !important; }
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"] { background:linear-gradient(135deg,#16a34a,#15803d) !important; color:white !important; }
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"], .ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"] { background:white !important; color:#374151 !important; border:1.5px solid #d1d5db !important; }
+.ag-theme-alpine .ag-floating-filter-input input { border:1px solid #e2e8f0 !important; border-radius:5px !important; padding:3px 7px !important; font-size:11px !important; }
+.ag-theme-alpine .ag-floating-filter-input input:focus { outline:none !important; border-color:#2563eb !important; }
+.ag-theme-alpine .ag-row-even { background:white; }
+.ag-theme-alpine .ag-row-odd { background:#fafbfc; }
+.ag-theme-alpine .ag-row-hover { background:#eff6ff !important; }
+.ag-theme-alpine .ag-cell { border-right:1px solid #f1f5f9 !important; }
+
+/* ── Action buttons ── */
 .pl-act { display:flex; align-items:center; gap:3px; }
-.pl-btn { width:28px; height:28px; border-radius:7px; border:none; display:inline-flex;
-           align-items:center; justify-content:center; font-size:11px; cursor:pointer;
-           transition:all 0.12s; flex-shrink:0; }
-.pl-btn:hover { transform:translateY(-1px); box-shadow:0 2px 6px rgba(0,0,0,0.2); }
+.pl-btn { width:28px; height:28px; border-radius:7px; border:none; display:inline-flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; transition:all .12s; }
+.pl-btn:hover { transform:translateY(-1px); box-shadow:0 2px 6px rgba(0,0,0,.2); }
 .pl-view  { background:#0ea5e9; color:white; }
 .pl-edit  { background:#f59e0b; color:white; }
 .pl-del   { background:#ef4444; color:white; }
-.pl-pay   { background:#6b7280; color:white; }
-.pl-pay.on{ background:#f59e0b; color:white; }
-.pl-dl    { background:#8b5cf6; color:white; }
 .pl-print { background:#16a34a; color:white; }
-/* Status pills */
-.st-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 10px;
-            border-radius:10px; font-size:11px; font-weight:700; }
+
+/* ── Status pills ── */
+.st-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:10px; font-size:11px; font-weight:700; }
 .st-active   { background:#dcfce7; color:#15803d; }
 .st-inactive { background:#f1f5f9; color:#6b7280; }
-.st-open     { background:#dbeafe; color:#1d4ed8; }
-.st-approved { background:#dcfce7; color:#15803d; }
-.st-pending  { background:#fef3c7; color:#92400e; }
-.st-closed   { background:#f1f5f9; color:#6b7280; }
-.st-cancelled{ background:#fee2e2; color:#b91c1c; }
-/* Code badge */
-.code-badge { background:#eff6ff; color:#1d4ed8; padding:2px 8px;
-               border-radius:5px; font-size:11px; font-weight:700; font-family:monospace; }
+.code-badge  { background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:5px; font-size:11px; font-weight:700; font-family:monospace; }
 
+/* ── Page toolbar ── */
+.pl-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+.pl-toolbar-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.pl-add-btn { padding:9px 20px; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; border:none; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:7px; transition:all .15s; }
+.pl-add-btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(37,99,235,.35); }
+.pl-search-wrap { position:relative; }
+.pl-search { padding:8px 12px 8px 36px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; color:#374151; width:240px; outline:none; transition:border-color .15s; }
+.pl-search:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+.pl-search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:13px; }
+
+/* ── Buyer form specific ── */
+.field-input { width:100%;padding:8px 11px;font-size:13px;color:#1f2937;border:1.5px solid #d1d5db;border-radius:8px;background:white;outline:none;transition:border-color .15s;font-family:inherit; }
+.field-input:focus { border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+.field-label { font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px; }
+.field-item { display:flex;flex-direction:column; }
+.field-row { display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px; }
+@media(max-width:640px){ .field-row{grid-template-columns:1fr;} }
 </style>
 {% endblock %}
 
@@ -362,7 +397,25 @@
             </div>
           </div>
 
-        </form>
+        
+                        <!-- BANK ACCOUNTS -->
+            <div style="margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div class="pf-section-hdr" style="margin:0;border:none;padding:0;">
+                  <i class="fas fa-university"></i>
+                  {% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
+                  <span id="bankBadge_buyer" class="pf-badge-blue" style="margin-left:8px;">0</span>
+                </div>
+                <button type="button" onclick="openBuyerBank()"
+                  style="padding:7px 14px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                  <i class="fas fa-plus"></i> {% if ar %}إضافة{% else %}Add Bank{% endif %}
+                </button>
+              </div>
+              <div id="bankList_buyer">
+                <div class="pf-empty"><i class="fas fa-university"></i>{% if ar %}لا توجد حسابات{% else %}No bank accounts yet{% endif %}</div>
+              </div>
+            </div>
+</form>
       </div><!-- /.modal-body -->
 
       <div class="modal-footer-bar">
@@ -508,6 +561,7 @@ function openAddBuyer() {
 /* ══ OPEN EDIT ══ */
 function openEditBuyer(id) {
   _currentBuyerId=id;
+  loadBuyerBanks(id);
   _pendingBanks=[];
   document.getElementById('buyerModalTitle').textContent=IS_AR?'تعديل مشتري':'Edit Buyer';
   document.getElementById('buyerForm').action=`/buyers/${id}/edit`;
@@ -639,5 +693,104 @@ function upd(){
 }
 
 document.getElementById('buyerForm').addEventListener('submit',()=>setTimeout(loadData,600));
+
+
+/* ══ BUYER BANK — popup modal pattern ══ */
+function openBuyerBank(bankId){
+  const mid='bankModal_buyer';
+  document.getElementById(mid+'_bank_id').value=bankId||'';
+  document.getElementById(mid+'_title').innerHTML=bankId?'<i class="fas fa-edit me-2"></i>Edit Bank':'<i class="fas fa-university me-2"></i>Add Bank Account';
+  if(!bankId){[mid+'_name',mid+'_account',mid+'_branch',mid+'_swift',mid+'_iban'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById(mid+'_primary').checked=false;}
+  new bootstrap.Modal(document.getElementById(mid)).show();
+}
+async function saveBuyerBank(){
+  const mid='bankModal_buyer'; const bankId=document.getElementById(mid+'_bank_id').value;
+  const buyerId=_currentBuyerId;
+  if(!buyerId){alert('Save the buyer first.');return;}
+  const bname=document.getElementById(mid+'_name')?.value.trim();
+  if(!bname){alert('Bank name is required.');return;}
+  const payload={bank_name:bname,account_number:document.getElementById(mid+'_account')?.value.trim()||'',branch:document.getElementById(mid+'_branch')?.value.trim()||'',swift_code:document.getElementById(mid+'_swift')?.value.trim()||'',iban:document.getElementById(mid+'_iban')?.value.trim()||'',is_primary:document.getElementById(mid+'_primary')?.checked||false};
+  const url=bankId?`/buyers/banks/${bankId}/edit`:`/buyers/${buyerId}/banks/add`;
+  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify(payload)});
+  const data=await res.json();
+  if(data.ok){bootstrap.Modal.getInstance(document.getElementById(mid))?.hide();loadBuyerBanks(buyerId);}
+  else{alert(data.error||'Failed to save bank.');}
+}
+async function loadBuyerBanks(buyerId){
+  if(!buyerId)return;
+  const res=await fetch(`/buyers/${buyerId}/banks`);
+  const banks=await res.json();
+  renderBuyerBanks(banks,buyerId);
+}
+function renderBuyerBanks(banks,buyerId){
+  const wrap=document.getElementById('bankList_buyer');
+  const badge=document.getElementById('bankBadge_buyer');
+  if(badge)badge.textContent=banks.length;
+  if(!wrap)return;
+  if(!banks.length){wrap.innerHTML='<div class="pf-empty"><i class="fas fa-university"></i>No bank accounts yet</div>';return;}
+  wrap.innerHTML=banks.map(b=>`<div class="pf-bank-card ${b.is_primary?'primary':''}"><div><div class="pf-bank-card-name"><i class="fas fa-university" style="color:#2563eb;font-size:14px;"></i>${b.bank_name||'—'}${b.is_primary?'<span class="pf-badge-primary">PRIMARY</span>':''}</div><div class="pf-bank-card-meta">${b.account_number?`<span><i class="fas fa-hashtag"></i>${b.account_number}</span>`:''} ${b.branch?`<span><i class="fas fa-map-marker-alt"></i>${b.branch}</span>`:''} ${b.swift_code?`<span><i class="fas fa-globe"></i>${b.swift_code}</span>`:''} ${b.iban?`<span><i class="fas fa-credit-card"></i>${b.iban}</span>`:''}</div></div><div class="pf-bank-actions"><button onclick="openBuyerBank(${b.id})" style="width:28px;height:28px;background:#fef3c7;color:#d97706;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-pencil-alt"></i></button><button onclick="deleteBuyerBank(${b.id})" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-trash"></i></button></div></div>`).join('');
+}
+async function deleteBuyerBank(bankId){
+  if(!confirm('Delete this bank account?'))return;
+  const res=await fetch(`/buyers/banks/${bankId}/delete`,{method:'POST',headers:{'X-CSRFToken':CSRF}});
+  const data=await res.json();
+  if(data.ok)loadBuyerBanks(_currentBuyerId);
+}
+function togAccBank(btn){const body=btn.nextElementSibling;body.classList.toggle('d-none');const icon=btn.querySelector('.fa-chevron-down,.fa-chevron-up');if(icon){icon.classList.toggle('fa-chevron-down');icon.classList.toggle('fa-chevron-up');}}
+function showBankForm(prefix){document.getElementById('bankForm_'+prefix).style.display='block';}
+function hideBankForm(prefix){document.getElementById('bankForm_'+prefix).style.display='none';['bk_name_','bk_acct_','bk_branch_','bk_swift_','bk_iban_'].forEach(p=>{const el=document.getElementById(p+prefix);if(el)el.value='';});const cb=document.getElementById('bk_primary_'+prefix);if(cb)cb.checked=false;}
+async function loadBanksPanel(prefix,apiBase,entityId){if(!entityId)return;const res=await fetch(apiBase+'/'+entityId+'/banks');const data=await res.json();renderBanksPanel(prefix,apiBase,entityId,data);}
+function renderBanksPanel(prefix,apiBase,entityId,banks){const wrap=document.getElementById('bankList_'+prefix);const badge=document.getElementById('bankBadge_'+prefix);if(badge)badge.textContent=banks.length;if(!wrap)return;if(!banks.length){wrap.innerHTML='<div style="color:#9ca3af;font-size:12px;">No bank details yet</div>';return;}wrap.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;"><thead><tr style="background:#f8fafc;border-bottom:1.5px solid #e2e8f0;"><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">Bank</th><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">Account</th><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">Branch</th><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">SWIFT</th><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">IBAN</th><th style="width:50px;"></th></tr></thead><tbody>${banks.map(b=>`<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 10px;font-weight:600;">${b.bank_name||b.bank_name_en||'—'}${b.is_primary?'<span style="margin-left:6px;background:#dcfce7;color:#16a34a;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">Primary</span>':''}</td><td style="padding:8px 10px;">${b.account_number||'—'}</td><td style="padding:8px 10px;">${b.branch||b.branch_en||'—'}</td><td style="padding:8px 10px;">${b.swift_code||'—'}</td><td style="padding:8px 10px;">${b.iban||'—'}</td><td style="padding:8px 10px;"><button onclick="deleteBankEntry('${prefix}','${apiBase}','${entityId}',${b.id})" style="width:26px;height:26px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;" title="Delete"><i class="fas fa-trash" style="font-size:10px;"></i></button></td></tr>`).join('')}</tbody></table>`;}
+async function saveBankEntry(prefix,apiBase,entityId){if(!entityId){alert('Save the record first, then add bank details.');return;}const bname=document.getElementById('bk_name_'+prefix)?.value.trim();if(!bname){alert('Bank name is required.');return;}const payload={bank_name:bname,bank_name_en:bname,account_number:document.getElementById('bk_acct_'+prefix)?.value.trim()||'',branch:document.getElementById('bk_branch_'+prefix)?.value.trim()||'',branch_en:document.getElementById('bk_branch_'+prefix)?.value.trim()||'',swift_code:document.getElementById('bk_swift_'+prefix)?.value.trim()||'',iban:document.getElementById('bk_iban_'+prefix)?.value.trim()||'',is_primary:document.getElementById('bk_primary_'+prefix)?.checked||false};const res=await fetch(apiBase+'/'+entityId+'/banks/add',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify(payload)});const data=await res.json();if(data.ok){hideBankForm(prefix);await loadBanksPanel(prefix,apiBase,entityId);}else{alert(data.error||'Failed to save bank.');}}
+async function deleteBankEntry(prefix,apiBase,entityId,bankId){if(!confirm('Delete this bank?'))return;const res=await fetch(apiBase+'/banks/'+bankId+'/delete',{method:'POST',headers:{'X-CSRFToken':CSRF}});const data=await res.json();if(data.ok)await loadBanksPanel(prefix,apiBase,entityId);}
+
 </script>
+
+<!-- ══ BUYER BANK POPUP MODAL ══ -->
+<div class="modal fade pf-bank-modal" id="bankModal_buyer" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="pf-hdr">
+        <h5 id="bankModal_buyer_title"><i class="fas fa-university"></i> {% if ar %}حساب بنكي{% else %}Bank Account{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div style="padding:22px;background:#f8fafc;">
+        <input type="hidden" id="bankModal_buyer_bank_id">
+        <div class="pf-row cols-2" style="margin-bottom:14px;">
+          <div class="pf-field">
+            <div class="pf-label">{% if ar %}اسم البنك{% else %}Bank Name{% endif %} <span class="req">*</span></div>
+            <input type="text" id="bankModal_buyer_name" class="pf-input" placeholder="e.g. Al Rajhi Bank">
+          </div>
+          <div class="pf-field">
+            <div class="pf-label">{% if ar %}رقم الحساب{% else %}Account Number{% endif %}</div>
+            <input type="text" id="bankModal_buyer_account" class="pf-input" dir="ltr">
+          </div>
+        </div>
+        <div class="pf-row cols-3" style="margin-bottom:14px;">
+          <div class="pf-field">
+            <div class="pf-label">{% if ar %}الفرع{% else %}Branch{% endif %}</div>
+            <input type="text" id="bankModal_buyer_branch" class="pf-input">
+          </div>
+          <div class="pf-field">
+            <div class="pf-label">SWIFT</div>
+            <input type="text" id="bankModal_buyer_swift" class="pf-input" dir="ltr" style="text-transform:uppercase;">
+          </div>
+          <div class="pf-field">
+            <div class="pf-label">IBAN</div>
+            <input type="text" id="bankModal_buyer_iban" class="pf-input" dir="ltr">
+          </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#374151;">
+          <input type="checkbox" id="bankModal_buyer_primary" style="width:16px;height:16px;accent-color:#2563eb;cursor:pointer;">
+          {% if ar %}تعيين كحساب رئيسي{% else %}Set as primary account{% endif %}
+        </label>
+      </div>
+      <div class="pf-footer">
+        <button type="button" class="pf-btn secondary" data-bs-dismiss="modal"><i class="fas fa-times"></i> {% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button type="button" class="pf-btn primary" onclick="saveBuyerBank()"><i class="fas fa-save"></i> {% if ar %}حفظ{% else %}Save Bank{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
