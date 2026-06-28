@@ -56,13 +56,13 @@
                     <span>{% if current_locale=='ar' %}البائعون{% else %}Seller{% endif %}</span>
                 </a>
             </li>
-            <li class="nav-item nav-item-coming">
-                <span class="nav-link nav-link-disabled">
-                    <i class="fas fa-file-alt"></i>
-                    <span>{% if current_locale=='ar' %}وثائق البائع{% else %}Seller Documents{% endif %}</span>
-                    <span class="nav-soon">{% if current_locale=='ar' %}قريباً{% else %}Soon{% endif %}</span>
-                </span>
-            </li>
+           <li class="nav-item">
+    <a href="{{ url_for('sellers.list_seller_documents_page') }}" 
+       class="nav-link {% if request.endpoint == 'sellers.list_seller_documents_page' %}active{% endif %}">
+        <i class="fas fa-paperclip"></i>
+        <span>{% if current_locale == 'ar' %}وثائق البائع{% else %}Seller Documents{% endif %}</span>
+    </a>
+</li>
             {% if current_user.is_admin() %}
             
             {% endif %}

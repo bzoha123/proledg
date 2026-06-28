@@ -6,6 +6,8 @@
 .pur-view-hero{background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:14px;padding:24px 28px;color:white;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;box-shadow:0 4px 20px rgba(37,99,235,.25);}
 .pur-view-hero h3{margin:0 0 6px;font-size:22px;font-weight:800;}
 .pur-vbadge{display:inline-flex;align-items:center;gap:5px;padding:3px 12px;border-radius:10px;font-size:12px;font-weight:700;background:rgba(255,255,255,.2);color:white;margin-right:6px;}
+.pur-vbadge.Open{background:rgba(59,130,246,.35);}
+.pur-vbadge.Pending{background:rgba(245,158,11,.35);}
 .pur-vbadge.Approved{background:rgba(34,197,94,.35);}
 .pur-vbadge.Cancelled{background:rgba(239,68,68,.35);}
 .pur-vbadge.Closed{background:rgba(107,114,128,.35);}
@@ -15,24 +17,25 @@
 .ic-hdr span{font-size:12px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:.4px;}
 .ic-body{padding:14px 18px;}
 .d-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 24px;}
+@media (max-width: 768px) { .d-grid{grid-template-columns:1fr;} }
 .d-row{display:flex;padding:7px 0;border-bottom:1px dashed #f1f5f9;font-size:13px;}
 .d-row:last-child{border-bottom:none;}
 .d-lbl{width:130px;font-weight:600;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.3px;flex-shrink:0;}
-.d-val{color:#111827;font-weight:500;flex:1;}
+.d-val{color:#111827;font-weight:500;flex:1;word-break:break-word;}
 .d-val.hi{color:#2563eb;font-weight:700;}
-/* Line items */
 .li-vt{width:100%;border-collapse:collapse;font-size:12.5px;}
 .li-vt thead tr{background:#1e3a5f;}
-.li-vt th{padding:9px 10px;font-weight:600;color:white;text-align:left;font-size:11px;text-transform:uppercase;}
-.li-vt td{padding:9px 10px;border-bottom:1px solid #f1f5f9;}
+.li-vt th{padding:9px 10px;font-weight:600;color:white;text-align:left;font-size:11px;text-transform:uppercase;white-space:nowrap;}
+.li-vt td{padding:9px 10px;border-bottom:1px solid #f1f5f9;white-space:nowrap;}
 .li-vt tbody tr:hover td{background:#f0f7ff;}
-/* Summary */
+.li-vt tbody tr:nth-child(even) td{background:#fafbfc;}
 .sum-card{background:linear-gradient(135deg,#f8fafc,#f0f7ff);border:1.5px solid #bfdbfe;border-radius:10px;padding:16px 18px;}
 .sum-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed #e2e8f0;font-size:13px;}
 .sum-row:last-child{border-bottom:none;}
 .sum-total{background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;padding:11px 16px;border-radius:8px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;}
 .att-chip{display:inline-flex;align-items:center;gap:6px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;color:#2563eb;margin:3px;}
-.btn-act{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;text-decoration:none;}
+.btn-act{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;text-decoration:none;transition:all .15s;}
+.btn-act:hover{opacity:.9;transform:translateY(-1px);}
 </style>
 {% endblock %}
 {% block breadcrumb %}
@@ -44,7 +47,7 @@
 <div class="proledg-page" style="max-width:1100px;">
   <div class="act-bar" style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
     <a href="{{ url_for('purchase.pr_list') }}" class="btn-act" style="background:white;color:#374151;border:1.5px solid #d1d5db;"><i class="fas fa-arrow-left"></i>{% if ar %}رجوع{% else %}Back{% endif %}</a>
-    <button class="btn-act" style="background:#f59e0b;color:white;" onclick="window.location='{{ url_for('purchase.pr_list') }}?edit={{ pr.id }}'"><i class="fas fa-pencil-alt"></i>{% if ar %}تعديل{% else %}Edit{% endif %}</button>
+    <a href="{{ url_for('purchase.pr_list') }}?edit={{ pr.purchase_request_id }}" class="btn-act" style="background:#f59e0b;color:white;"><i class="fas fa-pencil-alt"></i>{% if ar %}تعديل{% else %}Edit{% endif %}</a>
   </div>
 
   {# Hero #}
@@ -110,10 +113,10 @@
           <tr>
             <td style="color:#9ca3af;">{{ loop.index }}</td>
             <td>{{ li.item_code or '—' }}</td>
-            <td><strong>{{ li.item_desc or '—' }}</strong></td>
+            <td><strong>{{ li.description or li.item_desc or '—' }}</strong></td>
             <td>{{ li.required_date.strftime('%d/%m/%Y') if li.required_date else '—' }}</td>
             <td>{{ li.warehouse or '—' }}</td>
-            <td>{{ li.uom|upper }}</td>
+            <td>{{ li.uom|upper if li.uom else '—' }}</td>
             <td style="text-align:right;">{{ '{:,.2f}'.format(li.quantity or 0) }}</td>
             <td style="text-align:right;">{{ '{:,.2f}'.format(li.rate or 0) }}</td>
             <td style="text-align:right;">{{ '{:,.2f}'.format(li.discount or 0) }}</td>
@@ -150,8 +153,8 @@
       <div class="sum-row"><span>{% if ar %}قبل الخصم{% else %}Total before discount{% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(pr.total_before_discount or 0) }}</span></div>
       <div class="sum-row"><span>{% if ar %}الخصم{% else %}Total discount{% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(pr.total_discount or 0) }}</span></div>
       <div class="sum-row"><span>{% if ar %}الشحن{% else %}Freight{% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(pr.total_freight or 0) }}</span></div>
-      <div class="sum-row"><span>{% if ar %}بدون ضريبة{% else %}Excl. VAT (SAR){% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(pr.total_excl_vat or 0) }}</span></div>
-      <div class="sum-row"><span>{% if ar %}ضريبة القيمة المضافة{% else %}VAT Amount (SAR){% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(pr.vat_amount or 0) }}</span></div>
+      <div class="sum-row"><span>{% if ar %}بدون ضريبة{% else %}Excl. VAT{% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(pr.total_excl_vat or 0) }}</span></div>
+      <div class="sum-row"><span>{% if ar %}ضريبة القيمة المضافة{% else %}VAT Amount{% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(pr.vat_amount or 0) }}</span></div>
       <div class="sum-total"><span style="font-weight:700;">{% if ar %}الإجمالي شامل الضريبة{% else %}Total Incl. VAT{% endif %}</span><span style="font-size:18px;font-weight:800;">SAR {{ '{:,.2f}'.format(pr.total_incl_vat or 0) }}</span></div>
       <div style="margin-top:10px;display:flex;justify-content:space-between;font-size:13px;">
         <span style="color:#374151;">{% if ar %}المرفقات{% else %}Documents Attached{% endif %}</span>

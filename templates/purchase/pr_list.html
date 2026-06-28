@@ -138,7 +138,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
       </div>
 
       <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;min-height:420px;">
-        <form id="prForm">
+        <form id="prForm" onsubmit="event.preventDefault(); savePR();">
         <input type="hidden" id="pr_id">
 
         {# ══ TAB 1: CONTENT ══ #}
@@ -379,7 +379,25 @@ const IS_AR = {{ 'true' if ar else 'false' }};
 const CSRF  = '{{ csrf_token() }}';
 let _liIdx = 0;
 let _attachments = [];
+let _prModal = null;  // Store modal instance
 
+// Initialize modal on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const modalEl = document.getElementById('prModal');
+    if (modalEl) {
+        _prModal = new bootstrap.Modal(modalEl);
+    }
+const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get('edit');
+    if (editId) {
+        // Wait a moment for grid to initialize, then open edit
+        setTimeout(() => {
+            openEdit(parseInt(editId));
+            // Clean up the URL without reloading
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }, 500);
+    }
+});
 /* ══ Section toggle ══ */
 function togSec(btn) {
   const body = btn.nextElementSibling;
@@ -401,10 +419,14 @@ function switchTab(tabId, btn) {
 
 /* ══ Doc No fetch ══ */
 async function fetchDocNo() {
-  const res = await fetch('/purchase/next-doc-no?type=PR');
-  const d   = await res.json();
-  document.getElementById('pr_doc_no').value = d.doc_no;
-  document.getElementById('prDocBadge').textContent = d.doc_no;
+  try {
+    const res = await fetch('/purchase/next-doc-no?type=PR');
+    const d   = await res.json();
+    document.getElementById('pr_doc_no').value = d.doc_no;
+    document.getElementById('prDocBadge').textContent = d.doc_no;
+  } catch(e) {
+    console.error('Error fetching doc no:', e);
+  }
 }
 
 /* ══ Line Items ══ */
@@ -480,10 +502,6 @@ function recalcSummary() {
     fr   += g('li_freight');
     vat  += parseFloat(row.querySelector('[name="li_tax_amount_disp[]"]')?.value || 0) || 0;
   });
-  // Total before discount = Σ(Qty × Rate)
-  // Total discount = Σ(Discount)
-  // Freight = Σ(Freight)
-  // Excl. VAT = (Total before discount - Discount) + Freight  = (bd - disc) + fr
   const excl = (bd - disc) + fr;
   const incl = excl + vat;
   const fmt  = n => 'SAR ' + n.toLocaleString('en-SA', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -537,6 +555,7 @@ function updDocCount() {
 
 /* ══ Open Add ══ */
 function openAdd() {
+  console.log('openAdd() called');
   _liIdx = 0; _attachments = [];
   document.getElementById('pr_id').value = '';
   document.getElementById('prTitle').innerHTML =
@@ -570,90 +589,162 @@ function openAdd() {
   fetchDocNo();
   // Add first empty line item
   addLiRow();
-  new bootstrap.Modal(document.getElementById('prModal')).show();
+  
+  // Show modal
+  if (!_prModal) {
+    const modalEl = document.getElementById('prModal');
+    if (modalEl) {
+      _prModal = new bootstrap.Modal(modalEl);
+    }
+  }
+  if (_prModal) {
+    _prModal.show();
+  }
 }
 
 /* ══ Open Edit ══ */
 function openEdit(id) {
-  fetch('/purchase/requests/' + id + '/json').then(r => r.json()).then(d => {
-    _liIdx = 0; _attachments = [];
-    document.getElementById('pr_id').value = id;
-    document.getElementById('prTitle').innerHTML =
-      '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل طلب الشراء' : 'Edit Purchase Request');
-    document.getElementById('pr_doc_no').value = d.doc_no || '';
-    document.getElementById('prDocBadge').textContent = d.doc_no || '';
-    document.getElementById('pr_status').value = d.status || 'Open';
-    document.getElementById('pr_vendor').value = d.vendor_id || '';
-    document.getElementById('pr_requester').value = d.requester || '';
-    document.getElementById('pr_req_name').value = d.requester_name || '';
-    document.getElementById('pr_approved_by').value = d.approved_by || '';
-    document.getElementById('pr_remarks').value = d.remarks || '';
-    document.getElementById('pr_posting_date').value = d.posting_date || '';
-    document.getElementById('pr_valid_until').value  = d.valid_until  || '';
-    document.getElementById('pr_doc_date').value     = d.document_date || '';
-    document.getElementById('pr_req_date').value     = d.required_date || '';
-    // Line items
-    document.getElementById('liBody').innerHTML = '';
-    (d.items || []).forEach(li => addLiRow(li));
-    if (!d.items?.length) addLiRow();
-    // Existing attachments
-    document.getElementById('attList').innerHTML = '';
-    document.getElementById('existAttList').innerHTML = '';
-    (d.attachments || []).forEach(a => {
-      const div = document.createElement('div'); div.className = 'att-item';
-      div.innerHTML = `<span><i class="fas fa-file me-2" style="color:#60a5fa;"></i><strong>${a.filename}</strong>
-        <span style="color:#9ca3af;margin-left:8px;font-size:11px;">existing</span></span>`;
-      document.getElementById('existAttList').appendChild(div);
+  console.log('openEdit() called with id:', id);
+  fetch('/purchase/requests/' + id + '/json')
+    .then(r => {
+      if (!r.ok) throw new Error('Network response was not ok');
+      return r.json();
+    })
+    .then(d => {
+      _liIdx = 0; _attachments = [];
+      document.getElementById('pr_id').value = id;
+      document.getElementById('prTitle').innerHTML =
+        '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل طلب الشراء' : 'Edit Purchase Request');
+      document.getElementById('pr_doc_no').value = d.doc_no || '';
+      document.getElementById('prDocBadge').textContent = d.doc_no || '';
+      document.getElementById('pr_status').value = d.status || 'Open';
+      document.getElementById('pr_vendor').value = d.vendor_id || '';
+      document.getElementById('pr_requester').value = d.requester || '';
+      document.getElementById('pr_req_name').value = d.requester_name || '';
+      document.getElementById('pr_approved_by').value = d.approved_by || '';
+      document.getElementById('pr_remarks').value = d.remarks || '';
+      document.getElementById('pr_posting_date').value = d.posting_date || '';
+      document.getElementById('pr_valid_until').value  = d.valid_until  || '';
+      document.getElementById('pr_doc_date').value     = d.document_date || '';
+      document.getElementById('pr_req_date').value     = d.required_date || '';
+      // Line items
+      document.getElementById('liBody').innerHTML = '';
+      (d.items || []).forEach(li => addLiRow(li));
+      if (!d.items?.length) addLiRow();
+      // Existing attachments
+      document.getElementById('attList').innerHTML = '';
+      document.getElementById('existAttList').innerHTML = '';
+      (d.attachments || []).forEach(a => {
+        const div = document.createElement('div'); div.className = 'att-item';
+        div.innerHTML = `<span><i class="fas fa-file me-2" style="color:#60a5fa;"></i><strong>${a.filename}</strong>
+          <span style="color:#9ca3af;margin-left:8px;font-size:11px;">existing</span></span>`;
+        document.getElementById('existAttList').appendChild(div);
+      });
+      recalcSummary(); updLiCount(); updDocCount();
+      switchTab('tab_content', document.querySelector('.pur-tab'));
+      document.querySelectorAll('.pur-section-hdr').forEach(btn => {
+        btn.classList.add('open'); btn.nextElementSibling.classList.add('open');
+        const ch = btn.querySelector('.fa-chevron-up,.fa-chevron-down');
+        if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
+      });
+      
+      // Show modal
+      if (!_prModal) {
+        const modalEl = document.getElementById('prModal');
+        if (modalEl) {
+          _prModal = new bootstrap.Modal(modalEl);
+        }
+      }
+      if (_prModal) {
+        _prModal.show();
+      }
+    })
+    .catch(err => {
+      console.error('Error loading PR:', err);
+      alert(IS_AR ? 'خطأ في تحميل الطلب' : 'Error loading request');
     });
-    recalcSummary(); updLiCount(); updDocCount();
-    switchTab('tab_content', document.querySelector('.pur-tab'));
-    document.querySelectorAll('.pur-section-hdr').forEach(btn => {
-      btn.classList.add('open'); btn.nextElementSibling.classList.add('open');
-      const ch = btn.querySelector('.fa-chevron-up,.fa-chevron-down');
-      if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
-    });
-    new bootstrap.Modal(document.getElementById('prModal')).show();
-  });
 }
 
 /* ══ Save ══ */
 async function savePR() {
-  const id  = document.getElementById('pr_id').value;
-  const url = id ? `/purchase/requests/${id}/edit` : '/purchase/requests/add';
-  const fd  = new FormData();
-  fd.set('csrf_token', CSRF);
-  fd.set('status',         document.getElementById('pr_status').value);
-  fd.set('vendor_id',      document.getElementById('pr_vendor').value);
-  fd.set('requester',      document.getElementById('pr_requester').value);
-  fd.set('requester_name', document.getElementById('pr_req_name').value);
-  fd.set('approved_by',    document.getElementById('pr_approved_by').value);
-  fd.set('remarks',        document.getElementById('pr_remarks').value);
-  fd.set('posting_date',   document.getElementById('pr_posting_date').value);
-  fd.set('valid_until',    document.getElementById('pr_valid_until').value);
-  fd.set('document_date',  document.getElementById('pr_doc_date').value);
-  fd.set('required_date',  document.getElementById('pr_req_date').value);
-  // Line items
-  document.querySelectorAll('#liBody tr').forEach(row => {
-    const g = n => row.querySelector(`[name="${n}[]"]`)?.value || '';
-    fd.append('li_item_code[]',      g('li_item_code'));
-    fd.append('li_item_desc[]',      g('li_item_desc'));
-    fd.append('li_required_date[]',  g('li_required_date'));
-    fd.append('li_warehouse[]',      g('li_warehouse'));
-    fd.append('li_uom[]',            g('li_uom'));
-    fd.append('li_qty[]',            g('li_qty'));
-    fd.append('li_rate[]',           g('li_rate'));
-    fd.append('li_discount[]',       g('li_discount'));
-    fd.append('li_freight[]',        g('li_freight'));
-    fd.append('li_tax_code[]',       g('li_tax_code'));
-  });
-  _attachments.forEach(f => fd.append('attachments', f));
-  const res = await fetch(url, {method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd});
-  const data = await res.json();
-  if (data.ok) {
-    bootstrap.Modal.getInstance(document.getElementById('prModal'))?.hide();
-    loadData();
-  } else {
-    alert(data.error || (IS_AR ? 'حدث خطأ' : 'An error occurred'));
+  console.log('savePR() called');
+  
+  try {
+    const id  = document.getElementById('pr_id').value;
+    const url = id ? `/purchase/requests/${id}/edit` : '/purchase/requests/add';
+    console.log('Save URL:', url);
+    console.log('CSRF Token:', CSRF);
+    
+    const fd  = new FormData();
+    fd.set('csrf_token', CSRF);
+    fd.set('status',         document.getElementById('pr_status').value);
+    fd.set('vendor_id',      document.getElementById('pr_vendor').value);
+    fd.set('requester',      document.getElementById('pr_requester').value);
+    fd.set('requester_name', document.getElementById('pr_req_name').value);
+    fd.set('approved_by',    document.getElementById('pr_approved_by').value);
+    fd.set('remarks',        document.getElementById('pr_remarks').value);
+    fd.set('posting_date',   document.getElementById('pr_posting_date').value);
+    fd.set('valid_until',    document.getElementById('pr_valid_until').value);
+    fd.set('document_date',  document.getElementById('pr_doc_date').value);
+    fd.set('required_date',  document.getElementById('pr_req_date').value);
+    
+    // Line items
+    document.querySelectorAll('#liBody tr').forEach(row => {
+      const g = n => row.querySelector(`[name="${n}[]"]`)?.value || '';
+      fd.append('li_item_code[]',      g('li_item_code'));
+      fd.append('li_item_desc[]',      g('li_item_desc'));
+      fd.append('li_required_date[]',  g('li_required_date'));
+      fd.append('li_warehouse[]',      g('li_warehouse'));
+      fd.append('li_uom[]',            g('li_uom'));
+      fd.append('li_qty[]',            g('li_qty'));
+      fd.append('li_rate[]',           g('li_rate'));
+      fd.append('li_discount[]',       g('li_discount'));
+      fd.append('li_freight[]',        g('li_freight'));
+      fd.append('li_tax_code[]',       g('li_tax_code'));
+    });
+    
+    _attachments.forEach(f => fd.append('attachments', f));
+    
+    console.log('Sending request to:', url);
+    
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': CSRF
+        // Don't set Content-Type for FormData - browser sets it automatically with boundary
+      },
+      body: fd
+    });
+    
+    console.log('Response status:', res.status);
+    console.log('Response headers:', res.headers);
+    
+    // Check if response is JSON
+    const contentType = res.headers.get('content-type');
+    console.log('Content-Type:', contentType);
+    
+    if (contentType && contentType.includes('application/json')) {
+      const data = await res.json();
+      console.log('Response data:', data);
+      
+      if (data.ok) {
+        // Close modal and refresh grid
+        if (_prModal) {
+          _prModal.hide();
+        }
+        loadData();
+        alert(IS_AR ? 'تم الحفظ بنجاح' : 'Saved successfully');
+      } else {
+        alert(data.error || (IS_AR ? 'حدث خطأ' : 'An error occurred'));
+      }
+    } else {
+      const text = await res.text();
+      console.error('Non-JSON response:', text.substring(0, 500));
+      alert('Server returned non-JSON response. Check console for details.');
+    }
+  } catch (error) {
+    console.error('Save error:', error);
+    alert('Error saving: ' + error.message);
   }
 }
 
@@ -662,9 +753,13 @@ function confDel(id, docNo) {
   document.getElementById('delTxt').textContent = (IS_AR ? 'حذف: ' : 'Delete: ') + docNo + '?';
   document.getElementById('delBtn').onclick = () => {
     fetch('/purchase/requests/' + id + '/delete', {
-      method:'POST', headers:{'X-CSRFToken':CSRF}, body:new URLSearchParams({csrf_token:CSRF})
+      method:'POST', headers:{'X-CSRFToken':CSRF, 'Content-Type': 'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({csrf_token:CSRF})
     }).then(r => r.json()).then(d => {
-      if (d.ok) { bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide(); loadData(); }
+      if (d.ok) { 
+        bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide(); 
+        loadData(); 
+      }
     });
   };
   new bootstrap.Modal(document.getElementById('delModal')).show();
@@ -697,10 +792,12 @@ class ActR {
     this.g = document.createElement('div');
     this.g.style.cssText = 'display:flex;align-items:center;gap:3px;';
     const d = p.data;
+    // Use purchase_request_id instead of id
+    const docId = d.id || d.purchase_request_id;
     this.g.innerHTML = `
-      <button class="ag-ab ag-ab-view" onclick="window.location='/purchase/requests/${d.id}/view'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
-      <button class="ag-ab ag-ab-edit" onclick="openEdit(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-      <button class="ag-ab ag-ab-del"  onclick="confDel(${d.id},'${(d.doc_no||'').replace(/'/g,"\\'")}') " title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
+      <button class="ag-ab ag-ab-view" onclick="window.location.href='/purchase/requests/${docId}/view'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
+      <button class="ag-ab ag-ab-edit" onclick="openEdit(${docId})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+      <button class="ag-ab ag-ab-del"  onclick="confDel(${docId},'${(d.doc_no||'').replace(/'/g,"\\'")}') " title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
   }
   getGui() { return this.g; }
 }
@@ -710,7 +807,7 @@ const defCol = {
   filterParams:{buttons:['apply','reset','clear'], closeOnApply:true, maxNumConditions:10}
 };
 const cols = [
-  {headerName:'#',field:'id',width:65,floatingFilter:false,suppressMenu:true},
+  {headerName:'#',field:'purchase_request_id',width:65,floatingFilter:false,suppressMenu:true},
   {headerName:IS_AR?'رقم المستند':'Doc No',field:'doc_no',width:125,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'المستخدم':'Requester',field:'requester',width:120,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'اسم مقدم الطلب':'Requester Name',field:'requester_name',minWidth:160,filter:'agTextColumnFilter'},
@@ -724,7 +821,6 @@ const cols = [
    sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,
    cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 6px'}},
 ];
-
 let gridApi;
 agGrid.createGrid(document.getElementById('prGrid'), {
   columnDefs:cols, rowData:[], pagination:true, paginationPageSize:10,
@@ -733,11 +829,14 @@ agGrid.createGrid(document.getElementById('prGrid'), {
   onPaginationChanged() { upd(); },
   getRowStyle(p) { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
 });
+
 function loadData() {
-  fetch('/purchase/requests/data').then(r=>r.json())
+  fetch('/purchase/requests/data')
+    .then(r=>r.json())
     .then(d => { gridApi.setGridOption('rowData',d); upd(); })
-    .catch(console.error);
+    .catch(err => console.error('Error loading data:', err));
 }
+
 function upd() {
   if (!gridApi) return;
   const c = gridApi.getDisplayedRowCount();

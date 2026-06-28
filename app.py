@@ -1,12 +1,9 @@
 import os
-from flask import Flask, session, request
+from flask import Flask, session, render_template
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from config import config
-from models import db, User
-
-login_manager = LoginManager()
-csrf = CSRFProtect()
+from models import db, User, ActivityLog
 
 # Try to import Flask-Babel; gracefully degrade if missing
 try:
@@ -14,6 +11,9 @@ try:
     BABEL_AVAILABLE = True
 except ImportError:
     BABEL_AVAILABLE = False
+
+login_manager = LoginManager()
+csrf = CSRFProtect()
 
 def get_locale():
     return session.get('lang', 'en')
@@ -56,6 +56,7 @@ def create_app(config_name='default'):
     from routes.purchase import pur_bp
     from routes.lookups import lookups_bp
 
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(sellers_bp)
@@ -65,20 +66,19 @@ def create_app(config_name='default'):
     app.register_blueprint(pur_bp)
     app.register_blueprint(lookups_bp)
 
+
     # Error handlers
     @app.errorhandler(404)
     def not_found(e):
-        from flask import render_template
         return render_template('errors/404.html'), 404
 
     @app.errorhandler(403)
     def forbidden(e):
-        from flask import render_template
         return render_template('errors/403.html'), 403
 
     # Jinja filters
     @app.template_filter('filesizeformat')
-    def filesizeformat(value):
+    def filesizeformat_filter(value):
         if value is None:
             return 'N/A'
         if value < 1024:
@@ -90,9 +90,7 @@ def create_app(config_name='default'):
 
     return app
 
-app = create_app()
-
-def init_db():
+def init_db(app):
     """Initialize database and create default admin user."""
     with app.app_context():
         db.create_all()
@@ -100,14 +98,17 @@ def init_db():
             admin = User(username='admin', email='admin@sellerms.com', role='admin')
             admin.set_password('Admin@123')
             db.session.add(admin)
+            
             staff = User(username='staff', email='staff@sellerms.com', role='staff')
             staff.set_password('Staff@123')
             db.session.add(staff)
             db.session.commit()
-            print('Default users created:  admin / Admin@123  |  staff / Staff@123')
+            print('Default users created: admin / Admin@123 | staff / Staff@123')
 
 if __name__ == '__main__':
     os.makedirs('database', exist_ok=True)
     os.makedirs('uploads', exist_ok=True)
-    init_db()
+    
+    app = create_app()
+    init_db(app)
     app.run(debug=True, port=5000)

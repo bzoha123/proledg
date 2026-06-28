@@ -28,11 +28,35 @@ def _t(en, ar): return ar if session.get('lang') == 'ar' else en
 def _next_doc_no(doc_type, model):
     """Generate unique doc number per type. Format: PR-2026-0001, PQ-2026-0001, PO-2026-0001."""
     year = date.today().year
-    prefix = doc_type   # PR / PQ / PO
+    prefix = doc_type
     like = f'{prefix}-{year}-%'
+    
+    # Get the primary key column name
+    pk_name = None
+    if hasattr(model, 'purchase_request_id'):
+        pk_name = 'purchase_request_id'
+    elif hasattr(model, 'purchase_quotation_id'):
+        pk_name = 'purchase_quotation_id'
+    elif hasattr(model, 'purchase_order_id'):
+        pk_name = 'purchase_order_id'
+    elif hasattr(model, 'goods_receipt_note_id'):
+        pk_name = 'goods_receipt_note_id'
+    elif hasattr(model, 'purchase_invoice_id'):
+        pk_name = 'purchase_invoice_id'
+    elif hasattr(model, 'goods_return_request_id'):
+        pk_name = 'goods_return_request_id'
+    elif hasattr(model, 'purchase_debit_memo_id'):
+        pk_name = 'purchase_debit_memo_id'
+    else:
+        pk_name = 'id'
+    
+    # Get the actual column object for ordering
+    pk_column = getattr(model, pk_name)
+    
     last = db.session.query(model).filter(
         model.doc_no.like(like)
-    ).order_by(model.id.desc()).first()
+    ).order_by(pk_column.desc()).first()
+    
     if last and last.doc_no:
         try:
             n = int(last.doc_no.split('-')[-1]) + 1
@@ -41,7 +65,6 @@ def _next_doc_no(doc_type, model):
     else:
         n = 1
     return f'{prefix}-{year}-{n:04d}'
-
 def _save_attachments(doc_type, doc_id, files):
     upload_dir = os.path.join('static','uploads','purchase',doc_type,str(doc_id))
     os.makedirs(upload_dir, exist_ok=True)
@@ -67,47 +90,6 @@ def _invoice_list():
 # ══════════════════════════════════════════════════════════════════
 # VENDOR REGISTRATION
 # ══════════════════════════════════════════════════════════════════
-@pur_bp.route('/purchase/next-no')
-@login_required
-def purchase_next_no():
-    doc_type = request.args.get('type','PR')
-    models_map = {'PR': PurchaseRequest, 'PQ': PurchaseQuotation, 'PO': PurchaseOrder}
-    model = models_map.get(doc_type, PurchaseRequest)
-    return jsonify({'doc_no': _next_doc_no(doc_type, model)})
-
-
-@pur_bp.route('/purchase/next-doc-no')
-@login_required  
-def next_doc_no():
-    doc_type = request.args.get('type', 'PR')
-    model_map = {'PR': PurchaseRequest, 'PQ': PurchaseQuotation, 'PO': PurchaseOrder}
-    model = model_map.get(doc_type, PurchaseRequest)
-    return jsonify({'doc_no': _next_doc_no(doc_type, model)})
-
-@pur_bp.route('/purchase/requests/<int:id>/view')
-@login_required
-def pr_view(id):
-    pr = PurchaseRequest.query.get_or_404(id)
-    items = PurchaseRequestLineItem.query.filter_by(purchase_request_id=id).order_by(PurchaseRequestLineItem.line_number).all()
-    attachments = PurchaseAttachment.query.filter_by(doc_type='PR', doc_id=id).all()
-    return render_template('purchase/pr_view.html', pr=pr, items=items, attachments=attachments)
-
-@pur_bp.route('/purchase/quotations/<int:id>/view')
-@login_required
-def pq_view(id):
-    pq = PurchaseQuotation.query.get_or_404(id)
-    items = PurchaseQuotationLineItem.query.filter_by(purchase_quotation_id=id).order_by(PurchaseQuotationLineItem.line_number).all()
-    attachments = PurchaseAttachment.query.filter_by(doc_type='PQ', doc_id=id).all()
-    return render_template('purchase/pq_view.html', doc=pq, items=items, attachments=attachments, doc_type='PQ')
-
-@pur_bp.route('/purchase/orders/<int:id>/view')
-@login_required
-def po_view(id):
-    po = PurchaseOrder.query.get_or_404(id)
-    items = PurchaseOrderLineItem.query.filter_by(purchase_order_id=id).order_by(PurchaseOrderLineItem.line_number).all()
-    attachments = PurchaseAttachment.query.filter_by(doc_type='PO', doc_id=id).all()
-    return render_template('purchase/po_view.html', doc=po, items=items, attachments=attachments, doc_type='PO')
-
 @pur_bp.route('/purchase/vendors')
 @login_required
 def vendor_list():
@@ -132,7 +114,6 @@ def vendor_data():
 def vendor_json(id):
     v = VendorMaster.query.get_or_404(id)
     d = v.to_dict()
-    # Add full fields
     for fld in ['vendor_name_ar','vat_number','crn','phone','fax','email','website',
                 'contact_person','street_name','street_name_ar','building_number',
                 'additional_number','postal_code','country','country_ar','city','city_ar',
@@ -140,6 +121,7 @@ def vendor_json(id):
                 'account_number','iban','invoice_id']:
         d[fld] = getattr(v, fld, '') or ''
     return jsonify(d)
+
 
 @pur_bp.route('/purchase/vendors/add', methods=['POST'])
 @login_required
@@ -171,7 +153,39 @@ def vendor_add():
         district_ar=f.get('district_ar','').strip() or None,
         status='active', is_active=True, created_by=current_user.id,
     )
-    db.session.add(v); db.session.commit()
+    db.session.add(v); db.session.flush()
+    
+    # Save banks from form data
+    bank_names_en = f.getlist('bank_name_en[]')
+    bank_names_ar = f.getlist('bank_name_ar[]')
+    bank_accounts = f.getlist('bank_account_number[]')
+    bank_branches_en = f.getlist('bank_branch_en[]')
+    bank_branches_ar = f.getlist('bank_branch_ar[]')
+    bank_swifts = f.getlist('bank_swift[]')
+    bank_ibans = f.getlist('bank_iban[]')
+    bank_primaries = f.getlist('bank_is_primary[]')
+    
+    for i in range(len(bank_names_en)):
+        if not bank_names_en[i].strip():
+            continue
+        is_primary = bank_primaries[i] == '1' if i < len(bank_primaries) else False
+        if is_primary:
+            # Unset any existing primary (though none should exist for new vendor)
+            VendorBank.query.filter_by(vendor_id=v.id, is_primary=True).update({'is_primary': False})
+        bank = VendorBank(
+            vendor_id=v.id,
+            bank_name_en=bank_names_en[i].strip(),
+            bank_name_ar=bank_names_ar[i].strip() if i < len(bank_names_ar) and bank_names_ar[i].strip() else None,
+            account_number=bank_accounts[i].strip() if i < len(bank_accounts) and bank_accounts[i].strip() else None,
+            branch_en=bank_branches_en[i].strip() if i < len(bank_branches_en) and bank_branches_en[i].strip() else None,
+            branch_ar=bank_branches_ar[i].strip() if i < len(bank_branches_ar) and bank_branches_ar[i].strip() else None,
+            swift_code=bank_swifts[i].strip() if i < len(bank_swifts) and bank_swifts[i].strip() else None,
+            iban=bank_ibans[i].strip() if i < len(bank_ibans) and bank_ibans[i].strip() else None,
+            is_primary=is_primary,
+        )
+        db.session.add(bank)
+    
+    db.session.commit()
     return jsonify({'ok': True, 'id': v.id, 'vendor_code': v.vendor_code})
 
 @pur_bp.route('/purchase/vendors/<int:id>/edit', methods=['POST'])
@@ -185,6 +199,37 @@ def vendor_edit(id):
                 'district','district_ar']:
         setattr(v, fld, f.get(fld,'').strip() or None)
     v.status = f.get('status','active')
+    
+    # Delete existing banks and recreate
+    VendorBank.query.filter_by(vendor_id=id).delete()
+    
+    # Save banks from form data
+    bank_names_en = f.getlist('bank_name_en[]')
+    bank_names_ar = f.getlist('bank_name_ar[]')
+    bank_accounts = f.getlist('bank_account_number[]')
+    bank_branches_en = f.getlist('bank_branch_en[]')
+    bank_branches_ar = f.getlist('bank_branch_ar[]')
+    bank_swifts = f.getlist('bank_swift[]')
+    bank_ibans = f.getlist('bank_iban[]')
+    bank_primaries = f.getlist('bank_is_primary[]')
+    
+    for i in range(len(bank_names_en)):
+        if not bank_names_en[i].strip():
+            continue
+        is_primary = bank_primaries[i] == '1' if i < len(bank_primaries) else False
+        bank = VendorBank(
+            vendor_id=id,
+            bank_name_en=bank_names_en[i].strip(),
+            bank_name_ar=bank_names_ar[i].strip() if i < len(bank_names_ar) and bank_names_ar[i].strip() else None,
+            account_number=bank_accounts[i].strip() if i < len(bank_accounts) and bank_accounts[i].strip() else None,
+            branch_en=bank_branches_en[i].strip() if i < len(bank_branches_en) and bank_branches_en[i].strip() else None,
+            branch_ar=bank_branches_ar[i].strip() if i < len(bank_branches_ar) and bank_branches_ar[i].strip() else None,
+            swift_code=bank_swifts[i].strip() if i < len(bank_swifts) and bank_swifts[i].strip() else None,
+            iban=bank_ibans[i].strip() if i < len(bank_ibans) and bank_ibans[i].strip() else None,
+            is_primary=is_primary,
+        )
+        db.session.add(bank)
+    
     db.session.commit()
     return jsonify({'ok': True})
 
@@ -196,6 +241,185 @@ def vendor_delete(id):
     return jsonify({'ok': True})
 
 # ══════════════════════════════════════════════════════════════════
+# VENDOR BANKS
+# ══════════════════════════════════════════════════════════════════
+@pur_bp.route('/purchase/vendors/<int:vendor_id>/banks')
+@login_required
+def vendor_banks(vendor_id):
+    banks = VendorBank.query.filter_by(vendor_id=vendor_id).order_by(VendorBank.is_primary.desc()).all()
+    return jsonify([b.to_dict() for b in banks])
+
+@pur_bp.route('/purchase/vendors/<int:vendor_id>/banks/add', methods=['POST'])
+@login_required
+def vendor_bank_add(vendor_id):
+    f = request.form
+    if f.get('is_primary') == '1':
+        VendorBank.query.filter_by(vendor_id=vendor_id, is_primary=True).update({'is_primary': False})
+    bank = VendorBank(
+        vendor_id      = vendor_id,
+        bank_name_en   = f.get('bank_name_en','').strip(),
+        bank_name_ar   = f.get('bank_name_ar','').strip() or None,
+        account_number = f.get('account_number','').strip() or None,
+        branch_en      = f.get('branch_en','').strip() or None,
+        branch_ar      = f.get('branch_ar','').strip() or None,
+        swift_code     = f.get('swift_code','').strip() or None,
+        iban           = f.get('iban','').strip() or None,
+        is_primary     = f.get('is_primary') == '1',
+    )
+    db.session.add(bank)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': bank.id})
+
+@pur_bp.route('/purchase/vendors/banks/<int:bank_id>/edit', methods=['POST'])
+@login_required
+def vendor_bank_edit(bank_id):
+    bank = VendorBank.query.get_or_404(bank_id)
+    f = request.form
+    if f.get('is_primary') == '1':
+        VendorBank.query.filter_by(vendor_id=bank.vendor_id, is_primary=True).update({'is_primary': False})
+    bank.bank_name_en   = f.get('bank_name_en','').strip()
+    bank.bank_name_ar   = f.get('bank_name_ar','').strip() or None
+    bank.account_number = f.get('account_number','').strip() or None
+    bank.branch_en      = f.get('branch_en','').strip() or None
+    bank.branch_ar      = f.get('branch_ar','').strip() or None
+    bank.swift_code     = f.get('swift_code','').strip() or None
+    bank.iban           = f.get('iban','').strip() or None
+    bank.is_primary     = f.get('is_primary') == '1'
+    db.session.commit()
+    return jsonify({'ok': True})
+
+@pur_bp.route('/purchase/vendors/banks/<int:bank_id>/delete', methods=['POST'])
+@login_required
+def vendor_bank_delete(bank_id):
+    bank = VendorBank.query.get_or_404(bank_id)
+    db.session.delete(bank)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+@pur_bp.route('/purchase/vendors/banks/<int:bank_id>/set-primary', methods=['POST'])
+@login_required
+def vendor_bank_set_primary(bank_id):
+    bank = VendorBank.query.get_or_404(bank_id)
+    VendorBank.query.filter_by(vendor_id=bank.vendor_id, is_primary=True).update({'is_primary': False})
+    bank.is_primary = True
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+# ══════════════════════════════════════════════════════════════════
+# VENDOR DOCUMENTS
+# ══════════════════════════════════════════════════════════════════
+from werkzeug.utils import secure_filename as _sf
+import uuid as _uuid
+
+VENDOR_DOC_TYPES = [
+    'CR / سجل تجاري', 'VAT Certificate / شهادة ضريبة', 'ID / هوية',
+    'Contract / عقد', 'License / رخصة', 'Insurance / تأمين',
+    'Bank Letter / خطاب بنكي', 'Other / أخرى',
+]
+VENDOR_ALLOWED_EXT = {'pdf','doc','docx','xls','xlsx','jpg','jpeg','png','gif','txt'}
+
+@pur_bp.route('/purchase/vendors/<int:vendor_id>/documents')
+@login_required
+def vendor_documents(vendor_id):
+    docs = VendorDocument.query.filter_by(vendor_id=vendor_id).order_by(VendorDocument.uploaded_at.desc()).all()
+    return jsonify([d.to_dict() for d in docs])
+
+@pur_bp.route('/purchase/vendors/<int:vendor_id>/documents/upload', methods=['POST'])
+@login_required
+def vendor_doc_upload(vendor_id):
+    from flask import current_app
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return jsonify({'ok': False, 'error': 'No file selected'}), 400
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in VENDOR_ALLOWED_EXT:
+        return jsonify({'ok': False, 'error': f'File type .{ext} not allowed'}), 400
+    unique_name = f'{_uuid.uuid4().hex}.{ext}'
+    folder = os.path.join('uploads', 'vendors', str(vendor_id))
+    os.makedirs(folder, exist_ok=True)
+    full_path = os.path.join(folder, unique_name)
+    file.save(full_path)
+    rel_path = os.path.join('vendors', str(vendor_id), unique_name)
+    doc = VendorDocument(
+        vendor_id     = vendor_id,
+        document_type = request.form.get('document_type', 'Other / أخرى'),
+        document_name = request.form.get('document_name', file.filename).strip() or file.filename,
+        file_path     = rel_path,
+        file_size     = os.path.getsize(full_path),
+        expiry_date   = datetime.strptime(request.form['expiry_date'], '%Y-%m-%d').date() if request.form.get('expiry_date') else None,
+        uploaded_by   = current_user.id,
+    )
+    db.session.add(doc)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': doc.id, 'doc': doc.to_dict()})
+
+@pur_bp.route('/purchase/vendors/documents/<int:doc_id>/download')
+@login_required
+def vendor_doc_download(doc_id):
+    from flask import current_app, send_from_directory
+    doc    = VendorDocument.query.get_or_404(doc_id)
+    folder = os.path.join('uploads', os.path.dirname(doc.file_path))
+    fname  = os.path.basename(doc.file_path)
+    return send_from_directory(os.path.abspath(folder), fname, as_attachment=True, download_name=doc.document_name)
+
+@pur_bp.route('/purchase/vendors/documents/<int:doc_id>/delete', methods=['POST'])
+@login_required
+def vendor_doc_delete(doc_id):
+    doc = VendorDocument.query.get_or_404(doc_id)
+    full = os.path.join('uploads', doc.file_path)
+    if os.path.exists(full):
+        os.remove(full)
+    db.session.delete(doc)
+    db.session.commit()
+    return jsonify({'ok': True})
+# ══════════════════════════════════════════════════════════════════
+# PURCHASE REQUEST
+# ══════════════════════════════════════════════════════════════════
+
+@pur_bp.route('/purchase/next-no')
+@login_required
+def purchase_next_no():
+    doc_type = request.args.get('type','PR')
+    models_map = {'PR': PurchaseRequest, 'PQ': PurchaseQuotation, 'PO': PurchaseOrder}
+    model = models_map.get(doc_type, PurchaseRequest)
+    return jsonify({'doc_no': _next_doc_no(doc_type, model)})
+
+
+@pur_bp.route('/purchase/next-doc-no')
+@login_required  
+def next_doc_no():
+    doc_type = request.args.get('type', 'PR')
+    model_map = {'PR': PurchaseRequest, 'PQ': PurchaseQuotation, 'PO': PurchaseOrder}
+    model = model_map.get(doc_type, PurchaseRequest)
+    return jsonify({'doc_no': _next_doc_no(doc_type, model)})
+
+@pur_bp.route('/purchase/requests/<int:id>/view')
+@login_required
+def pr_view(id):
+    pr = PurchaseRequest.query.get_or_404(id)
+    items = PurchaseRequestLineItem.query.filter_by(purchase_request_id=id).order_by(PurchaseRequestLineItem.line_number).all()
+    attachments = PurchaseAttachment.query.filter_by(doc_type='PR', doc_id=id).all()
+    return render_template('purchase/pr_view.html', pr=pr, items=items, attachments=attachments)
+@pur_bp.route('/purchase/quotations/<int:id>/view')
+@login_required
+def pq_view(id):
+    pq = PurchaseQuotation.query.get_or_404(id)
+    items = PurchaseQuotationLineItem.query.filter_by(purchase_quotation_id=id).order_by(PurchaseQuotationLineItem.line_number).all()
+    attachments = PurchaseAttachment.query.filter_by(doc_type='PQ', doc_id=id).all()
+    return render_template('purchase/pq_view.html', doc=pq, items=items, attachments=attachments, doc_type='PQ')
+
+@pur_bp.route('/purchase/orders/<int:id>/view')
+@login_required
+def po_view(id):
+    po = PurchaseOrder.query.get_or_404(id)
+    items = PurchaseOrderLineItem.query.filter_by(purchase_order_id=id).order_by(PurchaseOrderLineItem.line_number).all()
+    attachments = PurchaseAttachment.query.filter_by(doc_type='PO', doc_id=id).all()
+    return render_template('purchase/po_view.html', doc=po, items=items, attachments=attachments, doc_type='PO')
+
+
+
+
 # PURCHASE REQUEST
 # ══════════════════════════════════════════════════════════════════
 @pur_bp.route('/purchase/requests')
@@ -312,7 +536,6 @@ def pr_add():
     _save_attachments('PR', pr.purchase_request_id, request.files.getlist('attachments'))
     db.session.commit()
     return jsonify({'ok': True, 'id': pr.purchase_request_id, 'doc_no': pr.doc_no})
-
 @pur_bp.route('/purchase/requests/<int:id>/edit', methods=['POST'])
 @login_required
 def pr_edit(id):
@@ -439,7 +662,7 @@ def pq_add():
     f = request.form
     pq = PurchaseQuotation(
         doc_no=_next_doc_no('PQ', PurchaseQuotation),
-        pr_id=int(f.get('pr_id')) if f.get('pr_id') else None,
+        purchase_request_id=int(f.get('pr_id')) if f.get('pr_id') else None,  # FIX: use purchase_request_id
         requester=f.get('requester','').strip(),
         requester_name=f.get('requester_name','').strip(),
         vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
@@ -452,9 +675,20 @@ def pq_add():
         approved_by=f.get('approved_by','').strip(),
         created_by=current_user.id,
     )
-    db.session.add(pq); db.session.flush()
-    tots = _save_doc_line_items(PurchaseQuotationLineItem, 'purchase_quotation_id', pq.purchase_quotation_id, f)
-    for k,v in tots.items(): setattr(pq, k, v)
+    db.session.add(pq)
+    db.session.flush()
+    
+    tots = _save_doc_line_items(
+        PurchaseQuotationLineItem, 
+        'purchase_quotation_id', 
+        pq.purchase_quotation_id, 
+        f
+    )
+    
+    # Convert Decimal to float for setattr
+    for k, v in tots.items():
+        setattr(pq, k, float(v) if isinstance(v, Decimal) else v)
+    
     _save_attachments('PQ', pq.purchase_quotation_id, request.files.getlist('attachments'))
     db.session.commit()
     return jsonify({'ok': True, 'id': pq.purchase_quotation_id, 'doc_no': pq.doc_no})
@@ -466,16 +700,28 @@ def pq_edit(id):
     f = request.form
     for fld in ['requester','requester_name','status','remarks','approved_by']:
         setattr(pq, fld, f.get(fld,'').strip())
-    pq.pr_id = int(f.get('pr_id')) if f.get('pr_id') else None
+    
+    # FIX: use purchase_request_id
+    pq.purchase_request_id = int(f.get('pr_id')) if f.get('pr_id') else None  
     pq.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
+    
     for df in ['posting_date','valid_until','document_date','required_date']:
         setattr(pq, df, pd(f.get(df)))
-    tots = _save_doc_line_items(PurchaseQuotationLineItem, 'purchase_quotation_id', id, f)
-    for k,v in tots.items(): setattr(pq, k, v)
+    
+    tots = _save_doc_line_items(
+        PurchaseQuotationLineItem, 
+        'purchase_quotation_id', 
+        id, 
+        f
+    )
+    
+    # Convert Decimal to float for setattr
+    for k, v in tots.items():
+        setattr(pq, k, float(v) if isinstance(v, Decimal) else v)
+    
     _save_attachments('PQ', id, request.files.getlist('attachments'))
     db.session.commit()
     return jsonify({'ok': True})
-
 @pur_bp.route('/purchase/quotations/<int:id>/delete', methods=['POST'])
 @login_required
 def pq_delete(id):
@@ -889,148 +1135,4 @@ def pinv_summary(id):
     d['items'] = [i.to_dict() for i in PurchaseInvoiceLineItem.query.filter_by(purchase_invoice_id=id).order_by(PurchaseInvoiceLineItem.line_number).all()]
     return jsonify(d)
 
-# ══════════════════════════════════════════════════════════════════
-# VENDOR BANKS
-# ══════════════════════════════════════════════════════════════════
-@pur_bp.route('/purchase/vendors/<int:vendor_id>/banks')
-@login_required
-def vendor_banks(vendor_id):
-    banks = VendorBank.query.filter_by(vendor_id=vendor_id).order_by(VendorBank.is_primary.desc()).all()
-    return jsonify([b.to_dict() for b in banks])
 
-@pur_bp.route('/purchase/vendors/<int:vendor_id>/banks/add', methods=['POST'])
-@login_required
-def vendor_bank_add(vendor_id):
-    f = request.form
-    # Ensure only one primary
-    if f.get('is_primary') == '1':
-        VendorBank.query.filter_by(vendor_id=vendor_id, is_primary=True).update({'is_primary': False})
-    bank = VendorBank(
-        vendor_id      = vendor_id,
-        bank_name_en   = f.get('bank_name_en','').strip(),
-        bank_name_ar   = f.get('bank_name_ar','').strip() or None,
-        account_number = f.get('account_number','').strip() or None,
-        branch_en      = f.get('branch_en','').strip() or None,
-        branch_ar      = f.get('branch_ar','').strip() or None,
-        swift_code     = f.get('swift_code','').strip() or None,
-        iban           = f.get('iban','').strip() or None,
-        is_primary     = f.get('is_primary') == '1',
-    )
-    db.session.add(bank)
-    db.session.commit()
-    return jsonify({'ok': True, 'id': bank.id})
-
-@pur_bp.route('/purchase/vendors/banks/<int:bank_id>/edit', methods=['POST'])
-@login_required
-def vendor_bank_edit(bank_id):
-    bank = VendorBank.query.get_or_404(bank_id)
-    f = request.form
-    if f.get('is_primary') == '1':
-        VendorBank.query.filter_by(vendor_id=bank.vendor_id, is_primary=True).update({'is_primary': False})
-    bank.bank_name_en   = f.get('bank_name_en','').strip()
-    bank.bank_name_ar   = f.get('bank_name_ar','').strip() or None
-    bank.account_number = f.get('account_number','').strip() or None
-    bank.branch_en      = f.get('branch_en','').strip() or None
-    bank.branch_ar      = f.get('branch_ar','').strip() or None
-    bank.swift_code     = f.get('swift_code','').strip() or None
-    bank.iban           = f.get('iban','').strip() or None
-    bank.is_primary     = f.get('is_primary') == '1'
-    db.session.commit()
-    return jsonify({'ok': True})
-
-@pur_bp.route('/purchase/vendors/banks/<int:bank_id>/delete', methods=['POST'])
-@login_required
-def vendor_bank_delete(bank_id):
-    bank = VendorBank.query.get_or_404(bank_id)
-    db.session.delete(bank)
-    db.session.commit()
-    return jsonify({'ok': True})
-
-@pur_bp.route('/purchase/vendors/banks/<int:bank_id>/set-primary', methods=['POST'])
-@login_required
-def vendor_bank_set_primary(bank_id):
-    bank = VendorBank.query.get_or_404(bank_id)
-    VendorBank.query.filter_by(vendor_id=bank.vendor_id, is_primary=True).update({'is_primary': False})
-    bank.is_primary = True
-    db.session.commit()
-    return jsonify({'ok': True})
-
-# ══════════════════════════════════════════════════════════════════
-# VENDOR DOCUMENTS
-# ══════════════════════════════════════════════════════════════════
-from werkzeug.utils import secure_filename as _sf
-import uuid as _uuid
-
-VENDOR_DOC_TYPES = [
-    'CR / سجل تجاري', 'VAT Certificate / شهادة ضريبة', 'ID / هوية',
-    'Contract / عقد', 'License / رخصة', 'Insurance / تأمين',
-    'Bank Letter / خطاب بنكي', 'Other / أخرى',
-]
-VENDOR_ALLOWED_EXT = {'pdf','doc','docx','xls','xlsx','jpg','jpeg','png','gif','txt'}
-
-def _vendor_doc_save(file, vendor_id):
-    """Save uploaded file, return relative path"""
-    import current_app
-    ext    = file.filename.rsplit('.', 1)[-1].lower()
-    name   = f'{_uuid.uuid4().hex}.{ext}'
-    folder = os.path.join('uploads', 'vendors', str(vendor_id))
-    os.makedirs(folder, exist_ok=True)
-    full   = os.path.join(folder, name)
-    file.save(full)
-    return os.path.join('vendors', str(vendor_id), name)
-
-@pur_bp.route('/purchase/vendors/<int:vendor_id>/documents')
-@login_required
-def vendor_documents(vendor_id):
-    docs = VendorDocument.query.filter_by(vendor_id=vendor_id).order_by(VendorDocument.uploaded_at.desc()).all()
-    return jsonify([d.to_dict() for d in docs])
-
-@pur_bp.route('/purchase/vendors/<int:vendor_id>/documents/upload', methods=['POST'])
-@login_required
-def vendor_doc_upload(vendor_id):
-    from flask import current_app
-    file = request.files.get('file')
-    if not file or not file.filename:
-        return jsonify({'ok': False, 'error': 'No file selected'}), 400
-    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
-    if ext not in VENDOR_ALLOWED_EXT:
-        return jsonify({'ok': False, 'error': f'File type .{ext} not allowed'}), 400
-    # Save file
-    unique_name = f'{_uuid.uuid4().hex}.{ext}'
-    folder = os.path.join('uploads', 'vendors', str(vendor_id))
-    os.makedirs(folder, exist_ok=True)
-    full_path = os.path.join(folder, unique_name)
-    file.save(full_path)
-    rel_path = os.path.join('vendors', str(vendor_id), unique_name)
-    doc = VendorDocument(
-        vendor_id     = vendor_id,
-        document_type = request.form.get('document_type', 'Other / أخرى'),
-        document_name = request.form.get('document_name', file.filename).strip() or file.filename,
-        file_path     = rel_path,
-        file_size     = os.path.getsize(full_path),
-        expiry_date   = datetime.strptime(request.form['expiry_date'], '%Y-%m-%d').date() if request.form.get('expiry_date') else None,
-        uploaded_by   = current_user.id,
-    )
-    db.session.add(doc)
-    db.session.commit()
-    return jsonify({'ok': True, 'id': doc.id, 'doc': doc.to_dict()})
-
-@pur_bp.route('/purchase/vendors/documents/<int:doc_id>/download')
-@login_required
-def vendor_doc_download(doc_id):
-    from flask import current_app, send_from_directory
-    doc    = VendorDocument.query.get_or_404(doc_id)
-    folder = os.path.join('uploads', os.path.dirname(doc.file_path))
-    fname  = os.path.basename(doc.file_path)
-    return send_from_directory(os.path.abspath(folder), fname, as_attachment=True, download_name=doc.document_name)
-
-@pur_bp.route('/purchase/vendors/documents/<int:doc_id>/delete', methods=['POST'])
-@login_required
-def vendor_doc_delete(doc_id):
-    doc = VendorDocument.query.get_or_404(doc_id)
-    full = os.path.join('uploads', doc.file_path)
-    if os.path.exists(full):
-        os.remove(full)
-    db.session.delete(doc)
-    db.session.commit()
-    return jsonify({'ok': True})

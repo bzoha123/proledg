@@ -6,181 +6,10 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
-
-/* ═══════════════════════════════════════════════════════
-   PROLEDG FORM DESIGN SYSTEM  v2
-   Used across: Sellers, Employees, Buyers, Vendors
-═══════════════════════════════════════════════════════ */
-
-/* ── Modal shell ── */
-.pf-modal .modal-dialog { max-width: 960px; }
-.pf-modal .modal-content { border: none; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,.22); }
-
-/* ── Modal header ── */
-.pf-hdr {
-  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
-  padding: 16px 22px;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.pf-hdr h5 { margin: 0; color: #fff; font-size: 15px; font-weight: 700; letter-spacing: .2px; display: flex; align-items: center; gap: 8px; }
-.pf-hdr .btn-close { filter: brightness(0) invert(1); opacity: .85; }
-.pf-hdr .btn-close:hover { opacity: 1; }
-
-/* ── Tab nav inside modal ── */
-.pf-tabs { display: flex; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; padding: 0 20px; gap: 2px; }
-.pf-tab {
-  padding: 10px 18px; font-size: 12px; font-weight: 600; color: #6b7280;
-  border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent;
-  transition: all .15s; white-space: nowrap; display: flex; align-items: center; gap: 6px;
-}
-.pf-tab:hover { color: #2563eb; background: rgba(37,99,235,.06); border-radius: 6px 6px 0 0; }
-.pf-tab.active { color: #2563eb; border-bottom-color: #2563eb; background: white; border-radius: 6px 6px 0 0; }
-.pf-tab i { font-size: 11px; }
-
-/* ── Tab panes ── */
-.pf-pane { display: none; padding: 22px 24px; }
-.pf-pane.active { display: block; }
-
-/* ── Section header ── */
-.pf-section-hdr {
-  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px;
-  color: #1e3a5f; margin: 0 0 14px; padding-bottom: 8px;
-  border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 7px;
-}
-.pf-section-hdr i { color: #2563eb; font-size: 13px; }
-
-/* ── Field grid ── */
-.pf-row { display: grid; gap: 14px; margin-bottom: 14px; }
-.pf-row.cols-1 { grid-template-columns: 1fr; }
-.pf-row.cols-2 { grid-template-columns: 1fr 1fr; }
-.pf-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
-.pf-row.cols-2-1 { grid-template-columns: 2fr 1fr; }
-.pf-row.cols-1-2 { grid-template-columns: 1fr 2fr; }
-@media (max-width: 640px) {
-  .pf-row.cols-2, .pf-row.cols-3, .pf-row.cols-2-1, .pf-row.cols-1-2 { grid-template-columns: 1fr; }
-}
-
-/* ── Field ── */
-.pf-field {}
-.pf-label {
-  font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px;
-  display: flex; align-items: center; gap: 4px; text-transform: uppercase; letter-spacing: .3px;
-}
-.pf-label .req { color: #ef4444; font-size: 13px; line-height: 1; }
-.pf-input {
-  width: 100%; padding: 8px 11px; font-size: 13px; color: #1f2937;
-  border: 1.5px solid #d1d5db; border-radius: 8px; background: white;
-  transition: border-color .15s, box-shadow .15s; outline: none;
-  font-family: inherit;
-}
-.pf-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
-.pf-input:disabled { background: #f9fafb; color: #9ca3af; cursor: not-allowed; }
-.pf-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; padding-right: 32px; }
-
-/* ── Bilingual input wrap ── */
-.pf-bilingual { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.pf-bilingual-lbl { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px; letter-spacing: .3px; }
-@media (max-width: 640px) { .pf-bilingual { grid-template-columns: 1fr; } }
-
-/* ── Translate button ── */
-.pf-retrans {
-  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-  width: 22px; height: 22px; background: #eff6ff; color: #2563eb;
-  border: none; border-radius: 5px; cursor: pointer; font-size: 10px;
-  display: flex; align-items: center; justify-content: center; opacity: .7;
-  transition: opacity .15s;
-}
-.pf-retrans:hover { opacity: 1; }
-.pf-input-wrap { position: relative; }
-.pf-input-wrap .pf-input { padding-right: 34px; }
-
-/* ── Modal footer ── */
-.pf-footer {
-  padding: 14px 22px; background: #f8fafc; border-top: 1.5px solid #e2e8f0;
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-}
-.pf-btn {
-  padding: 9px 22px; border-radius: 9px; border: none; cursor: pointer;
-  font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 7px;
-  transition: all .15s;
-}
-.pf-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.15); }
-.pf-btn.primary { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: white; }
-.pf-btn.secondary { background: white; color: #374151; border: 1.5px solid #d1d5db; }
-.pf-btn.danger { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
-.pf-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
-
-/* ── Bank list inside modal ── */
-.pf-bank-card {
-  background: white; border: 1.5px solid #e2e8f0; border-radius: 10px;
-  padding: 13px 16px; margin-bottom: 8px;
-  display: flex; align-items: flex-start; justify-content: space-between;
-  transition: border-color .15s;
-}
-.pf-bank-card.primary { border-color: #86efac; background: #f0fdf4; }
-.pf-bank-card-name { font-weight: 700; font-size: 13px; color: #1e3a5f; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.pf-bank-card-meta { font-size: 11px; color: #6b7280; margin-top: 5px; display: flex; flex-wrap: wrap; gap: 12px; }
-.pf-bank-card-meta span { display: flex; align-items: center; gap: 4px; }
-.pf-badge-primary { background: #dcfce7; color: #15803d; padding: 2px 9px; border-radius: 8px; font-size: 10px; font-weight: 700; }
-.pf-badge-blue { background: #eff6ff; color: #2563eb; padding: 2px 9px; border-radius: 8px; font-size: 10px; font-weight: 700; }
-.pf-bank-actions { display: flex; gap: 5px; flex-shrink: 0; }
-
-/* ── Bank popup modal ── */
-.pf-bank-modal .modal-dialog { max-width: 620px; }
-.pf-bank-modal .modal-content { border: none; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
-
-/* ── Empty state ── */
-.pf-empty { text-align: center; padding: 28px; color: #9ca3af; font-size: 13px; }
-.pf-empty i { font-size: 32px; margin-bottom: 10px; display: block; opacity: .4; }
-
-/* ── AG Grid tweaks ── */
-.ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif; --ag-font-size:13px; --ag-header-background-color:#1e3a5f; --ag-header-foreground-color:#fff; --ag-border-color:#e2e8f0; --ag-row-border-color:#f1f5f9; --ag-row-hover-color:#eff6ff; --ag-selected-row-background-color:#dbeafe; --ag-header-height:46px; --ag-row-height:46px; --ag-cell-horizontal-padding:12px; }
-.ag-theme-alpine .ag-header-cell-label { font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; }
-.ag-theme-alpine .ag-header-cell:hover { background:rgba(255,255,255,.08) !important; }
-.ag-theme-alpine .ag-sort-ascending-icon, .ag-theme-alpine .ag-sort-descending-icon, .ag-theme-alpine .ag-sort-none-icon { color:rgba(255,255,255,.7); }
-.ag-theme-alpine .ag-header-icon { color:rgba(255,255,255,.6); }
-.ag-theme-alpine .ag-filter { border-radius:10px !important; box-shadow:0 8px 30px rgba(0,0,0,.15) !important; border:1px solid #e2e8f0 !important; overflow:hidden; min-width:260px; background:white; }
-.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input { border:1.5px solid #d1d5db !important; border-radius:7px !important; padding:6px 10px !important; font-size:12px !important; }
-.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus { outline:none !important; border-color:#2563eb !important; box-shadow:0 0 0 2px rgba(37,99,235,.12) !important; }
-.ag-theme-alpine .ag-filter-apply-panel { padding:8px 10px !important; background:#f8fafc !important; border-top:1px solid #e2e8f0 !important; display:flex !important; gap:6px !important; justify-content:space-between !important; }
-.ag-theme-alpine .ag-filter-apply-panel-button { padding:5px 14px !important; border-radius:7px !important; font-size:12px !important; font-weight:600 !important; border:none !important; cursor:pointer !important; }
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"] { background:linear-gradient(135deg,#16a34a,#15803d) !important; color:white !important; }
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"], .ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"] { background:white !important; color:#374151 !important; border:1.5px solid #d1d5db !important; }
-.ag-theme-alpine .ag-floating-filter-input input { border:1px solid #e2e8f0 !important; border-radius:5px !important; padding:3px 7px !important; font-size:11px !important; }
-.ag-theme-alpine .ag-floating-filter-input input:focus { outline:none !important; border-color:#2563eb !important; }
-.ag-theme-alpine .ag-row-even { background:white; }
-.ag-theme-alpine .ag-row-odd { background:#fafbfc; }
-.ag-theme-alpine .ag-row-hover { background:#eff6ff !important; }
-.ag-theme-alpine .ag-cell { border-right:1px solid #f1f5f9 !important; }
-
-/* ── Action buttons ── */
-.pl-act { display:flex; align-items:center; gap:3px; }
-.pl-btn { width:28px; height:28px; border-radius:7px; border:none; display:inline-flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; transition:all .12s; }
-.pl-btn:hover { transform:translateY(-1px); box-shadow:0 2px 6px rgba(0,0,0,.2); }
-.pl-view  { background:#0ea5e9; color:white; }
-.pl-edit  { background:#f59e0b; color:white; }
-.pl-del   { background:#ef4444; color:white; }
-.pl-print { background:#16a34a; color:white; }
-
-/* ── Status pills ── */
-.st-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:10px; font-size:11px; font-weight:700; }
-.st-active   { background:#dcfce7; color:#15803d; }
-.st-inactive { background:#f1f5f9; color:#6b7280; }
-.code-badge  { background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:5px; font-size:11px; font-weight:700; font-family:monospace; }
-
-/* ── Page toolbar ── */
-.pl-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
-.pl-toolbar-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.pl-add-btn { padding:9px 20px; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; border:none; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:7px; transition:all .15s; }
-.pl-add-btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(37,99,235,.35); }
-.pl-search-wrap { position:relative; }
-.pl-search { padding:8px 12px 8px 36px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; color:#374151; width:240px; outline:none; transition:border-color .15s; }
-.pl-search:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
-.pl-search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:13px; }
-
-/* ── Vendor-specific ── */
+/* ── Vendor Form Styles ── */
 .vnd-hdr { background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:16px 22px;display:flex;align-items:center;justify-content:space-between; }
 .vnd-hdr h5 { margin:0;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px; }
+.vnd-footer { padding:14px 22px;background:#f8fafc;border-top:1.5px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:10px; }
 .acc-panel { background:white;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:10px; }
 .acc-btn { display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 16px;background:#f8fafc;border:none;cursor:pointer;font-size:12px;font-weight:700;color:#374151;transition:background .15s; }
 .acc-btn:hover { background:#eff6ff; }
@@ -190,32 +19,50 @@
 .acc-icon { width:22px;height:22px;background:#eff6ff;color:#2563eb;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;font-size:11px; }
 .f-grid2 { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
 .f-grid3 { display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px; }
-.f-grid4 { display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px; }
-@media(max-width:640px){ .f-grid2,.f-grid3,.f-grid4{ grid-template-columns:1fr; } }
+@media(max-width:640px){ .f-grid2,.f-grid3{ grid-template-columns:1fr; } }
 .f-item { display:flex;flex-direction:column; }
 .f-lbl { font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px; }
 .f-req { color:#ef4444; }
 .f-inp { width:100%;padding:8px 11px;font-size:13px;color:#1f2937;border:1.5px solid #d1d5db;border-radius:8px;background:white;outline:none;transition:border-color .15s,box-shadow .15s;font-family:inherit; }
 .f-inp:focus { border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+.f-inp.is-invalid { border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.1); }
 .field-wrap { position:relative; }
-.retrans-btn { position:absolute;right:6px;top:50%;transform:translateY(-50%);width:22px;height:22px;background:#eff6ff;color:#2563eb;border:none;border-radius:5px;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;opacity:.7;transition:opacity .15s; }
+.retrans-btn { position:absolute;right:6px;top:50%;transform:translateY(-50%);width:22px;height:22px;background:#eff6ff;color:#2563eb;border:none;border-radius:5px;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;opacity:.7;transition:opacity .15s;z-index:2; }
 .retrans-btn:hover { opacity:1; }
-.field-spin { position:absolute;right:32px;top:50%;transform:translateY(-50%); }
+.pf-valid-msg { font-size:10px;margin-top:4px;display:none;color:#ef4444;font-weight:500;align-items:center;gap:4px; }
+.pf-valid-msg.show { display:flex; }
 .btn-f { padding:9px 20px;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px;transition:all .15s; }
 .btn-save { background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white; }
 .btn-save:hover { transform:translateY(-1px);box-shadow:0 3px 10px rgba(37,99,235,.35); }
 .btn-cancel { background:white;color:#374151;border:1.5px solid #d1d5db; }
 .btn-cancel:hover { background:#f9fafb; }
-.pur-section { background:white;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:10px; }
-.pur-section-hdr { display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8fafc;cursor:pointer;border:none;width:100%;font-size:12px;font-weight:700;color:#374151; }
-.pur-section-body { padding:14px;display:none; }
-.pur-section-body.open { display:block; }
-.pur-sec-icon { width:20px;height:20px;background:#eff6ff;color:#2563eb;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;font-size:10px; }
+.btn-save:disabled { opacity:.6;cursor:not-allowed;transform:none;box-shadow:none; }
+
+/* Bank cards */
+.bank-card { background:white;border:1.5px solid #e2e8f0;border-radius:9px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between; }
+.bank-card.primary { border-color:#86efac;background:#f0fdf4; }
+.bank-card-info { flex:1; }
+.bank-card-name { font-weight:700;font-size:13px;color:#1e3a5f;display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
+.bank-card-meta { font-size:11px;color:#6b7280;margin-top:4px;display:flex;flex-wrap:wrap;gap:12px; }
+.bank-card-meta span { display:flex;align-items:center;gap:4px; }
+.bank-badge-primary { background:#dcfce7;color:#15803d;padding:2px 9px;border-radius:8px;font-size:10px;font-weight:700; }
+.bank-actions { display:flex;gap:5px;flex-shrink:0;margin-left:10px; }
+.btn-xs { width:26px;height:26px;border-radius:6px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:10px; }
+.btn-xs-edit { background:#fef3c7;color:#d97706; }
+.btn-xs-del { background:#fee2e2;color:#dc2626; }
+.bank-add-btn { width:100%;padding:10px;background:#f0f9ff;color:#2563eb;border:1.5px dashed #bfdbfe;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px; }
+.bank-add-btn:hover { background:#eff6ff;border-color:#93c5fd; }
+.pf-empty { text-align:center;padding:20px;color:#9ca3af;font-size:12px; }
+.pf-empty i { font-size:24px;margin-bottom:8px;display:block;opacity:.4; }
+
+/* AG Grid */
+.ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif;--ag-font-size:13px;--ag-header-background-color:#1e3a5f;--ag-header-foreground-color:#fff;--ag-border-color:#e2e8f0;--ag-row-hover-color:#eff6ff;--ag-header-height:42px;--ag-row-height:42px; }
+.ag-theme-alpine .ag-header-cell-label { font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px; }
 .ag-ab { width:28px;height:28px;border-radius:7px;border:none;display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all .12s; }
 .ag-ab:hover { transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.2); }
 .ag-ab-view { background:#0ea5e9;color:white; }
 .ag-ab-edit { background:#f59e0b;color:white; }
-.ag-ab-del  { background:#ef4444;color:white; }
+.ag-ab-del { background:#ef4444;color:white; }
 </style>
 {% endblock %}
 
@@ -245,7 +92,6 @@
   <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;overflow:hidden;">
     <div id="vndGrid" class="ag-theme-alpine" style="height:500px;width:100%;"></div>
   </div>
-  <div class="proledg-pagination"><span class="page-count" id="pageInfo">–</span></div>
 </div>
 
 {# ══ ADD / EDIT MODAL ══ #}
@@ -256,55 +102,65 @@
         <h5 id="vndTitle"><i class="fas fa-store me-2"></i>{% if ar %}إضافة مورد{% else %}Add Vendor{% endif %}</h5>
         <button class="btn-close" style="filter:brightness(0) invert(1);" data-bs-dismiss="modal"></button>
       </div>
-
-      <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;">
-        <input type="hidden" id="v_edit_id">
+      <div class="modal-body p-0" style="overflow-y:auto;max-height:70vh;background:#f8fafc;">
         <div style="padding:16px 18px;">
 
           {# ── Basic Info ── #}
           <div class="acc-panel">
             <button type="button" class="acc-btn open" onclick="togAcc('va1')">
-              <div><i class="acc-icon fas fa-store"></i>{% if ar %}معلومات المورد الأساسية / Basic Information{% else %}Basic Vendor Information / معلومات أساسية{% endif %}</div>
+              <div><i class="acc-icon fas fa-store"></i>{% if ar %}معلومات المورد الأساسية{% else %}Basic Vendor Information{% endif %}</div>
               <i class="fas fa-chevron-up" id="ch_va1" style="color:#2563eb;font-size:11px;"></i>
             </button>
             <div class="acc-body show" id="va1">
-
-              {# Vendor name bilingual — same pattern as buyers #}
+              
+              {# Vendor name bilingual #}
+              {# EN portal: typing EN → auto AR, refresh on EN re-translates EN→AR #}
+              {# AR portal: typing AR → auto EN, refresh on AR re-translates AR→EN #}
               <div class="f-grid2" style="margin-bottom:12px;">
+                {# EN field — Refresh button here for EN portal #}
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}اسم المورد (EN){% else %}Vendor Name (EN){% endif %} <span class="f-req">*</span></div>
                   <div class="field-wrap" dir="ltr">
                     <input type="text" id="v_name_en" class="f-inp" dir="ltr" required
                            placeholder="e.g. Al Rajhi Trading"
                            oninput="vTrans('v_name_en','v_name_ar','en')">
-                    {% if not ar %}<button type="button" class="retrans-btn" title="Re-translate to AR" onclick="vRetrans('v_name_ar','v_name_en','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
-                    <span class="field-spin" id="spin_name"></span>
+                    {% if not ar %}
+                    <button type="button" class="retrans-btn" title="Re-translate to Arabic" onclick="doRetrans('v_name_en','v_name_ar','en')"><i class="fas fa-sync-alt"></i></button>
+                    {% endif %}
                   </div>
                 </div>
+                {# AR field — Refresh button here for AR portal #}
                 <div class="f-item">
                   <div class="f-lbl" dir="rtl" style="text-align:right;">{% if ar %}اسم المورد (AR){% else %}Vendor Name (AR){% endif %}</div>
                   <div class="field-wrap" dir="rtl">
                     <input type="text" id="v_name_ar" class="f-inp" dir="rtl"
                            placeholder="مثال: شركة الراجحي التجارية"
                            oninput="vTrans('v_name_ar','v_name_en','ar')">
-                    {% if ar %}<button type="button" class="retrans-btn" title="إعادة الترجمة للإنجليزية" onclick="vRetrans('v_name_en','v_name_ar','en')"><i class="fas fa-sync-alt"></i></button>{% endif %}
-                    <span class="field-spin" id="spin_name_ar"></span>
+                    {% if ar %}
+                    <button type="button" class="retrans-btn" title="إعادة الترجمة للإنجليزية" onclick="doRetrans('v_name_ar','v_name_en','ar')"><i class="fas fa-sync-alt"></i></button>
+                    {% endif %}
                   </div>
                 </div>
               </div>
 
               <div class="f-grid3">
-                <div class="f-item"><div class="f-lbl">{% if ar %}رقم ضريبة القيمة المضافة{% else %}VAT Number{% endif %} <span class="f-req">*</span></div><input type="text" id="v_vat" class="f-inp" dir="ltr" required></div>
+                <div class="f-item"><div class="f-lbl">{% if ar %}رقم الضريبة{% else %}VAT Number{% endif %} <span class="f-req">*</span></div><input type="text" id="v_vat" class="f-inp" dir="ltr" required></div>
                 <div class="f-item"><div class="f-lbl">{% if ar %}السجل التجاري{% else %}CRN{% endif %} <span class="f-req">*</span></div><input type="text" id="v_crn" class="f-inp" dir="ltr" required></div>
                 <div class="f-item"><div class="f-lbl">{% if ar %}شخص الاتصال{% else %}Contact Person{% endif %}</div><input type="text" id="v_contact" class="f-inp"></div>
               </div>
-
               <div class="f-grid3">
                 <div class="f-item"><div class="f-lbl">{% if ar %}الهاتف{% else %}Phone{% endif %} <span class="f-req">*</span></div><input type="tel" id="v_phone" class="f-inp" dir="ltr" required></div>
                 <div class="f-item"><div class="f-lbl">{% if ar %}الفاكس{% else %}Fax{% endif %}</div><input type="text" id="v_fax" class="f-inp" dir="ltr"></div>
-                <div class="f-item"><div class="f-lbl">{% if ar %}البريد الإلكتروني{% else %}Email{% endif %}</div><input type="email" id="v_email" class="f-inp" dir="ltr"></div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}البريد الإلكتروني{% else %}Email{% endif %}</div>
+                  <input type="email" id="v_email" class="f-inp" dir="ltr" placeholder="example@domain.com"
+                         oninput="validateEmail(this)" onblur="validateEmail(this)">
+                  <div class="pf-valid-msg" id="v_email_msg">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="v_email_msg_text">{% if ar %}صيغة البريد غير صحيحة{% else %}Invalid email format{% endif %}</span>
+                  </div>
+                </div>
               </div>
-
               <div class="f-grid2">
                 <div class="f-item"><div class="f-lbl">{% if ar %}الموقع الإلكتروني{% else %}Website{% endif %}</div><input type="text" id="v_website" class="f-inp" dir="ltr"></div>
                 <div class="f-item">
@@ -315,30 +171,25 @@
                   </select>
                 </div>
               </div>
-
-              <div class="f-grid2">
-
-
             </div>
           </div>
 
           {# ── Address ── #}
           <div class="acc-panel">
             <button type="button" class="acc-btn" onclick="togAcc('va2')">
-              <div><i class="acc-icon fas fa-map-marker-alt"></i>{% if ar %}العنوان / Address{% else %}Address / العنوان{% endif %}</div>
+              <div><i class="acc-icon fas fa-map-marker-alt"></i>{% if ar %}العنوان{% else %}Address{% endif %}</div>
               <i class="fas fa-chevron-down" id="ch_va2" style="color:#9ca3af;font-size:11px;"></i>
             </button>
             <div class="acc-body" id="va2">
-
-              {# Street bilingual #}
               <div class="f-grid2" style="margin-bottom:12px;">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}اسم الشارع (EN){% else %}Street Name (EN){% endif %}</div>
                   <div class="field-wrap" dir="ltr">
                     <input type="text" id="v_street_en" class="f-inp" dir="ltr"
                            oninput="vTrans('v_street_en','v_street_ar','en')">
-                    {% if not ar %}<button type="button" class="retrans-btn" onclick="vRetrans('v_street_ar','v_street_en','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
-                    <span class="field-spin" id="spin_street"></span>
+                    {% if not ar %}
+                    <button type="button" class="retrans-btn" onclick="doRetrans('v_street_en','v_street_ar','en')"><i class="fas fa-sync-alt"></i></button>
+                    {% endif %}
                   </div>
                 </div>
                 <div class="f-item">
@@ -346,18 +197,17 @@
                   <div class="field-wrap" dir="rtl">
                     <input type="text" id="v_street_ar" class="f-inp" dir="rtl"
                            oninput="vTrans('v_street_ar','v_street_en','ar')">
-                    {% if ar %}<button type="button" class="retrans-btn" onclick="vRetrans('v_street_en','v_street_ar','en')"><i class="fas fa-sync-alt"></i></button>{% endif %}
-                    <span class="field-spin" id="spin_street_ar"></span>
+                    {% if ar %}
+                    <button type="button" class="retrans-btn" onclick="doRetrans('v_street_ar','v_street_en','ar')"><i class="fas fa-sync-alt"></i></button>
+                    {% endif %}
                   </div>
                 </div>
               </div>
-
               <div class="f-grid3">
                 <div class="f-item"><div class="f-lbl">{% if ar %}رقم المبنى{% else %}Building No{% endif %}</div><input type="text" id="v_bldg" class="f-inp" dir="ltr"></div>
                 <div class="f-item"><div class="f-lbl">{% if ar %}الرقم الإضافي{% else %}Addl. No{% endif %}</div><input type="text" id="v_addl" class="f-inp" dir="ltr"></div>
                 <div class="f-item"><div class="f-lbl">{% if ar %}الرمز البريدي{% else %}Postal Code{% endif %}</div><input type="text" id="v_postal" class="f-inp" dir="ltr"></div>
               </div>
-
               <div class="f-grid3">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}الدولة{% else %}Country{% endif %} <span class="f-req">*</span></div>
@@ -372,83 +222,125 @@
                   <select id="v_district" class="f-inp"></select>
                 </div>
               </div>
+            </div>
+          </div>
 
+          {# ── Bank Accounts ── #}
+          <div class="acc-panel">
+            <button type="button" class="acc-btn" onclick="togAcc('va3')">
+              <div><i class="acc-icon fas fa-university"></i>{% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %} <span id="bankCount" style="background:#eff6ff;color:#2563eb;padding:1px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:8px;">0</span></div>
+              <i class="fas fa-chevron-down" id="ch_va3" style="color:#9ca3af;font-size:11px;"></i>
+            </button>
+            <div class="acc-body" id="va3">
+              <div id="bankListWrap"><div class="pf-empty"><i class="fas fa-university"></i>{% if ar %}لا توجد حسابات بنكية{% else %}No bank accounts yet{% endif %}</div></div>
+              <button type="button" class="bank-add-btn" onclick="openBankPopup()">
+                <i class="fas fa-plus-circle"></i>{% if ar %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
+              </button>
             </div>
           </div>
 
         </div>
       </div>
-
       <div class="vnd-footer">
-        <button class="btn-f btn-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}</button>
-        <button class="btn-f btn-save" id="vndSaveBtn" onclick="saveVendor()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ المورد / Save{% else %}Save Vendor / حفظ{% endif %}</button>
+        <button class="btn-f btn-cancel" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button class="btn-f btn-save" id="vndSaveBtn" onclick="saveVendor()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ المورد{% else %}Save Vendor{% endif %}</button>
       </div>
     </div>
   </div>
 </div>
 
-
-{# ══ VENDOR BANK ADD/EDIT MODAL ══ #}
+{# ══ BANK POPUP MODAL ══ #}
 <div class="modal fade" id="bankModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content" style="border:none;border-radius:12px;overflow:hidden;">
+    <div class="modal-content" style="border:none;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);">
       <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;">
         <h6 id="bankModalTitle" style="margin:0;color:white;font-weight:700;font-size:14px;">
-          <i class="fas fa-university me-2"></i>Add Bank Account
+          <i class="fas fa-university me-2"></i>{% if ar %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
         </h6>
         <button class="btn-close" style="filter:brightness(0)invert(1);" data-bs-dismiss="modal"></button>
       </div>
       <div style="padding:20px;background:#f8fafc;">
-        <input type="hidden" id="bank_id">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-          <div>
-            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Bank Name (EN) <span style="color:#ef4444;">*</span></div>
-            <input type="text" id="bank_name_en" class="f-inp" placeholder="e.g. Al Rajhi Bank">
+        <input type="hidden" id="bank_edit_idx" value="">
+        
+        {# Bank Name bilingual — same pattern as vendor name #}
+        <div class="f-grid2" style="margin-bottom:12px;">
+          <div class="f-item">
+            <div class="f-lbl">Bank Name (EN) <span class="f-req">*</span></div>
+            <div class="field-wrap" dir="ltr">
+              <input type="text" id="bank_name_en" class="f-inp" dir="ltr"
+                     placeholder="e.g. Al Rajhi Bank"
+                     oninput="vTrans('bank_name_en','bank_name_ar','en')">
+              {% if not ar %}
+              <button type="button" class="retrans-btn" onclick="doRetrans('bank_name_en','bank_name_ar','en')"><i class="fas fa-sync-alt"></i></button>
+              {% endif %}
+            </div>
           </div>
-          <div>
-            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">اسم البنك (AR)</div>
-            <input type="text" id="bank_name_ar" class="f-inp" dir="rtl" placeholder="مثال: بنك الراجحي">
+          <div class="f-item">
+            <div class="f-lbl" dir="rtl" style="text-align:right;">اسم البنك (AR)</div>
+            <div class="field-wrap" dir="rtl">
+              <input type="text" id="bank_name_ar" class="f-inp" dir="rtl"
+                     placeholder="مثال: بنك الراجحي"
+                     oninput="vTrans('bank_name_ar','bank_name_en','ar')">
+              {% if ar %}
+              <button type="button" class="retrans-btn" onclick="doRetrans('bank_name_ar','bank_name_en','ar')"><i class="fas fa-sync-alt"></i></button>
+              {% endif %}
+            </div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-          <div>
-            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Branch (EN)</div>
-            <input type="text" id="bank_branch_en" class="f-inp" placeholder="Branch name">
+
+        {# Branch bilingual — same pattern #}
+        <div class="f-grid2" style="margin-bottom:12px;">
+          <div class="f-item">
+            <div class="f-lbl">Branch (EN)</div>
+            <div class="field-wrap" dir="ltr">
+              <input type="text" id="bank_branch_en" class="f-inp" dir="ltr"
+                     placeholder="Branch name"
+                     oninput="vTrans('bank_branch_en','bank_branch_ar','en')">
+              {% if not ar %}
+              <button type="button" class="retrans-btn" onclick="doRetrans('bank_branch_en','bank_branch_ar','en')"><i class="fas fa-sync-alt"></i></button>
+              {% endif %}
+            </div>
           </div>
-          <div>
-            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">الفرع (AR)</div>
-            <input type="text" id="bank_branch_ar" class="f-inp" dir="rtl" placeholder="اسم الفرع">
+          <div class="f-item">
+            <div class="f-lbl" dir="rtl" style="text-align:right;">الفرع (AR)</div>
+            <div class="field-wrap" dir="rtl">
+              <input type="text" id="bank_branch_ar" class="f-inp" dir="rtl"
+                     placeholder="اسم الفرع"
+                     oninput="vTrans('bank_branch_ar','bank_branch_en','ar')">
+              {% if ar %}
+              <button type="button" class="retrans-btn" onclick="doRetrans('bank_branch_ar','bank_branch_en','ar')"><i class="fas fa-sync-alt"></i></button>
+              {% endif %}
+            </div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-          <div>
-            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Account Number</div>
+
+        <div class="f-grid2" style="margin-bottom:12px;">
+          <div class="f-item">
+            <div class="f-lbl">Account Number</div>
             <input type="text" id="bank_account_number" class="f-inp" placeholder="Account number">
           </div>
-          <div>
-            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">SWIFT Code</div>
+          <div class="f-item">
+            <div class="f-lbl">SWIFT Code</div>
             <input type="text" id="bank_swift" class="f-inp" placeholder="e.g. RJHISARI" style="text-transform:uppercase;">
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-          <div>
-            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">IBAN</div>
+        <div class="f-grid2" style="margin-bottom:12px;">
+          <div class="f-item">
+            <div class="f-lbl">IBAN</div>
             <input type="text" id="bank_iban" class="f-inp" placeholder="e.g. SA1234567890123456789012">
           </div>
-          <div>
-            <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Primary Account</div>
-            <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
-                <input type="checkbox" id="bank_is_primary" style="width:16px;height:16px;cursor:pointer;accent-color:#2563eb;">
-                <span>Set as primary account</span>
-              </label>
-            </div>
+          <div class="f-item">
+            <div class="f-lbl">Primary Account</div>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;margin-top:8px;">
+              <input type="checkbox" id="bank_is_primary" value="1" style="width:16px;height:16px;cursor:pointer;accent-color:#2563eb;">
+              <span>{% if ar %}تعيين كحساب أساسي{% else %}Set as primary account{% endif %}</span>
+            </label>
           </div>
         </div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#f8fafc;border-top:2px solid #e2e8f0;">
-        <button class="btn-f btn-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Cancel</button>
-        <button class="btn-f btn-save" onclick="saveBank()"><i class="fas fa-save me-1"></i>Save Bank</button>
+        <button class="btn-f btn-cancel" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button class="btn-f btn-save" onclick="saveBankFromPopup()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save Bank{% endif %}</button>
       </div>
     </div>
   </div>
@@ -474,254 +366,326 @@ const IS_AR = {{ 'true' if ar else 'false' }};
 const CSRF  = '{{ csrf_token() }}';
 const TR    = '{{ url_for("sellers.translate_text") }}';
 
-/* ══ Bilingual Translation — same logic as buyers ══ */
+// ═══════════════════════════════════════════════════════════
+// BANKS ARRAY
+// ═══════════════════════════════════════════════════════════
+let vendorBanks = [];
+
+function clearBankPopup() {
+  ['bank_name_en','bank_name_ar','bank_branch_en','bank_branch_ar','bank_account_number','bank_swift','bank_iban'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  document.getElementById('bank_is_primary').checked = false;
+  document.getElementById('bank_edit_idx').value = '';
+}
+
+function openBankPopup(idx) {
+  if (idx !== undefined && vendorBanks[idx]) {
+    const b = vendorBanks[idx];
+    document.getElementById('bank_edit_idx').value = idx;
+    document.getElementById('bankModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل حساب بنكي' : 'Edit Bank Account');
+    document.getElementById('bank_name_en').value = b.bank_name_en || '';
+    document.getElementById('bank_name_ar').value = b.bank_name_ar || '';
+    document.getElementById('bank_branch_en').value = b.branch_en || '';
+    document.getElementById('bank_branch_ar').value = b.branch_ar || '';
+    document.getElementById('bank_account_number').value = b.account_number || '';
+    document.getElementById('bank_swift').value = b.swift_code || '';
+    document.getElementById('bank_iban').value = b.iban || '';
+    document.getElementById('bank_is_primary').checked = b.is_primary || false;
+  } else {
+    clearBankPopup();
+    document.getElementById('bankModalTitle').innerHTML = '<i class="fas fa-university me-2"></i>' + (IS_AR ? 'إضافة حساب بنكي' : 'Add Bank Account');
+  }
+  new bootstrap.Modal(document.getElementById('bankModal')).show();
+}
+
+function saveBankFromPopup() {
+  const name = document.getElementById('bank_name_en').value.trim();
+  if (!name) { alert(IS_AR ? 'اسم البنك مطلوب' : 'Bank name is required'); return; }
+
+  const isPrimary = document.getElementById('bank_is_primary').checked;
+  if (isPrimary) { vendorBanks.forEach(b => b.is_primary = false); }
+
+  const bankData = {
+    bank_name_en: name,
+    bank_name_ar: document.getElementById('bank_name_ar').value.trim(),
+    account_number: document.getElementById('bank_account_number').value.trim(),
+    branch_en: document.getElementById('bank_branch_en').value.trim(),
+    branch_ar: document.getElementById('bank_branch_ar').value.trim(),
+    swift_code: document.getElementById('bank_swift').value.trim(),
+    iban: document.getElementById('bank_iban').value.trim(),
+    is_primary: isPrimary,
+  };
+
+  const editIdx = document.getElementById('bank_edit_idx').value;
+  if (editIdx !== '') { vendorBanks[parseInt(editIdx)] = bankData; }
+  else { vendorBanks.push(bankData); }
+
+  renderBankCards();
+  bootstrap.Modal.getInstance(document.getElementById('bankModal')).hide();
+}
+
+function deleteBankFromArray(idx) {
+  if (!confirm(IS_AR ? 'حذف هذا الحساب البنكي؟' : 'Delete this bank account?')) return;
+  vendorBanks.splice(idx, 1);
+  renderBankCards();
+}
+
+function renderBankCards() {
+  const wrap = document.getElementById('bankListWrap');
+  const countEl = document.getElementById('bankCount');
+  if (countEl) countEl.textContent = vendorBanks.length;
+  
+  if (!vendorBanks.length) {
+    wrap.innerHTML = '<div class="pf-empty"><i class="fas fa-university"></i>{% if ar %}لا توجد حسابات بنكية{% else %}No bank accounts yet{% endif %}</div>';
+    return;
+  }
+  
+  wrap.innerHTML = vendorBanks.map((b, i) => `
+    <div class="bank-card ${b.is_primary ? 'primary' : ''}">
+      <div class="bank-card-info">
+        <div class="bank-card-name">
+          <i class="fas fa-university" style="color:#2563eb;font-size:14px;"></i>
+          ${b.bank_name_en}${b.bank_name_ar ? ' / ' + b.bank_name_ar : ''}
+          ${b.is_primary ? '<span class="bank-badge-primary">PRIMARY</span>' : ''}
+        </div>
+        <div class="bank-card-meta">
+          ${b.account_number ? '<span><i class="fas fa-hashtag"></i>'+b.account_number+'</span>' : ''}
+          ${b.branch_en ? '<span><i class="fas fa-map-marker-alt"></i>'+b.branch_en+'</span>' : ''}
+          ${b.swift_code ? '<span><i class="fas fa-globe"></i>'+b.swift_code+'</span>' : ''}
+          ${b.iban ? '<span><i class="fas fa-credit-card"></i>'+b.iban+'</span>' : ''}
+        </div>
+      </div>
+      <div class="bank-actions">
+        <button class="btn-xs btn-xs-edit" onclick="openBankPopup(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+        <button class="btn-xs btn-xs-del" onclick="deleteBankFromArray(${i})" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function loadBanksFromServer(vendorId) {
+  fetch('/purchase/vendors/' + vendorId + '/banks')
+    .then(r => r.json())
+    .then(banks => {
+      vendorBanks = banks.map(b => ({
+        bank_name_en: b.bank_name_en || '',
+        bank_name_ar: b.bank_name_ar || '',
+        account_number: b.account_number || '',
+        branch_en: b.branch_en || '',
+        branch_ar: b.branch_ar || '',
+        swift_code: b.swift_code || '',
+        iban: b.iban || '',
+        is_primary: b.is_primary || false,
+      }));
+      renderBankCards();
+    });
+}
+
+// ═══════════════════════════════════════════════════════════
+// CORRECTED TRANSLATION LOGIC
+// ═══════════════════════════════════════════════════════════
+// vTrans: auto-translate on typing
+//   EN portal: only EN→AR (sl='en')
+//   AR portal: only AR→EN (sl='ar')
+// doRetrans: refresh button re-translates from source field
+//   Source is always the field with the refresh button
+//   EN portal: source=EN field, target=AR field, direction='en|ar'
+//   AR portal: source=AR field, target=EN field, direction='ar|en'
+// ═══════════════════════════════════════════════════════════
+
 const _vTimers = {};
+
 function vTrans(srcId, tgtId, sl) {
-  if (!IS_AR && sl === 'ar') return;   // EN portal: only translate EN→AR
-  if ( IS_AR && sl === 'en') return;   // AR portal: only translate AR→EN
+  // Only trigger if we're in the matching portal
+  if (!IS_AR && sl !== 'en') return;   // EN portal: only EN source triggers
+  if (IS_AR && sl !== 'ar') return;    // AR portal: only AR source triggers
+
   clearTimeout(_vTimers[tgtId]);
   const src = document.getElementById(srcId);
   const tgt = document.getElementById(tgtId);
   const text = src ? src.value.trim() : '';
   if (!text) { if (tgt) tgt.value = ''; return; }
-  // spinner
-  const baseId = srcId.replace('v_','').replace('_en','').replace('_ar','');
-  const spin = document.getElementById('spin_' + baseId) || document.getElementById('spin_' + baseId + (sl==='en'?'':'_ar'));
-  if (spin) spin.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
+
   _vTimers[tgtId] = setTimeout(() => {
-    fetch(TR, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-                body: JSON.stringify({ text, direction: `${sl}|${sl==='en'?'ar':'en'}` }) })
+    fetch(TR, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify({ text, direction: `${sl}|${sl==='en'?'ar':'en'}` })
+    })
     .then(r => r.json())
-    .then(d => { if (d.translated && tgt) tgt.value = d.translated; if (spin) spin.innerHTML = ''; })
-    .catch(() => { if (spin) spin.innerHTML = ''; });
+    .then(d => { if (d.translated && tgt) tgt.value = d.translated; });
   }, 700);
 }
-function vRetrans(tgtId, srcId, tl) {
+
+// doRetrans: refresh button — re-translate FROM source field TO target field
+// srcId = the field with the button (source), tgtId = the other field (target)
+// sl = source language ('en' or 'ar')
+function doRetrans(srcId, tgtId, sl) {
   const src = document.getElementById(srcId);
   const tgt = document.getElementById(tgtId);
   const text = src ? src.value.trim() : '';
   if (!text || !tgt) return;
-  fetch(TR, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-              body: JSON.stringify({ text, direction: `${tl==='ar'?'en':'ar'}|${tl}` }) })
+
+  // Direction: from source language to target language
+  const direction = sl === 'en' ? 'en|ar' : 'ar|en';
+
+  fetch(TR, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body: JSON.stringify({ text, direction })
+  })
   .then(r => r.json())
   .then(d => { if (d.translated) tgt.value = d.translated; });
 }
 
-/* ══ Geo: Country / City / District ══ */
+// ═══════════════════════════════════════════════════════════
+// EMAIL VALIDATION
+// ═══════════════════════════════════════════════════════════
+function validateEmail(input) {
+  const email = input.value.trim();
+  const msgEl = document.getElementById('v_email_msg');
+  if (!email) { input.classList.remove('is-invalid'); if(msgEl) msgEl.classList.remove('show'); return true; }
+  const valid = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/.test(email);
+  if (!valid) { input.classList.add('is-invalid'); if(msgEl) msgEl.classList.add('show'); }
+  else { input.classList.remove('is-invalid'); if(msgEl) msgEl.classList.remove('show'); }
+  return valid;
+}
+
+// ═══════════════════════════════════════════════════════════
+// GEO
+// ═══════════════════════════════════════════════════════════
 const GEO = {
-  'Saudi Arabia': {
-    'Riyadh':     ['Al Olaya','Al Malaz','Al Murabba','Al Naseem','Al Rawdah','Al Sulimaniyah','Al Aqiq','Al Hamra','Al Wazarat','Al Wurud','Al Yarmouk','Al Nakhil','Al Izdihar','Al Sahafah','Al Qirawan','Al Khaleej','Al Badi','Al Shuhada','Al Uqaz','Al Rabwah','Al Nadhim','Al Nafl','Hittin','Qurtubah','Dhahrat Al Badiyah','Al Falah','Al Mursalat','Al Ghadir','Al Rayyan','Al Hair','Al Masif','Other'],
-    'Jeddah':     ['Al Hamra','Al Zahraa','Al Rawdah','Al Andalus','Al Corniche','Al Balad','Al Aziziyah','Al Nahdah','Al Marwah','Al Salamah','Al Shati','Al Khalidiyah','Al Bawadi','Al Ruwais','Al Nuzha','Al Faisaliyah','Al Rehab','Al Waha','Al Amir Fawwaz','Obhur','Al Thaalibah','Al Worood','Al Rabwah','Other'],
-    'Dammam':     ['Al Shatea','Al Faisaliah','Al Nuzha','Al Badiyah','Al Anoud','Al Muraikabat','Al Qazaz','Al Adama','Al Jawharah','Al Hamra','Al Mazoon','Al Jalawiyah','Al Fursan','Al Nahdah','Al Uraija','Al Dawasir','Other'],
-    'Al Khobar':  ['Ath Thuqbah','Al Corniche','Al Ulaya','Al Aqrabiyah','Al Bandariyah','Al Rekah','Al Hamra','Al Waha','Al Doha','Al Yarmouk','Al Shati','Al Aloha','Al Safa','Al Khobar Al Shamaliyah','Other'],
-    'Al Qatif':   ['At Tawbi','Al Anwar','Al Safwa','Saihat','Sihat','Al Awwamiyah','Tarout','Al Darin','Al Qulaibah','Qatif City Center','Other'],
-    'Makkah':     ['Al Aziziyah','Al Massaer','Ajyad','Al Zahir','Al Hindawiyah','Jarwal','Al Kakiyah','Al Awali','Bakhsh','Al Adl','Al Nuzha','Al Rusaifah','Al Khadra','Al Shubaikah','Al Faysaliyah','Other'],
-    'Madinah':    ['Al Anabarat','Al Aziziyah','Al Manakhah','Al Haram','Al Aqoul','Al Sad','Quba','Al Nakhil','Al Jumah','Al Ranuna','Al Safiyyah','Al Iskan','Bani Harithah','Other'],
-    'Taif':       ['Al Hada','Al Shafa','Al Sail Al Kabeer','Al Hawiyah','Al Faisaliyah','Al Nuzha','Al Salamah','Other'],
-    'Abha':       ['Al Manhal','Al Namas','Al Qabel','Al Waroud','Al Manar','Other'],
-    'Tabuk':      ['Al Aziziyah','Al Rabwah','Al Qadsiah','Al Salam','Other'],
-    'Hail':       ['Al Ghadir','Al Simah','Al Hamad','Al Nahdah','Other'],
-    'Jizan':      ['Al Rawdah','Al Corniche','Al Naeem','Other'],
-    'Najran':     ['Al Nahdah','Al Yarmuk','Other'],
-    'Al Jubail':  ['Al Fanateer','Al Munizilyah','Al Rakkah','Al Shulah','Other'],
-    'Yanbu':      ['Al Sinaiyah','Al Sharm','Al Nuzlah','Other'],
-    'Buraydah':   ['Al Rawdah','Al Khuzama','Al Faysaliyah','Other'],
-    'Other':      ['Other'],
-  },
-  'UAE': {
-    'Dubai':      ['Deira','Bur Dubai','Jumeirah','Marina','Al Quoz','Downtown Dubai','Business Bay','DIFC','Jebel Ali','Al Barsha','Al Nahda','Al Rashidiya','Mirdif','Al Karama','Oud Metha','Al Garhoud','Dubai Silicon Oasis','Academic City','Discovery Gardens','International City','Other'],
-    'Abu Dhabi':  ['Al Khalidiyah','Al Mushrif','Al Manhal','Al Maqtaa','Al Reem Island','Al Raha','Khalifa City','Mohammed Bin Zayed City','Masdar City','Yas Island','Saadiyat Island','Al Ain City','Al Reef','Al Bateen','Corniche','Other'],
-    'Sharjah':    ['Al Majaz','Al Nahda','Al Qasimia','Muwaileh','Al Taawun','Al Khan','Industrial Area','Other'],
-    'Ajman':      ['Al Nuaimia','Al Rashidiya','Al Rumailah','Al Jurf','Other'],
-    'Ras Al Khaimah':['Al Nakheel','Al Qawasim Corniche','Al Dhait','Other'],
-    'Fujairah':   ['Fujairah City','Dibba','Khor Fakkan','Other'],
-    'Al Ain':     ['Al Jimi','Al Muwaiji','Hili','Al Ain City','Other'],
-    'Other':      ['Other'],
-  },
-  'Kuwait': {
-    'Kuwait City':['Salmiya','Hawalli','Rumaithiya','Bayan','Mishref','Sabah Al Salem','Jabriya','Abu Halifa','Mangaf','Fahaheel','Other'],
-    'Al Ahmadi':  ['Ahmadi','Fahaheel','Mahboula','Abu Halifa','Other'],
-    'Al Jahra':   ['Jahra City','Sulaibiya','Other'],
-    'Other':      ['Other'],
-  },
-  'Qatar': {
-    'Doha':       ['West Bay','Lusail','Al Sadd','Al Dafna','Al Mansoura','Madinat Khalifa','Al Rayyan','Al Wakrah','Al Khor','The Pearl','Old Airport','Msheireb','Al Muntazah','Other'],
-    'Al Rayyan':  ['Al Rayyan City','Muaither','Al Gharrafa','Other'],
-    'Al Wakrah':  ['Al Wakrah City','Mesaieed','Other'],
-    'Other':      ['Other'],
-  },
-  'Bahrain': {
-    'Manama':     ['Seef','Juffair','Adliya','Hoora','Muharraq','Riffa','Isa Town','Hamad Town','Saar','Budaiya','Other'],
-    'Muharraq':   ['Muharraq City','Hidd','Arad','Other'],
-    'Riffa':      ['East Riffa','West Riffa','Other'],
-    'Other':      ['Other'],
-  },
-  'Oman': {
-    'Muscat':     ['Al Khuwair','Ruwi','Qurum','Al Maabilah','Al Hail','Ghala','Bausher','Muttrah','Wattayah','Al Azaiba','Other'],
-    'Salalah':    ['Al Nahda','Al Rabat','Al Wusta','Other'],
-    'Sohar':      ['Sohar City','Al Falaj','Other'],
-    'Nizwa':      ['Nizwa City','Other'],
-    'Other':      ['Other'],
-  },
-  'Jordan': {
-    'Amman':      ['Abdali','Shmeisani','Sweifieh','Mecca Street','7th Circle','Khalda','Al Rabieh','Aqaba','Zarqa','Other'],
-    'Irbid':      ['Irbid City','Al Husn','Other'],
-    'Zarqa':      ['Zarqa City','Rusaifa','Other'],
-    'Other':      ['Other'],
-  },
-  'Egypt': {
-    'Cairo':      ['Zamalek','Maadi','Nasr City','Heliopolis','New Cairo','October City','Giza','Dokki','Mohandessin','Garden City','Other'],
-    'Alexandria': ['Smouha','Miami','Montazah','Kafr Abdo','Other'],
-    'Giza':       ['Giza City','6 October','Sheikh Zayed','Other'],
-    'Other':      ['Other'],
-  },
-  'Pakistan': {
-    'Karachi':    ['DHA','Clifton','Gulshan-e-Iqbal','PECHS','Nazimabad','North Karachi','Korangi','Landhi','Other'],
-    'Lahore':     ['DHA','Gulberg','Model Town','Johar Town','Garden Town','Other'],
-    'Islamabad':  ['F-6','F-7','F-8','G-9','G-10','Blue Area','Other'],
-    'Other':      ['Other'],
-  },
-  'India': {
-    'Mumbai':     ['Bandra','Andheri','Juhu','Powai','Navi Mumbai','Thane','Other'],
-    'Delhi':      ['Connaught Place','South Delhi','Noida','Gurgaon','Dwarka','Other'],
-    'Bangalore':  ['Koramangala','Indiranagar','Whitefield','Electronic City','Other'],
-    'Other':      ['Other'],
-  },
-  'Philippines': {
-    'Manila':     ['Makati','Bonifacio Global City','Quezon City','Pasig','Taguig','Other'],
-    'Cebu':       ['Cebu City','Mandaue','Lapu-Lapu','Other'],
-    'Other':      ['Other'],
-  },
-  'Bangladesh':   { 'Dhaka':['Gulshan','Banani','Dhanmondi','Uttara','Other'], 'Chittagong':['Agrabad','Panchlaish','Other'], 'Other':['Other'] },
-  'Sri Lanka':    { 'Colombo':['Colombo 1','Colombo 3','Colombo 7','Dehiwela','Nugegoda','Other'], 'Other':['Other'] },
-  'Nepal':        { 'Kathmandu':['Thamel','Patan','Bhaktapur','Other'], 'Other':['Other'] },
-  'United Kingdom':{ 'London':['City','Westminster','Kensington','Canary Wharf','Shoreditch','Other'], 'Manchester':['City Centre','Salford','Other'], 'Other':['Other'] },
-  'United States': { 'New York':['Manhattan','Brooklyn','Queens','Bronx','Other'], 'Los Angeles':['Downtown','Beverly Hills','Santa Monica','Other'], 'Other':['Other'] },
-  'Canada':       { 'Toronto':['Downtown','North York','Scarborough','Other'], 'Vancouver':['Downtown','Burnaby','Other'], 'Other':['Other'] },
-  'Germany':      { 'Berlin':['Mitte','Charlottenburg','Prenzlauer Berg','Other'], 'Munich':['Maxvorstadt','Schwabing','Other'], 'Other':['Other'] },
-  'France':       { 'Paris':['1st Arr.','8th Arr.','16th Arr.','Other'], 'Lyon':['Lyon City','Other'], 'Other':['Other'] },
-  'Turkey':       { 'Istanbul':['Beyoglu','Besiktas','Kadikoy','Sisli','Other'], 'Ankara':['Cankaya','Kecioren','Other'], 'Other':['Other'] },
-  'Malaysia':     { 'Kuala Lumpur':['KLCC','Bukit Bintang','Mont Kiara','PJ','Other'], 'Johor Bahru':['JB City','Other'], 'Other':['Other'] },
-  'Indonesia':    { 'Jakarta':['Central Jakarta','South Jakarta','West Jakarta','Other'], 'Surabaya':['Surabaya City','Other'], 'Other':['Other'] },
-  'Other':        { 'Other':['Other'] },
+  'Saudi Arabia': {'Riyadh':['Al Olaya','Al Malaz','Other'],'Jeddah':['Al Hamra','Al Zahraa','Other'],'Dammam':['Al Shatea','Other'],'Makkah':['Al Aziziyah','Other'],'Madinah':['Al Anabarat','Other'],'Other':['Other']},
+  'UAE': {'Dubai':['Deira','Bur Dubai','Other'],'Abu Dhabi':['Al Khalidiyah','Other'],'Other':['Other']},
+  'Kuwait': {'Kuwait City':['Salmiya','Other'],'Other':['Other']},
+  'Qatar': {'Doha':['West Bay','Other'],'Other':['Other']},
+  'Bahrain': {'Manama':['Seef','Other'],'Other':['Other']},
+  'Oman': {'Muscat':['Al Khuwair','Other'],'Other':['Other']},
+  'Other': {'Other':['Other']},
 };
+function initVCountry(sel) { const s=document.getElementById('v_country');s.innerHTML='<option value="">-- '+(IS_AR?'اختر':'Select')+' --</option>';Object.keys(GEO).forEach(c=>s.innerHTML+=`<option value="${c}"${c===sel?' selected':''}>${c}</option>`);vCountryChange(sel?'':null,sel); }
+function vCountryChange(preCity,preCountry){const c=preCountry||document.getElementById('v_country').value;const cities=GEO[c]||{};const s=document.getElementById('v_city');s.innerHTML='<option value="">-- '+(IS_AR?'اختر':'Select')+' --</option>';Object.keys(cities).forEach(ct=>s.innerHTML+=`<option value="${ct}"${ct===preCity?' selected':''}>${ct}</option>`);vCityChange(null,preCity);}
+function vCityChange(preDistrict,preCity){const country=document.getElementById('v_country').value;const city=preCity||document.getElementById('v_city').value;const districts=(GEO[country]||{})[city]||[];const s=document.getElementById('v_district');s.innerHTML='<option value="">-- '+(IS_AR?'اختر':'Select')+' --</option>';districts.forEach(d=>s.innerHTML+=`<option value="${d}"${d===preDistrict?' selected':''}>${d}</option>`);}
 
-function initVCountry(selected) {
-  const sel = document.getElementById('v_country');
-  sel.innerHTML = `<option value="">-- ${IS_AR?'اختر':'Select'} --</option>`;
-  Object.keys(GEO).forEach(c => sel.innerHTML += `<option value="${c}"${c===selected?' selected':''}>${c}</option>`);
-  vCountryChange(selected ? '' : null, selected);
-}
-function vCountryChange(preCity, preCountry) {
-  const country = preCountry || document.getElementById('v_country').value;
-  const cities = GEO[country] || {};
-  const sel = document.getElementById('v_city');
-  sel.innerHTML = `<option value="">-- ${IS_AR?'اختر':'Select'} --</option>`;
-  Object.keys(cities).forEach(c => sel.innerHTML += `<option value="${c}"${c===preCity?' selected':''}>${c}</option>`);
-  vCityChange(null, preCity);
-}
-function vCityChange(preDistrict, preCity) {
-  const country = document.getElementById('v_country').value;
-  const city = preCity || document.getElementById('v_city').value;
-  const districts = (GEO[country] || {})[city] || [];
-  const sel = document.getElementById('v_district');
-  sel.innerHTML = `<option value="">-- ${IS_AR?'اختر':'Select'} --</option>`;
-  districts.forEach(d => sel.innerHTML += `<option value="${d}"${d===preDistrict?' selected':''}>${d}</option>`);
-}
+// ═══════════════════════════════════════════════════════════
+// ACCORDION
+// ═══════════════════════════════════════════════════════════
+function togAcc(id){const b=document.getElementById(id),btn=b.previousElementSibling,ch=document.getElementById('ch_'+id);const open=b.classList.contains('show');b.classList.toggle('show',!open);btn.classList.toggle('open',!open);if(ch){ch.className=open?'fas fa-chevron-down':'fas fa-chevron-up';ch.style.cssText=open?'color:#9ca3af;font-size:11px;':'color:#2563eb;font-size:11px;';}}
 
-/* ══ Accordion ══ */
-function togAcc(id) {
-  const b=document.getElementById(id), btn=b.previousElementSibling, ch=document.getElementById('ch_'+id);
-  const open=b.classList.contains('show');
-  b.classList.toggle('show',!open); btn.classList.toggle('open',!open);
-  if(ch){ch.className=open?'fas fa-chevron-down':'fas fa-chevron-up';ch.style.cssText=open?'color:#9ca3af;font-size:11px;':'color:#2563eb;font-size:11px;';}
-}
+const gv=id=>document.getElementById(id)?.value?.trim()||'';
+const sv=(id,val)=>{const e=document.getElementById(id);if(e)e.value=val||'';};
 
-/* ══ Helpers ══ */
-const gv = id => document.getElementById(id)?.value?.trim() || '';
-const sv = (id, val) => { const e=document.getElementById(id); if(e) e.value = val||''; };
-
-/* ══ Open Add ══ */
-function openAdd() {
-  document.getElementById('v_edit_id').value = '';
-  document.getElementById('vndTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة مورد / Add Vendor' : 'Add Vendor / إضافة مورد');
-  ['v_name_en','v_name_ar','v_vat','v_crn','v_contact','v_phone','v_fax','v_email','v_website',
-   'v_street_en','v_street_ar','v_bldg','v_addl','v_postal'].forEach(id => sv(id,''));
+// ═══════════════════════════════════════════════════════════
+// OPEN ADD / EDIT
+// ═══════════════════════════════════════════════════════════
+function openAdd(){
+  vendorBanks = [];
+  renderBankCards();
+  document.getElementById('vndTitle').innerHTML='<i class="fas fa-plus-circle me-2"></i>'+(IS_AR?'إضافة مورد':'Add Vendor');
+  ['v_name_en','v_name_ar','v_vat','v_crn','v_contact','v_phone','v_fax','v_email','v_website','v_street_en','v_street_ar','v_bldg','v_addl','v_postal'].forEach(id=>sv(id,''));
   sv('v_status','active');
-  sv('v_invoice_id','');
   initVCountry('Saudi Arabia');
-  // Open acc1, close acc2
-  ['va1','va2'].forEach((id,i) => {
-    const b=document.getElementById(id), ch=document.getElementById('ch_'+id);
-    b.classList.toggle('show',i===0); b.previousElementSibling.classList.toggle('open',i===0);
-    if(ch){ch.className=i===0?'fas fa-chevron-up':'fas fa-chevron-down';ch.style.cssText=i===0?'color:#2563eb;font-size:11px;':'color:#9ca3af;font-size:11px;';}
-  });
+  const em=document.getElementById('v_email');if(em){em.classList.remove('is-invalid');document.getElementById('v_email_msg').classList.remove('show');}
+  ['va1','va2','va3'].forEach((id,i)=>{const b=document.getElementById(id),ch=document.getElementById('ch_'+id);b.classList.toggle('show',i===0);b.previousElementSibling.classList.toggle('open',i===0);if(ch){ch.className=i===0?'fas fa-chevron-up':'fas fa-chevron-down';ch.style.cssText=i===0?'color:#2563eb;font-size:11px;':'color:#9ca3af;font-size:11px;';}});
   new bootstrap.Modal(document.getElementById('vndModal')).show();
 }
 
-/* ══ Open Edit ══ */
-function openEdit(id) {
+function openEdit(id){
+  vendorBanks = [];
+  renderBankCards();
   fetch('/purchase/vendors/'+id+'/json').then(r=>r.json()).then(d=>{
-    document.getElementById('v_edit_id').value = id;
-    document.getElementById('vndTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل المورد / Edit Vendor' : 'Edit Vendor / تعديل المورد');
-    sv('v_name_en', d.vendor_name_en); sv('v_name_ar', d.vendor_name_ar);
-    sv('v_vat', d.vat_number); sv('v_crn', d.crn);
-    sv('v_contact', d.contact_person); sv('v_phone', d.phone);
-    sv('v_fax', d.fax); sv('v_email', d.email); sv('v_website', d.website);
-    sv('v_status', d.status || 'active');
-    sv('v_invoice_id', d.invoice_id || '');
-    sv('v_street_en', d.street_name); sv('v_street_ar', d.street_name_ar);
-    sv('v_bldg', d.building_number); sv('v_addl', d.additional_number);
-    sv('v_postal', d.postal_code);
-    initVCountry(d.country || 'Saudi Arabia');
-    setTimeout(() => {
-      vCountryChange(d.city || '', d.country || 'Saudi Arabia');
-      setTimeout(() => { vCityChange(d.district || '', d.city || ''); }, 50);
-    }, 50);
+    document.getElementById('vndTitle').innerHTML='<i class="fas fa-edit me-2"></i>'+(IS_AR?'تعديل المورد':'Edit Vendor');
+    sv('v_name_en',d.vendor_name_en);sv('v_name_ar',d.vendor_name_ar);
+    sv('v_vat',d.vat_number);sv('v_crn',d.crn);
+    sv('v_contact',d.contact_person);sv('v_phone',d.phone);
+    sv('v_fax',d.fax);sv('v_email',d.email);sv('v_website',d.website);
+    sv('v_status',d.status||'active');
+    sv('v_street_en',d.street_name);sv('v_street_ar',d.street_name_ar);
+    sv('v_bldg',d.building_number);sv('v_addl',d.additional_number);
+    sv('v_postal',d.postal_code);
+    const em=document.getElementById('v_email');if(em){em.classList.remove('is-invalid');document.getElementById('v_email_msg').classList.remove('show');}
+    initVCountry(d.country||'Saudi Arabia');
+    setTimeout(()=>{vCountryChange(d.city||'',d.country||'Saudi Arabia');setTimeout(()=>{vCityChange(d.district||'',d.city||'');},50);},50);
+    loadBanksFromServer(id);
     new bootstrap.Modal(document.getElementById('vndModal')).show();
   });
 }
 
-/* ══ Save ══ */
-function saveVendor() {
-  const name = gv('v_name_en');
-  if (!name) { document.getElementById('v_name_en').focus(); alert(IS_AR?'اسم المورد مطلوب':'Vendor name is required'); return; }
-  if (!gv('v_vat')) { document.getElementById('v_vat').focus(); alert(IS_AR?'رقم الضريبة مطلوب':'VAT Number is required'); return; }
-  if (!gv('v_crn')) { document.getElementById('v_crn').focus(); alert(IS_AR?'السجل التجاري مطلوب':'CRN is required'); return; }
-  if (!gv('v_phone')) { document.getElementById('v_phone').focus(); alert(IS_AR?'رقم الهاتف مطلوب':'Phone is required'); return; }
-  if (!gv('v_country')) { alert(IS_AR?'الدولة مطلوبة':'Country is required'); return; }
-  if (!gv('v_city')) { alert(IS_AR?'المدينة مطلوبة':'City is required'); return; }
+// ═══════════════════════════════════════════════════════════
+// SAVE VENDOR
+// ═══════════════════════════════════════════════════════════
+function saveVendor(){
+  if(!gv('v_name_en')){alert(IS_AR?'اسم المورد مطلوب':'Vendor name is required');return;}
+  if(!gv('v_vat')){alert(IS_AR?'رقم الضريبة مطلوب':'VAT Number is required');return;}
+  if(!gv('v_crn')){alert(IS_AR?'السجل التجاري مطلوب':'CRN is required');return;}
+  if(!gv('v_phone')){alert(IS_AR?'رقم الهاتف مطلوب':'Phone is required');return;}
+  if(!gv('v_country')){alert(IS_AR?'الدولة مطلوبة':'Country is required');return;}
+  if(!gv('v_city')){alert(IS_AR?'المدينة مطلوبة':'City is required');return;}
+  const emailEl=document.getElementById('v_email');
+  if(emailEl&&emailEl.value.trim()&&!validateEmail(emailEl)){emailEl.focus();return;}
 
-  const editId = document.getElementById('v_edit_id').value;
-  const url = editId ? `/purchase/vendors/${editId}/edit` : '/purchase/vendors/add';
-  const body = new URLSearchParams({
-    csrf_token: CSRF,
-    vendor_name_en: gv('v_name_en'), vendor_name_ar: gv('v_name_ar'),
-    vat_number: gv('v_vat'), crn: gv('v_crn'),
-    contact_person: gv('v_contact'), phone: gv('v_phone'),
-    fax: gv('v_fax'), email: gv('v_email'), website: gv('v_website'),
-    status: gv('v_status'),
-    invoice_id: gv('v_invoice_id'),
-    street_name: gv('v_street_en'), street_name_ar: gv('v_street_ar'),
-    building_number: gv('v_bldg'), additional_number: gv('v_addl'),
-    postal_code: gv('v_postal'),
-    country: gv('v_country'), city: gv('v_city'), district: gv('v_district'),
+  const editId = document.getElementById('v_edit_id')?.value || '';
+  const url = editId ? '/purchase/vendors/'+editId+'/edit' : '/purchase/vendors/add';
+  
+  const formData = new URLSearchParams();
+  formData.append('csrf_token', CSRF);
+  formData.append('vendor_name_en', gv('v_name_en'));
+  formData.append('vendor_name_ar', gv('v_name_ar'));
+  formData.append('vat_number', gv('v_vat'));
+  formData.append('crn', gv('v_crn'));
+  formData.append('contact_person', gv('v_contact'));
+  formData.append('phone', gv('v_phone'));
+  formData.append('fax', gv('v_fax'));
+  formData.append('email', gv('v_email'));
+  formData.append('website', gv('v_website'));
+  formData.append('status', gv('v_status'));
+  formData.append('street_name', gv('v_street_en'));
+  formData.append('street_name_ar', gv('v_street_ar'));
+  formData.append('building_number', gv('v_bldg'));
+  formData.append('additional_number', gv('v_addl'));
+  formData.append('postal_code', gv('v_postal'));
+  formData.append('country', gv('v_country'));
+  formData.append('city', gv('v_city'));
+  formData.append('district', gv('v_district'));
+  
+  vendorBanks.forEach(b => {
+    formData.append('bank_name_en[]', b.bank_name_en);
+    formData.append('bank_name_ar[]', b.bank_name_ar || '');
+    formData.append('bank_account_number[]', b.account_number || '');
+    formData.append('bank_branch_en[]', b.branch_en || '');
+    formData.append('bank_branch_ar[]', b.branch_ar || '');
+    formData.append('bank_swift[]', b.swift_code || '');
+    formData.append('bank_iban[]', b.iban || '');
+    formData.append('bank_is_primary[]', b.is_primary ? '1' : '0');
   });
 
-  // Disable button while saving
   const btn = document.getElementById('vndSaveBtn');
   btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>' + (IS_AR?'جاري الحفظ...':'Saving...');
-  fetch(url, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken':CSRF}, body })
+  fetch(url, { method:'POST', headers:{'X-CSRFToken':CSRF}, body: formData })
   .then(r => r.json())
-  .then(d => {
-    btn.disabled = false; btn.innerHTML = '<i class="fas fa-save me-1"></i>' + (IS_AR?'حفظ المورد / Save':'Save Vendor / حفظ');
-    if (d.ok) { bootstrap.Modal.getInstance(document.getElementById('vndModal'))?.hide(); loadData(); }
+.then(d => {
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-save me-1"></i>' + (IS_AR?'حفظ':'Save');
+    if (d.ok) { 
+      bootstrap.Modal.getInstance(document.getElementById('vndModal'))?.hide();
+      // Clear ALL filters before reloading data
+      if (gridApi) {
+        gridApi.setFilterModel(null);           // Clear column filters
+        gridApi.setGridOption('quickFilterText', '');  // Clear quick search
+      }
+      // Clear the search input box
+      const qsEl = document.getElementById('qs');
+      if (qsEl) qsEl.value = '';
+      // Now reload data (clean, no filters)
+      loadData();
+    }
     else { alert(d.error || (IS_AR?'حدث خطأ':'An error occurred')); }
   })
-  .catch(() => { btn.disabled=false; btn.innerHTML='<i class="fas fa-save me-1"></i>' + (IS_AR?'حفظ المورد / Save':'Save Vendor / حفظ'); });
+  .catch(() => { btn.disabled=false; btn.innerHTML='<i class="fas fa-save me-1"></i>'+(IS_AR?'حفظ':'Save'); });
 }
 
-/* ══ Delete ══ */
+// ═══════════════════════════════════════════════════════════
+// DELETE
+// ═══════════════════════════════════════════════════════════
 function confDel(id, name) {
   document.getElementById('delTxt').textContent = (IS_AR ? 'حذف المورد: ' : 'Delete vendor: ') + name + '?';
   document.getElementById('delConfirmBtn').onclick = () => {
@@ -731,346 +695,37 @@ function confDel(id, name) {
   new bootstrap.Modal(document.getElementById('delModal')).show();
 }
 
-/* ══ AG-Grid ══ */
-function rStatus(p) {
-  const v=p.value||'active';
-  const cfg={'active':['#dcfce7','#15803d'],'inactive':['#f1f5f9','#6b7280']};
-  const [bg,fg]=cfg[v]||cfg['active'];
-  return `<span style="background:${bg};color:${fg};padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;">${IS_AR?(v==='active'?'نشيط':'غير نشيط'):v.charAt(0).toUpperCase()+v.slice(1)}</span>`;
-}
+// ═══════════════════════════════════════════════════════════
+// AG-GRID
+// ═══════════════════════════════════════════════════════════
+function rStatus(p){const v=p.value||'active';const c={'active':['#dcfce7','#15803d'],'inactive':['#f1f5f9','#6b7280']};const[b,f]=c[v]||c['active'];return`<span style="background:${b};color:${f};padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;">${IS_AR?(v==='active'?'نشيط':'غير نشيط'):v.charAt(0).toUpperCase()+v.slice(1)}</span>`;}
 
-class ActR {
-  init(p) {
-    this.g = document.createElement('div'); this.g.style.cssText='display:flex;align-items:center;gap:3px;';
-    const d = p.data;
-    this.g.innerHTML = `
-      <button class="ag-ab ag-ab-view" onclick="window.location='/purchase/vendors/${d.id}'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
-      <button class="ag-ab ag-ab-edit" onclick="openEdit(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-      <button class="ag-ab ag-ab-del"  onclick="confDel(${d.id},'${(d.vendor_name_en||'').replace(/'/g,"\\'")}') " title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
-  }
-  getGui() { return this.g; }
-}
+class ActR{init(p){this.g=document.createElement('div');this.g.style.cssText='display:flex;align-items:center;gap:3px;';const d=p.data;this.g.innerHTML=`<button class="ag-ab ag-ab-view" onclick="window.location='/purchase/vendors/${d.id}'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button><button class="ag-ab ag-ab-edit" onclick="openEdit(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button><button class="ag-ab ag-ab-del" onclick="confDel(${d.id},'${(d.vendor_name_en||'').replace(/'/g,"\\'")}')" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;}getGui(){return this.g;}}
 
-const AG_LOCALE = IS_AR ? {
-  filterOoo:'تصفية...',equals:'يساوي',notEqual:'لا يساوي',contains:'يحتوي على',
-  notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',
-  blank:'فارغ',notBlank:'غير فارغ',
-  applyFilter:'تطبيق / Apply',clearFilter:'مسح / Clear',resetFilter:'إعادة تعيين',
-  addFilterCondition:'+ إضافة قاعدة / Add Rule',
-  matchAll:'يطابق الكل / Match All',matchAny:'يطابق أي / Match Any',
-  noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...',
-} : {
-  filterOoo:'Filter...',applyFilter:'Apply / تطبيق',clearFilter:'Clear / مسح',
-  resetFilter:'Reset',addFilterCondition:'+ Add Rule / إضافة قاعدة',
-  matchAll:'Match All / بتطابق مع الكل',matchAny:'Match Any / يطابق أي',
-  noRowsToShow:'No records found',
-};
+const AG_LOCALE = IS_AR ? {filterOoo:'تصفية...',contains:'يحتوي على',notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',blank:'فارغ',notBlank:'غير فارغ',applyFilter:'تطبيق',clearFilter:'مسح',resetFilter:'إعادة تعيين',noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...'} : {filterOoo:'Filter...',applyFilter:'Apply',clearFilter:'Clear',resetFilter:'Reset',noRowsToShow:'No records found'};
 
-const defCol = {
-  sortable:true, resizable:true, filter:true, floatingFilter:true,
-  filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}
-};
+const defCol = {sortable:true,resizable:true,filter:true,floatingFilter:true,filterParams:{buttons:['apply','reset','clear'],closeOnApply:true}};
 const cols = [
   {headerName:'#',field:'id',width:65,floatingFilter:false,suppressMenu:true},
   {headerName:IS_AR?'الكود':'Code',field:'vendor_code',width:115},
   {headerName:IS_AR?'اسم المورد':'Vendor Name',field:'vendor_name_en',minWidth:200,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'الاسم بالعربي':'Name (AR)',field:'vendor_name_ar',minWidth:160,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'رقم الضريبة':'VAT Number',field:'vat_number',width:145,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'السجل التجاري':'CRN',field:'crn',width:125,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'الهاتف':'Phone',field:'phone',width:125,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'البريد':'Email',field:'email',width:165,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'المدينة':'City',field:'city',width:110,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'شخص الاتصال':'Contact Person',field:'contact_person',width:140,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'الفاتورة':'Invoice No',field:'invoice_no',width:130,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'الحالة':'Status',field:'status',width:95,cellRenderer:rStatus,floatingFilter:false},
-  {headerName:IS_AR?'إجراءات':'Actions الإجراءات',field:'_a',width:110,pinned:IS_AR?'left':'right',
-   sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,
-   cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 6px'}},
+  {headerName:IS_AR?'رقم الضريبة':'VAT',field:'vat_number',width:130},
+  {headerName:IS_AR?'الهاتف':'Phone',field:'phone',width:120},
+  {headerName:IS_AR?'البريد':'Email',field:'email',width:160},
+  {headerName:IS_AR?'المدينة':'City',field:'city',width:110},
+  {headerName:IS_AR?'الحالة':'Status',field:'status',width:90,cellRenderer:rStatus,floatingFilter:false},
+  {headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:105,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 6px'}},
 ];
 
 let gridApi;
-agGrid.createGrid(document.getElementById('vndGrid'), {
-  columnDefs:cols, rowData:[], pagination:true, paginationPageSize:10,
-  animateRows:true, enableRtl:IS_AR, defaultColDef:defCol, localeText:AG_LOCALE,
-  onGridReady(p) { gridApi=p.api; loadData(); },
-  onPaginationChanged() { upd(); },
-  getRowStyle(p) { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
+agGrid.createGrid(document.getElementById('vndGrid'),{
+  columnDefs:cols,rowData:[],pagination:true,paginationPageSize:10,animateRows:true,enableRtl:IS_AR,defaultColDef:defCol,localeText:AG_LOCALE,
+  onGridReady(p){gridApi=p.api;loadData();},
+  getRowStyle(p){return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'};}
 });
-function loadData() { fetch('/purchase/vendors/data').then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);upd();}); }
-function upd() { if(!gridApi)return; const c=gridApi.getDisplayedRowCount(); document.getElementById('selText').textContent=c+' '+(IS_AR?'مورد':'vendors'); document.getElementById('pageInfo').textContent=`${c} entries`; }
-// Auto-open edit modal if ?edit= param present (from vendor view page)
-document.addEventListener('DOMContentLoaded', () => {
-  const params = new URLSearchParams(window.location.search);
-  const editId = params.get('edit');
-  if (editId) {
-    // Wait for grid to load then open edit
-    setTimeout(() => openEdit(parseInt(editId)), 800);
-    // Clean URL
-    history.replaceState({}, '', window.location.pathname);
-  }
-});
+function loadData(){fetch('/purchase/vendors/data').then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);const c=gridApi.getDisplayedRowCount();document.getElementById('selText').textContent=c+' '+(IS_AR?'مورد':'vendors');});}
 
-
-/* ══ VENDOR DOCUMENTS ══ */
-function loadDocs(vendorId) {
-  if (!vendorId) { renderDocList([]); return; }
-  fetch('/purchase/vendors/' + vendorId + '/documents')
-    .then(r => r.json())
-    .then(docs => renderDocList(docs));
-}
-
-function renderDocList(docs) {
-  const wrap = document.getElementById('docListWrap');
-  const badge = document.getElementById('docBadge');
-  if (badge) badge.textContent = docs.length;
-  if (!wrap) return;
-  if (!docs.length) {
-    wrap.innerHTML = '<div style="color:#9ca3af;font-size:12px;padding:4px 0;">No documents uploaded yet</div>';
-    return;
-  }
-  const icons = {pdf:'fa-file-pdf',doc:'fa-file-word',docx:'fa-file-word',
-    xls:'fa-file-excel',xlsx:'fa-file-excel',jpg:'fa-file-image',jpeg:'fa-file-image',
-    png:'fa-file-image',gif:'fa-file-image'};
-  wrap.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px;">
-    <thead>
-      <tr style="background:#f8fafc;border-bottom:1.5px solid #e2e8f0;">
-        <th style="padding:8px 10px;text-align:left;font-weight:700;color:#6b7280;text-transform:uppercase;font-size:10px;">Document</th>
-        <th style="padding:8px 10px;text-align:left;font-weight:700;color:#6b7280;text-transform:uppercase;font-size:10px;">Type</th>
-        <th style="padding:8px 10px;text-align:left;font-weight:700;color:#6b7280;text-transform:uppercase;font-size:10px;">Size</th>
-        <th style="padding:8px 10px;text-align:left;font-weight:700;color:#6b7280;text-transform:uppercase;font-size:10px;">Expiry</th>
-        <th style="padding:8px 10px;text-align:left;font-weight:700;color:#6b7280;text-transform:uppercase;font-size:10px;">Uploaded</th>
-        <th style="width:80px;"></th>
-      </tr>
-    </thead>
-    <tbody>${docs.map(d => {
-      const ext  = d.file_path.split('.').pop().toLowerCase();
-      const icon = {pdf:'fa-file-pdf',doc:'fa-file-word',docx:'fa-file-word',
-        xls:'fa-file-excel',xlsx:'fa-file-excel',jpg:'fa-file-image',jpeg:'fa-file-image',
-        png:'fa-file-image',gif:'fa-file-image'}[ext] || 'fa-file';
-      const iconColor = {pdf:'#ef4444',doc:'#2563eb',docx:'#2563eb',
-        xls:'#16a34a',xlsx:'#16a34a',jpg:'#f59e0b',jpeg:'#f59e0b',
-        png:'#f59e0b',gif:'#f59e0b'}[ext] || '#6b7280';
-      const expiry = d.expiry_date ? d.expiry_date : '—';
-      const expired = d.expiry_date && new Date(d.expiry_date) < new Date();
-      return `<tr style="border-bottom:1px solid #f1f5f9;">
-        <td style="padding:9px 10px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <i class="fas ${icon}" style="font-size:18px;color:${iconColor};"></i>
-            <div>
-              <div style="font-weight:600;color:#374151;">${d.document_name}</div>
-              <div style="color:#9ca3af;font-size:10px;">${ext.toUpperCase()}</div>
-            </div>
-          </div>
-        </td>
-        <td style="padding:9px 10px;"><span style="background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600;">${d.document_type}</span></td>
-        <td style="padding:9px 10px;color:#6b7280;">${d.file_size_kb} KB</td>
-        <td style="padding:9px 10px;">
-          <span style="color:${expired ? '#dc2626' : '#374151'};font-weight:${expired ? '700' : '400'};">
-            ${expired ? '⚠️ ' : ''}${expiry}
-          </span>
-        </td>
-        <td style="padding:9px 10px;color:#9ca3af;">${d.uploaded_at}</td>
-        <td style="padding:9px 10px;white-space:nowrap;">
-          <a href="/purchase/vendors/documents/${d.id}/download"
-             style="width:26px;height:26px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-right:3px;"
-             title="Download"><i class="fas fa-download" style="font-size:10px;"></i></a>
-          <button onclick="deleteVendorDoc(${d.id})"
-                  style="width:26px;height:26px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"
-                  title="Delete"><i class="fas fa-trash" style="font-size:10px;"></i></button>
-        </td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table>`;
-}
-
-async function uploadVendorDoc(input) {
-  const vendorId = _currentVendorId || document.getElementById('v_id')?.value;
-  if (!vendorId) {
-    alert('Please save the vendor first before uploading documents.');
-    input.value = '';
-    return;
-  }
-  if (!input.files.length) return;
-  const file     = input.files[0];
-  const progress = document.getElementById('docUploadProgress');
-  if (progress) progress.style.display = 'block';
-  const fd = new FormData();
-  fd.append('csrf_token',    CSRF);
-  fd.append('file',          file);
-  fd.append('document_type', document.getElementById('doc_type_sel')?.value || 'Other / أخرى');
-  fd.append('document_name', document.getElementById('doc_name_inp')?.value?.trim() || file.name);
-  fd.append('expiry_date',   document.getElementById('doc_expiry_inp')?.value || '');
-  try {
-    const res  = await fetch('/purchase/vendors/' + vendorId + '/documents/upload',
-      {method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd});
-    const data = await res.json();
-    if (data.ok) {
-      loadDocs(vendorId);
-      // Reset upload fields
-      if (document.getElementById('doc_name_inp')) document.getElementById('doc_name_inp').value = '';
-      if (document.getElementById('doc_expiry_inp')) document.getElementById('doc_expiry_inp').value = '';
-    } else {
-      alert(data.error || 'Upload failed');
-    }
-  } catch(e) {
-    alert('Upload failed: ' + e.message);
-  } finally {
-    if (progress) progress.style.display = 'none';
-    input.value = '';
-  }
-}
-
-async function deleteVendorDoc(docId) {
-  if (!confirm('Delete this document?')) return;
-  const res  = await fetch('/purchase/vendors/documents/' + docId + '/delete',
-    {method:'POST', headers:{'X-CSRFToken':CSRF}, body:new URLSearchParams({csrf_token:CSRF})});
-  const data = await res.json();
-  if (data.ok) loadDocs(_currentVendorId);
-}
-
-/* ══ VENDOR BANKS ══ */
-let _currentVendorId = null;
-
-function loadBanks(vendorId) {
-  if (!vendorId) { document.getElementById('docListWrap').innerHTML = '<div style="color:#9ca3af;font-size:12px;padding:4px 0;">Save vendor first, then upload documents</div>';
-  document.getElementById('docBadge').textContent = '0';
-  document.getElementById('bankListWrap').innerHTML = ''; return; }
-  _currentVendorId = vendorId;
-  fetch('/purchase/vendors/' + vendorId + '/banks')
-    .then(r => r.json())
-    .then(banks => renderBankList(banks));
-}
-
-function renderBankList(banks) {
-  const wrap = document.getElementById('bankListWrap');
-  if (!wrap) return;
-  if (!banks.length) {
-    wrap.innerHTML = '<div style="color:#9ca3af;font-size:12px;padding:8px 0;">No bank accounts added yet</div>';
-    return;
-  }
-  wrap.innerHTML = banks.map(b => `
-    <div style="background:white;border:1.5px solid ${b.is_primary ? '#86efac' : '#e2e8f0'};border-radius:9px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
-      <div>
-        <div style="font-weight:700;font-size:13px;color:#1e3a5f;display:flex;align-items:center;gap:8px;">
-          <i class="fas fa-university" style="color:#2563eb;"></i>
-          ${b.bank_name_en}${b.bank_name_ar ? ' / ' + b.bank_name_ar : ''}
-          ${b.is_primary ? '<span style="background:#dcfce7;color:#15803d;padding:1px 8px;border-radius:8px;font-size:10px;font-weight:700;">PRIMARY</span>' : ''}
-        </div>
-        <div style="font-size:12px;color:#6b7280;margin-top:4px;display:flex;gap:16px;">
-          ${b.branch_en ? '<span><i class="fas fa-code-branch me-1"></i>' + b.branch_en + '</span>' : ''}
-          ${b.account_number ? '<span><i class="fas fa-hashtag me-1"></i>' + b.account_number + '</span>' : ''}
-          ${b.iban ? '<span><i class="fas fa-credit-card me-1"></i>' + b.iban + '</span>' : ''}
-          ${b.swift_code ? '<span><i class="fas fa-globe me-1"></i>' + b.swift_code + '</span>' : ''}
-        </div>
-      </div>
-      <div style="display:flex;gap:5px;">
-        ${!b.is_primary ? `<button onclick="setBankPrimary(${b.id})" style="padding:4px 10px;background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Set Primary</button>` : ''}
-        <button onclick="openEditBank(${b.id})" style="width:28px;height:28px;background:#fef3c7;color:#d97706;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><i class="fas fa-pencil-alt" style="font-size:10px;"></i></button>
-        <button onclick="deleteBank(${b.id})" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><i class="fas fa-trash" style="font-size:10px;"></i></button>
-      </div>
-    </div>`).join('');
-}
-
-function openVendorBank(bankId){
-  const mid='bankModal';
-  document.getElementById(mid+'_bank_id').value=bankId||'';
-  document.getElementById(mid+'Title').innerHTML=bankId?'<i class="fas fa-edit me-2"></i>Edit Bank Account':'<i class="fas fa-university me-2"></i>Add Bank Account';
-  if(!bankId){['bank_name_en','bank_name_ar','bank_branch_en','bank_branch_ar','bank_account_number','bank_swift','bank_iban'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('bank_is_primary').checked=false;}
-  new bootstrap.Modal(document.getElementById(mid)).show();
-}
-
-// Alias for backward compat
-const openAddBank = openVendorBank;
-
-function openEditBank(bankId){
-  fetch('/purchase/vendors/'+_currentVendorId+'/banks').then(r=>r.json()).then(banks=>{
-    const b=banks.find(x=>x.id===bankId);
-    if(!b)return;
-    document.getElementById('bank_id').value=bankId;
-    document.getElementById('bankModalTitle').innerHTML='<i class="fas fa-edit me-2"></i>Edit Bank Account';
-    document.getElementById('bank_name_en').value=b.bank_name_en||'';
-    document.getElementById('bank_name_ar').value=b.bank_name_ar||'';
-    document.getElementById('bank_branch_en').value=b.branch_en||'';
-    document.getElementById('bank_branch_ar').value=b.branch_ar||'';
-    document.getElementById('bank_account_number').value=b.account_number||'';
-    document.getElementById('bank_swift').value=b.swift_code||'';
-    document.getElementById('bank_iban').value=b.iban||'';
-    document.getElementById('bank_is_primary').checked=b.is_primary;
-    new bootstrap.Modal(document.getElementById('bankModal')).show();
-  });
-}
-
-function renderBankList(banks){
-  const wrap=document.getElementById('bankListWrap');
-  const badge=document.getElementById('bankBadge_vendor');
-  if(badge)badge.textContent=banks.length;
-  if(!wrap)return;
-  if(!banks.length){wrap.innerHTML='<div class="pf-empty"><i class="fas fa-university"></i>No bank accounts yet</div>';return;}
-  wrap.innerHTML=banks.map(b=>`<div class="pf-bank-card ${b.is_primary?'primary':''}"><div><div class="pf-bank-card-name"><i class="fas fa-university" style="color:#2563eb;font-size:14px;"></i>${b.bank_name_en||'—'}${b.bank_name_ar?' / '+b.bank_name_ar:''}${b.is_primary?'<span class="pf-badge-primary">PRIMARY</span>':''}</div><div class="pf-bank-card-meta">${b.account_number?`<span><i class="fas fa-hashtag"></i>${b.account_number}</span>`:''} ${b.branch_en?`<span><i class="fas fa-map-marker-alt"></i>${b.branch_en}</span>`:''} ${b.swift_code?`<span><i class="fas fa-globe"></i>${b.swift_code}</span>`:''} ${b.iban?`<span><i class="fas fa-credit-card"></i>${b.iban}</span>`:''}</div></div><div class="pf-bank-actions">${!b.is_primary?`<button onclick="setBankPrimary(${b.id})" style="padding:4px 10px;background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Primary</button>`:''}<button onclick="openEditBank(${b.id})" style="width:28px;height:28px;background:#fef3c7;color:#d97706;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-pencil-alt"></i></button><button onclick="deleteBank(${b.id})" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-trash"></i></button></div></div>`).join('');
-}
-
-
-
+document.addEventListener('DOMContentLoaded',()=>{const p=new URLSearchParams(window.location.search);const eid=p.get('edit');if(eid){setTimeout(()=>openEdit(parseInt(eid)),800);history.replaceState({},'',window.location.pathname);}});
 </script>
-{% endblock %}document.getElementById('docListWrap').innerHTML = '<div style="color:#9ca3af;font-size:12px;padding:4px 0;">Save vendor first, then upload documents</div>';
-  document.getElementById('docBadge').textContent = '0';
-  document.getElementById('bankListWrap').innerHTML = '<div style="color:#9ca3af;font-size:12px;padding:8px 0;">Save vendor first, then add bank accounts</div>';
-  
-          {# ── Vendor Documents Sub-section ── #}
-          <div class="pur-section" style="margin:10px 0 16px;">
-            <button type="button" class="pur-section-hdr open" onclick="togSec(this)">
-              <div style="display:flex;align-items:center;">
-                <i class="pur-sec-icon fas fa-file-alt"></i>
-                {% if ar %}المستندات{% else %}Documents{% endif %}
-                <span id="docBadge" style="background:#eff6ff;color:#2563eb;padding:1px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:8px;">0</span>
-              </div>
-              <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
-            </button>
-            <div class="pur-section-body open">
-
-              {# Upload row #}
-              <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;padding:14px;background:#f8fafc;border-radius:8px;border:1.5px solid #e2e8f0;">
-                <div style="flex:1;min-width:160px;">
-                  <div class="f-lbl">{% if ar %}نوع المستند{% else %}Document Type{% endif %}</div>
-                  <select id="doc_type_sel" class="f-inp">
-                    <option value="CR / سجل تجاري">CR / سجل تجاري</option>
-                    <option value="VAT Certificate / شهادة ضريبة">VAT Certificate / شهادة ضريبة</option>
-                    <option value="ID / هوية">ID / هوية</option>
-                    <option value="Contract / عقد">Contract / عقد</option>
-                    <option value="License / رخصة">License / رخصة</option>
-                    <option value="Insurance / تأمين">Insurance / تأمين</option>
-                    <option value="Bank Letter / خطاب بنكي">Bank Letter / خطاب بنكي</option>
-                    <option value="Other / أخرى">Other / أخرى</option>
-                  </select>
-                </div>
-                <div style="flex:1;min-width:160px;">
-                  <div class="f-lbl">{% if ar %}اسم المستند{% else %}Document Name{% endif %}</div>
-                  <input type="text" id="doc_name_inp" class="f-inp" placeholder="{% if ar %}اسم وصفي{% else %}Descriptive name{% endif %}">
-                </div>
-                <div style="flex:0 0 140px;">
-                  <div class="f-lbl">{% if ar %}تاريخ الانتهاء{% else %}Expiry Date{% endif %}</div>
-                  <input type="date" id="doc_expiry_inp" class="f-inp" dir="ltr">
-                </div>
-                <div style="flex:0 0 auto;display:flex;align-items:flex-end;gap:6px;">
-                  <label style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;">
-                    <i class="fas fa-paperclip"></i>
-                    {% if ar %}اختر ملف{% else %}Choose File{% endif %}
-                    <input type="file" id="doc_file_inp" style="display:none;"
-                           accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
-                           onchange="uploadVendorDoc(this)">
-                  </label>
-                </div>
-              </div>
-
-              {# Upload progress #}
-              <div id="docUploadProgress" style="display:none;margin-bottom:10px;">
-                <div style="background:#f0f9ff;border:1px solid #bfdbfe;border-radius:7px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
-                  <i class="fas fa-spinner fa-spin" style="color:#2563eb;"></i>
-                  <span style="font-size:13px;color:#374151;">{% if ar %}جارٍ الرفع...{% else %}Uploading...{% endif %}</span>
-                </div>
-              </div>
-
-              {# Document list #}
-              <div id="docListWrap"></div>
-            </div>
-          </div>
+{% endblock %}

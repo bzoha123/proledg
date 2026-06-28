@@ -64,6 +64,15 @@ class Seller(db.Model):
     updated_at          = db.Column(db.DateTime, default=datetime.utcnow)
     created_by          = db.Column(db.Integer, db.ForeignKey('users.id'))
 
+    # Relationships
+    banks = db.relationship('SellerBank', backref='seller', lazy='dynamic',
+                            foreign_keys='SellerBank.seller_id',
+                            cascade='all, delete-orphan')
+    documents = db.relationship('SellerDocument', backref='seller', lazy='dynamic',
+                                foreign_keys='SellerDocument.seller_id',
+                                cascade='all, delete-orphan')
+    creator = db.relationship('User', foreign_keys=[created_by], lazy=True)
+
     def to_dict(self):
         return {
             'id': self.id, 'seller_code': self.seller_code or '',
@@ -83,20 +92,24 @@ class SellerBank(db.Model):
     id             = db.Column(db.Integer, primary_key=True)
     seller_id      = db.Column(db.Integer, db.ForeignKey('sellers.id'), nullable=False)
     bank_name      = db.Column(db.String(150), nullable=False)
+    bank_name_ar   = db.Column(db.String(150))
     account_number = db.Column(db.String(50))
     branch         = db.Column(db.String(100))
+    branch_ar      = db.Column(db.String(100))
     swift_code     = db.Column(db.String(20))
     iban           = db.Column(db.String(50))
     is_primary     = db.Column(db.Boolean, default=False)
     created_at     = db.Column(db.DateTime, default=datetime.utcnow)
 
-    seller = db.relationship('Seller', backref=db.backref('banks', lazy=True))
-
     def to_dict(self):
         return {
             'id': self.id, 'seller_id': self.seller_id,
-            'bank_name': self.bank_name, 'account_number': self.account_number or '',
-            'branch': self.branch or '', 'swift_code': self.swift_code or '',
+            'bank_name': self.bank_name,
+            'bank_name_ar': self.bank_name_ar or '',
+            'account_number': self.account_number or '',
+            'branch': self.branch or '',
+            'branch_ar': self.branch_ar or '',
+            'swift_code': self.swift_code or '',
             'iban': self.iban or '', 'is_primary': self.is_primary,
         }
 
@@ -112,12 +125,27 @@ class SellerDocument(db.Model):
     document_name = db.Column(db.String(200), nullable=False)
     file_path     = db.Column(db.String(500), nullable=False)
     file_size     = db.Column(db.Integer)
+    issue_date    = db.Column(db.Date)
     expiry_date   = db.Column(db.Date)
     uploaded_at   = db.Column(db.DateTime, default=datetime.utcnow)
     uploaded_by   = db.Column(db.Integer, db.ForeignKey('users.id'))
 
+    # Relationship to User who uploaded
+    uploader = db.relationship('User', foreign_keys=[uploaded_by], lazy=True)
 
-# ─────────────────────────────────────────────────────────────────
+
+class ActivityLog(db.Model):
+    __tablename__ = 'activity_logs'
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    action     = db.Column(db.String(50), nullable=False)
+    target     = db.Column(db.String(50))
+    target_id  = db.Column(db.Integer)
+    detail     = db.Column(db.Text)
+    ip_address = db.Column(db.String(45))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 # BUYER MASTER
 # ─────────────────────────────────────────────────────────────────
 class BuyerMaster(db.Model):
@@ -187,21 +215,6 @@ class BuyerBank(db.Model):
             'branch': self.branch or '', 'swift_code': self.swift_code or '',
             'iban': self.iban or '', 'is_primary': self.is_primary,
         }
-
-
-# ─────────────────────────────────────────────────────────────────
-# ACTIVITY LOG
-# ─────────────────────────────────────────────────────────────────
-class ActivityLog(db.Model):
-    __tablename__ = 'activity_logs'
-    id         = db.Column(db.Integer, primary_key=True)
-    user_id    = db.Column(db.Integer, db.ForeignKey('users.id'))
-    action     = db.Column(db.String(100))
-    target     = db.Column(db.String(100))
-    target_id  = db.Column(db.Integer)
-    detail     = db.Column(db.Text)
-    ip_address = db.Column(db.String(45))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 # ─────────────────────────────────────────────────────────────────

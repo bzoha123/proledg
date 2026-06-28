@@ -408,10 +408,14 @@ function switchTab(tabId, btn) {
 
 /* ══ Doc No fetch ══ */
 async function fetchDocNo() {
-  const res = await fetch('/purchase/next-doc-no?type=PQ');
-  const d   = await res.json();
-  document.getElementById('pq_doc_no').value = d.doc_no;
-  document.getElementById('pqDocBadge').textContent = d.doc_no;
+  try {
+    const res = await fetch('/purchase/next-doc-no?type=PQ');
+    const d   = await res.json();
+    document.getElementById('pq_doc_no').value = d.doc_no;
+    document.getElementById('pqDocBadge').textContent = d.doc_no;
+  } catch(e) {
+    console.error('Error fetching doc no:', e);
+  }
 }
 
 /* ══ Line Items ══ */
@@ -424,7 +428,7 @@ function addLiRow(d) {
   const row = `<tr id="plr_${idx}">
     <td style="text-align:center;color:#9ca3af;font-size:11px;padding:4px;">${_liIdx}</td>
     <td><input type="text"   class="li-inp" name="li_item_code[]" value="${d.item_code||''}" style="width:80px;"></td>
-    <td><input type="text"   class="li-inp" name="li_item_desc[]" value="${d.item_desc||''}" style="min-width:130px;"></td>
+    <td><input type="text"   class="li-inp" name="li_item_desc[]" value="${d.item_desc||d.description||''}" style="min-width:130px;"></td>
     <td><input type="date"   class="li-inp" name="li_required_date[]" value="${d.required_date||''}" dir="ltr" style="width:105px;"></td>
     <td><input type="text"   class="li-inp" name="li_warehouse[]" value="${d.warehouse||''}" style="min-width:90px;"></td>
     <td><select class="li-inp" name="li_uom[]" style="width:90px;">${uoms.map(([v,l])=>`<option value="${v}"${d.uom===v?' selected':''}>${l}</option>`).join('')}</select></td>
@@ -558,6 +562,7 @@ function openAddPQ() {
   });
   document.getElementById('pq_status').value = 'Open';
   document.getElementById('pq_vendor').value = '';
+  document.getElementById('pq_pr_id').value = '';
   document.getElementById('pq_doc_no').value = '';
   document.getElementById('pqDocBadge').textContent = 'NEW';
   document.getElementById('liBody').innerHTML = '';
@@ -591,6 +596,7 @@ function openEditPQ(id) {
     document.getElementById('pqDocBadge').textContent = d.doc_no || '';
     document.getElementById('pq_status').value = d.status || 'Open';
     document.getElementById('pq_vendor').value = d.vendor_id || '';
+    document.getElementById('pq_pr_id').value = d.purchase_request_id || '';
     document.getElementById('pq_requester').value = d.requester || '';
     document.getElementById('pq_req_name').value = d.requester_name || '';
     document.getElementById('pq_approved_by').value = d.approved_by || '';
@@ -620,48 +626,67 @@ function openEditPQ(id) {
       if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
     });
     new bootstrap.Modal(document.getElementById('pqModal')).show();
+  }).catch(err => {
+    console.error('Error loading quotation:', err);
+    alert(IS_AR ? 'حدث خطأ في تحميل البيانات' : 'Error loading data');
   });
 }
 
 /* ══ Save ══ */
 async function savePQ() {
-  const id  = document.getElementById('pq_id').value;
-  const url = id ? `/purchase/quotations/${id}/edit` : '/purchase/quotations/add';
-  const fd  = new FormData();
-  fd.set('csrf_token', CSRF);
-  fd.set('status',         document.getElementById('pq_status').value);
-  fd.set('pr_id', document.getElementById('pq_pr_id')?.value || '');
-  fd.set('vendor_id',      document.getElementById('pq_vendor').value);
-  fd.set('requester',      document.getElementById('pq_requester').value);
-  fd.set('requester_name', document.getElementById('pq_req_name').value);
-  fd.set('approved_by',    document.getElementById('pq_approved_by').value);
-  fd.set('remarks',        document.getElementById('pq_remarks').value);
-  fd.set('posting_date',   document.getElementById('pq_posting_date').value);
-  fd.set('valid_until',    document.getElementById('pq_valid_until').value);
-  fd.set('document_date',  document.getElementById('pq_doc_date').value);
-  fd.set('required_date',  document.getElementById('pq_req_date').value);
-  // Line items
-  document.querySelectorAll('#liBody tr').forEach(row => {
-    const g = n => row.querySelector(`[name="${n}[]"]`)?.value || '';
-    fd.append('li_item_code[]',      g('li_item_code'));
-    fd.append('li_item_desc[]',      g('li_item_desc'));
-    fd.append('li_required_date[]',  g('li_required_date'));
-    fd.append('li_warehouse[]',      g('li_warehouse'));
-    fd.append('li_uom[]',            g('li_uom'));
-    fd.append('li_qty[]',            g('li_qty'));
-    fd.append('li_rate[]',           g('li_rate'));
-    fd.append('li_discount[]',       g('li_discount'));
-    fd.append('li_freight[]',        g('li_freight'));
-    fd.append('li_tax_code[]',       g('li_tax_code'));
-  });
-  _attachments.forEach(f => fd.append('attachments', f));
-  const res = await fetch(url, {method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd});
-  const data = await res.json();
-  if (data.ok) {
-    bootstrap.Modal.getInstance(document.getElementById('pqModal'))?.hide();
-    loadData();
-  } else {
-    alert(data.error || (IS_AR ? 'حدث خطأ' : 'An error occurred'));
+  try {
+    const id  = document.getElementById('pq_id').value;
+    const url = id ? `/purchase/quotations/${id}/edit` : '/purchase/quotations/add';
+    const fd  = new FormData();
+    fd.set('csrf_token', CSRF);
+    fd.set('status',         document.getElementById('pq_status').value);
+    fd.set('pr_id', document.getElementById('pq_pr_id')?.value || '');
+    fd.set('vendor_id',      document.getElementById('pq_vendor').value);
+    fd.set('requester',      document.getElementById('pq_requester').value);
+    fd.set('requester_name', document.getElementById('pq_req_name').value);
+    fd.set('approved_by',    document.getElementById('pq_approved_by').value);
+    fd.set('remarks',        document.getElementById('pq_remarks').value);
+    fd.set('posting_date',   document.getElementById('pq_posting_date').value);
+    fd.set('valid_until',    document.getElementById('pq_valid_until').value);
+    fd.set('document_date',  document.getElementById('pq_doc_date').value);
+    fd.set('required_date',  document.getElementById('pq_req_date').value);
+    
+    // Line items
+    document.querySelectorAll('#liBody tr').forEach(row => {
+      const g = n => row.querySelector(`[name="${n}[]"]`)?.value || '';
+      fd.append('li_item_code[]',      g('li_item_code'));
+      fd.append('li_item_desc[]',      g('li_item_desc'));
+      fd.append('li_required_date[]',  g('li_required_date'));
+      fd.append('li_warehouse[]',      g('li_warehouse'));
+      fd.append('li_uom[]',            g('li_uom'));
+      fd.append('li_qty[]',            g('li_qty'));
+      fd.append('li_rate[]',           g('li_rate'));
+      fd.append('li_discount[]',       g('li_discount'));
+      fd.append('li_freight[]',        g('li_freight'));
+      fd.append('li_tax_code[]',       g('li_tax_code'));
+    });
+    
+    _attachments.forEach(f => fd.append('attachments', f));
+    
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {'X-CSRFToken': CSRF},
+      body: fd
+    });
+    
+    const data = await res.json();
+    
+    if (data.ok) {
+      bootstrap.Modal.getInstance(document.getElementById('pqModal'))?.hide();
+      loadData();
+      // Optional: Show success message
+      // alert(IS_AR ? 'تم الحفظ بنجاح' : 'Saved successfully');
+    } else {
+      alert(data.error || (IS_AR ? 'حدث خطأ' : 'An error occurred'));
+    }
+  } catch(err) {
+    console.error('Save error:', err);
+    alert(IS_AR ? 'حدث خطأ في الحفظ' : 'Save failed');
   }
 }
 
@@ -670,9 +695,20 @@ function confDel(id, docNo) {
   document.getElementById('delTxt').textContent = (IS_AR ? 'حذف: ' : 'Delete: ') + docNo + '?';
   document.getElementById('delBtn').onclick = () => {
     fetch('/purchase/quotations/' + id + '/delete', {
-      method:'POST', headers:{'X-CSRFToken':CSRF}, body:new URLSearchParams({csrf_token:CSRF})
+      method:'POST', 
+      headers:{
+        'X-CSRFToken': CSRF,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }, 
+      body: new URLSearchParams({csrf_token: CSRF})
     }).then(r => r.json()).then(d => {
-      if (d.ok) { bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide(); loadData(); }
+      if (d.ok) { 
+        bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide(); 
+        loadData(); 
+      }
+    }).catch(err => {
+      console.error('Delete error:', err);
+      alert(IS_AR ? 'حدث خطأ في الحذف' : 'Delete failed');
     });
   };
   new bootstrap.Modal(document.getElementById('delModal')).show();
@@ -734,18 +770,28 @@ const cols = [
 ];
 
 let gridApi;
-agGrid.createGrid(document.getElementById('pqGrid'), {
-  columnDefs:cols, rowData:[], pagination:true, paginationPageSize:10,
-  animateRows:true, enableRtl:IS_AR, defaultColDef:defCol, localeText:AG_LOCALE,
-  onGridReady(p) { gridApi=p.api; loadData(); },
-  onPaginationChanged() { upd(); },
-  getRowStyle(p) { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
+document.addEventListener('DOMContentLoaded', function() {
+  agGrid.createGrid(document.getElementById('pqGrid'), {
+    columnDefs:cols, rowData:[], pagination:true, paginationPageSize:10,
+    animateRows:true, enableRtl:IS_AR, defaultColDef:defCol, localeText:AG_LOCALE,
+    onGridReady(p) { gridApi=p.api; loadData(); },
+    onPaginationChanged() { upd(); },
+    getRowStyle(p) { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
+  });
 });
+
 function loadData() {
-  fetch('/purchase/quotations/data').then(r=>r.json())
-    .then(d => { gridApi.setGridOption('rowData',d); upd(); })
+  fetch('/purchase/quotations/data')
+    .then(r=>r.json())
+    .then(d => { 
+      if (gridApi) {
+        gridApi.setGridOption('rowData',d); 
+        upd(); 
+      }
+    })
     .catch(console.error);
 }
+
 function upd() {
   if (!gridApi) return;
   const c = gridApi.getDisplayedRowCount();
