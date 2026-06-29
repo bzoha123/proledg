@@ -145,7 +145,6 @@ class ActivityLog(db.Model):
     ip_address = db.Column(db.String(45))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-
 # BUYER MASTER
 # ─────────────────────────────────────────────────────────────────
 class BuyerMaster(db.Model):
@@ -199,8 +198,10 @@ class BuyerBank(db.Model):
     id             = db.Column(db.Integer, primary_key=True)
     buyer_id       = db.Column(db.Integer, db.ForeignKey('buyers.id', ondelete='CASCADE'), nullable=False)
     bank_name      = db.Column(db.String(150), nullable=False)
+    bank_name_ar   = db.Column(db.String(150))
     account_number = db.Column(db.String(50))
     branch         = db.Column(db.String(100))
+    branch_ar      = db.Column(db.String(100))
     swift_code     = db.Column(db.String(20))
     iban           = db.Column(db.String(50))
     is_primary     = db.Column(db.Boolean, default=False)
@@ -211,13 +212,15 @@ class BuyerBank(db.Model):
     def to_dict(self):
         return {
             'id': self.id, 'buyer_id': self.buyer_id,
-            'bank_name': self.bank_name, 'account_number': self.account_number or '',
-            'branch': self.branch or '', 'swift_code': self.swift_code or '',
-            'iban': self.iban or '', 'is_primary': self.is_primary,
+            'bank_name': self.bank_name, 
+            'bank_name_ar': self.bank_name_ar or '',
+            'account_number': self.account_number or '',
+            'branch': self.branch or '', 
+            'branch_ar': self.branch_ar or '',
+            'swift_code': self.swift_code or '',
+            'iban': self.iban or '', 
+            'is_primary': self.is_primary,
         }
-
-
-# ─────────────────────────────────────────────────────────────────
 # PROFESSION MASTER
 # ─────────────────────────────────────────────────────────────────
 class ProfessionMaster(db.Model):
@@ -577,30 +580,78 @@ class VendorBank(db.Model):
 # ─────────────────────────────────────────────────────────────────
 # VENDOR DOCUMENT
 # ─────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────
+# VENDOR DOCUMENT
+# ─────────────────────────────────────────────────────────────────
 class VendorDocument(db.Model):
     __tablename__ = 'vendor_documents'
     id            = db.Column(db.Integer, primary_key=True)
     vendor_id     = db.Column(db.Integer, db.ForeignKey('vendors.id', ondelete='CASCADE'), nullable=False)
-    document_type = db.Column(db.String(100), nullable=False)
-    document_name = db.Column(db.String(200), nullable=False)
-    file_path     = db.Column(db.String(500), nullable=False)
+    document_type = db.Column(db.String(100))
+    document_name = db.Column(db.String(255))
+    issue_date    = db.Column(db.Date, nullable=True)
+    expiry_date   = db.Column(db.Date, nullable=True)
+    file_path     = db.Column(db.String(500))
     file_size     = db.Column(db.Integer)
-    expiry_date   = db.Column(db.Date)
-    uploaded_at   = db.Column(db.DateTime, default=datetime.utcnow)
     uploaded_by   = db.Column(db.Integer, db.ForeignKey('users.id'))
+    uploaded_at   = db.Column(db.DateTime, default=datetime.utcnow)
 
-    vendor = db.relationship('VendorMaster', backref=db.backref('documents', lazy=True, cascade='all,delete-orphan'))
+    vendor   = db.relationship('VendorMaster', backref=db.backref('documents', lazy=True, cascade='all,delete-orphan'))
+    uploader = db.relationship('User', foreign_keys=[uploaded_by])
 
     def to_dict(self):
         return {
-            'id': self.id, 'vendor_id': self.vendor_id,
-            'document_type': self.document_type, 'document_name': self.document_name,
-            'file_path': self.file_path,
-            'file_size_kb': round((self.file_size or 0) / 1024, 1),
+            'id': self.id,
+            'vendor_id': self.vendor_id,
+            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
+            'vendor_code': self.vendor.vendor_code if self.vendor else '',
+            'document_type': self.document_type or '',
+            'document_name': self.document_name or '',
+            'issue_date': str(self.issue_date) if self.issue_date else '',
             'expiry_date': str(self.expiry_date) if self.expiry_date else '',
+            'file_path': self.file_path or '',
+            'file_size_kb': round((self.file_size or 0) / 1024, 1),
+            'uploaded_by': self.uploaded_by,
+            'uploaded_by_name': self.uploader.username if self.uploader else '',
             'uploaded_at': self.uploaded_at.strftime('%Y-%m-%d %H:%M') if self.uploaded_at else '',
         }
 
+
+# ─────────────────────────────────────────────────────────────────
+# BUYER DOCUMENT
+# ─────────────────────────────────────────────────────────────────
+class BuyerDocument(db.Model):
+    __tablename__ = 'buyer_documents'
+    id            = db.Column(db.Integer, primary_key=True)
+    buyer_id      = db.Column(db.Integer, db.ForeignKey('buyers.id', ondelete='CASCADE'), nullable=False)
+    document_type = db.Column(db.String(100))
+    document_name = db.Column(db.String(255))
+    issue_date    = db.Column(db.Date, nullable=True)
+    expiry_date   = db.Column(db.Date, nullable=True)
+    file_path     = db.Column(db.String(500))
+    file_size     = db.Column(db.Integer)
+    uploaded_by   = db.Column(db.Integer, db.ForeignKey('users.id'))
+    uploaded_at   = db.Column(db.DateTime, default=datetime.utcnow)
+
+    buyer    = db.relationship('BuyerMaster', backref=db.backref('documents', lazy=True, cascade='all,delete-orphan'))
+    uploader = db.relationship('User', foreign_keys=[uploaded_by])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'buyer_id': self.buyer_id,
+            'buyer_name': self.buyer.buyer_name_en if self.buyer else '',
+            'buyer_code': self.buyer.buyer_code if self.buyer else '',
+            'document_type': self.document_type or '',
+            'document_name': self.document_name or '',
+            'issue_date': str(self.issue_date) if self.issue_date else '',
+            'expiry_date': str(self.expiry_date) if self.expiry_date else '',
+            'file_path': self.file_path or '',
+            'file_size_kb': round((self.file_size or 0) / 1024, 1),
+            'uploaded_by': self.uploaded_by,
+            'uploaded_by_name': self.uploader.username if self.uploader else '',
+            'uploaded_at': self.uploaded_at.strftime('%Y-%m-%d %H:%M') if self.uploaded_at else '',
+        }
 
 # ═══════════════════════════════════════════════════════════════════
 # PURCHASE MODULE
@@ -799,8 +850,8 @@ class PurchaseQuotationLineItem(db.Model):
 
 
 # ─────────────────────────────────────────────────────────────────
-# 3. PURCHASE ORDER
-#      FK: purchase_quotation_id → purchase_quotations
+# ─────────────────────────────────────────────────────────────────
+# PURCHASE ORDER HEADER
 # ─────────────────────────────────────────────────────────────────
 class PurchaseOrder(db.Model):
     __tablename__ = 'purchase_orders'
@@ -809,6 +860,7 @@ class PurchaseOrder(db.Model):
     purchase_quotation_id = db.Column(db.Integer, db.ForeignKey('purchase_quotations.purchase_quotation_id'))
     vendor_id             = db.Column(db.Integer, db.ForeignKey('vendors.id'))
     vendor_ref_no         = db.Column(db.String(100))
+    remarks               = db.Column(db.Text)
     status                = db.Column(db.String(20), default='Open')
     posting_date          = db.Column(db.Date)
     delivery_date         = db.Column(db.Date)
@@ -823,6 +875,7 @@ class PurchaseOrder(db.Model):
     created_by            = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     vendor = db.relationship('VendorMaster', backref=db.backref('purchase_orders', lazy=True))
+    pq = db.relationship('PurchaseQuotation', backref=db.backref('purchase_orders', lazy=True))
 
     def to_dict(self):
         return {
@@ -830,9 +883,12 @@ class PurchaseOrder(db.Model):
             'purchase_order_id': self.purchase_order_id,
             'doc_no': self.doc_no or '',
             'purchase_quotation_id': self.purchase_quotation_id,
+            'pq_id': self.purchase_quotation_id,
             'vendor_id': self.vendor_id,
             'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
-            'vendor_ref_no': self.vendor_ref_no or '', 'status': self.status,
+            'vendor_ref_no': self.vendor_ref_no or '',
+            'remarks': self.remarks or '',
+            'status': self.status,
             'posting_date':  str(self.posting_date)  if self.posting_date  else '',
             'delivery_date': str(self.delivery_date) if self.delivery_date else '',
             'document_date': str(self.document_date) if self.document_date else '',
@@ -846,9 +902,7 @@ class PurchaseOrder(db.Model):
 
 
 # ─────────────────────────────────────────────────────────────────
-# 3L. PURCHASE ORDER LINE ITEMS
-#      PK: purchase_order_line_item_id
-#      FK: purchase_order_id → purchase_orders
+# PURCHASE ORDER LINE ITEMS
 # ─────────────────────────────────────────────────────────────────
 class PurchaseOrderLineItem(db.Model):
     __tablename__ = 'purchase_order_line_items'
@@ -877,18 +931,21 @@ class PurchaseOrderLineItem(db.Model):
             'purchase_order_line_item_id': self.purchase_order_line_item_id,
             'purchase_order_id': self.purchase_order_id,
             'line_number': self.line_number,
-            'item_code': self.item_code or '', 'item_desc': self.description or '',
+            'item_code': self.item_code or '',
+            'item_desc': self.description or '',
             'description': self.description or '',
             'required_date': str(self.required_date) if self.required_date else '',
-            'warehouse': self.warehouse or '', 'uom': self.uom,
-            'quantity': float(self.quantity or 0), 'rate': float(self.rate or 0),
-            'discount': float(self.discount or 0), 'freight': float(self.freight or 0),
-            'taxable': float(self.taxable or 0), 'tax_code': self.tax_code,
-            'tax_amount': float(self.tax_amount or 0), 'total': float(self.total or 0),
+            'warehouse': self.warehouse or '',
+            'uom': self.uom,
+            'quantity': float(self.quantity or 0),
+            'rate': float(self.rate or 0),
+            'discount': float(self.discount or 0),
+            'freight': float(self.freight or 0),
+            'taxable': float(self.taxable or 0),
+            'tax_code': self.tax_code,
+            'tax_amount': float(self.tax_amount or 0),
+            'total': float(self.total or 0),
         }
-
-
-# ─────────────────────────────────────────────────────────────────
 # 4. GOODS RECEIPT NOTE
 #      FK: purchase_order_id → purchase_orders
 # ─────────────────────────────────────────────────────────────────
@@ -1373,3 +1430,5 @@ class ItemMaster(db.Model):
             'retail_rate':        float(self.retail_rate        or 0),
             'is_active': self.is_active,
         }
+
+ 

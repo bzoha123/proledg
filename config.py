@@ -10,7 +10,15 @@ class Config:
     WTF_CSRF_ENABLED = True
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max upload
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
-    ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png'}
+    ALLOWED_MIMETYPES = {
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # .docx
+    'application/msword',  # .doc - add this
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',  # .xlsx
+    'application/vnd.ms-excel',  # .xls 
+}
     REMEMBER_COOKIE_DURATION = timedelta(days=30)
 
     # Flask-Babel

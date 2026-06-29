@@ -56,16 +56,13 @@
                     <span>{% if current_locale=='ar' %}البائعون{% else %}Seller{% endif %}</span>
                 </a>
             </li>
-           <li class="nav-item">
-    <a href="{{ url_for('sellers.list_seller_documents_page') }}" 
-       class="nav-link {% if request.endpoint == 'sellers.list_seller_documents_page' %}active{% endif %}">
-        <i class="fas fa-paperclip"></i>
-        <span>{% if current_locale == 'ar' %}وثائق البائع{% else %}Seller Documents{% endif %}</span>
-    </a>
-</li>
-            {% if current_user.is_admin() %}
-            
-            {% endif %}
+            <li class="nav-item">
+                <a href="{{ url_for('sellers.list_seller_documents_page') }}"
+                   class="nav-link {% if request.endpoint == 'sellers.list_seller_documents_page' %}active{% endif %}">
+                    <i class="fas fa-paperclip"></i>
+                    <span>{% if current_locale=='ar' %}وثائق البائع{% else %}Seller Documents{% endif %}</span>
+                </a>
+            </li>
 
             {# ══ PURCHASE ════════════════════════════════════ #}
             <li class="nav-section">{% if current_locale=='ar' %}المشتريات{% else %}Purchase{% endif %}</li>
@@ -76,11 +73,19 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="{{ url_for('vendor_doc.list_vendor_documents_page') }}"
+                   class="nav-link {% if request.endpoint == 'vendor_doc.list_vendor_documents_page' %}active{% endif %}">
+                    <i class="fas fa-paperclip"></i>
+                    <span>{% if current_locale=='ar' %}وثائق المورد{% else %}Vendor Documents{% endif %}</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="{{ url_for('lookups.items_list') }}" class="nav-link {% if request.endpoint == 'lookups.items_list' %}active{% endif %}">
                     <i class="fas fa-boxes"></i>
                     <span>{% if current_locale=='ar' %}بنود البضاعة{% else %}Item Master{% endif %}</span>
                 </a>
-            </li>            <li class="nav-item">
+            </li>
+            <li class="nav-item">
                 <a href="{{ url_for('purchase.pr_list') }}" class="nav-link {% if request.endpoint and 'pr_list' in request.endpoint %}active{% endif %}">
                     <i class="fas fa-file-alt"></i>
                     <span>{% if current_locale=='ar' %}طلب الشراء{% else %}Purchase Request{% endif %}</span>
@@ -123,7 +128,6 @@
                 </a>
             </li>
 
-
             {# ══ SALE ════════════════════════════════════════ #}
             <li class="nav-section">{% if current_locale=='ar' %}المبيعات{% else %}Sale{% endif %}</li>
             <li class="nav-item">
@@ -133,13 +137,19 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="{{ url_for('buyer_doc.list_buyer_documents_page') }}"
+                   class="nav-link {% if request.endpoint == 'buyer_doc.list_buyer_documents_page' %}active{% endif %}">
+                    <i class="fas fa-file-alt"></i>
+                    <span>{% if current_locale=='ar' %}وثائق المشتري{% else %}Buyer Documents{% endif %}</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="{{ url_for('invoices.list_invoices') }}" class="nav-link {% if request.endpoint and 'invoice' in request.endpoint %}active{% endif %}">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <span>{% if current_locale=='ar' %}الفواتير{% else %}Invoices{% endif %}</span>
                 </a>
             </li>
             {% for icon, en, ar in [
-                ('file-alt','Buyer Document','وثائق المشتري'),
                 ('file-signature','Sale Request','طلب بيع'),
                 ('file-invoice','Sale Quotation','عرض سعر بيع'),
                 ('shopping-cart','Sale Order','أمر بيع'),
@@ -165,8 +175,6 @@
                     <span>{% if current_locale=='ar' %}الموظفون{% else %}Employee{% endif %}</span>
                 </a>
             </li>
-            
-            
             <li class="nav-item">
                 <a href="{{ url_for('work_allocations.list_wa') }}" class="nav-link {% if request.endpoint and 'work_allocations.' in request.endpoint %}active{% endif %}">
                     <i class="fas fa-tasks"></i>

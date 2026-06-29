@@ -46,11 +46,9 @@
 .f-inp[readonly]{background:#f8fafc;color:#374151;}
 .f-inp.required-field{border-color:#fca5a5;}
 select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
-/* PO selected highlight */
 .po-selected-banner{background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:none;align-items:center;gap:10px;font-size:13px;}
 .po-selected-banner i{color:#16a34a;font-size:16px;}
 .po-selected-banner strong{color:#15803d;}
-/* Line items */
 .li-wrap{overflow-x:auto;border-radius:8px;border:1.5px solid #e2e8f0;}
 .li-table{width:100%;border-collapse:collapse;font-size:11.5px;min-width:1150px;}
 .li-table thead tr{background:#1e3a5f;}
@@ -405,7 +403,6 @@ async function onPOChange() {
 
   // Mark field as valid/invalid
   sel.classList.toggle('required-field', !poId);
-  sel.classList.toggle('f-inp', true);
 
   if (!poId) {
     banner.style.display = 'none';
@@ -418,9 +415,12 @@ async function onPOChange() {
   let po;
   try {
     const res = await fetch('/purchase/orders/' + poId + '/summary');
+    if (!res.ok) throw new Error('Failed to fetch PO');
     po = await res.json();
+    console.log('PO data:', po);
   } catch(e) {
     console.error('Failed to load PO:', e);
+    alert(IS_AR ? 'فشل تحميل أمر الشراء' : 'Failed to load Purchase Order');
     return;
   }
 
@@ -429,8 +429,7 @@ async function onPOChange() {
   const vendorSel = document.getElementById('pinv_vendor');
   if (vendorSel && po.vendor_id) {
     vendorSel.value = po.vendor_id;
-    const vnEl = document.getElementById('pinv_vendor_name');
-    if (vnEl) vnEl.value = po.vendor_name || '';
+    onVendorChange(); // Update vendor name display
   }
 
   // Vendor ref
@@ -514,10 +513,14 @@ function switchTab(tabId, btn) {
 
 /* ══ Doc No fetch ══ */
 async function fetchDocNo() {
-  const res = await fetch('/purchase/next-doc-no?type=PINV');
-  const d   = await res.json();
-  document.getElementById('pinv_doc_no').value = d.doc_no;
-  document.getElementById('pinvDocBadge').textContent = d.doc_no;
+  try {
+    const res = await fetch('/purchase/next-doc-no?type=PINV');
+    const d   = await res.json();
+    document.getElementById('pinv_doc_no').value = d.doc_no;
+    document.getElementById('pinvDocBadge').textContent = d.doc_no;
+  } catch(e) {
+    console.error('Failed to fetch doc no:', e);
+  }
 }
 
 /* ══ Line Items ══ */
@@ -668,48 +671,69 @@ function openAddPINV() {
 
 /* ══ Open Edit ══ */
 function openEditPINV(id) {
-  fetch('/purchase/invoices/' + id + '/json').then(r => r.json()).then(d => {
-    _liIdx = 0; _attachments = [];
-    document.getElementById('pinv_id').value = id;
-    document.getElementById('pinvTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل فاتورة شراء' : 'Edit Purchase Invoice');
-    // PO - set without triggering auto-fill
-    const poSel = document.getElementById('pinv_po_id');
-    poSel.value = d.po_id || '';
-    poSel.style.borderColor = d.po_id ? '#86efac' : '';
-    poSel.classList.toggle('required-field', !d.po_id);
-    document.getElementById('po_filled_banner').style.display = d.po_no ? 'flex' : 'none';
-    document.getElementById('po_filled_docno').textContent = d.po_no || '';
-    document.getElementById('po_hint').style.display = d.po_id ? 'none' : 'block';
-    // Other fields
-    document.getElementById('pinv_doc_no').value = d.doc_no || '';
-    document.getElementById('pinvDocBadge').textContent = d.doc_no || '';
-    document.getElementById('pinv_status').value = d.status || 'Open';
-    document.getElementById('pinv_vendor').value = d.vendor_id || '';
-    const vn = document.getElementById('pinv_vendor_name'); if(vn) vn.value = d.vendor_name||'';
-    const vr = document.getElementById('pinv_vendor_ref');  if(vr) vr.value = d.vendor_ref_no||'';
-    const rm = document.getElementById('pinv_remarks');     if(rm) rm.value = d.remarks||'';
-    document.getElementById('pinv_posting_date').value  = d.posting_date  || '';
-    document.getElementById('pinv_delivery_date').value = d.delivery_date || '';
-    document.getElementById('pinv_doc_date').value      = d.document_date || '';
-    document.getElementById('liBody').innerHTML = '';
-    (d.items || []).forEach(li => addLiRow(li));
-    if (!d.items?.length) addLiRow();
-    document.getElementById('attList').innerHTML = '';
-    document.getElementById('existAttList').innerHTML = '';
-    (d.attachments || []).forEach(a => {
-      const div = document.createElement('div'); div.className = 'att-item';
-      div.innerHTML = `<span><i class="fas fa-file me-2" style="color:#60a5fa;"></i><strong>${a.filename}</strong></span>`;
-      document.getElementById('existAttList').appendChild(div);
+  fetch('/purchase/invoices/' + id + '/json')
+    .then(r => {
+      if (!r.ok) throw new Error('Failed to fetch invoice data');
+      return r.json();
+    })
+    .then(d => {
+      console.log('Edit data:', d);
+      _liIdx = 0; _attachments = [];
+      document.getElementById('pinv_id').value = id;
+      document.getElementById('pinvTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل فاتورة شراء' : 'Edit Purchase Invoice');
+      
+      // PO - set without triggering auto-fill
+      const poSel = document.getElementById('pinv_po_id');
+      const poIdValue = d.purchase_order_id || d.po_id || '';
+      poSel.value = poIdValue;
+      poSel.style.borderColor = poIdValue ? '#86efac' : '';
+      poSel.classList.toggle('required-field', !poIdValue);
+      document.getElementById('po_filled_banner').style.display = poIdValue ? 'flex' : 'none';
+      document.getElementById('po_filled_docno').textContent = d.po_no || d.po_doc_no || '';
+      document.getElementById('po_hint').style.display = poIdValue ? 'none' : 'block';
+      
+      // Other fields
+      document.getElementById('pinv_doc_no').value = d.doc_no || '';
+      document.getElementById('pinvDocBadge').textContent = d.doc_no || '';
+      document.getElementById('pinv_status').value = d.status || 'Open';
+      document.getElementById('pinv_vendor').value = d.vendor_id || '';
+      onVendorChange();
+      const vr = document.getElementById('pinv_vendor_ref');  if(vr) vr.value = d.vendor_ref_no||'';
+      const rm = document.getElementById('pinv_remarks');     if(rm) rm.value = d.remarks||'';
+      document.getElementById('pinv_posting_date').value  = d.posting_date  || '';
+      document.getElementById('pinv_delivery_date').value = d.delivery_date || '';
+      document.getElementById('pinv_doc_date').value      = d.document_date || '';
+      
+      document.getElementById('liBody').innerHTML = '';
+      if (d.items && d.items.length > 0) {
+        d.items.forEach(li => addLiRow(li));
+      } else {
+        addLiRow();
+      }
+      
+      document.getElementById('attList').innerHTML = '';
+      document.getElementById('existAttList').innerHTML = '';
+      if (d.attachments) {
+        d.attachments.forEach(a => {
+          const div = document.createElement('div'); div.className = 'att-item';
+          div.innerHTML = `<span><i class="fas fa-file me-2" style="color:#60a5fa;"></i><strong>${a.filename}</strong></span>`;
+          document.getElementById('existAttList').appendChild(div);
+        });
+      }
+      
+      recalcSummary(); updLiCount(); updDocCount();
+      switchTab('tab_content', document.querySelector('.pur-tab'));
+      document.querySelectorAll('.pur-section-hdr').forEach(btn => {
+        btn.classList.add('open'); btn.nextElementSibling.classList.add('open');
+        const ch = btn.querySelector('.fa-chevron-up,.fa-chevron-down');
+        if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
+      });
+      new bootstrap.Modal(document.getElementById('pinvModal')).show();
+    })
+    .catch(error => {
+      console.error('Error loading invoice:', error);
+      alert(IS_AR ? 'خطأ في تحميل بيانات الفاتورة' : 'Error loading invoice data');
     });
-    recalcSummary(); updLiCount(); updDocCount();
-    switchTab('tab_content', document.querySelector('.pur-tab'));
-    document.querySelectorAll('.pur-section-hdr').forEach(btn => {
-      btn.classList.add('open'); btn.nextElementSibling.classList.add('open');
-      const ch = btn.querySelector('.fa-chevron-up,.fa-chevron-down');
-      if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
-    });
-    new bootstrap.Modal(document.getElementById('pinvModal')).show();
-  });
 }
 
 /* ══ Save ══ */
@@ -723,39 +747,91 @@ async function savePINV() {
     alert(IS_AR ? 'الرجاء اختيار أمر الشراء أولاً' : 'Please select a Purchase Order first');
     return;
   }
+  
   const id  = document.getElementById('pinv_id').value;
   const url = id ? `/purchase/invoices/${id}/edit` : '/purchase/invoices/add';
   const fd  = new FormData();
-  fd.set('csrf_token',     CSRF);
-  fd.set('po_id',          poId);
-  fd.set('status',         document.getElementById('pinv_status').value);
-  fd.set('vendor_id',      document.getElementById('pinv_vendor').value);
-  fd.set('vendor_ref_no',  document.getElementById('pinv_vendor_ref')?.value||'');
-  fd.set('remarks',        document.getElementById('pinv_remarks')?.value||'');
-  fd.set('posting_date',   document.getElementById('pinv_posting_date').value);
-  fd.set('delivery_date',  document.getElementById('pinv_delivery_date').value);
-  fd.set('document_date',  document.getElementById('pinv_doc_date').value);
-  document.querySelectorAll('#liBody tr').forEach(row => {
-    const g = n => row.querySelector(`[name="${n}[]"]`)?.value || '';
-    fd.append('li_item_code[]',     g('li_item_code'));
-    fd.append('li_item_desc[]',     g('li_item_desc'));
+  
+  // Add CSRF token
+  fd.append('csrf_token', CSRF);
+  
+  // Add all form fields
+  fd.append('po_id', poId);
+  fd.append('status', document.getElementById('pinv_status').value);
+  fd.append('vendor_id', document.getElementById('pinv_vendor').value || '');
+  fd.append('vendor_ref_no', document.getElementById('pinv_vendor_ref')?.value || '');
+  fd.append('remarks', document.getElementById('pinv_remarks')?.value || '');
+  fd.append('posting_date', document.getElementById('pinv_posting_date').value || '');
+  fd.append('delivery_date', document.getElementById('pinv_delivery_date').value || '');
+  fd.append('document_date', document.getElementById('pinv_doc_date').value || '');
+  
+  // Add line items
+  const rows = document.querySelectorAll('#liBody tr');
+  console.log('Number of line items:', rows.length);
+  
+  rows.forEach((row, index) => {
+    const g = n => {
+      const el = row.querySelector(`[name="${n}[]"]`);
+      return el ? el.value : '';
+    };
+    
+    fd.append('li_item_code[]', g('li_item_code'));
+    fd.append('li_item_desc[]', g('li_item_desc'));
     fd.append('li_required_date[]', g('li_required_date'));
-    fd.append('li_warehouse[]',     g('li_warehouse'));
-    fd.append('li_uom[]',           g('li_uom'));
-    fd.append('li_qty[]',           g('li_qty'));
-    fd.append('li_rate[]',          g('li_rate'));
-    fd.append('li_discount[]',      g('li_discount'));
-    fd.append('li_freight[]',       g('li_freight'));
-    fd.append('li_tax_code[]',      g('li_tax_code'));
+    fd.append('li_warehouse[]', g('li_warehouse'));
+    fd.append('li_uom[]', g('li_uom'));
+    fd.append('li_qty[]', g('li_qty'));
+    fd.append('li_rate[]', g('li_rate'));
+    fd.append('li_discount[]', g('li_discount'));
+    fd.append('li_freight[]', g('li_freight'));
+    fd.append('li_tax_code[]', g('li_tax_code'));
+    
+    console.log(`Row ${index}:`, {
+      code: g('li_item_code'),
+      desc: g('li_item_desc'),
+      qty: g('li_qty'),
+      rate: g('li_rate')
+    });
   });
+  
+  // Add attachments
   _attachments.forEach(f => fd.append('attachments', f));
-  const res  = await fetch(url, {method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd});
-  const data = await res.json();
-  if (data.ok) {
-    bootstrap.Modal.getInstance(document.getElementById('pinvModal'))?.hide();
-    loadData();
-  } else {
-    alert(data.error || (IS_AR ? 'حدث خطأ' : 'An error occurred'));
+  
+  // Debug: log all FormData entries
+  console.log('FormData entries:');
+  for (let pair of fd.entries()) {
+    console.log(pair[0] + ': ' + pair[1]);
+  }
+  
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': CSRF
+      },
+      body: fd
+    });
+    
+    // Check if response is OK before trying to parse JSON
+    if (!res.ok) {
+      const text = await res.text();
+      console.error('Server error response:', text);
+      throw new Error(`Server returned ${res.status}: ${res.statusText}`);
+    }
+    
+    const data = await res.json();
+    console.log('Server response:', data);
+    
+    if (data.ok) {
+      bootstrap.Modal.getInstance(document.getElementById('pinvModal'))?.hide();
+      loadData();
+    } else {
+      console.error('Save error:', data);
+      alert(data.error || data.message || (IS_AR ? 'حدث خطأ أثناء الحفظ' : 'Error saving invoice'));
+    }
+  } catch (error) {
+    console.error('Network error:', error);
+    alert(IS_AR ? 'خطأ في الاتصال بالخادم: ' + error.message : 'Server error: ' + error.message);
   }
 }
 

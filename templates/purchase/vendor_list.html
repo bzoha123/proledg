@@ -38,22 +38,12 @@
 .btn-cancel:hover { background:#f9fafb; }
 .btn-save:disabled { opacity:.6;cursor:not-allowed;transform:none;box-shadow:none; }
 
-/* Bank cards */
-.bank-card { background:white;border:1.5px solid #e2e8f0;border-radius:9px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between; }
-.bank-card.primary { border-color:#86efac;background:#f0fdf4; }
-.bank-card-info { flex:1; }
-.bank-card-name { font-weight:700;font-size:13px;color:#1e3a5f;display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
-.bank-card-meta { font-size:11px;color:#6b7280;margin-top:4px;display:flex;flex-wrap:wrap;gap:12px; }
-.bank-card-meta span { display:flex;align-items:center;gap:4px; }
-.bank-badge-primary { background:#dcfce7;color:#15803d;padding:2px 9px;border-radius:8px;font-size:10px;font-weight:700; }
-.bank-actions { display:flex;gap:5px;flex-shrink:0;margin-left:10px; }
+/* Bank grid action buttons */
 .btn-xs { width:26px;height:26px;border-radius:6px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:10px; }
 .btn-xs-edit { background:#fef3c7;color:#d97706; }
 .btn-xs-del { background:#fee2e2;color:#dc2626; }
 .bank-add-btn { width:100%;padding:10px;background:#f0f9ff;color:#2563eb;border:1.5px dashed #bfdbfe;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px; }
 .bank-add-btn:hover { background:#eff6ff;border-color:#93c5fd; }
-.pf-empty { text-align:center;padding:20px;color:#9ca3af;font-size:12px; }
-.pf-empty i { font-size:24px;margin-bottom:8px;display:block;opacity:.4; }
 
 /* AG Grid */
 .ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif;--ag-font-size:13px;--ag-header-background-color:#1e3a5f;--ag-header-foreground-color:#fff;--ag-border-color:#e2e8f0;--ag-row-hover-color:#eff6ff;--ag-header-height:42px;--ag-row-height:42px; }
@@ -114,10 +104,7 @@
             <div class="acc-body show" id="va1">
               
               {# Vendor name bilingual #}
-              {# EN portal: typing EN → auto AR, refresh on EN re-translates EN→AR #}
-              {# AR portal: typing AR → auto EN, refresh on AR re-translates AR→EN #}
               <div class="f-grid2" style="margin-bottom:12px;">
-                {# EN field — Refresh button here for EN portal #}
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}اسم المورد (EN){% else %}Vendor Name (EN){% endif %} <span class="f-req">*</span></div>
                   <div class="field-wrap" dir="ltr">
@@ -129,7 +116,6 @@
                     {% endif %}
                   </div>
                 </div>
-                {# AR field — Refresh button here for AR portal #}
                 <div class="f-item">
                   <div class="f-lbl" dir="rtl" style="text-align:right;">{% if ar %}اسم المورد (AR){% else %}Vendor Name (AR){% endif %}</div>
                   <div class="field-wrap" dir="rtl">
@@ -232,7 +218,7 @@
               <i class="fas fa-chevron-down" id="ch_va3" style="color:#9ca3af;font-size:11px;"></i>
             </button>
             <div class="acc-body" id="va3">
-              <div id="bankListWrap"><div class="pf-empty"><i class="fas fa-university"></i>{% if ar %}لا توجد حسابات بنكية{% else %}No bank accounts yet{% endif %}</div></div>
+              <div id="bankGrid" class="ag-theme-alpine" style="height:200px;width:100%;margin-bottom:10px;"></div>
               <button type="button" class="bank-add-btn" onclick="openBankPopup()">
                 <i class="fas fa-plus-circle"></i>{% if ar %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
               </button>
@@ -262,7 +248,7 @@
       <div style="padding:20px;background:#f8fafc;">
         <input type="hidden" id="bank_edit_idx" value="">
         
-        {# Bank Name bilingual — same pattern as vendor name #}
+        {# Bank Name bilingual #}
         <div class="f-grid2" style="margin-bottom:12px;">
           <div class="f-item">
             <div class="f-lbl">Bank Name (EN) <span class="f-req">*</span></div>
@@ -288,7 +274,7 @@
           </div>
         </div>
 
-        {# Branch bilingual — same pattern #}
+        {# Branch bilingual #}
         <div class="f-grid2" style="margin-bottom:12px;">
           <div class="f-item">
             <div class="f-lbl">Branch (EN)</div>
@@ -367,9 +353,142 @@ const CSRF  = '{{ csrf_token() }}';
 const TR    = '{{ url_for("sellers.translate_text") }}';
 
 // ═══════════════════════════════════════════════════════════
-// BANKS ARRAY
+// BANKS GRID
 // ═══════════════════════════════════════════════════════════
 let vendorBanks = [];
+let bankGridApi;
+
+// AG-Grid column definitions for bank accounts
+const bankCols = [
+  {
+    headerName: IS_AR ? '#' : '#',
+    field: '_index',
+    width: 50,
+    valueGetter: 'node.rowIndex + 1',
+    filter: false,
+    floatingFilter: false,
+    suppressMenu: true,
+    cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center' }
+  },
+  {
+    headerName: IS_AR ? 'اسم البنك' : 'Bank Name',
+    field: 'bank_name_en',
+    minWidth: 150,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: IS_AR ? 'اسم البنك (عربي)' : 'Bank Name (AR)',
+    field: 'bank_name_ar',
+    minWidth: 150,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: IS_AR ? 'رقم الحساب' : 'Account Number',
+    field: 'account_number',
+    width: 140,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: IS_AR ? 'الفرع' : 'Branch',
+    field: 'branch_en',
+    width: 120,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: 'SWIFT',
+    field: 'swift_code',
+    width: 110,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: 'IBAN',
+    field: 'iban',
+    width: 160,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: IS_AR ? 'أساسي' : 'Primary',
+    field: 'is_primary',
+    width: 80,
+    filter: false,
+    floatingFilter: false,
+    cellRenderer: function(params) {
+      return params.value 
+        ? '<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;">✓</span>' 
+        : '';
+    },
+    cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center' }
+  },
+  {
+    headerName: IS_AR ? 'إجراءات' : 'Actions',
+    field: '_actions',
+    width: 80,
+    pinned: IS_AR ? 'left' : 'right',
+    sortable: false,
+    filter: false,
+    floatingFilter: false,
+    suppressMenu: true,
+    resizable: false,
+    cellRenderer: function(params) {
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;align-items:center;gap:4px;';
+      div.innerHTML = `
+        <button class="btn-xs btn-xs-edit" onclick="event.stopPropagation(); openBankPopup(${params.node.rowIndex})" title="${IS_AR ? 'تعديل' : 'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+        <button class="btn-xs btn-xs-del" onclick="event.stopPropagation(); deleteBankFromGrid(${params.node.rowIndex})" title="${IS_AR ? 'حذف' : 'Delete'}"><i class="fas fa-trash"></i></button>
+      `;
+      return div;
+    },
+    cellStyle: { overflow: 'visible', padding: '0 4px' }
+  }
+];
+
+// Initialize bank grid
+function initBankGrid() {
+  const bankGridEl = document.getElementById('bankGrid');
+  if (!bankGridEl) return;
+  
+  agGrid.createGrid(bankGridEl, {
+    columnDefs: bankCols,
+    rowData: vendorBanks,
+    enableRtl: IS_AR,
+    defaultColDef: {
+      sortable: true,
+      resizable: true,
+      filter: true,
+      floatingFilter: true,
+      filterParams: {
+        buttons: ['apply', 'reset', 'clear'],
+        closeOnApply: true
+      }
+    },
+    localeText: IS_AR ? {
+      filterOoo: 'تصفية...',
+      contains: 'يحتوي على',
+      notContains: 'لا يحتوي على',
+      startsWith: 'يبدأ بـ',
+      endsWith: 'ينتهي بـ',
+      blank: 'فارغ',
+      notBlank: 'غير فارغ',
+      applyFilter: 'تطبيق',
+      clearFilter: 'مسح',
+      resetFilter: 'إعادة تعيين',
+      noRowsToShow: 'لا توجد حسابات',
+      loadingOoo: 'جاري التحميل...'
+    } : {
+      filterOoo: 'Filter...',
+      applyFilter: 'Apply',
+      clearFilter: 'Clear',
+      resetFilter: 'Reset',
+      noRowsToShow: 'No bank accounts'
+    },
+    getRowStyle: function(params) {
+      return params.node.rowIndex % 2 === 0 ? { background: '#fff' } : { background: '#fafbfc' };
+    },
+    onGridReady: function(params) {
+      bankGridApi = params.api;
+    }
+  });
+}
 
 function clearBankPopup() {
   ['bank_name_en','bank_name_ar','bank_branch_en','bank_branch_ar','bank_account_number','bank_swift','bank_iban'].forEach(id => {
@@ -380,7 +499,7 @@ function clearBankPopup() {
 }
 
 function openBankPopup(idx) {
-  if (idx !== undefined && vendorBanks[idx]) {
+  if (idx !== undefined && idx !== null && vendorBanks[idx]) {
     const b = vendorBanks[idx];
     document.getElementById('bank_edit_idx').value = idx;
     document.getElementById('bankModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل حساب بنكي' : 'Edit Bank Account');
@@ -421,46 +540,23 @@ function saveBankFromPopup() {
   if (editIdx !== '') { vendorBanks[parseInt(editIdx)] = bankData; }
   else { vendorBanks.push(bankData); }
 
-  renderBankCards();
+  refreshBankGrid();
   bootstrap.Modal.getInstance(document.getElementById('bankModal')).hide();
 }
 
-function deleteBankFromArray(idx) {
+function deleteBankFromGrid(idx) {
   if (!confirm(IS_AR ? 'حذف هذا الحساب البنكي؟' : 'Delete this bank account?')) return;
   vendorBanks.splice(idx, 1);
-  renderBankCards();
+  refreshBankGrid();
 }
 
-function renderBankCards() {
-  const wrap = document.getElementById('bankListWrap');
+function refreshBankGrid() {
+  if (bankGridApi) {
+    bankGridApi.setGridOption('rowData', vendorBanks);
+  }
+  // Update bank count badge
   const countEl = document.getElementById('bankCount');
   if (countEl) countEl.textContent = vendorBanks.length;
-  
-  if (!vendorBanks.length) {
-    wrap.innerHTML = '<div class="pf-empty"><i class="fas fa-university"></i>{% if ar %}لا توجد حسابات بنكية{% else %}No bank accounts yet{% endif %}</div>';
-    return;
-  }
-  
-  wrap.innerHTML = vendorBanks.map((b, i) => `
-    <div class="bank-card ${b.is_primary ? 'primary' : ''}">
-      <div class="bank-card-info">
-        <div class="bank-card-name">
-          <i class="fas fa-university" style="color:#2563eb;font-size:14px;"></i>
-          ${b.bank_name_en}${b.bank_name_ar ? ' / ' + b.bank_name_ar : ''}
-          ${b.is_primary ? '<span class="bank-badge-primary">PRIMARY</span>' : ''}
-        </div>
-        <div class="bank-card-meta">
-          ${b.account_number ? '<span><i class="fas fa-hashtag"></i>'+b.account_number+'</span>' : ''}
-          ${b.branch_en ? '<span><i class="fas fa-map-marker-alt"></i>'+b.branch_en+'</span>' : ''}
-          ${b.swift_code ? '<span><i class="fas fa-globe"></i>'+b.swift_code+'</span>' : ''}
-          ${b.iban ? '<span><i class="fas fa-credit-card"></i>'+b.iban+'</span>' : ''}
-        </div>
-      </div>
-      <div class="bank-actions">
-        <button class="btn-xs btn-xs-edit" onclick="openBankPopup(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-        <button class="btn-xs btn-xs-del" onclick="deleteBankFromArray(${i})" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
-      </div>
-    </div>`).join('');
 }
 
 function loadBanksFromServer(vendorId) {
@@ -477,28 +573,18 @@ function loadBanksFromServer(vendorId) {
         iban: b.iban || '',
         is_primary: b.is_primary || false,
       }));
-      renderBankCards();
+      refreshBankGrid();
     });
 }
 
 // ═══════════════════════════════════════════════════════════
 // CORRECTED TRANSLATION LOGIC
 // ═══════════════════════════════════════════════════════════
-// vTrans: auto-translate on typing
-//   EN portal: only EN→AR (sl='en')
-//   AR portal: only AR→EN (sl='ar')
-// doRetrans: refresh button re-translates from source field
-//   Source is always the field with the refresh button
-//   EN portal: source=EN field, target=AR field, direction='en|ar'
-//   AR portal: source=AR field, target=EN field, direction='ar|en'
-// ═══════════════════════════════════════════════════════════
-
 const _vTimers = {};
 
 function vTrans(srcId, tgtId, sl) {
-  // Only trigger if we're in the matching portal
-  if (!IS_AR && sl !== 'en') return;   // EN portal: only EN source triggers
-  if (IS_AR && sl !== 'ar') return;    // AR portal: only AR source triggers
+  if (!IS_AR && sl !== 'en') return;
+  if (IS_AR && sl !== 'ar') return;
 
   clearTimeout(_vTimers[tgtId]);
   const src = document.getElementById(srcId);
@@ -517,16 +603,12 @@ function vTrans(srcId, tgtId, sl) {
   }, 700);
 }
 
-// doRetrans: refresh button — re-translate FROM source field TO target field
-// srcId = the field with the button (source), tgtId = the other field (target)
-// sl = source language ('en' or 'ar')
 function doRetrans(srcId, tgtId, sl) {
   const src = document.getElementById(srcId);
   const tgt = document.getElementById(tgtId);
   const text = src ? src.value.trim() : '';
   if (!text || !tgt) return;
 
-  // Direction: from source language to target language
   const direction = sl === 'en' ? 'en|ar' : 'ar|en';
 
   fetch(TR, {
@@ -580,7 +662,7 @@ const sv=(id,val)=>{const e=document.getElementById(id);if(e)e.value=val||'';};
 // ═══════════════════════════════════════════════════════════
 function openAdd(){
   vendorBanks = [];
-  renderBankCards();
+  refreshBankGrid();
   document.getElementById('vndTitle').innerHTML='<i class="fas fa-plus-circle me-2"></i>'+(IS_AR?'إضافة مورد':'Add Vendor');
   ['v_name_en','v_name_ar','v_vat','v_crn','v_contact','v_phone','v_fax','v_email','v_website','v_street_en','v_street_ar','v_bldg','v_addl','v_postal'].forEach(id=>sv(id,''));
   sv('v_status','active');
@@ -592,7 +674,7 @@ function openAdd(){
 
 function openEdit(id){
   vendorBanks = [];
-  renderBankCards();
+  refreshBankGrid();
   fetch('/purchase/vendors/'+id+'/json').then(r=>r.json()).then(d=>{
     document.getElementById('vndTitle').innerHTML='<i class="fas fa-edit me-2"></i>'+(IS_AR?'تعديل المورد':'Edit Vendor');
     sv('v_name_en',d.vendor_name_en);sv('v_name_ar',d.vendor_name_ar);
@@ -667,15 +749,12 @@ function saveVendor(){
     btn.disabled = false; btn.innerHTML = '<i class="fas fa-save me-1"></i>' + (IS_AR?'حفظ':'Save');
     if (d.ok) { 
       bootstrap.Modal.getInstance(document.getElementById('vndModal'))?.hide();
-      // Clear ALL filters before reloading data
       if (gridApi) {
-        gridApi.setFilterModel(null);           // Clear column filters
-        gridApi.setGridOption('quickFilterText', '');  // Clear quick search
+        gridApi.setFilterModel(null);
+        gridApi.setGridOption('quickFilterText', '');
       }
-      // Clear the search input box
       const qsEl = document.getElementById('qs');
       if (qsEl) qsEl.value = '';
-      // Now reload data (clean, no filters)
       loadData();
     }
     else { alert(d.error || (IS_AR?'حدث خطأ':'An error occurred')); }
@@ -726,6 +805,12 @@ agGrid.createGrid(document.getElementById('vndGrid'),{
 });
 function loadData(){fetch('/purchase/vendors/data').then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);const c=gridApi.getDisplayedRowCount();document.getElementById('selText').textContent=c+' '+(IS_AR?'مورد':'vendors');});}
 
-document.addEventListener('DOMContentLoaded',()=>{const p=new URLSearchParams(window.location.search);const eid=p.get('edit');if(eid){setTimeout(()=>openEdit(parseInt(eid)),800);history.replaceState({},'',window.location.pathname);}});
+// Initialize bank grid on page load
+document.addEventListener('DOMContentLoaded',()=>{
+  initBankGrid();
+  const p=new URLSearchParams(window.location.search);
+  const eid=p.get('edit');
+  if(eid){setTimeout(()=>openEdit(parseInt(eid)),800);history.replaceState({},'',window.location.pathname);}
+});
 </script>
 {% endblock %}

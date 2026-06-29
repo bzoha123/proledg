@@ -316,10 +316,7 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
 /* ══════════════════════════════════════════════
    VIEW + DELETE MODALS
 ══════════════════════════════════════════════ */
-#viewSellerBody table{width:100%;border-collapse:collapse;font-size:13px;}
-#viewSellerBody td{padding:10px 16px;border-bottom:1px solid var(--gray-100);}
-#viewSellerBody tr:nth-child(even) td{background:var(--gray-50);}
-#viewSellerBody td:first-child{font-weight:600;color:var(--gray-700);width:38%;}
+/* view modal styles removed — view page is now a dedicated route */
 </style>
 {% endblock %}
 
@@ -639,10 +636,10 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
                   <thead>
                     <tr>
                       <th>{% if ar %}اسم البنك / Bank Name{% else %}Bank Name / اسم البنك{% endif %}</th>
-                      <th>{% if ar %}رقم الحساب / Account No.{% else %}Account No. / رقم الحساب{% endif %}</th>
                       <th>{% if ar %}الفرع / Branch{% else %}Branch / الفرع{% endif %}</th>
-                      <th>SWIFT Code</th>
+                      <th>{% if ar %}رقم الحساب / Account No.{% else %}Account No. / رقم الحساب{% endif %}</th>
                       <th>IBAN</th>
+                      <th>SWIFT Code</th>
                       <th>{% if ar %}رئيسي / Primary{% else %}Primary / رئيسي{% endif %}</th>
                       <th>{% if ar %}الإجراءات / Actions{% else %}Actions / الإجراءات{% endif %}</th>
                     </tr>
@@ -657,57 +654,6 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
 
             </div><!-- /body-bank -->
           </div><!-- /sec-bank -->
-
-          <!-- ════════════════════════════════
-               SECTION 4: DOCUMENTS
-          ════════════════════════════════ -->
-          <div class="acc-section" id="sec-docs">
-            <div class="acc-head" onclick="toggleSection('docs')">
-              <div class="acc-head-left">
-                <div class="acc-head-icon docs"><i class="fas fa-paperclip"></i></div>
-                <div class="acc-head-title">
-                  {% if ar %}المستندات والمرفقات{% else %}Documents & Attachments{% endif %}
-                  <span class="ar-sub">{% if ar %}Documents & Attachments{% else %}المستندات والمرفقات{% endif %}</span>
-                  <span id="docCountBadge" style="background:#7c3aed;color:#fff;padding:1px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-inline-start:8px;display:none;">0</span>
-                </div>
-              </div>
-              <i class="fas fa-chevron-down acc-chevron" id="chev-docs"></i>
-            </div>
-            <div class="acc-body" id="body-docs">
-
-              <button type="button" class="doc-add-btn" id="docAddBtn" onclick="openDocModal()">
-                <i class="fas fa-plus"></i>
-                {% if ar %}إضافة مستند / Add Document{% else %}+ Add Document / إضافة مستند{% endif %}
-              </button>
-
-              <!-- Documents table -->
-              <div id="docTblWrap" class="doc-tbl-wrap" style="display:none;">
-                <table class="doc-tbl">
-                  <thead>
-                    <tr>
-                      <th style="width:36px;">#</th>
-                      <th>{% if ar %}م / ID{% else %}ID{% endif %}</th>
-                      <th>{% if ar %}ب / Seller{% else %}Seller ID{% endif %}</th>
-                      <th>{% if ar %}نوع المستند / Type{% else %}Doc Type{% endif %}</th>
-                      <th>{% if ar %}الاسم / Name{% else %}Doc Name{% endif %}</th>
-                      <th>{% if ar %}الإصدار / Issue{% else %}Issue Date{% endif %}</th>
-                      <th>{% if ar %}الانتهاء / Expiry{% else %}Expiry Date{% endif %}</th>
-                      <th>{% if ar %}رُفع / Uploaded{% else %}Uploaded At{% endif %}</th>
-                      <th>{% if ar %}بواسطة / By{% else %}Uploaded By{% endif %}</th>
-                      <th>{% if ar %}الحالة{% else %}Status{% endif %}</th>
-                      <th>{% if ar %}إجراءات / Actions{% else %}Actions{% endif %}</th>
-                    </tr>
-                  </thead>
-                  <tbody id="docTblBody"></tbody>
-                </table>
-              </div>
-              <div id="docEmptyMsg" class="doc-empty">
-                <i class="fas fa-folder-open"></i>
-                {% if ar %}لم يتم إضافة مستندات بعد / No documents added yet{% else %}No documents added yet / لم يتم إضافة مستندات بعد{% endif %}
-              </div>
-
-            </div><!-- /body-docs -->
-          </div><!-- /sec-docs -->
 
         </form>
       </div><!-- /sf-body -->
@@ -733,26 +679,6 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
   </div>
 </div>
 
-<!-- ══ VIEW MODAL ══ -->
-<div class="modal fade sf-modal" id="viewSellerModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="sf-hdr"><h5 id="viewTitle"><i class="fas fa-user-tie"></i> Seller Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body p-0" id="viewSellerBody" style="max-height:65vh;overflow-y:auto;"></div>
-      <div class="sf-footer">
-        {% if current_user.is_admin() %}
-        <button type="button" class="sf-btn save" style="background:linear-gradient(135deg,var(--blue),var(--blue-dk));"
-          onclick="bootstrap.Modal.getInstance(document.getElementById('viewSellerModal')).hide();setTimeout(()=>openEditModal(currentViewId),350)">
-          <i class="fas fa-pencil-alt"></i> {% if ar %}تعديل / Edit{% else %}Edit / تعديل{% endif %}
-        </button>
-        {% endif %}
-        <button type="button" class="sf-btn cancel" data-bs-dismiss="modal"><i class="fas fa-times"></i> {% if ar %}إغلاق{% else %}Close{% endif %}</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ══ DELETE MODAL ══ -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
   <div class="modal-dialog modal-sm modal-dialog-centered">
@@ -773,205 +699,242 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
   </div>
 </div>
 
-<!-- ══ BANK DETAIL SUB-MODAL ══ -->
-<div class="modal fade bm-modal" id="bankModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="bm-hdr">
-        <h5 id="bmTitle"><i class="fas fa-university"></i> {% if ar %}إضافة تفاصيل البنك / Add Bank Details{% else %}Add Bank Details / إضافة تفاصيل البنك{% endif %}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="bm-body">
-        <input type="hidden" id="bm_idx" value="">
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- BANK DETAIL SUB-MODAL                                   -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="modal fade bm-modal" id="bankModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
 
-        <!-- Bank Name — bilingual -->
-        <div class="bi-group">
-          <div class="bi-labels">
-            <div class="bi-lbl-en">{% if ar %}اسم البنك{% else %}Bank Name{% endif %} <span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span> <span class="req">*</span></div>
-            <div class="bi-lbl-ar"><span class="req">*</span> <span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span> {% if ar %}Bank Name{% else %}اسم البنك{% endif %}</div>
-          </div>
-          <div class="bi-inputs">
-            <div class="bi-wrap">
-              <input type="text" id="bm_name_p" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                placeholder="{% if ar %}أدخل اسم البنك{% else %}Enter bank name{% endif %}"
-                oninput="scheduleBMTrans('bm_name');clearBmErr()">
-              <button type="button" class="sf-retrans" onclick="retransBM('bm_name')"><i class="fas fa-sync-alt"></i></button>
+            <!-- ──── HEADER ──── -->
+            <div class="bm-hdr">
+                <h5 id="bmTitle">
+                    <i class="fas fa-university"></i>
+                    {% if ar %}إضافة تفاصيل البنك / Add Bank Details{% else %}Add Bank Details / إضافة تفاصيل البنك{% endif %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="bi-wrap">
-              <input type="text" id="bm_name_s" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}"
-                placeholder="{% if ar %}Enter bank name{% else %}أدخل اسم البنك{% endif %}">
-              <span class="sf-spin" id="bm_name_spin"></span>
+
+            <!-- ──── BODY ──── -->
+            <div class="bm-body" style="padding:20px 22px 4px;">
+                <input type="hidden" id="bm_idx" value="">
+
+                <!-- ══ SECTION DIVIDER HELPER ══
+                     Reuse the same pattern as the main form's section labels -->
+                <style>
+                    .bm-section-lbl {
+                        display: flex;
+                        align-items: center;
+                        gap: 7px;
+                        margin: 0 0 12px;
+                        color: var(--gray-400);
+                        font-size: 10.5px;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        letter-spacing: .06em;
+                    }
+                    .bm-section-lbl i { font-size: 11px; }
+                    .bm-section-lbl::after {
+                        content: '';
+                        flex: 1;
+                        height: 1px;
+                        background: var(--gray-200);
+                    }
+                    .bm-section { margin-bottom: 18px; }
+                    .bm-section:last-child { margin-bottom: 0; }
+                </style>
+
+                <!-- ══ A: ACCOUNT HOLDER ══ -->
+                <div class="bm-section">
+                    <div class="bm-section-lbl">
+                        <i class="fas fa-user-circle"></i>
+                        {% if ar %}صاحب الحساب / Account holder{% else %}Account holder / صاحب الحساب{% endif %}
+                    </div>
+
+                    <!-- Bank Name — bilingual -->
+                    <div class="bi-group" style="margin-bottom:0;">
+                        <div class="bi-labels">
+                            <div class="bi-lbl-en">
+                                {% if ar %}اسم البنك{% else %}Bank Name{% endif %}
+                                <span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span>
+                                <span class="req">*</span>
+                            </div>
+                            <div class="bi-lbl-ar">
+                                <span class="req">*</span>
+                                <span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>
+                                {% if ar %}Bank Name{% else %}اسم البنك{% endif %}
+                            </div>
+                        </div>
+                        <div class="bi-inputs">
+                            <div class="bi-wrap">
+                                <input type="text" id="bm_name_p" class="sf-inp has-btn"
+                                       dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                                       placeholder="{% if ar %}أدخل اسم البنك{% else %}Enter bank name{% endif %}"
+                                       oninput="scheduleBMTrans('bm_name');clearBmErr()">
+                                <button type="button" class="sf-retrans" onclick="retransBM('bm_name')"
+                                        title="{% if ar %}إعادة ترجمة{% else %}Re-translate{% endif %}">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                            <div class="bi-wrap">
+                                <input type="text" id="bm_name_s" class="sf-inp secondary"
+                                       dir="{% if ar %}ltr{% else %}rtl{% endif %}"
+                                       placeholder="{% if ar %}Enter bank name{% else %}أدخل اسم البنك{% endif %}">
+                                <span class="sf-spin" id="bm_name_spin"></span>
+                            </div>
+                        </div>
+                        <div class="sf-err" id="err_bm_name">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>{% if ar %}اسم البنك مطلوب{% else %}Bank name is required{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ B: BRANCH ══ -->
+                <div class="bm-section">
+                    <div class="bm-section-lbl">
+                        <i class="fas fa-code-branch"></i>
+                        {% if ar %}الفرع / Branch{% else %}Branch / الفرع{% endif %}
+                    </div>
+
+                    <!-- Branch — bilingual -->
+                    <div class="bi-group" style="margin-bottom:0;">
+                        <div class="bi-labels">
+                            <div class="bi-lbl-en">
+                                {% if ar %}الفرع{% else %}Branch{% endif %}
+                                <span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span>
+                                <span class="req">*</span>
+                            </div>
+                            <div class="bi-lbl-ar">
+                                <span class="req">*</span>
+                                <span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>
+                                {% if ar %}Branch{% else %}الفرع{% endif %}
+                            </div>
+                        </div>
+                        <div class="bi-inputs">
+                            <div class="bi-wrap">
+                                <input type="text" id="bm_branch_p" class="sf-inp has-btn"
+                                       dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                                       placeholder="{% if ar %}أدخل اسم الفرع{% else %}Enter branch name{% endif %}"
+                                       oninput="scheduleBMTrans('bm_branch');clrInv(this,'err_bm_branch')">
+                                <button type="button" class="sf-retrans" onclick="retransBM('bm_branch')"
+                                        title="{% if ar %}إعادة ترجمة{% else %}Re-translate{% endif %}">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                            <div class="bi-wrap">
+                                <input type="text" id="bm_branch_s" class="sf-inp secondary"
+                                       dir="{% if ar %}ltr{% else %}rtl{% endif %}"
+                                       placeholder="{% if ar %}Enter branch name{% else %}أدخل اسم الفرع{% endif %}">
+                                <span class="sf-spin" id="bm_branch_spin"></span>
+                            </div>
+                        </div>
+                        <div class="sf-err" id="err_bm_branch">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>{% if ar %}الفرع مطلوب{% else %}Branch is required{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ C: TRANSFER CODES ══ -->
+                <div class="bm-section">
+                    <div class="bm-section-lbl">
+                        <i class="fas fa-exchange-alt"></i>
+                        {% if ar %}تفاصيل التحويل / Transfer details{% else %}Transfer details / تفاصيل التحويل{% endif %}
+                    </div>
+
+                    <!-- Account Number — full width -->
+                    <div class="mono-group" style="margin-bottom:12px;">
+                        <div class="mono-lbl">
+                            {% if ar %}رقم الحساب / Account Number{% else %}Account Number / رقم الحساب{% endif %}
+                            <span class="req">*</span>
+                        </div>
+                        <input type="text" id="bm_account" class="sf-inp" dir="ltr"
+                               placeholder="{% if ar %}أدخل رقم الحساب{% else %}Enter account number{% endif %}"
+                               oninput="clrInv(this,'err_bm_account')">
+                        <div class="sf-err" id="err_bm_account">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>{% if ar %}مطلوب{% else %}Required{% endif %}</span>
+                        </div>
+                    </div>
+
+                    <!-- IBAN + SWIFT — side by side -->
+                    <div class="fg-2" style="margin-bottom:0;">
+                        <div>
+                            <div class="mono-lbl">
+                                {% if ar %}رقم الآيبان / IBAN{% else %}IBAN / رقم الآيبان{% endif %}
+                                <span class="req">*</span>
+                            </div>
+                            <input type="text" id="bm_iban" class="sf-inp" dir="ltr"
+                                   style="font-family:monospace;letter-spacing:.03em;"
+                                   placeholder="e.g. SA0380000000608010167519"
+                                   oninput="clrInv(this,'err_bm_iban')">
+                            <div class="sf-err" id="err_bm_iban">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>{% if ar %}مطلوب{% else %}Required{% endif %}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="mono-lbl">
+                                {% if ar %}كود السويفت / SWIFT Code{% else %}SWIFT Code / كود السويفت{% endif %}
+                                <span class="req">*</span>
+                            </div>
+                            <input type="text" id="bm_swift" class="sf-inp" dir="ltr"
+                                   style="font-family:monospace;text-transform:uppercase;letter-spacing:.06em;"
+                                   placeholder="e.g. RJHISARI"
+                                   oninput="clrInv(this,'err_bm_swift')">
+                            <div class="sf-err" id="err_bm_swift">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>{% if ar %}مطلوب{% else %}Required{% endif %}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ D: PRIMARY TOGGLE ══ -->
+                <div class="bm-section" style="margin-bottom:16px;">
+                    <label class="primary-toggle" style="margin-top:0;">
+                        <input type="checkbox" id="bm_primary">
+                        <span>
+                            <i class="fas fa-star" style="color:var(--amber);font-size:12px;"></i>
+                            {% if ar %}تعيين كبنك رئيسي / Set as Primary Bank{% else %}Set as Primary Bank / تعيين كبنك رئيسي{% endif %}
+                        </span>
+                    </label>
+                    <p class="bm-hint" style="margin-top:8px;">
+                        <i class="fas fa-info-circle me-1"></i>
+                        {% if ar %}يمكن تعيين حساب بنكي واحد فقط كحساب رئيسي. / Only one bank account can be set as primary.
+                        {% else %}Only one bank account can be set as primary. / يمكن تعيين حساب بنكي واحد فقط كحساب رئيسي.{% endif %}
+                    </p>
+                </div>
+
+            </div><!-- /bm-body -->
+
+            <!-- ──── FOOTER ──── -->
+            <div class="bm-footer">
+                <button type="button" class="sf-btn reset" onclick="
+                    ['bm_name_p','bm_name_s','bm_account','bm_branch_p','bm_branch_s','bm_swift','bm_iban']
+                        .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+                    document.getElementById('bm_primary').checked=false;
+                    clearBmErr();
+                ">
+                    <i class="fas fa-redo"></i>
+                    {% if ar %}إعادة تعيين / Reset{% else %}Reset / إعادة تعيين{% endif %}
+                </button>
+                <div style="display:flex;gap:8px;">
+                    <button type="button" class="sf-btn cancel" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                        {% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}
+                    </button>
+                    <button type="button" class="sf-btn save" onclick="saveBankEntry()">
+                        <i class="fas fa-plus"></i>
+                        {% if ar %}إضافة بيانات البنك / Add Bank Detail{% else %}Add Bank Detail / إضافة بيانات البنك{% endif %}
+                    </button>
+                </div>
             </div>
-          </div>
-          <div class="sf-err" id="err_bm_name"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}اسم البنك مطلوب{% else %}Bank name is required{% endif %}</span></div>
-        </div>
 
-        <!-- Account Number — single (number) / Branch — bilingual -->
-        <div class="fg-2">
-          <div>
-            <div class="mono-lbl">{% if ar %}رقم الحساب / Account Number{% else %}Account Number / رقم الحساب{% endif %} <span class="req">*</span></div>
-            <input type="text" id="bm_account" class="sf-inp" dir="ltr" placeholder="{% if ar %}أدخل رقم الحساب{% else %}Enter account number{% endif %}"
-              oninput="clrInv(this,'err_bm_account')">
-            <div class="sf-err" id="err_bm_account"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
-          </div>
-        </div>
-
-        <!-- Branch — bilingual -->
-        <div class="bi-group">
-          <div class="bi-labels">
-            <div class="bi-lbl-en">{% if ar %}الفرع{% else %}Branch{% endif %} <span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span> <span class="req">*</span></div>
-            <div class="bi-lbl-ar"><span class="req">*</span> <span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span> {% if ar %}Branch{% else %}الفرع{% endif %}</div>
-          </div>
-          <div class="bi-inputs">
-            <div class="bi-wrap">
-              <input type="text" id="bm_branch_p" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                placeholder="{% if ar %}أدخل اسم الفرع{% else %}Enter branch name{% endif %}"
-                oninput="scheduleBMTrans('bm_branch');clrInv(this,'err_bm_branch')">
-              <button type="button" class="sf-retrans" onclick="retransBM('bm_branch')"><i class="fas fa-sync-alt"></i></button>
-            </div>
-            <div class="bi-wrap">
-              <input type="text" id="bm_branch_s" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}"
-                placeholder="{% if ar %}Enter branch name{% else %}أدخل اسم الفرع{% endif %}">
-              <span class="sf-spin" id="bm_branch_spin"></span>
-            </div>
-          </div>
-          <div class="sf-err" id="err_bm_branch"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}الفرع مطلوب{% else %}Branch is required{% endif %}</span></div>
-        </div>
-
-        <!-- SWIFT / IBAN — single (codes, no translation) -->
-        <div class="fg-2">
-          <div>
-            <div class="mono-lbl">{% if ar %}كود السويفت / SWIFT Code{% else %}SWIFT Code / كود السويفت{% endif %} <span class="req">*</span></div>
-            <input type="text" id="bm_swift" class="sf-inp" dir="ltr" style="font-family:monospace;text-transform:uppercase;" placeholder="e.g. RJHISARI"
-              oninput="clrInv(this,'err_bm_swift')">
-            <div class="sf-err" id="err_bm_swift"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
-          </div>
-          <div>
-            <div class="mono-lbl">{% if ar %}رقم الآيبان / IBAN{% else %}IBAN / رقم الآيبان{% endif %} <span class="req">*</span></div>
-            <input type="text" id="bm_iban" class="sf-inp" dir="ltr" style="font-family:monospace;" placeholder="e.g. SA0380000000608010167519"
-              oninput="clrInv(this,'err_bm_iban')">
-            <div class="sf-err" id="err_bm_iban"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
-          </div>
-        </div>
-
-        <!-- Primary toggle -->
-        <label class="primary-toggle">
-          <input type="checkbox" id="bm_primary">
-          <span><i class="fas fa-star" style="color:var(--amber);font-size:12px;"></i>
-            {% if ar %}تعيين كبنك رئيسي / Set as Primary Bank{% else %}Set as Primary Bank / تعيين كبنك رئيسي{% endif %}
-          </span>
-        </label>
-        <p style="font-size:11px;color:var(--teal);margin-top:8px;margin-bottom:0;font-style:italic;">
-          {% if ar %}يمكن تعيين حساب بنكي واحد فقط كحساب رئيسي. / Only one bank account can be set as primary.{% else %}Only one bank account can be set as primary. / يمكن تعيين حساب بنكي واحد فقط كحساب رئيسي.{% endif %}
-        </p>
-      </div><!-- /bm-body -->
-      <div class="bm-footer">
-        <button type="button" class="sf-btn cancel" data-bs-dismiss="modal">
-          <i class="fas fa-times"></i> {% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}
-        </button>
-        <button type="button" class="sf-btn save" onclick="saveBankEntry()">
-          <i class="fas fa-plus"></i>
-          {% if ar %}إضافة بيانات البنك / Add Bank Detail{% else %}Add Bank Detail / إضافة بيانات البنك{% endif %}
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ══ DOCUMENT SUB-MODAL ══ -->
-<div class="modal fade dm-modal" id="docModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="dm-hdr">
-        <h5 id="dmTitle">
-          <i class="fas fa-paperclip me-2"></i>
-          {% if ar %}إضافة مستند / Add Document{% else %}Add Document / إضافة مستند{% endif %}
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="dm-body">
-        <input type="hidden" id="dm_doc_id" value="">
-
-        <!-- Row 1: Document Type + Document Name -->
-        <div class="fg-2" style="margin-bottom:16px;">
-          <div>
-            <div class="mono-lbl">{% if ar %}نوع المستند / Document Type{% else %}Document Type / نوع المستند{% endif %} <span class="req">*</span></div>
-            <select id="dm_type" class="sf-inp sf-sel" onchange="clrInv(this,'err_dm_type')">
-              <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
-              <option value="Commercial Registration">{% if ar %}السجل التجاري / Commercial Registration{% else %}Commercial Registration / السجل التجاري{% endif %}</option>
-              <option value="VAT Certificate">{% if ar %}شهادة ضريبة القيمة المضافة / VAT Certificate{% else %}VAT Certificate / شهادة ضريبة القيمة المضافة{% endif %}</option>
-              <option value="Trade License">{% if ar %}رخصة تجارية / Trade License{% else %}Trade License / رخصة تجارية{% endif %}</option>
-              <option value="Municipal License">{% if ar %}رخصة بلدية / Municipal License{% else %}Municipal License / رخصة بلدية{% endif %}</option>
-              <option value="GOSI Certificate">{% if ar %}شهادة التأمينات / GOSI Certificate{% else %}GOSI Certificate / شهادة التأمينات{% endif %}</option>
-              <option value="Zakat Certificate">{% if ar %}شهادة الزكاة / Zakat Certificate{% else %}Zakat Certificate / شهادة الزكاة{% endif %}</option>
-              <option value="Saudization Certificate">{% if ar %}شهادة السعودة / Saudization Certificate{% else %}Saudization Certificate / شهادة السعودة{% endif %}</option>
-              <option value="ISO Certificate">{% if ar %}شهادة الأيزو / ISO Certificate{% else %}ISO Certificate / شهادة الأيزو{% endif %}</option>
-              <option value="Bank Letter">{% if ar %}خطاب بنكي / Bank Letter{% else %}Bank Letter / خطاب بنكي{% endif %}</option>
-              <option value="Contract">{% if ar %}عقد / Contract{% else %}Contract / عقد{% endif %}</option>
-              <option value="Other">{% if ar %}أخرى / Other{% else %}Other / أخرى{% endif %}</option>
-            </select>
-            <div class="sf-err" id="err_dm_type"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
-          </div>
-          <div>
-            <div class="mono-lbl">{% if ar %}اسم المستند / Document Name{% else %}Document Name / اسم المستند{% endif %} <span class="req">*</span></div>
-            <input type="text" id="dm_name" class="sf-inp"
-              placeholder="{% if ar %}مثال: رخصة 2025{% else %}e.g. Trade License 2025{% endif %}"
-              oninput="clrInv(this,'err_dm_name')">
-            <div class="sf-err" id="err_dm_name"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
-          </div>
-        </div>
-
-        <!-- Row 2: Issue Date + Expiry Date -->
-        <div class="fg-2" style="margin-bottom:16px;">
-          <div>
-            <div class="mono-lbl">{% if ar %}تاريخ الإصدار / Issue Date{% else %}Issue Date / تاريخ الإصدار{% endif %} <span class="req">*</span></div>
-            <input type="date" id="dm_issue_date" class="sf-inp" oninput="clrInv(this,'err_dm_issue')">
-            <div class="sf-err" id="err_dm_issue"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
-          </div>
-          <div>
-            <div class="mono-lbl">{% if ar %}تاريخ الانتهاء / Expiry Date{% else %}Expiry Date / تاريخ الانتهاء{% endif %}</div>
-            <input type="date" id="dm_expiry_date" class="sf-inp">
-          </div>
-        </div>
-
-        <!-- File Upload -->
-        <div>
-          <div class="mono-lbl">{% if ar %}الملف / File{% else %}File / الملف{% endif %} <span class="req" id="dm_file_star">*</span>
-            <span style="font-size:10px;font-weight:400;color:var(--gray-400);margin-inline-start:6px;">{% if ar %}يمكن اختيار أكثر من ملف{% else %}multiple files allowed{% endif %}</span>
-          </div>
-          <label id="dm_file_zone" class="doc-file-zone" for="dm_file_input">
-            <i class="fas fa-cloud-upload-alt"></i>
-            <div class="doc-file-zone-txt">{% if ar %}اسحب الملف هنا أو انقر للتصفح{% else %}Drag & drop files here or click to browse{% endif %}</div>
-            <div class="doc-file-zone-sub">PDF, JPG, PNG, DOCX — {% if ar %}حتى 10 ميغابايت{% else %}up to 10 MB each{% endif %}</div>
-            <input type="file" id="dm_file_input" class="d-none"
-              accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.doc"
-              multiple
-              onchange="onDmFileChosen(this)">
-          </label>
-          <!-- File list (supports multiple) -->
-          <div id="dm_file_list" style="margin-top:8px;"></div>
-          <!-- Edit hint: shown when editing existing saved doc -->
-          <div id="dm_edit_file_hint" style="display:none;font-size:11px;color:var(--teal);margin-top:6px;font-style:italic;">
-            <i class="fas fa-info-circle me-1"></i>
-            {% if ar %}الملف موجود — اختر ملفاً جديداً للاستبدال أو اتركه كما هو{% else %}File already saved — pick a new file to replace it, or leave blank to keep existing{% endif %}
-          </div>
-          <div class="sf-err" id="err_dm_file"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}الملف مطلوب{% else %}File is required{% endif %}</span></div>
-        </div>
-      </div><!-- /dm-body -->
-
-      <div class="dm-footer">
-        <button type="button" class="sf-btn cancel" data-bs-dismiss="modal">
-          <i class="fas fa-times"></i> {% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}
-        </button>
-        <button type="button" class="sf-btn save" onclick="saveDocEntry()">
-          <i class="fas fa-plus"></i>
-          {% if ar %}إضافة المستند / Add Document{% else %}Add Document / إضافة المستند{% endif %}
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
+        </div><!-- /modal-content -->
+    </div><!-- /modal-dialog -->
+</div><!-- /bankModal -->
 {% endblock %}
 
 {% block extra_js %}
@@ -1112,7 +1075,7 @@ function renderStatus(p){
 class ActR{
   init(p){this.el=document.createElement('div');this.el.className='pl-act';
     const id=p.data.id,nm=(p.data.name||'').replace(/'/g,"\\'");
-    this.el.innerHTML=`<button class="pl-btn pl-view" onclick="openView(${id})"><i class="fas fa-eye"></i></button>
+    this.el.innerHTML=`<button class="pl-btn pl-view" onclick="window.location.href='/sellers/${id}/view'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
       <button class="pl-btn pl-edit" onclick="openEditModal(${id})"><i class="fas fa-pencil-alt"></i></button>
       <button class="pl-btn pl-del" onclick="confirmDelete('/sellers/${id}/delete','${nm}')"><i class="fas fa-trash"></i></button>`;}
   getGui(){return this.el;}
@@ -1152,81 +1115,6 @@ function updateBadge(){
   document.getElementById('pageInfo').textContent=`${disp} / ${total} — ${IS_AR?'صفحة':'Page'} ${pg}/${pgs}`;
 }
 
-/* ════════════════════════════════════
-   VIEW
-════════════════════════════════════ */
-function openView(id){
-  currentViewId=id;
-  fetch('/sellers/'+id+'/json').then(r=>r.json()).then(d=>{
-    const na='—';
-    const rows=[
-      ['Seller Code', d.seller_code||na],
-      ['Name (EN)', d.name||na],
-      ['Name (AR)', d.name_ar||na],
-      ['VAT Number', d.vat_number||na],
-      ['CRN', d.crn||na],
-      ['Phone', d.phone||na],
-      ['Fax', d.fax||na],
-      ['Email', d.email||na],
-      ['Website', d.website||na],
-      ['Report Color', d.report_color||na],
-      ['Street (EN)', d.street_name||na],
-      ['Street (AR)', d.street_name_ar||na],
-      ['Building No.', d.building_number||na],
-      ['Building No. (AR)', d.building_number_ar||na],
-      ['Additional No.', d.additional_number||na],
-      ['Additional No. (AR)', d.additional_number_ar||na],
-      ['District (EN)', d.district||na],
-      ['District (AR)', d.district_ar||na],
-      ['City (EN)', d.city||na],
-      ['City (AR)', d.city_ar||na],
-      ['Postal Code', d.postal_code||na],
-      ['Postal Code (AR)', d.postal_code_ar||na],
-      ['Country (EN)', d.country||na],
-      ['Country (AR)', d.country_ar||na],
-      ['Status', d.status||na]
-    ];
-    
-    // Add banks if any
-    if(d.banks && d.banks.length > 0){
-      rows.push(['─── Banks ───', '']);
-      d.banks.forEach((b, i) => {
-        rows.push([`Bank ${i+1}`, b.bank_name||na]);
-        if(b.bank_name_ar) rows.push([`Bank ${i+1} (AR)`, b.bank_name_ar]);
-        rows.push([`Account ${i+1}`, b.account_number||na]);
-        rows.push([`Branch ${i+1}`, b.branch||na]);
-        rows.push([`SWIFT ${i+1}`, b.swift_code||na]);
-        rows.push([`IBAN ${i+1}`, b.iban||na]);
-        rows.push([`Primary ${i+1}`, b.is_primary ? 'Yes' : 'No']);
-      });
-    }
-    
-    // Add documents if any
-    if(d.documents && d.documents.length > 0){
-      rows.push(['─── Documents ───', '']);
-      d.documents.forEach((doc, i) => {
-        rows.push([`Doc ${i+1} Type`, doc.document_type||doc.doc_type||na]);
-        rows.push([`Doc ${i+1} Name`, doc.document_name||doc.doc_name||na]);
-        rows.push([`Doc ${i+1} Issue`, doc.issue_date||na]);
-        rows.push([`Doc ${i+1} Expiry`, doc.expiry_date||na]);
-      });
-    }
-    
-    let html='<table>';
-    rows.forEach(r=>{
-      html+=`<tr><td style="font-weight:600;color:#374151;">${r[0]}</td><td>${r[1]}</td></tr>`;
-    });
-    html+='</table>';
-    
-    const viewName = (IS_AR && d.name_ar) ? d.name_ar : (d.name || 'Seller');
-    document.getElementById('viewTitle').innerHTML=`<i class="fas fa-user-tie me-2"></i>${viewName}`;
-    document.getElementById('viewSellerBody').innerHTML=html;
-    new bootstrap.Modal(document.getElementById('viewSellerModal')).show();
-  }).catch(err => {
-    console.error('Failed to load seller view:', err);
-    alert('Failed to load seller details');
-  });
-}
 function confirmDelete(url,name){
   document.getElementById('deleteText').textContent=(IS_AR?'حذف: ':'Delete: ')+name;
   document.getElementById('deleteForm').action=url;
@@ -1290,10 +1178,10 @@ function renderBankTable(){
   body.innerHTML=_banks.map((b,i)=>`
     <tr class="${b.is_primary?'is-primary':''}">
       <td><strong>${b.bank_name||'—'}</strong>${b.bank_name_ar?`<br><small style="color:var(--gray-400);font-size:11px;">${b.bank_name_ar}</small>`:''}</td>
+      <td>${b.branch||'—'}${b.branch_ar?`<br><small style="color:var(--gray-400);font-size:11px;">${b.branch_ar}</small>`:''}</td>
       <td class="td-mono">${b.account_number||'—'}</td>
-      <td>${b.branch||'—'}</td>
-      <td class="td-mono">${b.swift_code||'—'}</td>
       <td class="td-mono" style="font-size:11px;">${b.iban||'—'}</td>
+      <td class="td-mono">${b.swift_code||'—'}</td>
       <td style="text-align:center;">${b.is_primary?'<span class="primary-check"><i class="fas fa-check-circle"></i>'+(IS_AR?' رئيسي':' Primary')+'</span>':'—'}</td>
       <td><div class="td-acts">
         <button class="pl-btn pl-edit" onclick="editBankEntry(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
@@ -1427,9 +1315,8 @@ function clearAllFields(){
   ['logoName','bgLogoName'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=IS_AR?'اختر ملف...':'Choose file...';});
   document.querySelectorAll('.sf-spin').forEach(e=>e.innerHTML='');
   _banks=[];_bankSeq=0;renderBankTable();
-  _docs=[];renderDocTable();
   // Reset all sections: basic open, others closed
-  ['basic','address','bank','docs'].forEach(k=>{
+  ['basic','address','bank'].forEach(k=>{
     const sec=document.getElementById('sec-'+k);
     const chev=document.getElementById('chev-'+k);
     if(k==='basic'){sec.classList.add('open');chev.className='fas acc-chevron fa-chevron-up';}
@@ -1454,61 +1341,32 @@ function openEditModal(id){
   document.getElementById('sfSellerId').value=id;
   clearAllFields();
   geoInit();
-  
   fetch('/sellers/'+id+'/json').then(r=>r.json()).then(d=>{
     document.getElementById('f_name_p').value  = IS_AR?(d.name_ar||''):(d.name||'');
     document.getElementById('f_name_s').value  = IS_AR?(d.name||''):(d.name_ar||'');
-    
-    const vm=document.getElementById('f_vat'); if(vm) vm.value=d.vat_number||'';
-    const crnEl=document.getElementById('f_crn'); if(crnEl) crnEl.value=d.crn||'';
-    document.getElementById('f_phone').value = d.phone||'';
-    document.getElementById('f_fax').value = d.fax||'';
-    document.getElementById('f_email').value = d.email||'';
-    document.getElementById('f_website').value = d.website||'';
-    
-    const st=document.getElementById('f_status'); if(st) st.value=d.status||'active';
-    const rc=document.getElementById('f_rcolor'); if(rc) rc.value=d.report_color||'#16a34a';
-    const sw=document.getElementById('f_rswatch'); if(sw) sw.value=d.report_color||'#16a34a';
-    
+    ['vat','crn','phone','fax','email','website'].forEach(f=>{
+      const el=document.getElementById('f_'+f);if(el)el.value=d[f==='vat'?'vat_number':f==='crn'?'crn':f]||'';
+    });
+    // fix field name mapping
+    const vm=document.getElementById('f_vat');if(vm)vm.value=d.vat_number||'';
+    const crnEl=document.getElementById('f_crn');if(crnEl)crnEl.value=d.crn||'';
+    const st=document.getElementById('f_status');if(st)st.value=d.status||'active';
+    const rc=document.getElementById('f_rcolor');if(rc)rc.value=d.report_color||'#16a34a';
+    const sw=document.getElementById('f_rswatch');if(sw)sw.value=d.report_color||'#16a34a';
     document.getElementById('f_street_p').value = IS_AR?(d.street_name_ar||''):(d.street_name||'');
     document.getElementById('f_street_s').value = IS_AR?(d.street_name||''):(d.street_name_ar||'');
     document.getElementById('f_building').value   = d.building_number||'';
     document.getElementById('f_additional').value = d.additional_number||'';
     document.getElementById('f_postal').value     = d.postal_code||'';
-    
+    // mirror values to hidden AR fields (same value for numbers)
     document.getElementById('f_building_ar_val').value   = d.building_number_ar||d.building_number||'';
     document.getElementById('f_additional_ar_val').value = d.additional_number_ar||d.additional_number||'';
     document.getElementById('f_postal_ar_val').value     = d.postal_code_ar||d.postal_code||'';
-    
     geoInit(d.country||'Saudi Arabia',d.city||'',d.district||'');
-    
-    // Load banks
-    _banks=(d.banks||[]).map(b=>({
-      ...b,
-      bank_name_ar: b.bank_name_ar||'',
-      branch_ar: b.branch_ar||'',
-      _dbId: b.id
-    }));
+    // Load banks from DB into in-memory array
+    _banks=(d.banks||[]).map(b=>({...b,bank_name_ar:b.bank_name_ar||'',_dbId:b.id}));
     renderBankTable();
-    
-    // Load documents - FIXED: use correct field mapping
-    _docs = (d.documents||[]).map(doc => ({
-      _dbId:         doc.id,
-      doc_type:      doc.document_type || doc.doc_type || '',
-      doc_name:      doc.document_name || doc.doc_name || '',
-      issue_date:    doc.issue_date || '',
-      expiry_date:   doc.expiry_date || '',
-      uploaded_at:   doc.uploaded_at || '',
-      uploaded_by_name: doc.uploaded_by_name || '',
-      file_path:     doc.file_path || '',
-      _file:         null,
-    }));
-    renderDocTable();
-    
-  }).catch(err => {
-    console.error('Failed to load seller:', err);
   });
-  
   new bootstrap.Modal(document.getElementById('sellerModal')).show();
 }
 
@@ -1567,257 +1425,8 @@ function submitSellerForm(){
   }
 
   injectBankFields();
-  injectDocFields();
   document.getElementById('sellerForm').submit();
 }
-
-/* ════════════════════════════════════════════════════════════
-   DOCUMENT MANAGEMENT — JS Array First (same pattern as banks)
-   _docs[] holds all documents in memory until form submits.
-   Multiple files per "Add" are each added as separate entries.
-   injectDocFields() writes hidden meta + file inputs before submit.
-   sellers.py _save_docs_from_form() reads and persists on save.
-════════════════════════════════════════════════════════════ */
-let _docs    = [];   // [{_lid, doc_type, doc_name, issue_date, expiry_date, _file, _dbId, uploaded_at, uploaded_by_name}]
-let _docSeq  = 0;
-let _dmFiles = [];   // Array of File objects selected in current modal open
-let _dmEditIdx = null;
-
-/* ── Render doc table ── */
-function renderDocTable(){
-  const wrap  = document.getElementById('docTblWrap');
-  const body  = document.getElementById('docTblBody');
-  const empty = document.getElementById('docEmptyMsg');
-  const badge = document.getElementById('docCountBadge');
-  if(badge){ badge.textContent=_docs.length; badge.style.display=_docs.length?'inline-block':'none'; }
-  if(!_docs.length){ if(wrap)wrap.style.display='none'; if(empty)empty.style.display='block'; return; }
-  if(wrap)wrap.style.display='block'; if(empty)empty.style.display='none';
-  if(!body) return;
-
-  const now = new Date();
-  body.innerHTML = _docs.map((d, i) => {
-    // Expiry styling
-    let expCell = '<span style="color:var(--gray-400);">—</span>';
-    if(d.expiry_date){
-      const exp = new Date(d.expiry_date);
-      const diff = exp - now;
-      const cls  = diff < 0 ? 'color:#dc2626;font-weight:700;' : diff < 30*864e5 ? 'color:#d97706;font-weight:700;' : 'color:var(--green);';
-      const icon = diff < 0 ? '⚠ ' : diff < 30*864e5 ? '⏰ ' : '';
-      expCell = `<span style="${cls}">${icon}${d.expiry_date}</span>`;
-    }
-    // Status badge
-    const saved   = !!d._dbId;
-    const statusBadge = saved
-      ? `<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;"><i class="fas fa-check me-1"></i>${IS_AR?'محفوظ':'Saved'}</span>`
-      : `<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;"><i class="fas fa-clock me-1"></i>${IS_AR?'معلق':'Pending'}</span>`;
-    // File icon by type
-    const fname = d._file ? d._file.name : (d.file_path ? d.file_path.split('/').pop() : '');
-    const fext  = fname.split('.').pop().toLowerCase();
-    const ficon = {pdf:'fa-file-pdf',docx:'fa-file-word',doc:'fa-file-word',xlsx:'fa-file-excel',jpg:'fa-file-image',jpeg:'fa-file-image',png:'fa-file-image'}[fext] || 'fa-file-alt';
-    const fileCell = fname
-      ? `<span style="font-size:11px;color:#7c3aed;"><i class="fas ${ficon} me-1"></i>${fname}</span>`
-      : '<span style="color:var(--gray-400);">—</span>';
-
-    // Actions
-    let acts = `<button class="pl-btn pl-edit" onclick="editDocEntry(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>`;
-    if(d._file){
-      acts += `<button class="pl-btn pl-view" onclick="viewDocEntry(${i})" title="${IS_AR?'عرض':'View'}" style="background:#7c3aed;"><i class="fas fa-eye"></i></button>`;
-    } else if(d._dbId){
-      acts += `<a href="/sellers/documents/${d._dbId}/download" target="_blank" class="pl-btn pl-view" style="background:#7c3aed;text-decoration:none;" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></a>`;
-      acts += `<a href="/sellers/documents/${d._dbId}/download" class="pl-btn" style="background:#0ea5e9;color:#fff;text-decoration:none;" title="${IS_AR?'تحميل':'Download'}"><i class="fas fa-download"></i></a>`;
-    }
-    acts += `<button class="pl-btn pl-del" onclick="deleteDocEntry(${i})" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
-
-    return `<tr>
-      <td style="color:var(--gray-400);font-size:11px;font-weight:600;">${i+1}</td>
-      <td style="font-size:11px;font-family:monospace;color:var(--gray-400);">${d._dbId||'—'}</td>
-      <td style="font-size:11px;font-family:monospace;color:var(--gray-400);">${currentSellerId||'—'}</td>
-      <td><span class="doc-type-pill">${d.doc_type||'—'}</span></td>
-      <td style="font-weight:600;font-size:13px;">${d.doc_name||'—'}<br><small style="font-weight:400;">${fileCell}</small></td>
-      <td style="font-size:11px;color:var(--gray-600);">${d.issue_date||'—'}</td>
-      <td style="font-size:12px;">${expCell}</td>
-      <td style="font-size:11px;color:var(--gray-400);">${d.uploaded_at||'—'}</td>
-      <td style="font-size:11px;color:var(--gray-600);">${d.uploaded_by_name||'—'}</td>
-      <td>${statusBadge}</td>
-      <td><div class="td-acts">${acts}</div></td>
-    </tr>`;
-  }).join('');
-}
-
-/* ── Open doc modal (add or edit) ── */
-function openDocModal(editIdx){
-  _dmEditIdx = (editIdx != null) ? editIdx : null;
-  _dmFiles   = [];
-
-  const isEdit = _dmEditIdx != null;
-  document.getElementById('dmTitle').innerHTML = isEdit
-    ? `<i class="fas fa-edit me-2"></i>${IS_AR?'تعديل مستند / Edit Document':'Edit Document / تعديل مستند'}`
-    : `<i class="fas fa-paperclip me-2"></i>${IS_AR?'إضافة مستند / Add Document':'Add Document / إضافة مستند'}`;
-
-  // Reset fields
-  ['dm_type','dm_name','dm_issue_date','dm_expiry_date'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
-  renderDmFileList();
-  clearDmErrors();
-
-  const fileStar = document.getElementById('dm_file_star');
-  const editHint = document.getElementById('dm_edit_file_hint');
-
-  if(isEdit){
-    const d = _docs[_dmEditIdx];
-    document.getElementById('dm_type').value       = d.doc_type||'';
-    document.getElementById('dm_name').value       = d.doc_name||'';
-    document.getElementById('dm_issue_date').value = d.issue_date||'';
-    document.getElementById('dm_expiry_date').value= d.expiry_date||'';
-    if(fileStar) fileStar.style.display='none';  // not required when editing
-    if(editHint) editHint.style.display = (d._dbId||d._file) ? 'block' : 'none';
-  } else {
-    if(fileStar) fileStar.style.display='';
-    if(editHint) editHint.style.display='none';
-  }
-
-  const sec = document.getElementById('sec-docs');
-  if(!sec.classList.contains('open')) toggleSection('docs');
-  new bootstrap.Modal(document.getElementById('docModal')).show();
-}
-
-function editDocEntry(idx){ openDocModal(idx); }
-
-function viewDocEntry(idx){
-  const d = _docs[idx];
-  if(d._file){ window.open(URL.createObjectURL(d._file),'_blank'); }
-}
-
-/* ── File selection (multiple) ── */
-function onDmFileChosen(inp){
-  if(!inp.files||!inp.files.length) return;
-  Array.from(inp.files).forEach(f => _dmFiles.push(f));
-  inp.value = ''; // allow re-selecting same file
-  renderDmFileList();
-  document.getElementById('err_dm_file').classList.remove('show');
-}
-
-function removeDmFile(idx){
-  _dmFiles.splice(idx,1);
-  renderDmFileList();
-}
-
-function renderDmFileList(){
-  const wrap = document.getElementById('dm_file_list');
-  if(!wrap) return;
-  if(!_dmFiles.length){ wrap.innerHTML=''; return; }
-  wrap.innerHTML = _dmFiles.map((f,i)=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:7px 11px;background:#ede9fe;border-radius:7px;margin-top:6px;font-size:12px;color:#5b21b6;font-weight:600;">
-      <i class="fas fa-file-alt" style="color:#7c3aed;"></i>
-      <span>${f.name} <span style="font-weight:400;color:#7c3aed;">(${(f.size/1024).toFixed(1)} KB)</span></span>
-      <button type="button" onclick="removeDmFile(${i})" style="margin-inline-start:auto;background:none;border:none;color:#7c3aed;cursor:pointer;font-size:13px;"><i class="fas fa-times-circle"></i></button>
-    </div>`).join('');
-}
-
-function clearDmErrors(){
-  ['err_dm_type','err_dm_name','err_dm_issue','err_dm_file'].forEach(id=>{
-    const e=document.getElementById(id); if(e) e.classList.remove('show');
-  });
-  ['dm_type','dm_name','dm_issue_date'].forEach(id=>{
-    document.getElementById(id)?.classList.remove('is-invalid');
-  });
-}
-
-/* ── Save doc entry into _docs[] ── */
-function saveDocEntry(){
-  const docType   = (document.getElementById('dm_type').value||'').trim();
-  const docName   = (document.getElementById('dm_name').value||'').trim();
-  const issueDate = (document.getElementById('dm_issue_date').value||'').trim();
-  const expDate   = (document.getElementById('dm_expiry_date').value||'').trim();
-  const isEdit    = _dmEditIdx != null;
-  let ok = true;
-
-  if(!docType)   { setInv(document.getElementById('dm_type'),       'err_dm_type',  IS_AR?'مطلوب':'Required'); ok=false; }
-  if(!docName)   { setInv(document.getElementById('dm_name'),       'err_dm_name',  IS_AR?'مطلوب':'Required'); ok=false; }
-  if(!issueDate) { setInv(document.getElementById('dm_issue_date'), 'err_dm_issue', IS_AR?'مطلوب':'Required'); ok=false; }
-  // File required for new entries (not editing)
-  if(!isEdit && _dmFiles.length === 0){
-    document.getElementById('err_dm_file').classList.add('show'); ok=false;
-  }
-  if(!ok) return;
-
-  if(isEdit){
-    // Update existing entry in place
-    const d = _docs[_dmEditIdx];
-    d.doc_type    = docType;
-    d.doc_name    = docName;
-    d.issue_date  = issueDate;
-    d.expiry_date = expDate;
-    if(_dmFiles.length > 0) d._file = _dmFiles[0]; // replace file if new one chosen
-    _docs[_dmEditIdx] = d;
-  } else {
-    // Multiple files: create one entry per file if >1, or one entry if 1
-    if(_dmFiles.length > 0){
-      _dmFiles.forEach(f => {
-        _docs.push({ _lid:++_docSeq, doc_type:docType, doc_name:docName, issue_date:issueDate, expiry_date:expDate, _file:f, uploaded_at:'', uploaded_by_name:'' });
-      });
-    } else {
-      // No file (shouldn't reach here for new, but handle gracefully)
-      _docs.push({ _lid:++_docSeq, doc_type:docType, doc_name:docName, issue_date:issueDate, expiry_date:expDate, _file:null, uploaded_at:'', uploaded_by_name:'' });
-    }
-  }
-
-  _dmFiles = [];
-  renderDocTable();
-  bootstrap.Modal.getInstance(document.getElementById('docModal'))?.hide();
-}
-
-/* ── Delete ── */
-function deleteDocEntry(idx){
-  if(!confirm(IS_AR?'هل تريد حذف هذا المستند؟':'Delete this document?')) return;
-  _docs.splice(idx,1);
-  renderDocTable();
-}
-
-/* ── Inject doc data as hidden fields + file inputs before form submit ── */
-function injectDocFields(){
-  document.querySelectorAll('#sellerForm .doc-inject').forEach(e=>e.remove());
-  const form = document.getElementById('sellerForm');
-  _docs.forEach((d, i) => {
-    const meta = {
-      [`docs[${i}][doc_type]`]:    d.doc_type||'',
-      [`docs[${i}][doc_name]`]:    d.doc_name||'',
-      [`docs[${i}][issue_date]`]:  d.issue_date||'',
-      [`docs[${i}][expiry_date]`]: d.expiry_date||'',
-      [`docs[${i}][_db_id]`]:      d._dbId||'',
-    };
-    Object.entries(meta).forEach(([n,v])=>{
-      const h=document.createElement('input');
-      h.type='hidden'; h.name=n; h.value=v; h.className='doc-inject';
-      form.appendChild(h);
-    });
-    // Attach File object via DataTransfer if we have one
-    if(d._file){
-      try{
-        const fi = document.createElement('input');
-        fi.type='file'; fi.name=`docs[${i}][file]`;
-        fi.className='doc-inject d-none';
-        const dt = new DataTransfer(); dt.items.add(d._file); fi.files=dt.files;
-        form.appendChild(fi);
-      } catch(e){ /* DataTransfer unsupported — file will be skipped */ }
-    }
-  });
-}
-
-/* ── Drag-and-drop on file zone ── */
-document.addEventListener('DOMContentLoaded',()=>{
-  const zone = document.getElementById('dm_file_zone');
-  if(!zone) return;
-  zone.addEventListener('dragover',  e=>{ e.preventDefault(); zone.classList.add('dragover'); });
-  zone.addEventListener('dragleave', ()=> zone.classList.remove('dragover'));
-  zone.addEventListener('drop', e=>{
-    e.preventDefault(); zone.classList.remove('dragover');
-    Array.from(e.dataTransfer.files).forEach(f => _dmFiles.push(f));
-    renderDmFileList();
-    document.getElementById('err_dm_file').classList.remove('show');
-  });
-});
 
 document.getElementById('sellerForm').addEventListener('submit',()=>setTimeout(loadData,800));
 </script>

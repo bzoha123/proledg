@@ -29,7 +29,6 @@
 .pur-tab{padding:10px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;}
 .pur-tab:hover{color:#2563eb;}
 .pur-tab.active{color:#2563eb;border-bottom-color:#2563eb;}
-/* tab panes use inline display */
 /* Collapsible sections */
 .pur-section{border:1.5px solid #e2e8f0;border-radius:10px;margin:14px 18px 0;overflow:hidden;}
 .pur-section-hdr{width:100%;background:white;border:none;padding:12px 16px;text-align:left;font-weight:700;font-size:13px;color:#1e3a5f;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .1s;}
@@ -434,10 +433,8 @@ function onVendorChange() {
   nameEl.value = id ? (_vendorMap[id] || sel.options[sel.selectedIndex]?.text || '') : '';
 }
 
-/* ══ PQ selection → auto-fill vendor ══ */
 function onPQChange() {
-  // Could fetch PQ data and pre-fill vendor if needed
-  // For now just clear vendor name if PQ changed
+  // Optional: Could fetch PQ data to pre-fill vendor
 }
 
 /* ══ Line Items ══ */
@@ -491,11 +488,8 @@ function recalcLi(idx) {
   const fr   = g('plf_'+idx);
   const tcEl = document.getElementById('pltc_'+idx);
   const taxRate = tcEl && tcEl.value === 'VAT15' ? 15 : 0;
-  // Taxable = (Qty × Rate − Discount) + Freight
   const taxable = Math.max(0, (qty * rate - disc) + fr);
-  // Tax = Taxable × Tax%
   const taxAmt  = Math.round(taxable * taxRate / 100 * 100) / 100;
-  // Total = Taxable + Tax
   const total   = taxable + taxAmt;
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v.toFixed(2); };
   set('plt_'+idx,   taxable);
@@ -507,16 +501,12 @@ function recalcLi(idx) {
 function recalcSummary() {
   let bd=0, disc=0, fr=0, vat=0;
   document.querySelectorAll('#liBody tr').forEach(row => {
-    const g = n => parseFloat(row.querySelector(`[name="${n}[]"]`)?.value || 0) || 0;
-    bd   += g('li_qty') * g('li_rate');
-    disc += g('li_discount');
-    fr   += g('li_freight');
+    const g = n => parseFloat(row.querySelector(`[name="${n}"]`)?.value || 0) || 0;
+    bd   += g('li_qty[]') * g('li_rate[]');
+    disc += g('li_discount[]');
+    fr   += g('li_freight[]');
     vat  += parseFloat(row.querySelector('[name="li_tax_amount_disp[]"]')?.value || 0) || 0;
   });
-  // Total before discount = Σ(Qty × Rate)
-  // Total discount = Σ(Discount)
-  // Freight = Σ(Freight)
-  // Excl. VAT = (Total before discount - Discount) + Freight  = (bd - disc) + fr
   const excl = (bd - disc) + fr;
   const incl = excl + vat;
   const fmt  = n => 'SAR ' + n.toLocaleString('en-SA', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -574,7 +564,6 @@ function openAddPO() {
   document.getElementById('po_id').value = '';
   document.getElementById('poTitle').innerHTML =
     '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة أمر شراء' : 'Add Purchase Order');
-  // Clear fields
   ['po_vendor_ref','po_remarks','po_vendor_name'].forEach(id => {
     const e = document.getElementById(id); if (e) e.value = '';
   });
@@ -584,24 +573,21 @@ function openAddPO() {
   });
   document.getElementById('po_status').value = 'Open';
   document.getElementById('po_vendor').value = '';
+  document.getElementById('po_pq_id').value = '';
   document.getElementById('po_doc_no').value = '';
   document.getElementById('poDocBadge').textContent = 'NEW';
   document.getElementById('liBody').innerHTML = '';
   document.getElementById('attList').innerHTML = '';
   document.getElementById('existAttList').innerHTML = '';
   recalcSummary(); updLiCount(); updDocCount();
-  // Switch to content tab, open all sections
   switchTab('tab_content', document.querySelector('.pur-tab'));
-  // Auto-open sections
   document.querySelectorAll('.pur-section-hdr').forEach(btn => {
     btn.classList.add('open');
     btn.nextElementSibling.classList.add('open');
     const ch = btn.querySelector('.fa-chevron-up,.fa-chevron-down');
     if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
   });
-  // Fetch doc no from server
   fetchDocNo();
-  // Add first empty line item
   addLiRow();
   new bootstrap.Modal(document.getElementById('poModal')).show();
 }
@@ -626,11 +612,9 @@ function openEditPO(id) {
     document.getElementById('po_posting_date').value  = d.posting_date  || '';
     document.getElementById('po_delivery_date').value = d.delivery_date || '';
     document.getElementById('po_doc_date').value      = d.document_date || '';
-    // Line items
     document.getElementById('liBody').innerHTML = '';
     (d.items || []).forEach(li => addLiRow(li));
     if (!d.items?.length) addLiRow();
-    // Existing attachments
     document.getElementById('attList').innerHTML = '';
     document.getElementById('existAttList').innerHTML = '';
     (d.attachments || []).forEach(a => {
@@ -655,8 +639,9 @@ async function savePO() {
   const id  = document.getElementById('po_id').value;
   const url = id ? `/purchase/orders/${id}/edit` : '/purchase/orders/add';
   const fd  = new FormData();
+  
   fd.set('csrf_token', CSRF);
-    fd.set('status',         document.getElementById('po_status').value);
+  fd.set('status',         document.getElementById('po_status').value);
   fd.set('pq_id',          document.getElementById('po_pq_id')?.value || '');
   fd.set('vendor_id',      document.getElementById('po_vendor').value);
   fd.set('vendor_ref_no',  document.getElementById('po_vendor_ref').value);
@@ -664,14 +649,50 @@ async function savePO() {
   fd.set('posting_date',   document.getElementById('po_posting_date').value);
   fd.set('delivery_date',  document.getElementById('po_delivery_date').value);
   fd.set('document_date',  document.getElementById('po_doc_date').value);
-    _attachments.forEach(f => fd.append('attachments', f));
-  const res = await fetch(url, {method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd});
-  const data = await res.json();
-  if (data.ok) {
-    bootstrap.Modal.getInstance(document.getElementById('poModal'))?.hide();
-    loadData();
-  } else {
-    alert(data.error || (IS_AR ? 'حدث خطأ' : 'An error occurred'));
+  
+  // ══ CRITICAL: Add line items to FormData ══
+  const rows = document.querySelectorAll('#liBody tr');
+  console.log('Saving', rows.length, 'line items');
+  
+  rows.forEach(row => {
+    const getVal = (name) => {
+      const el = row.querySelector(`[name="${name}"]`);
+      return el ? el.value : '';
+    };
+    fd.append('li_item_code[]',    getVal('li_item_code[]'));
+    fd.append('li_item_desc[]',    getVal('li_item_desc[]'));
+    fd.append('li_required_date[]',getVal('li_required_date[]'));
+    fd.append('li_warehouse[]',    getVal('li_warehouse[]'));
+    fd.append('li_uom[]',          getVal('li_uom[]'));
+    fd.append('li_qty[]',          getVal('li_qty[]'));
+    fd.append('li_rate[]',         getVal('li_rate[]'));
+    fd.append('li_discount[]',     getVal('li_discount[]'));
+    fd.append('li_freight[]',      getVal('li_freight[]'));
+    fd.append('li_tax_code[]',     getVal('li_tax_code[]'));
+  });
+  
+  // ══ Add attachments ══
+  _attachments.forEach(f => fd.append('attachments', f));
+  
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {'X-CSRFToken': CSRF},
+      body: fd
+    });
+    const data = await res.json();
+    
+    console.log('Save response:', data);
+    
+    if (data.ok) {
+      bootstrap.Modal.getInstance(document.getElementById('poModal'))?.hide();
+      loadData();
+    } else {
+      alert(data.error || (IS_AR ? 'حدث خطأ' : 'An error occurred'));
+    }
+  } catch (err) {
+    console.error('Save fetch error:', err);
+    alert(IS_AR ? 'فشل في الحفظ' : 'Save failed - check console');
   }
 }
 
@@ -690,12 +711,12 @@ function confDel(id, docNo) {
 
 /* ══ AG-Grid ══ */
 const AG_LOCALE = IS_AR ? {
-  addFilterCondition:'+ إضافة قاعدة / Add Rule', matchAll:'يطابق الكل / Match All',
-  applyFilter:'تطبيق / Apply', clearFilter:'مسح / Clear', resetFilter:'إعادة تعيين',
+  addFilterCondition:'+ إضافة قاعدة', matchAll:'يطابق الكل',
+  applyFilter:'تطبيق', clearFilter:'مسح', resetFilter:'إعادة تعيين',
   noRowsToShow:'لا توجد بيانات', filterOoo:'تصفية...',
 } : {
-  addFilterCondition:'+ Add Rule / إضافة قاعدة', matchAll:'Match All / بتطابق مع الكل',
-  applyFilter:'Apply / تطبيق', clearFilter:'Clear / مسح', resetFilter:'Reset',
+  addFilterCondition:'+ Add Rule', matchAll:'Match All',
+  applyFilter:'Apply', clearFilter:'Clear', resetFilter:'Reset',
   noRowsToShow:'No records found',
 };
 
@@ -730,15 +751,13 @@ const defCol = {
 const cols = [
   {headerName:'#',field:'id',width:65,floatingFilter:false,suppressMenu:true},
   {headerName:IS_AR?'رقم المستند':'Doc No',field:'doc_no',width:125,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'المستخدم':'Requester',field:'requester',width:120,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'اسم المورد':'Vendor Name',field:'requester_name',minWidth:160,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'المورد':'Vendor',field:'vendor_name',minWidth:180,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'اسم المورد':'Vendor Name',field:'vendor_name',minWidth:180,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'الحالة':'Status',field:'status',width:105,cellRenderer:rStatus,floatingFilter:false},
   {headerName:IS_AR?'تاريخ الترحيل':'Posting Date',field:'posting_date',width:125,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'تاريخ التسليم':'Delivery Date',field:'valid_until',width:115,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'تاريخ التسليم':'Delivery Date',field:'delivery_date',width:115,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'الإجمالي شامل الضريبة':'Total Incl. VAT',field:'total_incl_vat',width:145,cellRenderer:rSAR,floatingFilter:false},
-  {headerName:IS_AR?'رقم مرجع المورد':'Vendor Ref No',field:'approved_by',width:130,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'إجراءات':'Actions الإجراءات',field:'_a',width:110,pinned:IS_AR?'left':'right',
+  {headerName:IS_AR?'رقم مرجع المورد':'Vendor Ref No',field:'vendor_ref_no',width:130,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:110,pinned:IS_AR?'left':'right',
    sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,
    cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 6px'}},
 ];

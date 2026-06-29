@@ -68,7 +68,6 @@ def professions_data():
     items = ProfessionMaster.query.filter_by(is_active=True).order_by(ProfessionMaster.profession_en).all()
     return jsonify([{'id':p.id,'en':p.profession_en,'ar':p.profession_ar or p.profession_en,
                      'label':p.profession_ar if lang=='ar' else p.profession_en} for p in items])
-
 # ── BUYERS ───────────────────────────────────────────────────────────
 @lookups_bp.route('/buyers')
 @login_required
@@ -81,14 +80,24 @@ def list_buyers():
 @admin_required
 def add_buyer():
     from datetime import datetime as dt
+    
+    # Debug: print all form data
+    print("=" * 50)
+    print("ADD BUYER - Form Data Received:")
+    for key in request.form:
+        print(f"  {key} = {request.form[key]}")
+    print("=" * 50)
+    
     en = request.form.get('buyer_name_en','').strip()
     if not en:
         flash(_t('Buyer name is required.','اسم المشتري مطلوب.'),'danger')
         return redirect(url_for('lookups.list_buyers'))
+    
     # Generate code
     last = BuyerMaster.query.order_by(BuyerMaster.id.desc()).first()
     num  = (last.id + 1) if last else 1
     code = f'BUY-{num:04d}'
+    
     b = BuyerMaster(
         buyer_code=code,
         buyer_name_en=en,
@@ -119,25 +128,12 @@ def add_buyer():
         created_by=current_user.id,
     )
     db.session.add(b)
-    db.session.flush()
-    # Save pending bank details
-    names = request.form.getlist('bank_bank_name[]')
-    accts = request.form.getlist('bank_account_number[]')
-    brchs = request.form.getlist('bank_branch[]')
-    swfts = request.form.getlist('bank_swift_code[]')
-    ibans = request.form.getlist('bank_iban[]')
-    prims = request.form.getlist('bank_is_primary[]')
-    for i,bn in enumerate(names):
-        if not bn.strip(): continue
-        db.session.add(BuyerBank(
-            buyer_id=b.id,
-            bank_name=bn.strip(),
-            account_number=accts[i].strip() if i<len(accts) else '',
-            branch=brchs[i].strip() if i<len(brchs) else '',
-            swift_code=swfts[i].strip() if i<len(swfts) else '',
-            iban=ibans[i].strip() if i<len(ibans) else '',
-            is_primary=prims[i]=='1' if i<len(prims) else False,
-        ))
+    db.session.flush()  # Get b.id without committing
+    
+    # ── Save banks from form ──
+    print(f"Calling _save_banks_from_form for buyer_id={b.id}")
+    _save_banks_from_form(b.id)
+    
     db.session.commit()
     flash(_t(f'Buyer {code} added.', f'تم إضافة المشتري {code}.'),'success')
     return redirect(url_for('lookups.list_buyers'))
@@ -147,6 +143,14 @@ def add_buyer():
 @admin_required
 def edit_buyer(id):
     b = BuyerMaster.query.get_or_404(id)
+    
+    # Debug: print all form data
+    print("=" * 50)
+    print(f"EDIT BUYER {id} - Form Data Received:")
+    for key in request.form:
+        print(f"  {key} = {request.form[key]}")
+    print("=" * 50)
+    
     b.buyer_name_en  = request.form.get('buyer_name_en', b.buyer_name_en).strip()
     b.buyer_name_ar  = request.form.get('buyer_name_ar', b.buyer_name_ar or '').strip()
     b.vat_number     = request.form.get('vat_number','').strip()
@@ -172,9 +176,113 @@ def edit_buyer(id):
     b.district_ar    = request.form.get('district_ar','').strip()
     b.status         = request.form.get('status','active').strip()
     b.is_active      = b.status == 'active'
+    
+    # ── Save banks from form ──
+    print(f"Calling _save_banks_from_form for buyer_id={id}")
+    _save_banks_from_form(id)
+    
     db.session.commit()
     flash(_t('Buyer updated.','تم تحديث المشتري.'),'success')
     return redirect(url_for('lookups.list_buyers'))
+
+
+def _save_banks_from_form(buyer_id):
+    """Process banks[] hidden fields from form submission.
+    
+    Expected format:
+    banks[0][bank_name] = Al Rajhi
+    banks[0][bank_name_ar] = الراجحي
+    banks[0][account_number] = 12345
+    banks[0][branch] = Main
+    banks[0][branch_ar] = الرئيسي
+    banks[0][swift_code] = RJHI
+    banks[0][iban] = SA123
+    banks[0][is_primary] = true
+    banks[0][_dbId] = 5   (or empty for new)
+    """
+    submitted_ids = set()
+    
+    # Parse all form keys matching banks[index][field]
+    banks_data = {}
+    for key in request.form:
+        if key.startswith('banks['):
+            # Parse: banks[0][bank_name]
+            rest = key[6:]  # Remove 'banks['
+            close_bracket = rest.index(']')
+            idx = rest[:close_bracket]
+            field = rest[close_bracket+2:-1]  # Remove '][' and trailing ']'
+            
+            if idx not in banks_data:
+                banks_data[idx] = {}
+            banks_data[idx][field] = request.form[key]
+    
+    print(f"\n=== _save_banks_from_form (buyer_id={buyer_id}) ===")
+    print(f"Parsed banks_data: {banks_data}")
+    
+    # Process each bank entry
+    for idx, data in banks_data.items():
+        bank_name = data.get('bank_name', '').strip()
+        if not bank_name:
+            print(f"  Skipping index {idx} - no bank_name")
+            continue
+        
+        db_id = data.get('_dbId', '').strip()
+        print(f"  Processing bank: name={bank_name}, _dbId={db_id}")
+        
+        if db_id:
+            # Update existing bank
+            bank = BuyerBank.query.get(int(db_id))
+            if bank and bank.buyer_id == buyer_id:
+                print(f"    Updating existing bank id={db_id}")
+                bank.bank_name      = bank_name
+                bank.bank_name_ar   = data.get('bank_name_ar', '').strip()
+                bank.account_number = data.get('account_number', '').strip()
+                bank.branch         = data.get('branch', '').strip()
+                bank.branch_ar      = data.get('branch_ar', '').strip()
+                bank.swift_code     = data.get('swift_code', '').strip()
+                bank.iban           = data.get('iban', '').strip()
+                bank.is_primary     = data.get('is_primary', 'false').lower() == 'true'
+                submitted_ids.add(int(db_id))
+            else:
+                print(f"    Bank id={db_id} not found or wrong buyer, creating new")
+                db_id = ''  # Force create new
+        
+        if not db_id:
+            # Create new bank
+            print(f"    Creating new bank")
+            bank = BuyerBank(
+                buyer_id=buyer_id,
+                bank_name=bank_name,
+                bank_name_ar=data.get('bank_name_ar', '').strip(),
+                account_number=data.get('account_number', '').strip(),
+                branch=data.get('branch', '').strip(),
+                branch_ar=data.get('branch_ar', '').strip(),
+                swift_code=data.get('swift_code', '').strip(),
+                iban=data.get('iban', '').strip(),
+                is_primary=data.get('is_primary', 'false').lower() == 'true',
+            )
+            db.session.add(bank)
+            db.session.flush()
+            submitted_ids.add(bank.id)
+            print(f"    Created bank id={bank.id}")
+    
+    # Delete banks that were removed from the array
+    existing_banks = BuyerBank.query.filter_by(buyer_id=buyer_id).all()
+    for bank in existing_banks:
+        if bank.id not in submitted_ids:
+            print(f"  Deleting bank id={bank.id} (not in submitted_ids)")
+            db.session.delete(bank)
+    
+    # Enforce single-primary rule
+    primary_banks = BuyerBank.query.filter_by(buyer_id=buyer_id, is_primary=True).all()
+    if len(primary_banks) > 1:
+        print(f"  Fixing {len(primary_banks)} primary banks - keeping only last one")
+        for b in primary_banks[:-1]:
+            b.is_primary = False
+    
+    print(f"  submitted_ids: {submitted_ids}")
+    print(f"=== _save_banks_from_form complete ===\n")
+
 
 @lookups_bp.route('/buyers/<int:id>/delete', methods=['POST'])
 @login_required
@@ -197,11 +305,13 @@ def buyer_json(id):
         'vat_number':g('vat_number'),'crn':g('crn'),
         'phone':g('phone'),'fax':g('fax'),'email':g('email'),'website':g('website'),
         'report_color':g('report_color') or '#2563eb',
-        'street_name':g('street_name'),'building_number':g('building_number'),
-        'additional_number':g('additional_number'),
-        'postal_code':g('postal_code'),
-        'country':g('country') or 'Saudi Arabia',
-        'city':g('city'),'district':g('district'),
+        'street_name':g('street_name'),'street_name_ar':g('street_name_ar'),
+        'building_number':g('building_number'),'building_number_ar':g('building_number_ar'),
+        'additional_number':g('additional_number'),'additional_number_ar':g('additional_number_ar'),
+        'postal_code':g('postal_code'),'postal_code_ar':g('postal_code_ar'),
+        'country':g('country') or 'Saudi Arabia','country_ar':g('country_ar'),
+        'city':g('city'),'city_ar':g('city_ar'),
+        'district':g('district'),'district_ar':g('district_ar'),
         'status':g('status') or 'active',
     })
 
@@ -225,13 +335,15 @@ def buyers_data():
         'report_color': b.report_color or '#2563eb',
     } for b in items])
 
-# ── BUYER BANKS API ──────────────────────────────────────────────────
+# ── BUYER BANKS API (for loading banks on edit) ──
 @lookups_bp.route('/buyers/<int:buyer_id>/banks')
 @login_required
 def buyer_banks(buyer_id):
+    """Returns banks for loading into JS array on edit"""
     banks = BuyerBank.query.filter_by(buyer_id=buyer_id).order_by(BuyerBank.id).all()
     return jsonify([b.to_dict() for b in banks])
 
+# Legacy API endpoints kept for backward compatibility
 @lookups_bp.route('/buyers/<int:buyer_id>/banks/add', methods=['POST'])
 @login_required
 @admin_required
@@ -241,8 +353,10 @@ def add_buyer_bank(buyer_id):
     b = BuyerBank(
         buyer_id=buyer_id,
         bank_name=data.get('bank_name','').strip(),
+        bank_name_ar=data.get('bank_name_ar','').strip(),
         account_number=data.get('account_number','').strip(),
         branch=data.get('branch','').strip(),
+        branch_ar=data.get('branch_ar','').strip(),
         swift_code=data.get('swift_code','').strip(),
         iban=data.get('iban','').strip(),
         is_primary=bool(data.get('is_primary',False)),
@@ -260,8 +374,10 @@ def edit_buyer_bank(bank_id):
     b = BuyerBank.query.get_or_404(bank_id)
     data = request.get_json() or {}
     b.bank_name     = data.get('bank_name', b.bank_name).strip()
+    b.bank_name_ar  = data.get('bank_name_ar', b.bank_name_ar or '').strip()
     b.account_number= data.get('account_number', b.account_number or '').strip()
     b.branch        = data.get('branch', b.branch or '').strip()
+    b.branch_ar     = data.get('branch_ar', b.branch_ar or '').strip()
     b.swift_code    = data.get('swift_code', b.swift_code or '').strip()
     b.iban          = data.get('iban', b.iban or '').strip()
     b.is_primary    = bool(data.get('is_primary', b.is_primary))
@@ -279,7 +395,6 @@ def delete_buyer_bank(bank_id):
     db.session.delete(b)
     db.session.commit()
     return jsonify({'ok':True})
-
 # ── ALLOWANCE TYPES MASTER ────────────────────────────────────────────
 @lookups_bp.route('/allowance-types')
 @login_required

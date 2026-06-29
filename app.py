@@ -4,12 +4,16 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from config import config
 from models import db, User, ActivityLog
-
+from routes.vendor_doc import vendor_doc_bp
+from routes.buyer_doc  import buyer_doc_bp
 # Try to import Flask-Babel; gracefully degrade if missing
 try:
-    from flask_babel import Babel
+    import importlib
+    flask_babel = importlib.import_module('flask_babel')
+    Babel = flask_babel.Babel
     BABEL_AVAILABLE = True
-except ImportError:
+except (ImportError, ModuleNotFoundError):
+    Babel = None
     BABEL_AVAILABLE = False
 
 login_manager = LoginManager()
@@ -65,7 +69,8 @@ def create_app(config_name='default'):
     app.register_blueprint(inv_bp)
     app.register_blueprint(pur_bp)
     app.register_blueprint(lookups_bp)
-
+    app.register_blueprint(vendor_doc_bp)
+    app.register_blueprint(buyer_doc_bp)
 
     # Error handlers
     @app.errorhandler(404)

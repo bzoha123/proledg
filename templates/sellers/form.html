@@ -204,40 +204,234 @@
             </div>
         </div>
 
-        <!-- SECTION 5: Bank -->
-        <div class="tab-pane fade" id="tab-bank">
-            <div class="card card-modern border-top-0 rounded-top-0">
-                <div class="card-body">
-                    <div class="alert alert-info d-flex align-items-center mb-4">
-                        <i class="fas fa-shield-alt me-2"></i>
-                        {% if current_locale == 'ar' %}يتم تخزين بيانات البنك بشكل آمن ومشفر.{% else %}Bank details are stored securely and encrypted.{% endif %}
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">{% if current_locale == 'ar' %}اسم البنك{% else %}Bank Name{% endif %}</label>
-                            {{ form.bank_name(class="form-control") }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">{% if current_locale == 'ar' %}اسم صاحب الحساب{% else %}Account Holder Name{% endif %}</label>
-                            {{ form.account_holder(class="form-control") }}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">{% if current_locale == 'ar' %}رقم الحساب{% else %}Account Number{% endif %}</label>
-                            {{ form.account_number(class="form-control") }}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">{% if current_locale == 'ar' %}رقم IBAN{% else %}IBAN{% endif %}</label>
-                            {{ form.iban(class="form-control") }}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">{% if current_locale == 'ar' %}كود SWIFT{% else %}SWIFT Code{% endif %}</label>
-                            {{ form.swift_code(class="form-control") }}
-                        </div>
-                    </div>
-                </div>
+     <!-- SECTION 5: Bank Information -->
+<!-- ============================================ -->
+<!-- SECTION 5: BANK INFORMATION                   -->
+<!-- ============================================ -->
+<div class="tab-pane fade" id="tab-bank">
+    <div class="card card-modern border-top-0 rounded-top-0">
+        <div class="card-body">
+            
+            <!-- ========================================== -->
+            <!-- SECURITY NOTICE                             -->
+            <!-- ========================================== -->
+            <div class="alert alert-info d-flex align-items-center mb-4">
+                <i class="fas fa-shield-alt me-2"></i>
+                <span>
+                    {% if current_locale == 'ar' %}
+                        يتم تخزين بيانات البنك بشكل آمن ومشفر.
+                    {% else %}
+                        Bank details are stored securely and encrypted.
+                    {% endif %}
+                </span>
             </div>
-        </div>
-    </div>
+
+            <!-- ========================================== -->
+            <!-- BANK DETAILS FORM                          -->
+            <!-- ========================================== -->
+            <form id="bankForm" method="post" action="#">
+                <div class="row g-4">
+                    
+                    <!-- -------------------------------------- -->
+                    <!-- SECTION A: Account Holder Information  -->
+                    <!-- -------------------------------------- -->
+                    <div class="col-12">
+                        <div class="section-divider">
+                            <span class="section-title">
+                                {% if current_locale == 'ar' %}
+                                    <i class="fas fa-user-circle me-2"></i>معلومات صاحب الحساب
+                                {% else %}
+                                    <i class="fas fa-user-circle me-2"></i>Account Holder Information
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Account Holder Name -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold">
+                                {% if current_locale == 'ar' %}
+                                    اسم صاحب الحساب
+                                {% else %}
+                                    Account Holder Name
+                                {% endif %}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.account_holder(class="form-control form-control-lg", placeholder=('أدخل الاسم الكامل' if current_locale == 'ar' else 'Enter full name')) }}
+                            <small class="form-text text-muted">
+                                {% if current_locale == 'ar' %}
+                                    الاسم كما يظهر في الحساب البنكي
+                                {% else %}
+                                    Name as it appears on the bank account
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Bank Name -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold">
+                                {% if current_locale == 'ar' %}
+                                    اسم البنك
+                                {% else %}
+                                    Bank Name
+                                {% endif %}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.bank_name(class="form-control form-control-lg", placeholder=('اختر أو اكتب اسم البنك' if current_locale == 'ar' else 'Select or type bank name')) }}
+                            <small class="form-text text-muted">
+                                {% if current_locale == 'ar' %}
+                                    البنك الذي تملك فيه الحساب
+                                {% else %}
+                                    The bank where you hold the account
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- -------------------------------------- -->
+                    <!-- SECTION B: Banking Codes              -->
+                    <!-- -------------------------------------- -->
+                    <div class="col-12">
+                        <div class="section-divider">
+                            <span class="section-title">
+                                {% if current_locale == 'ar' %}
+                                    <i class="fas fa-code me-2"></i>معلومات التحويل المصرفي
+                                {% else %}
+                                    <i class="fas fa-code me-2"></i>Banking Transfer Information
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- IBAN -->
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold">
+                                IBAN
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.iban(class="form-control form-control-lg text-uppercase", placeholder=('أدخل رقم IBAN' if current_locale == 'ar' else 'Enter IBAN number')) }}
+                            <small class="form-text text-muted">
+                                {% if current_locale == 'ar' %}
+                                    يتكون من 22-34 حرفًا وأرقامًا
+                                {% else %}
+                                    Consists of 22-34 alphanumeric characters
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- SWIFT Code -->
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold">
+                                SWIFT/BIC Code
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.swift_code(class="form-control form-control-lg text-uppercase", placeholder=('أدخل كود SWIFT' if current_locale == 'ar' else 'Enter SWIFT code')) }}
+                            <small class="form-text text-muted">
+                                {% if current_locale == 'ar' %}
+                                    يتكون من 8-11 حرفًا
+                                {% else %}
+                                    Consists of 8-11 characters
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Account Number -->
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold">
+                                {% if current_locale == 'ar' %}
+                                    رقم الحساب
+                                {% else %}
+                                    Account Number
+                                {% endif %}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.account_number(class="form-control form-control-lg", placeholder=('أدخل رقم الحساب' if current_locale == 'ar' else 'Enter account number')) }}
+                            <small class="form-text text-muted">
+                                {% if current_locale == 'ar' %}
+                                    رقم الحساب البنكي المحلي
+                                {% else %}
+                                    Local bank account number
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- -------------------------------------- -->
+                    <!-- SECTION C: Additional Options          -->
+                    <!-- -------------------------------------- -->
+                    <div class="col-12">
+                        <div class="section-divider">
+                            <span class="section-title">
+                                {% if current_locale == 'ar' %}
+                                    <i class="fas fa-cog me-2"></i>خيارات إضافية
+                                {% else %}
+                                    <i class="fas fa-cog me-2"></i>Additional Options
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Primary Account Toggle -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="form-check form-switch">
+                                {{ form.is_primary(class="form-check-input", role="switch") }}
+                                <label class="form-check-label fw-semibold" for="{{ form.is_primary.id }}">
+                                    {% if current_locale == 'ar' %}
+                                        تعيين كحساب رئيسي
+                                    {% else %}
+                                        Set as primary account
+                                    {% endif %}
+                                </label>
+                            </div>
+                            <small class="form-text text-muted d-block mt-1">
+                                {% if current_locale == 'ar' %}
+                                    سيتم استخدام هذا الحساب كخيار افتراضي للمدفوعات
+                                {% else %}
+                                    This account will be used as the default payment option
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Account Status -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="form-check form-switch">
+                                {{ form.is_active(class="form-check-input", role="switch") }}
+                                <label class="form-check-label fw-semibold" for="{{ form.is_active.id }}">
+                                    {% if current_locale == 'ar' %}
+                                        حساب نشط
+                                    {% else %}
+                                        Active account
+                                    {% endif %}
+                                </label>
+                            </div>
+                            <small class="form-text text-muted d-block mt-1">
+                                {% if current_locale == 'ar' %}
+                                    تعطيل الحساب يوقفه عن الاستخدام مؤقتًا
+                                {% else %}
+                                    Disabling the account temporarily stops its use
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                </div><!-- /row -->
+            </form>
+
+        </div><!-- /card-body -->
+    </div><!-- /card -->
+</div><!-- /tab-pane -->
+    
 
     <!-- Action Buttons -->
     <div class="form-actions mt-4">

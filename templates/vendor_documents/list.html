@@ -1,0 +1,928 @@
+{% extends "base.html" %}
+{% set ar = current_locale == 'ar' %}
+
+{% block title %}{% if ar %}مستندات الموردين{% else %}Vendor Documents{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --navy: #1e3a5f; --blue: #2563eb; --green: #16a34a; --red: #ef4444;
+    --gray-50: #f8fafc; --gray-100: #f1f5f9; --gray-200: #e2e8f0;
+    --gray-400: #9ca3af; --gray-600: #4b5563; --gray-900: #111827;
+    --amber: #f59e0b; --purple: #7c3aed;
+}
+
+/* ── Header ── */
+.page-header {
+    background: linear-gradient(135deg, #0f2040 0%, var(--navy) 40%, #1a56db 100%);
+    border-radius: 16px; padding: 20px 28px; margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px;
+    box-shadow: 0 8px 32px rgba(30,58,95,.25);
+}
+.page-header h2 { color: #fff; font-size: 20px; font-weight: 800; margin: 0; }
+.page-header .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.btn { 
+    padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; border: none; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary { background: #16a34a; color: #fff; }
+.btn-primary:hover { background: #15803d; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(22,163,74,.3); color: #fff; }
+.btn-outline { background: rgba(255,255,255,.15); color: #fff; border: 1.5px solid rgba(255,255,255,.3); }
+.btn-outline:hover { background: rgba(255,255,255,.25); color: #fff; }
+.btn-danger { background: #ef4444; color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+
+/* ── Filter Bar ── */
+.filter-bar {
+    background: #fff; border: 1px solid var(--gray-200); border-radius: 12px;
+    padding: 14px 18px; margin-bottom: 16px;
+    display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+}
+.filter-bar select, .filter-bar input {
+    padding: 8px 14px; border: 1.5px solid var(--gray-200); border-radius: 8px;
+    font-size: 13px; min-width: 180px;
+}
+.filter-bar select:focus, .filter-bar input:focus {
+    outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.08);
+}
+
+/* ── Table ── */
+.table-card {
+    background: #fff; border: 1px solid var(--gray-200); border-radius: 12px;
+    overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+
+.table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.table-container thead {
+    background: var(--navy);
+}
+
+.table-container thead th {
+    padding: 12px 16px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    text-align: left;
+}
+.table-card thead th:first-child { padding-left: 16px; }
+.table-card tbody tr { border-bottom: 1px solid var(--gray-100); transition: background 0.15s; }
+.table-card tbody tr:hover { background: #eff6ff; }
+.table-card tbody tr.selected { background: #dbeafe; }
+.table-card tbody td { padding: 10px 14px; color: var(--gray-600); vertical-align: middle; }
+.table-card tbody td:first-child { padding-left: 16px; }
+
+.badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10.5px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+}
+.badge-other { background: #f9fafb; color: #6b7280; }
+.badge-cr { background: #eff6ff; color: #2563eb; }
+.badge-vat { background: #faf5ff; color: #7c3aed; }
+.badge-id { background: #f0fdf4; color: #16a34a; }
+.badge-contract { background: #fff7ed; color: #ea580c; }
+.badge-license { background: #ecfeff; color: #0891b2; }
+.badge-insurance { background: #fef2f2; color: #dc2626; }
+.badge-bank { background: #f0fdf4; color: #15803d; }
+
+.file-icon { font-size: 20px; margin-right: 6px; }
+.file-icon.pdf { color: #ef4444; }
+.file-icon.image { color: #f59e0b; }
+.file-icon.word { color: #2563eb; }
+.file-icon.excel { color: #16a34a; }
+.file-icon.other { color: #6b7280; }
+
+.btn-action {
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex;
+    align-items: center; gap: 4px; border: none;
+}
+.btn-view { background: #eff6ff; color: var(--blue); }
+.btn-view:hover { background: #dbeafe; }
+.btn-download { background: #f0fdf4; color: var(--green); }
+.btn-download:hover { background: #dcfce7; }
+.btn-delete { background: #fef2f2; color: var(--red); border: 1px solid #fecaca; }
+.btn-delete:hover { background: #fee2e2; color: var(--red); }
+
+.empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; }
+.empty-state i { font-size: 48px; display: block; margin-bottom: 16px; opacity: 0.3; }
+.empty-state p { font-size: 14px; }
+
+/* ── Modal ── */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+
+.modal-content {
+    background: #fff; border-radius: 16px; width: 95%; max-width: 750px;
+    max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.modal-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--gray-200);
+    display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--navy); }
+.modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #9ca3af; padding: 4px 8px; border-radius: 6px; }
+.modal-close:hover { background: var(--gray-100); color: var(--gray-900); }
+.modal-body { padding: 24px; }
+.modal-footer {
+    padding: 16px 24px; border-top: 1px solid var(--gray-200);
+    display: flex; gap: 10px; justify-content: flex-end;
+    position: sticky; bottom: 0; background: #fff; border-radius: 0 0 16px 16px;
+}
+
+/* ── Form ── */
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-900); margin-bottom: 6px; }
+.form-group select, .form-group input[type="text"], .form-group input[type="date"] {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--gray-200);
+    border-radius: 8px; font-size: 13px;
+}
+.form-group select:focus, .form-group input:focus {
+    outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.08);
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.required { color: var(--red); }
+
+.upload-zone {
+    border: 2px dashed #d1d5db; border-radius: 12px; padding: 30px;
+    text-align: center; cursor: pointer; transition: all 0.2s;
+    background: #fafafa; margin-bottom: 16px;
+}
+.upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--blue); background: #eff6ff;
+}
+.upload-zone i { font-size: 36px; color: #9ca3af; display: block; margin-bottom: 10px; }
+.upload-zone p { color: #6b7280; font-size: 13px; margin: 0; }
+.upload-zone .browse { color: var(--blue); font-weight: 700; text-decoration: underline; }
+
+/* ── File List ── */
+.file-list { margin-bottom: 16px; }
+.file-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border: 1px solid var(--gray-200); border-radius: 8px;
+    margin-bottom: 8px; background: #fff;
+}
+.file-item .file-info { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.file-item .file-name { font-size: 13px; font-weight: 600; color: var(--gray-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-item .file-size { font-size: 11px; color: var(--gray-400); }
+.file-item .file-remove {
+    background: none; border: none; color: var(--red); cursor: pointer;
+    font-size: 18px; padding: 4px 8px; border-radius: 6px; flex-shrink: 0;
+}
+.file-item .file-remove:hover { background: #fef2f2; }
+
+/* ── Progress ── */
+.progress-bar {
+    height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; margin: 12px 0;
+}
+.progress-bar .progress-fill {
+    height: 100%; background: var(--blue); border-radius: 3px;
+    transition: width 0.3s; width: 0%;
+}
+
+/* ── Spinner ── */
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+    .form-row { grid-template-columns: 1fr; }
+    .file-item { flex-wrap: wrap; gap: 8px; }
+    .page-header { padding: 16px; }
+}
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('purchase.vendor_list') }}">{% if ar %}تسجيل الموردين{% else %}Vendor Registration{% endif %}</a></li>
+<li class="breadcrumb-item active">{% if ar %}مستندات الموردين{% else %}Vendor Documents{% endif %}</li>
+{% endblock %}
+
+{% block content %}
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PAGE HEADER                                                -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="page-header">
+    <h2>
+        <i class="fas fa-folder-open me-2"></i>
+        {% if ar %}مستندات الموردين{% else %}Vendor Documents{% endif %}
+    </h2>
+    <div class="header-actions">
+        <a href="{{ url_for('purchase.vendor_list') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-{% if ar %}right{% else %}left{% endif %}"></i>
+            {% if ar %}الموردين{% else %}Vendors{% endif %}
+        </a>
+        <button class="btn btn-primary" onclick="openUploadModal()">
+            <i class="fas fa-cloud-upload-alt"></i> {% if ar %}رفع مستندات{% else %}Upload Documents{% endif %}
+        </button>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- FILTER BAR                                                 -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="filter-bar">
+    <select id="filterVendor" onchange="filterDocuments()">
+        <option value="">{% if ar %}كل الموردين{% else %}All Vendors{% endif %}</option>
+    </select>
+    <select id="filterCategory" onchange="filterDocuments()">
+        <option value="">{% if ar %}كل الفئات{% else %}All Categories{% endif %}</option>
+        <option value="CR / سجل تجاري">{% if ar %}سجل تجاري{% else %}CR{% endif %}</option>
+        <option value="VAT Certificate / شهادة ضريبة">{% if ar %}شهادة ضريبة{% else %}VAT Certificate{% endif %}</option>
+        <option value="ID / هوية">{% if ar %}هوية{% else %}ID{% endif %}</option>
+        <option value="Contract / عقد">{% if ar %}عقد{% else %}Contract{% endif %}</option>
+        <option value="License / رخصة">{% if ar %}رخصة{% else %}License{% endif %}</option>
+        <option value="Insurance / تأمين">{% if ar %}تأمين{% else %}Insurance{% endif %}</option>
+        <option value="Bank Letter / خطاب بنكي">{% if ar %}خطاب بنكي{% else %}Bank Letter{% endif %}</option>
+        <option value="Other / أخرى">{% if ar %}أخرى{% else %}Other{% endif %}</option>
+    </select>
+    <input type="text" id="filterSearch" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" oninput="filterDocuments()">
+    <span id="docCount" style="font-size:12px;color:var(--gray-400);margin-left:auto;"></span>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- DOCUMENTS TABLE                                            -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="table-card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:40px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                    <th>{% if ar %}المستند{% else %}Document{% endif %}</th>
+                    <th>{% if ar %}المورد{% else %}Vendor{% endif %}</th>
+                    <th>{% if ar %}النوع{% else %}Type{% endif %}</th>
+                    <th>{% if ar %}تاريخ الإنتهاء{% else %}Expiry Date{% endif %}</th>
+                    <th>{% if ar %}الحجم{% else %}Size{% endif %}</th>
+                    <th>{% if ar %}تاريخ الرفع{% else %}Uploaded{% endif %}</th>
+                    <th>{% if ar %}الإجراءات{% else %}Actions{% endif %}</th>
+                </tr>
+            </thead>
+            <tbody id="documentsTableBody">
+                <tr>
+                    <td colspan="8" class="empty-state">
+                        <i class="fas fa-file-alt"></i>
+                        <p>{% if ar %}جاري التحميل...{% else %}Loading...{% endif %}</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- UPLOAD MODAL                                               -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="uploadModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>{% if ar %}رفع مستند{% else %}Upload Document{% endif %}</h3>
+            <button class="modal-close" onclick="closeUploadModal()">&times;</button>
+        </div>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="modal-body">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="form-group">
+                    <label>{% if ar %}المورد *{% else %}Vendor *{% endif %} <span class="required">*</span></label>
+                    <select name="vendor_id" id="vendorSelect" required onchange="updateUploadUrl()">
+                        <option value="">{% if ar %}اختر المورد...{% else %}Select vendor...{% endif %}</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>{% if ar %}نوع المستند{% else %}Document Type{% endif %}</label>
+                    <select name="document_type" id="documentType">
+                        <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
+                        <option value="CR / سجل تجاري">{% if ar %}سجل تجاري{% else %}CR{% endif %}</option>
+                        <option value="VAT Certificate / شهادة ضريبة">{% if ar %}شهادة ضريبة{% else %}VAT Certificate{% endif %}</option>
+                        <option value="ID / هوية">{% if ar %}هوية{% else %}ID{% endif %}</option>
+                        <option value="Contract / عقد">{% if ar %}عقد{% else %}Contract{% endif %}</option>
+                        <option value="License / رخصة">{% if ar %}رخصة{% else %}License{% endif %}</option>
+                        <option value="Insurance / تأمين">{% if ar %}تأمين{% else %}Insurance{% endif %}</option>
+                        <option value="Bank Letter / خطاب بنكي">{% if ar %}خطاب بنكي{% else %}Bank Letter{% endif %}</option>
+                        <option value="Other / أخرى">{% if ar %}أخرى{% else %}Other{% endif %}</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>{% if ar %}اسم المستند{% else %}Document Name{% endif %}</label>
+                    <input type="text" name="document_name" id="documentName" placeholder="{% if ar %}اسم المستند (اختياري){% else %}Document name (optional){% endif %}">
+                </div>
+                
+                <div class="form-group">
+                    <label>{% if ar %}تاريخ الإنتهاء{% else %}Expiry Date{% endif %}</label>
+                    <input type="date" name="expiry_date" id="expiryDate">
+                </div>
+                
+                <div class="form-group">
+                    <label>{% if ar %}الملف *{% else %}File *{% endif %} <span class="required">*</span></label>
+                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>{% if ar %}اسحب وأفلت الملفات هنا أو{% else %}Drag & drop files here or{% endif %} <span class="browse">{% if ar %}تصفح{% else %}Browse{% endif %}</span></p>
+                    </div>
+                    <input type="file" name="file" id="fileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt" style="display:none;" onchange="handleFileSelect(event)">
+                    <small style="color:#6b7280; font-size:11px; display:block; margin-top:4px;">
+                        {% if ar %}الأنواع المسموحة: PDF, Word, Excel, Images, Text{% else %}Allowed: PDF, Word, Excel, Images, Text{% endif %}
+                    </small>
+                </div>
+                
+                <div class="file-list" id="fileList"></div>
+                
+                <div class="progress-bar" id="uploadProgress" style="display:none;">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div id="uploadStatus" style="text-align:center;font-size:12px;color:var(--gray-600);margin-top:6px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-action btn-view" onclick="closeUploadModal()" style="font-size:14px; padding:10px 24px;">
+                    {% if ar %}إلغاء{% else %}Cancel{% endif %}
+                </button>
+                <button type="submit" class="btn btn-primary" id="uploadBtn" style="font-size:14px;">
+                    <i class="fas fa-upload"></i>
+                    {% if ar %}رفع المستند{% else %}Upload Document{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ─────────────────────────────────────────────────────────────
+// GLOBAL VARIABLES
+// ─────────────────────────────────────────────────────────────
+let allDocuments = [];
+let allVendors = [];
+const isArabic = {{ 'true' if ar else 'false' }};
+const CSRF_TOKEN = '{{ csrf_token() }}';
+
+// ─────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 Vendor Documents Page Loaded');
+    loadVendorsDropdown();
+    loadDocuments();
+    setupDragDrop();
+    
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', handleUpload);
+    }
+    
+    const uploadModal = document.getElementById('uploadModal');
+    if (uploadModal) {
+        uploadModal.addEventListener('click', function(e) {
+            if (e.target === this) closeUploadModal();
+        });
+    }
+});
+
+// ─────────────────────────────────────────────────────────────
+// LOAD VENDORS FOR DROPDOWN
+// ─────────────────────────────────────────────────────────────
+function loadVendorsDropdown() {
+    console.log('🔄 Loading vendors...');
+    
+    fetch('/purchase/vendors/data')
+        .then(response => {
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        })
+        .then(vendors => {
+            console.log('✅ Vendors loaded:', vendors.length);
+            allVendors = vendors;
+            
+            // Populate upload modal select
+            const vendorSelect = document.getElementById('vendorSelect');
+            if (vendorSelect) {
+                while (vendorSelect.options.length > 1) {
+                    vendorSelect.remove(1);
+                }
+                vendors.forEach(vendor => {
+                    const option = document.createElement('option');
+                    option.value = vendor.id;
+                    const name = vendor.vendor_name_en || ('Vendor #' + vendor.id);
+                    const code = vendor.vendor_code || '';
+                    option.textContent = code ? `${name} (${code})` : name;
+                    vendorSelect.appendChild(option);
+                });
+            }
+            
+            // Populate filter select
+            const filterVendor = document.getElementById('filterVendor');
+            if (filterVendor) {
+                while (filterVendor.options.length > 1) {
+                    filterVendor.remove(1);
+                }
+                vendors.forEach(vendor => {
+                    const option = document.createElement('option');
+                    option.value = vendor.id;
+                    const name = vendor.vendor_name_en || ('Vendor #' + vendor.id);
+                    const code = vendor.vendor_code || '';
+                    option.textContent = code ? `${name} (${code})` : name;
+                    filterVendor.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error loading vendors:', error);
+        });
+}
+
+// ─────────────────────────────────────────────────────────────
+// LOAD ALL DOCUMENTS (across all vendors)
+// ─────────────────────────────────────────────────────────────
+function loadDocuments() {
+    console.log('🔄 Loading documents...');
+    
+    // First get all vendors
+    fetch('/purchase/vendors/data')
+        .then(response => response.json())
+        .then(vendors => {
+            allVendors = vendors;
+            console.log('📋 Vendors:', vendors.length);
+            
+            if (vendors.length === 0) {
+                allDocuments = [];
+                renderDocumentsTable([]);
+                updateDocCount(0);
+                return;
+            }
+            
+            // Load documents for each vendor
+            const docPromises = vendors.map(vendor => 
+                fetch(`/purchase/vendors/${vendor.id}/documents`)
+                    .then(response => {
+                        if (!response.ok) return [];
+                        return response.json();
+                    })
+                    .then(docs => {
+                        return docs.map(doc => ({
+                            ...doc,
+                            vendor_id: vendor.id,
+                            vendor_name: vendor.vendor_name_en || ('Vendor #' + vendor.id),
+                            vendor_code: vendor.vendor_code || '',
+                        }));
+                    })
+                    .catch(err => {
+                        console.warn(`⚠️ Failed to load docs for vendor ${vendor.id}:`, err);
+                        return [];
+                    })
+            );
+            
+            return Promise.all(docPromises);
+        })
+        .then(results => {
+            allDocuments = results.flat();
+            console.log('✅ All documents loaded:', allDocuments.length);
+            renderDocumentsTable(allDocuments);
+            updateDocCount(allDocuments.length);
+        })
+        .catch(error => {
+            console.error('❌ Error loading documents:', error);
+            allDocuments = [];
+            renderDocumentsTable([]);
+            updateDocCount(0);
+        });
+}
+
+function updateDocCount(count) {
+    const countEl = document.getElementById('docCount');
+    if (countEl) {
+        countEl.textContent = count + ' ' + (isArabic ? 'مستند' : 'documents');
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER DOCUMENTS TABLE
+// ─────────────────────────────────────────────────────────────
+function renderDocumentsTable(docs) {
+    const tbody = document.getElementById('documentsTableBody');
+    if (!tbody) return;
+    
+    if (!docs || docs.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="empty-state">
+                    <i class="fas fa-file-alt"></i>
+                    <p>${isArabic ? 'لا توجد مستندات' : 'No documents found'}</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = docs.map((doc, i) => {
+        const docType = doc.document_type || '';
+        const catClass = getCategoryClass(docType);
+        const catLabel = getCategoryLabel(docType);
+        
+        const ext = (doc.file_path || '').split('.').pop().toLowerCase();
+        
+        let fileIconClass = 'other';
+        if (ext === 'pdf') fileIconClass = 'pdf';
+        else if (['jpg','jpeg','png','gif','bmp','webp'].includes(ext)) fileIconClass = 'image';
+        else if (['doc','docx'].includes(ext)) fileIconClass = 'word';
+        else if (['xls','xlsx'].includes(ext)) fileIconClass = 'excel';
+        
+        const fileSize = doc.file_size 
+            ? (doc.file_size > 1048576 
+                ? (doc.file_size / 1048576).toFixed(1) + ' MB' 
+                : (doc.file_size / 1024).toFixed(0) + ' KB')
+            : '—';
+        
+        const uploadedAt = doc.uploaded_at 
+            ? new Date(doc.uploaded_at).toLocaleDateString() 
+            : '—';
+        
+        let expiryHtml = '—';
+        if (doc.expiry_date) {
+            const expiryDate = new Date(doc.expiry_date);
+            const isExpired = expiryDate < new Date();
+            expiryHtml = `<span style="color:${isExpired ? 'var(--red)' : 'var(--green)'};font-weight:600;">${doc.expiry_date}</span>`;
+        }
+        
+        const docName = doc.document_name || (doc.file_path ? doc.file_path.split('/').pop() : '—');
+        
+        return `
+        <tr data-id="${doc.id}" data-vendor-id="${doc.vendor_id || ''}">
+            <td><input type="checkbox" class="doc-checkbox" value="${doc.id}"></td>
+            <td>
+                <i class="fas fa-file file-icon ${fileIconClass}"></i>
+                ${escapeHtml(docName)}
+            </td>
+            <td>${escapeHtml(doc.vendor_name || '—')}</td>
+            <td><span class="badge ${catClass}">${escapeHtml(catLabel)}</span></td>
+            <td>${expiryHtml}</td>
+            <td>${fileSize}</td>
+            <td>${uploadedAt}</td>
+            <td>
+                <div style="display:flex; gap:4px;">
+                    <button class="btn-action btn-view" onclick="viewDocument(${doc.id})" title="${isArabic ? 'عرض' : 'View'}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-action btn-download" onclick="downloadDocument(${doc.id})" title="${isArabic ? 'تحميل' : 'Download'}">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="btn-action btn-delete" onclick="deleteDocument(${doc.id})" title="${isArabic ? 'حذف' : 'Delete'}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function getCategoryClass(docType) {
+    if (!docType) return 'badge-other';
+    const lower = docType.toLowerCase();
+    if (lower.includes('cr')) return 'badge-cr';
+    if (lower.includes('vat')) return 'badge-vat';
+    if (lower.includes('id')) return 'badge-id';
+    if (lower.includes('contract')) return 'badge-contract';
+    if (lower.includes('license')) return 'badge-license';
+    if (lower.includes('insurance')) return 'badge-insurance';
+    if (lower.includes('bank')) return 'badge-bank';
+    return 'badge-other';
+}
+
+function getCategoryLabel(docType) {
+    if (!docType) return isArabic ? 'أخرى' : 'Other';
+    if (isArabic) {
+        if (docType.includes('سجل تجاري') || docType.includes('CR')) return 'سجل تجاري';
+        if (docType.includes('شهادة ضريبة') || docType.includes('VAT')) return 'شهادة ضريبة';
+        if (docType.includes('هوية') || docType.includes('ID')) return 'هوية';
+        if (docType.includes('عقد') || docType.includes('Contract')) return 'عقد';
+        if (docType.includes('رخصة') || docType.includes('License')) return 'رخصة';
+        if (docType.includes('تأمين') || docType.includes('Insurance')) return 'تأمين';
+        if (docType.includes('خطاب بنكي') || docType.includes('Bank')) return 'خطاب بنكي';
+        return 'أخرى';
+    }
+    return docType;
+}
+
+// ─────────────────────────────────────────────────────────────
+// FILTER
+// ─────────────────────────────────────────────────────────────
+function filterDocuments() {
+    const vendorId = document.getElementById('filterVendor')?.value || '';
+    const category = document.getElementById('filterCategory')?.value || '';
+    const search = (document.getElementById('filterSearch')?.value || '').toLowerCase();
+    
+    let filtered = allDocuments;
+    
+    if (vendorId) {
+        filtered = filtered.filter(d => d.vendor_id == vendorId);
+    }
+    if (category) {
+        filtered = filtered.filter(d => (d.document_type || '').includes(category) || d.document_type === category);
+    }
+    if (search) {
+        filtered = filtered.filter(d => 
+            (d.document_name || '').toLowerCase().includes(search) ||
+            (d.vendor_name || '').toLowerCase().includes(search) ||
+            (d.document_type || '').toLowerCase().includes(search) ||
+            (d.file_path || '').toLowerCase().includes(search)
+        );
+    }
+    
+    renderDocumentsTable(filtered);
+    updateDocCount(filtered.length);
+}
+
+// ─────────────────────────────────────────────────────────────
+// SELECT ALL
+// ─────────────────────────────────────────────────────────────
+function toggleSelectAll() {
+    const checked = document.getElementById('selectAll')?.checked || false;
+    document.querySelectorAll('.doc-checkbox').forEach(cb => cb.checked = checked);
+}
+
+// ─────────────────────────────────────────────────────────────
+// DRAG & DROP
+// ─────────────────────────────────────────────────────────────
+function setupDragDrop() {
+    const zone = document.getElementById('uploadZone');
+    if (!zone) return;
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        zone.addEventListener(eventName, e => { 
+            e.preventDefault(); 
+            e.stopPropagation(); 
+        });
+    });
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        zone.addEventListener(eventName, () => zone.classList.add('dragover'));
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        zone.addEventListener(eventName, () => zone.classList.remove('dragover'));
+    });
+    
+    zone.addEventListener('drop', e => {
+        handleFileSelect({ target: { files: e.dataTransfer.files } });
+    });
+}
+
+// ─────────────────────────────────────────────────────────────
+// FILE HANDLING
+// ─────────────────────────────────────────────────────────────
+function handleFileSelect(event) {
+    const files = event.target.files;
+    const fileList = document.getElementById('fileList');
+    
+    if (!files || files.length === 0) return;
+    
+    const file = files[0];
+    const sizeFormatted = file.size > 1048576 
+        ? (file.size / 1048576).toFixed(1) + ' MB' 
+        : (file.size / 1024).toFixed(0) + ' KB';
+    
+    fileList.innerHTML = `
+        <div class="file-item">
+            <div class="file-info">
+                <i class="fas fa-file" style="color:var(--gray-400)"></i>
+                <div>
+                    <div class="file-name">${escapeHtml(file.name)}</div>
+                    <div class="file-size">${sizeFormatted}</div>
+                </div>
+            </div>
+            <button type="button" class="file-remove" onclick="clearFileSelection()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    // Auto-fill document name from filename
+    const docNameInput = document.getElementById('documentName');
+    if (docNameInput && !docNameInput.value) {
+        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+        docNameInput.value = nameWithoutExt;
+    }
+}
+
+function clearFileSelection() {
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    if (fileInput) fileInput.value = '';
+    if (fileList) fileList.innerHTML = '';
+}
+
+function updateUploadUrl() {
+    // URL is set dynamically in handleUpload based on vendor selection
+}
+
+// ─────────────────────────────────────────────────────────────
+// UPLOAD HANDLER
+// ─────────────────────────────────────────────────────────────
+function handleUpload(e) {
+    e.preventDefault();
+    
+    const form = document.getElementById('uploadForm');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressBar = document.getElementById('uploadProgress');
+    const progressFill = document.getElementById('progressFill');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const fileInput = document.getElementById('fileInput');
+    const vendorSelect = document.getElementById('vendorSelect');
+    
+    // Validate
+    if (!vendorSelect || !vendorSelect.value) {
+        alert(isArabic ? 'الرجاء اختيار المورد' : 'Please select a vendor');
+        return;
+    }
+    
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        alert(isArabic ? 'الرجاء اختيار ملف' : 'Please select a file');
+        return;
+    }
+    
+    const vendorId = vendorSelect.value;
+    const formData = new FormData(form);
+    
+    // Build correct URL with vendor ID
+    const uploadUrl = `/purchase/vendors/${vendorId}/documents/upload`;
+    
+    const originalHtml = uploadBtn.innerHTML;
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<span class="spinner"></span> ' + (isArabic ? 'جاري الرفع...' : 'Uploading...');
+    progressBar.style.display = 'block';
+    progressFill.style.width = '0%';
+    progressFill.style.background = 'var(--blue)';
+    uploadStatus.textContent = '';
+    uploadStatus.style.color = '';
+    
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        progressFill.style.width = progress + '%';
+    }, 300);
+    
+    fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': CSRF_TOKEN
+        }
+    })
+    .then(response => {
+        clearInterval(progressInterval);
+        console.log('📥 Upload response status:', response.status);
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json().then(data => ({ ok: response.ok, data }));
+        } else {
+            return response.text().then(text => {
+                console.error('Non-JSON response:', text.substring(0, 200));
+                throw new Error('Server returned unexpected response');
+            });
+        }
+    })
+    .then(({ ok, data }) => {
+        console.log('✅ Upload response:', data);
+        progressFill.style.width = '100%';
+        
+        if (ok && data.ok) {
+            uploadStatus.textContent = isArabic ? '✅ تم الرفع بنجاح!' : '✅ Upload successful!';
+            uploadStatus.style.color = 'var(--green)';
+            setTimeout(() => {
+                closeUploadModal();
+                loadDocuments();
+            }, 1000);
+        } else {
+            throw new Error(data.error || 'Upload failed');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Upload error:', error);
+        uploadStatus.textContent = (isArabic ? '❌ فشل الرفع: ' : '❌ Upload failed: ') + error.message;
+        uploadStatus.style.color = 'var(--red)';
+        progressFill.style.background = 'var(--red)';
+    })
+    .finally(() => {
+        uploadBtn.innerHTML = originalHtml;
+        uploadBtn.disabled = false;
+        clearFileSelection();
+        setTimeout(() => {
+            progressBar.style.display = 'none';
+            progressFill.style.width = '0%';
+            progressFill.style.background = 'var(--blue)';
+            uploadStatus.textContent = '';
+        }, 3000);
+    });
+}
+
+// ─────────────────────────────────────────────────────────────
+// MODAL FUNCTIONS
+// ─────────────────────────────────────────────────────────────
+function openUploadModal() {
+    console.log('📂 Opening upload modal');
+    const modal = document.getElementById('uploadModal');
+    const form = document.getElementById('uploadForm');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressBar = document.getElementById('uploadProgress');
+    const uploadStatus = document.getElementById('uploadStatus');
+    
+    if (modal) modal.classList.add('active');
+    if (form) form.reset();
+    clearFileSelection();
+    if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fas fa-upload"></i> ' + (isArabic ? 'رفع المستند' : 'Upload Document');
+    }
+    if (progressBar) progressBar.style.display = 'none';
+    if (uploadStatus) {
+        uploadStatus.textContent = '';
+        uploadStatus.style.color = '';
+    }
+}
+
+function closeUploadModal() {
+    console.log('❌ Closing upload modal');
+    const modal = document.getElementById('uploadModal');
+    if (modal) modal.classList.remove('active');
+    clearFileSelection();
+}
+
+// ─────────────────────────────────────────────────────────────
+// DOCUMENT ACTIONS
+// ─────────────────────────────────────────────────────────────
+function viewDocument(docId) {
+    console.log('👁️ Viewing document:', docId);
+    window.open(`/purchase/vendors/documents/${docId}/download`, '_blank');
+}
+
+function downloadDocument(docId) {
+    console.log('⬇️ Downloading document:', docId);
+    window.location.href = `/purchase/vendors/documents/${docId}/download`;
+}
+
+function deleteDocument(docId) {
+    const confirmMsg = isArabic ? 'هل أنت متأكد من حذف هذا المستند؟' : 'Are you sure you want to delete this document?';
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    console.log('🗑️ Deleting document:', docId);
+    
+    fetch(`/purchase/vendors/documents/${docId}/delete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify({ csrf_token: CSRF_TOKEN })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
+            loadDocuments();
+        } else {
+            alert((isArabic ? 'فشل الحذف: ' : 'Delete failed: ') + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('❌ Delete error:', error);
+        alert((isArabic ? 'فشل الحذف' : 'Delete failed'));
+    });
+}
+
+// ─────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

@@ -7,184 +7,330 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
 
-/* ═══════════════════════════════════════════════════════
-   PROLEDG FORM DESIGN SYSTEM  v2
-   Used across: Sellers, Employees, Buyers, Vendors
-═══════════════════════════════════════════════════════ */
-
-/* ── Modal shell ── */
-.pf-modal .modal-dialog { max-width: 960px; }
-.pf-modal .modal-content { border: none; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,.22); }
-
-/* ── Modal header ── */
-.pf-hdr {
-  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
-  padding: 16px 22px;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.pf-hdr h5 { margin: 0; color: #fff; font-size: 15px; font-weight: 700; letter-spacing: .2px; display: flex; align-items: center; gap: 8px; }
-.pf-hdr .btn-close { filter: brightness(0) invert(1); opacity: .85; }
-.pf-hdr .btn-close:hover { opacity: 1; }
-
-/* ── Tab nav inside modal ── */
-.pf-tabs { display: flex; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; padding: 0 20px; gap: 2px; }
-.pf-tab {
-  padding: 10px 18px; font-size: 12px; font-weight: 600; color: #6b7280;
-  border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent;
-  transition: all .15s; white-space: nowrap; display: flex; align-items: center; gap: 6px;
-}
-.pf-tab:hover { color: #2563eb; background: rgba(37,99,235,.06); border-radius: 6px 6px 0 0; }
-.pf-tab.active { color: #2563eb; border-bottom-color: #2563eb; background: white; border-radius: 6px 6px 0 0; }
-.pf-tab i { font-size: 11px; }
-
-/* ── Tab panes ── */
-.pf-pane { display: none; padding: 22px 24px; }
-.pf-pane.active { display: block; }
-
-/* ── Section header ── */
-.pf-section-hdr {
-  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px;
-  color: #1e3a5f; margin: 0 0 14px; padding-bottom: 8px;
-  border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 7px;
-}
-.pf-section-hdr i { color: #2563eb; font-size: 13px; }
-
-/* ── Field grid ── */
-.pf-row { display: grid; gap: 14px; margin-bottom: 14px; }
-.pf-row.cols-1 { grid-template-columns: 1fr; }
-.pf-row.cols-2 { grid-template-columns: 1fr 1fr; }
-.pf-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
-.pf-row.cols-2-1 { grid-template-columns: 2fr 1fr; }
-.pf-row.cols-1-2 { grid-template-columns: 1fr 2fr; }
-@media (max-width: 640px) {
-  .pf-row.cols-2, .pf-row.cols-3, .pf-row.cols-2-1, .pf-row.cols-1-2 { grid-template-columns: 1fr; }
+/* ══════════════════════════════════════════════════════════════
+   BUYERS — design tokens
+══════════════════════════════════════════════════════════════ */
+:root {
+  --blue-dark : #1e3a5f;
+  --blue      : #2563eb;
+  --blue-light: #eff6ff;
+  --blue-mid  : #dbeafe;
+  --green-bg  : #f0fdf4;
+  --green     : #16a34a;
+  --green-bd  : #bbf7d0;
+  --border    : #e2e8f0;
+  --border-lt : #f1f5f9;
+  --surface   : #f8fafc;
+  --text-1    : #1f2937;
+  --text-2    : #374151;
+  --text-3    : #6b7280;
+  --text-4    : #9ca3af;
+  --radius    : 10px;
+  --radius-sm : 7px;
+  --shadow-lg : 0 20px 60px rgba(0,0,0,.18);
+  --shadow-md : 0 8px 24px rgba(0,0,0,.10);
 }
 
-/* ── Field ── */
-.pf-field {}
-.pf-label {
-  font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px;
-  display: flex; align-items: center; gap: 4px; text-transform: uppercase; letter-spacing: .3px;
+/* ── AG-Grid theme ─────────────────────────────────────────── */
+.ag-theme-alpine {
+  --ag-font-family: 'Segoe UI', system-ui, sans-serif;
+  --ag-font-size: 13px;
+  --ag-header-background-color: var(--blue-dark);
+  --ag-header-foreground-color: #fff;
+  --ag-border-color: var(--border);
+  --ag-row-border-color: var(--border-lt);
+  --ag-row-hover-color: var(--blue-light);
+  --ag-selected-row-background-color: var(--blue-mid);
+  --ag-header-height: 44px;
+  --ag-row-height: 46px;
+  --ag-cell-horizontal-padding: 14px;
 }
-.pf-label .req { color: #ef4444; font-size: 13px; line-height: 1; }
-.pf-input {
-  width: 100%; padding: 8px 11px; font-size: 13px; color: #1f2937;
-  border: 1.5px solid #d1d5db; border-radius: 8px; background: white;
+.ag-theme-alpine .ag-header-cell-label {
+  font-weight: 700; font-size: 11px;
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.ag-theme-alpine .ag-header-cell:hover { background: rgba(255,255,255,.07) !important; }
+.ag-theme-alpine .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-sort-descending-icon { color: rgba(255,255,255,.75); }
+.ag-theme-alpine .ag-filter {
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-md) !important;
+  border: 1px solid var(--border) !important;
+  min-width: 260px; background: white;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input {
+  border: 1.5px solid #d1d5db !important; border-radius: var(--radius-sm) !important;
+  padding: 6px 10px !important; font-size: 12px !important;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus {
+  outline: none !important; border-color: var(--blue) !important;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1) !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel {
+  padding: 8px 12px !important; background: var(--surface) !important;
+  border-top: 1px solid var(--border) !important;
+  display: flex !important; gap: 6px !important; justify-content: flex-end !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button {
+  padding: 5px 14px !important; border-radius: var(--radius-sm) !important;
+  font-size: 12px !important; font-weight: 600 !important;
+  border: none !important; cursor: pointer !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]
+  { background: linear-gradient(135deg,#16a34a,#15803d) !important; color: white !important; }
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"]
+  { background: white !important; color: var(--text-2) !important; border: 1.5px solid #d1d5db !important; }
+.ag-theme-alpine .ag-floating-filter-input input {
+  border: 1px solid var(--border) !important; border-radius: 5px !important;
+  padding: 3px 7px !important; font-size: 11px !important;
+}
+.ag-theme-alpine .ag-row-even  { background: white; }
+.ag-theme-alpine .ag-row-odd   { background: #fafbfc; }
+.ag-theme-alpine .ag-row-hover { background: var(--blue-light) !important; }
+.ag-theme-alpine .ag-cell      { border-right: 1px solid var(--border-lt) !important; }
+
+/* ── Action buttons ────────────────────────────────────────── */
+.pl-act { display: flex; align-items: center; gap: 3px; }
+.pl-btn {
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
+  border: none; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; cursor: pointer; transition: all .12s; flex-shrink: 0;
+  text-decoration: none;
+}
+.pl-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,.18); }
+.pl-view { background: #0ea5e9; color: white; }
+.pl-edit { background: #f59e0b; color: white; }
+.pl-del  { background: #ef4444; color: white; }
+
+/* ── Pills / badges ────────────────────────────────────────── */
+.st-pill { display: inline-flex; align-items: center; gap: 4px;
+           padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.st-active   { background: #dcfce7; color: #15803d; }
+.st-inactive { background: var(--border-lt); color: var(--text-3); }
+.code-badge  { background: var(--blue-light); color: #1d4ed8; padding: 2px 8px;
+               border-radius: 5px; font-size: 11px; font-weight: 700; font-family: monospace; }
+
+/* ── Modal outer ───────────────────────────────────────────── */
+#buyerModal .modal-content {
+  border: none;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+#buyerModal .modal-dialog { max-width: 880px; }
+
+/* ── Modal header ──────────────────────────────────────────── */
+.buyer-modal-header {
+  background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue) 100%) !important;
+  padding: 16px 22px !important;
+  display: flex !important; align-items: center !important;
+  justify-content: space-between !important; border-bottom: none !important;
+}
+.buyer-modal-header h5 {
+  margin: 0 !important; color: white !important;
+  font-size: 15px !important; font-weight: 700 !important;
+  display: flex !important; align-items: center !important; gap: 9px !important;
+}
+.buyer-modal-header .btn-close
+  { filter: brightness(0) invert(1) !important; opacity: .8 !important; }
+
+/* ── Accordion ─────────────────────────────────────────────── */
+.acc-header {
+  width: 100%; background: white; border: none;
+  padding: 13px 20px; text-align: left;
+  font-weight: 700; font-size: 12.5px; color: var(--blue-dark);
+  cursor: pointer; display: flex; align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid transparent;
+  transition: background .15s, border-color .15s;
+}
+.acc-header:hover { background: var(--blue-light); }
+.acc-header.open  { background: var(--blue-light); border-bottom-color: var(--border); }
+.acc-title { display: flex; align-items: center; gap: 0; }
+.acc-icon-wrap {
+  width: 26px; height: 26px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-right: 10px; font-size: 11px;
+  background: #dbeafe; color: var(--blue); flex-shrink: 0;
+}
+.acc-header.open .acc-icon-wrap { background: var(--blue); color: white; }
+.acc-arrow { color: var(--text-4); font-size: 11px; transition: transform .2s; }
+.acc-header.open .acc-arrow { color: var(--blue); }
+.acc-body  { padding: 20px 22px; background: white; }
+.acc-body.hidden { display: none !important; }
+
+/* ── Field rows ────────────────────────────────────────────── */
+.field-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.field-row-1 { display: grid; grid-template-columns: 1fr;     gap: 14px; margin-bottom: 14px; }
+@media (max-width: 600px) { .field-row { grid-template-columns: 1fr; } }
+.field-item  { display: flex; flex-direction: column; }
+.field-label {
+  font-size: 10.5px; font-weight: 700; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .45px; margin-bottom: 5px;
+}
+.field-req   { color: #ef4444; margin-left: 3px; }
+.field-input {
+  border: 1.5px solid #d1d5db; border-radius: 8px;
+  padding: 8px 12px; font-size: 13px; width: 100%;
+  color: var(--text-1); background: white;
   transition: border-color .15s, box-shadow .15s; outline: none;
   font-family: inherit;
 }
-.pf-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
-.pf-input:disabled { background: #f9fafb; color: #9ca3af; cursor: not-allowed; }
-.pf-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; padding-right: 32px; }
-
-/* ── Bilingual input wrap ── */
-.pf-bilingual { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.pf-bilingual-lbl { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px; letter-spacing: .3px; }
-@media (max-width: 640px) { .pf-bilingual { grid-template-columns: 1fr; } }
-
-/* ── Translate button ── */
-.pf-retrans {
-  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-  width: 22px; height: 22px; background: #eff6ff; color: #2563eb;
-  border: none; border-radius: 5px; cursor: pointer; font-size: 10px;
-  display: flex; align-items: center; justify-content: center; opacity: .7;
-  transition: opacity .15s;
+.field-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.field-wrap  { position: relative; display: flex; align-items: center; }
+.field-wrap .field-input { padding-right: 34px; }
+.field-spin  { position: absolute; right: 34px; top: 50%; transform: translateY(-50%); }
+.retrans-btn {
+  position: absolute !important; right: 7px !important;
+  top: 50% !important; transform: translateY(-50%) !important;
+  width: 22px !important; height: 22px !important;
+  border-radius: 5px !important; border: 1px solid #bfdbfe !important;
+  background: var(--blue-light) !important; color: var(--blue) !important;
+  display: flex !important; align-items: center !important;
+  justify-content: center !important; cursor: pointer !important;
+  font-size: 10px !important; opacity: .75;
 }
-.pf-retrans:hover { opacity: 1; }
-.pf-input-wrap { position: relative; }
-.pf-input-wrap .pf-input { padding-right: 34px; }
+.section-label {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .7px; color: var(--text-3);
+  margin: 18px 0 10px; padding-bottom: 6px;
+  border-bottom: 1px dashed var(--border);
+  display: flex; align-items: center; gap: 6px;
+}
+.section-label i { color: var(--blue); }
 
-/* ── Modal footer ── */
+/* ── Bank section ─────────────────────────────────────────── */
+.bank-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 22px 10px;
+  border-top: 2px solid var(--border-lt);
+  background: white;
+}
+.bank-section-title {
+  font-size: 12px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--blue-dark);
+  display: flex; align-items: center; gap: 7px;
+}
+.bank-count-badge {
+  background: var(--blue-light); color: var(--blue);
+  font-size: 10px; font-weight: 700; padding: 2px 8px;
+  border-radius: 20px; display: none;
+}
+.bank-add-btn {
+  padding: 7px 15px; background: linear-gradient(135deg,var(--blue),#1d4ed8);
+  color: white; border: none; border-radius: 8px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.bank-table-wrap {
+  margin: 0 22px 18px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.bank-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bank-table thead th {
+  background: var(--surface); padding: 9px 14px;
+  text-align: left; font-size: 10px; font-weight: 700;
+  color: var(--text-3); text-transform: uppercase;
+  border-bottom: 1.5px solid var(--border);
+}
+.bank-table tbody tr { transition: background .1s; }
+.bank-table tbody tr:not(.is-primary):hover { background: var(--blue-light) !important; }
+.bank-table tbody tr.is-primary { background: var(--green-bg); }
+.bank-table tbody td { padding: 11px 14px; border-bottom: 1px solid var(--border-lt); }
+.bank-table tbody tr:last-child td { border-bottom: none; }
+.bank-name-main { font-weight: 600; color: var(--text-1); }
+.bank-name-sub  { font-size: 11px; color: var(--text-4); margin-top: 2px; }
+.bank-mono      { font-family: monospace; color: var(--text-3); font-size: 12px; }
+.bank-mono-sm   { font-family: monospace; color: var(--text-3); font-size: 11px; }
+.bank-primary-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--green); font-weight: 700; font-size: 11px;
+  background: #dcfce7; padding: 2px 8px; border-radius: 20px;
+}
+.bank-dash { color: #d1d5db; }
+.bank-empty {
+  text-align: center; padding: 28px 20px;
+  margin: 0 22px 18px;
+  background: var(--surface); border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
+}
+.bank-empty i { font-size: 28px; color: var(--text-4); opacity: .35; display: block; margin-bottom: 8px; }
+.bank-empty-text { font-size: 12.5px; color: var(--text-4); font-weight: 500; }
+
+/* ── Modal footer ──────────────────────────────────────────── */
+.modal-footer-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 13px 22px; background: var(--surface);
+  border-top: 2px solid var(--border);
+  gap: 8px;
+}
+.btn-footer {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 20px; border-radius: 9px;
+  font-size: 13px; font-weight: 600; cursor: pointer; border: none;
+}
+.btn-footer-reset  { background: var(--surface); color: var(--text-3); border: 1.5px solid var(--border); }
+.btn-footer-cancel { background: white; color: var(--text-2); border: 1.5px solid #d1d5db; }
+.btn-footer-save   { background: linear-gradient(135deg,var(--blue),#1d4ed8); color: white; }
+
+/* ── Bank popup ────────────────────────────────────────────── */
+.pf-bank-modal .modal-dialog { max-width: 700px; }
+.pf-bank-modal .modal-content { border: none; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-lg); }
+.pf-hdr {
+  background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue) 100%);
+  padding: 15px 22px; display: flex; align-items: center; justify-content: space-between;
+}
+.pf-hdr h5 { margin: 0; color: white; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.pf-hdr .btn-close { filter: brightness(0) invert(1); opacity: .8; }
 .pf-footer {
-  padding: 14px 22px; background: #f8fafc; border-top: 1.5px solid #e2e8f0;
+  padding: 13px 22px; background: var(--surface); border-top: 1.5px solid var(--border);
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
 .pf-btn {
   padding: 9px 22px; border-radius: 9px; border: none; cursor: pointer;
   font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 7px;
-  transition: all .15s;
 }
-.pf-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.15); }
-.pf-btn.primary { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: white; }
-.pf-btn.secondary { background: white; color: #374151; border: 1.5px solid #d1d5db; }
-.pf-btn.danger { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
-.pf-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
-
-/* ── Bank list inside modal ── */
-.pf-bank-card {
-  background: white; border: 1.5px solid #e2e8f0; border-radius: 10px;
-  padding: 13px 16px; margin-bottom: 8px;
-  display: flex; align-items: flex-start; justify-content: space-between;
-  transition: border-color .15s;
+.pf-btn.primary   { background: linear-gradient(135deg,var(--blue),#1d4ed8); color: white; }
+.pf-btn.secondary { background: white; color: var(--text-2); border: 1.5px solid #d1d5db; }
+.bm-body   { padding: 22px; background: var(--surface); }
+.bm-row    { display: grid; gap: 14px; margin-bottom: 16px; }
+.bm-row.c2 { grid-template-columns: 1fr 1fr; }
+.bm-row.c3 { grid-template-columns: 1fr 1fr 1fr; }
+@media (max-width: 560px) { .bm-row.c2, .bm-row.c3 { grid-template-columns: 1fr; } }
+.bm-label  {
+  font-size: 10.5px; font-weight: 700; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .45px; margin-bottom: 5px;
 }
-.pf-bank-card.primary { border-color: #86efac; background: #f0fdf4; }
-.pf-bank-card-name { font-weight: 700; font-size: 13px; color: #1e3a5f; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.pf-bank-card-meta { font-size: 11px; color: #6b7280; margin-top: 5px; display: flex; flex-wrap: wrap; gap: 12px; }
-.pf-bank-card-meta span { display: flex; align-items: center; gap: 4px; }
-.pf-badge-primary { background: #dcfce7; color: #15803d; padding: 2px 9px; border-radius: 8px; font-size: 10px; font-weight: 700; }
-.pf-badge-blue { background: #eff6ff; color: #2563eb; padding: 2px 9px; border-radius: 8px; font-size: 10px; font-weight: 700; }
-.pf-bank-actions { display: flex; gap: 5px; flex-shrink: 0; }
+.bm-label .req { color: #ef4444; font-size: 12px; }
+.bm-input  {
+  width: 100%; padding: 9px 12px; font-size: 13px; color: var(--text-1);
+  border: 1.5px solid #d1d5db; border-radius: 8px; background: white;
+  outline: none; font-family: inherit;
+}
+.bm-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.bm-input.mono  { font-family: monospace; }
+.bm-input-wrap  { position: relative; }
+.bm-input-wrap .bm-input { padding-right: 34px; }
+.bm-retrans {
+  position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 22px; border-radius: 5px;
+  border: 1px solid #bfdbfe; background: var(--blue-light); color: var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 10px; opacity: .75;
+}
+.bm-retrans.ar { right: auto; left: 7px; border-color: var(--green-bd); background: var(--green-bg); color: var(--green); }
+.bm-divider { height: 1px; background: var(--border); margin: 16px 0 18px; }
+.bm-primary-wrap {
+  display: flex; align-items: center; gap: 9px;
+  padding: 10px 14px; background: white;
+  border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer;
+}
+.bm-primary-wrap input { width: 16px; height: 16px; accent-color: var(--blue); cursor: pointer; }
+.bm-primary-label { font-size: 13px; color: var(--text-2); font-weight: 500; }
 
-/* ── Bank popup modal ── */
-.pf-bank-modal .modal-dialog { max-width: 620px; }
-.pf-bank-modal .modal-content { border: none; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
-
-/* ── Empty state ── */
-.pf-empty { text-align: center; padding: 28px; color: #9ca3af; font-size: 13px; }
-.pf-empty i { font-size: 32px; margin-bottom: 10px; display: block; opacity: .4; }
-
-/* ── AG Grid tweaks ── */
-.ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif; --ag-font-size:13px; --ag-header-background-color:#1e3a5f; --ag-header-foreground-color:#fff; --ag-border-color:#e2e8f0; --ag-row-border-color:#f1f5f9; --ag-row-hover-color:#eff6ff; --ag-selected-row-background-color:#dbeafe; --ag-header-height:46px; --ag-row-height:46px; --ag-cell-horizontal-padding:12px; }
-.ag-theme-alpine .ag-header-cell-label { font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; }
-.ag-theme-alpine .ag-header-cell:hover { background:rgba(255,255,255,.08) !important; }
-.ag-theme-alpine .ag-sort-ascending-icon, .ag-theme-alpine .ag-sort-descending-icon, .ag-theme-alpine .ag-sort-none-icon { color:rgba(255,255,255,.7); }
-.ag-theme-alpine .ag-header-icon { color:rgba(255,255,255,.6); }
-.ag-theme-alpine .ag-filter { border-radius:10px !important; box-shadow:0 8px 30px rgba(0,0,0,.15) !important; border:1px solid #e2e8f0 !important; overflow:hidden; min-width:260px; background:white; }
-.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input { border:1.5px solid #d1d5db !important; border-radius:7px !important; padding:6px 10px !important; font-size:12px !important; }
-.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus { outline:none !important; border-color:#2563eb !important; box-shadow:0 0 0 2px rgba(37,99,235,.12) !important; }
-.ag-theme-alpine .ag-filter-apply-panel { padding:8px 10px !important; background:#f8fafc !important; border-top:1px solid #e2e8f0 !important; display:flex !important; gap:6px !important; justify-content:space-between !important; }
-.ag-theme-alpine .ag-filter-apply-panel-button { padding:5px 14px !important; border-radius:7px !important; font-size:12px !important; font-weight:600 !important; border:none !important; cursor:pointer !important; }
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"] { background:linear-gradient(135deg,#16a34a,#15803d) !important; color:white !important; }
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"], .ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"] { background:white !important; color:#374151 !important; border:1.5px solid #d1d5db !important; }
-.ag-theme-alpine .ag-floating-filter-input input { border:1px solid #e2e8f0 !important; border-radius:5px !important; padding:3px 7px !important; font-size:11px !important; }
-.ag-theme-alpine .ag-floating-filter-input input:focus { outline:none !important; border-color:#2563eb !important; }
-.ag-theme-alpine .ag-row-even { background:white; }
-.ag-theme-alpine .ag-row-odd { background:#fafbfc; }
-.ag-theme-alpine .ag-row-hover { background:#eff6ff !important; }
-.ag-theme-alpine .ag-cell { border-right:1px solid #f1f5f9 !important; }
-
-/* ── Action buttons ── */
-.pl-act { display:flex; align-items:center; gap:3px; }
-.pl-btn { width:28px; height:28px; border-radius:7px; border:none; display:inline-flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; transition:all .12s; }
-.pl-btn:hover { transform:translateY(-1px); box-shadow:0 2px 6px rgba(0,0,0,.2); }
-.pl-view  { background:#0ea5e9; color:white; }
-.pl-edit  { background:#f59e0b; color:white; }
-.pl-del   { background:#ef4444; color:white; }
-.pl-print { background:#16a34a; color:white; }
-
-/* ── Status pills ── */
-.st-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:10px; font-size:11px; font-weight:700; }
-.st-active   { background:#dcfce7; color:#15803d; }
-.st-inactive { background:#f1f5f9; color:#6b7280; }
-.code-badge  { background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:5px; font-size:11px; font-weight:700; font-family:monospace; }
-
-/* ── Page toolbar ── */
-.pl-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
-.pl-toolbar-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.pl-add-btn { padding:9px 20px; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; border:none; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:7px; transition:all .15s; }
-.pl-add-btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(37,99,235,.35); }
-.pl-search-wrap { position:relative; }
-.pl-search { padding:8px 12px 8px 36px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; color:#374151; width:240px; outline:none; transition:border-color .15s; }
-.pl-search:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
-.pl-search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:13px; }
-
-/* ── Buyer form specific ── */
-.field-input { width:100%;padding:8px 11px;font-size:13px;color:#1f2937;border:1.5px solid #d1d5db;border-radius:8px;background:white;outline:none;transition:border-color .15s;font-family:inherit; }
-.field-input:focus { border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1); }
-.field-label { font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px; }
-.field-item { display:flex;flex-direction:column; }
-.field-row { display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px; }
-@media(max-width:640px){ .field-row{grid-template-columns:1fr;} }
 </style>
 {% endblock %}
 
@@ -225,37 +371,37 @@
   </div>
 </div>
 
-{# ══ BUYER MODAL ══════════════════════════════════════════════════ #}
+{# ══ BUYER ADD / EDIT MODAL ═══════════════════════════════════ #}
 <div class="modal fade" id="buyerModal" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
-    <div class="modal-content" style="border:none;border-radius:8px;overflow:hidden;">
+    <div class="modal-content">
 
       <div class="buyer-modal-header">
         <h5 id="buyerModalTitle">{% if ar %}تفاصيل المشتري{% else %}Buyer Details{% endif %}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <div class="modal-body p-0" style="overflow-y:auto;">
+      <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;">
         <form id="buyerForm" method="POST" action="{{ url_for('lookups.add_buyer') }}" enctype="multipart/form-data">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" id="buyerFormId" name="_buyer_id">
 
-          {# ══ 1. BASIC INFORMATION ══ #}
-          <div>
+          <div style="background:white;">
+
+            {# ══ 1. BASIC INFORMATION ══ #}
             <button type="button" class="acc-header open" onclick="togAcc('bbasic')">
               <div class="acc-title">
                 <div class="acc-icon-wrap"><i class="fas fa-user-circle"></i></div>
                 {% if ar %}المعلومات الأساسية{% else %}Basic Information{% endif %}
-                <span style="color:#9ca3af;font-size:11px;margin-left:6px">/ {% if ar %}Basic Information{% else %}المعلومات الأساسية{% endif %}</span>
               </div>
               <i class="fas fa-chevron-down acc-arrow" id="arr-bbasic" style="transform:rotate(180deg)"></i>
             </button>
             <div class="acc-body" id="body-bbasic">
 
-              {# Name — bilingual #}
+              <div class="section-label"><i class="fas fa-signature"></i> {% if ar %}الاسم التجاري{% else %}Trade Name{% endif %}</div>
               <div class="field-row">
                 <div class="field-item">
-                  <div class="field-label" dir="ltr" style="text-align:left">{% if ar %}الاسم (English){% else %}Name{% endif %} <span class="field-req">*</span></div>
+                  <div class="field-label" dir="ltr">{% if ar %}الاسم (English){% else %}Name{% endif %} <span class="field-req">*</span></div>
                   <div class="field-wrap" dir="ltr">
                     <input type="text" name="buyer_name_en" id="b_name_en" class="field-input" dir="ltr" required
                            placeholder="e.g. Al Rajhi Contracting"
@@ -264,7 +410,7 @@
                   </div>
                 </div>
                 <div class="field-item">
-                  <div class="field-label" dir="rtl" style="text-align:right">{% if ar %}الاسم <span class="field-req">*</span>{% else %}الاسم (Arabic){% endif %}</div>
+                  <div class="field-label" dir="rtl" style="text-align:right;">{% if ar %}الاسم <span class="field-req">*</span>{% else %}الاسم (Arabic){% endif %}</div>
                   <div class="field-wrap" dir="rtl">
                     <input type="text" name="buyer_name_ar" id="b_name_ar" class="field-input" dir="rtl"
                            placeholder="مثال: مقاولات الراجحي"
@@ -275,21 +421,19 @@
                 </div>
               </div>
 
-              {# VAT + CRN — single language (numbers) #}
+              <div class="section-label"><i class="fas fa-id-card"></i> {% if ar %}معلومات التسجيل{% else %}Registration{% endif %}</div>
               <div class="field-row">
                 <div class="field-item">
                   <div class="field-label">{% if ar %}الرقم الضريبي{% else %}VAT Number{% endif %} <span class="field-req">*</span></div>
-                  <input type="text" name="vat_number" id="b_vat" class="field-input" dir="ltr" required
-                         placeholder="e.g. 310000000000003">
+                  <input type="text" name="vat_number" id="b_vat" class="field-input" dir="ltr" required placeholder="e.g. 310000000000003">
                 </div>
                 <div class="field-item">
                   <div class="field-label">{% if ar %}رقم السجل التجاري{% else %}CRN{% endif %} <span class="field-req">*</span></div>
-                  <input type="text" name="crn" id="b_crn" class="field-input" dir="ltr" required
-                         placeholder="e.g. 1010000001">
+                  <input type="text" name="crn" id="b_crn" class="field-input" dir="ltr" required placeholder="e.g. 1010000001">
                 </div>
               </div>
 
-              {# Phone + Email — single language #}
+              <div class="section-label"><i class="fas fa-phone-alt"></i> {% if ar %}معلومات الاتصال{% else %}Contact{% endif %}</div>
               <div class="field-row">
                 <div class="field-item">
                   <div class="field-label">{% if ar %}الهاتف{% else %}Phone{% endif %}</div>
@@ -311,8 +455,7 @@
                 </div>
               </div>
 
-              {# Status #}
-              <div class="field-row">
+              <div class="field-row-1" style="max-width:240px;">
                 <div class="field-item">
                   <div class="field-label">{% if ar %}الحالة{% else %}Status{% endif %}</div>
                   <select name="status" id="b_status" class="field-input">
@@ -323,42 +466,36 @@
               </div>
 
             </div>
-          </div>
 
-          {# ══ 2. ADDRESS INFORMATION ══ #}
-          <div>
+            {# ══ 2. ADDRESS ══ #}
             <button type="button" class="acc-header" onclick="togAcc('baddress')">
               <div class="acc-title">
                 <div class="acc-icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
                 {% if ar %}معلومات العنوان{% else %}Address Information{% endif %}
-                <span style="color:#9ca3af;font-size:11px;margin-left:6px">/ {% if ar %}Address Information{% else %}معلومات العنوان{% endif %}</span>
               </div>
               <i class="fas fa-chevron-down acc-arrow" id="arr-baddress"></i>
             </button>
             <div class="acc-body hidden" id="body-baddress">
 
-              {# Street Name — bilingual #}
+              <div class="section-label"><i class="fas fa-road"></i> {% if ar %}الشارع{% else %}Street{% endif %}</div>
               <div class="field-row">
                 <div class="field-item">
-                  <div class="field-label" dir="ltr" style="text-align:left">{% if ar %}اسم الشارع (English){% else %}Street Name{% endif %} <span class="field-req">*</span></div>
+                  <div class="field-label" dir="ltr">{% if ar %}اسم الشارع (English){% else %}Street Name{% endif %} <span class="field-req">*</span></div>
                   <div class="field-wrap" dir="ltr">
-                    <input type="text" name="street_name" id="b_street_en" class="field-input" dir="ltr" required
-                           oninput="bTrans('b_street_en','b_street_ar','en')">
+                    <input type="text" name="street_name" id="b_street_en" class="field-input" dir="ltr" required oninput="bTrans('b_street_en','b_street_ar','en')">
                     {% if not ar %}<button type="button" class="retrans-btn" onclick="bRetrans('b_street_ar','b_street_en','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
                   </div>
                 </div>
                 <div class="field-item">
-                  <div class="field-label" dir="rtl" style="text-align:right">{% if ar %}اسم الشارع <span class="field-req">*</span>{% else %}اسم الشارع (Arabic){% endif %}</div>
+                  <div class="field-label" dir="rtl" style="text-align:right;">{% if ar %}اسم الشارع <span class="field-req">*</span>{% else %}اسم الشارع (Arabic){% endif %}</div>
                   <div class="field-wrap" dir="rtl">
-                    <input type="text" name="street_name_ar" id="b_street_ar" class="field-input" dir="rtl"
-                           oninput="bTrans('b_street_ar','b_street_en','ar')">
+                    <input type="text" name="street_name_ar" id="b_street_ar" class="field-input" dir="rtl" oninput="bTrans('b_street_ar','b_street_en','ar')">
                     <span class="field-spin" id="spin_street"></span>
                     {% if ar %}<button type="button" class="retrans-btn" style="right:auto;left:6px;background:#f0fdf4;border-color:#bbf7d0;color:#16a34a;" onclick="bRetrans('b_street_en','b_street_ar','en')"><i class="fas fa-sync-alt"></i></button>{% endif %}
                   </div>
                 </div>
               </div>
 
-              {# Building Number — single (numeric) #}
               <div class="field-row">
                 <div class="field-item">
                   <div class="field-label">{% if ar %}رقم المبنى{% else %}Building Number{% endif %} <span class="field-req">*</span></div>
@@ -370,23 +507,21 @@
                 </div>
               </div>
 
-              {# Country / City / District — dropdowns #}
+              <div class="section-label"><i class="fas fa-globe"></i> {% if ar %}الموقع{% else %}Location{% endif %}</div>
               <div class="field-row">
                 <div class="field-item">
                   <div class="field-label">{% if ar %}البلد{% else %}Country{% endif %} <span class="field-req">*</span></div>
-                  <select name="country" id="b_country" class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                          onchange="onCountryChange()" required></select>
+                  <select name="country" id="b_country" class="field-input" onchange="onCountryChange()" required></select>
                 </div>
                 <div class="field-item">
                   <div class="field-label">{% if ar %}المدينة{% else %}City{% endif %} <span class="field-req">*</span></div>
-                  <select name="city" id="b_city" class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                          onchange="onCityChange()" required></select>
+                  <select name="city" id="b_city" class="field-input" onchange="onCityChange()" required></select>
                 </div>
               </div>
               <div class="field-row">
                 <div class="field-item">
                   <div class="field-label">{% if ar %}الحي{% else %}District{% endif %} <span class="field-req">*</span></div>
-                  <select name="district" id="b_district" class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}" required></select>
+                  <select name="district" id="b_district" class="field-input" required></select>
                 </div>
                 <div class="field-item">
                   <div class="field-label">{% if ar %}الرمز البريدي{% else %}Postal Code{% endif %} <span class="field-req">*</span></div>
@@ -395,57 +530,156 @@
               </div>
 
             </div>
+
+          </div>{# /accordion wrapper #}
+
+          {# ══ 3. BANK ACCOUNTS ══ #}
+          <div class="bank-section-head">
+            <div class="bank-section-title">
+              <i class="fas fa-university"></i>
+              {% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
+              <span id="bankBadge_buyer" class="bank-count-badge">0</span>
+            </div>
+            <button type="button" onclick="openBuyerBank()" class="bank-add-btn">
+              <i class="fas fa-plus"></i> {% if ar %}إضافة بنك{% else %}Add Bank{% endif %}
+            </button>
+          </div>
+          <div id="bankList_buyer">
+            <div class="bank-empty">
+              <i class="fas fa-university"></i>
+              <div class="bank-empty-text">{% if ar %}لم يتم إضافة بيانات بنك بعد{% else %}No bank accounts added yet{% endif %}</div>
+            </div>
           </div>
 
-        
-                        <!-- BANK ACCOUNTS -->
-            <div style="margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <div class="pf-section-hdr" style="margin:0;border:none;padding:0;">
-                  <i class="fas fa-university"></i>
-                  {% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
-                  <span id="bankBadge_buyer" class="pf-badge-blue" style="margin-left:8px;">0</span>
-                </div>
-                <button type="button" onclick="openBuyerBank()"
-                  style="padding:7px 14px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;">
-                  <i class="fas fa-plus"></i> {% if ar %}إضافة{% else %}Add Bank{% endif %}
-                </button>
-              </div>
-              <div id="bankList_buyer">
-                <div class="pf-empty"><i class="fas fa-university"></i>{% if ar %}لا توجد حسابات{% else %}No bank accounts yet{% endif %}</div>
-              </div>
-            </div>
-</form>
-      </div><!-- /.modal-body -->
+          <!-- Bank hidden fields container -->
+          <div id="bankHiddenFields"></div>
+
+        </form>
+      </div>
 
       <div class="modal-footer-bar">
         <button type="button" class="btn-footer btn-footer-reset" onclick="resetBuyerForm()">
-          <i class="fas fa-redo me-1"></i>{% if ar %}إعادة تعيين{% else %}Reset{% endif %}
+          <i class="fas fa-redo"></i> {% if ar %}إعادة تعيين{% else %}Reset{% endif %}
         </button>
-        <button type="button" class="btn-footer btn-footer-cancel" data-bs-dismiss="modal">
-          <i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}
-        </button>
-        <button type="button" class="btn-footer btn-footer-save" onclick="saveBuyer()">
-          <i class="fas fa-save me-1"></i>{% if ar %}حفظ / Save{% else %}Save / حفظ{% endif %}
-        </button>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="btn-footer btn-footer-cancel" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> {% if ar %}إلغاء{% else %}Cancel{% endif %}
+          </button>
+          <button type="button" class="btn-footer btn-footer-save" onclick="saveBuyer()">
+            <i class="fas fa-save"></i> {% if ar %}حفظ / Save{% else %}Save / حفظ{% endif %}
+          </button>
+        </div>
       </div>
 
-    </div><!-- /.modal-content -->
-  </div><!-- /.modal-dialog -->
-</div><!-- /#buyerModal -->
-
-          {# Delete confirm #}
-<div class="modal fade" id="delModal" tabindex="-1">
-  <div class="modal-dialog modal-sm"><div class="modal-content">
-    <div class="modal-header border-0"><h6 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>{% if ar %}تأكيد الحذف{% else %}Confirm Delete{% endif %}</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-    <div class="modal-body"><p id="delTxt" class="mb-0"></p></div>
-    <div class="modal-footer border-0">
-      <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-      <form id="delForm" method="POST" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-sm btn-danger">{% if ar %}حذف{% else %}Delete{% endif %}</button></form>
     </div>
-  </div></div>
+  </div>
+</div>
+
+
+{# ══ BANK POPUP MODAL ═══════════════════════════════════════ #}
+<div class="modal fade pf-bank-modal" id="bankModal_buyer" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="pf-hdr">
+        <h5 id="bankModal_buyer_title"><i class="fas fa-university"></i> {% if ar %}حساب بنكي{% else %}Bank Account{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="bm-body">
+        <input type="hidden" id="bankModal_buyer_bank_id">
+
+        <div class="bm-row c2">
+          <div class="bm-field">
+            <div class="bm-label">{% if ar %}اسم البنك (EN){% else %}Bank Name{% endif %} <span class="req">*</span></div>
+            <div class="bm-input-wrap">
+              <input type="text" id="bankModal_buyer_name" class="bm-input" dir="ltr" placeholder="e.g. Al Rajhi Bank"
+                     oninput="bTrans('bankModal_buyer_name','bankModal_buyer_name_ar','en')">
+              <button type="button" class="bm-retrans" onclick="bRetrans('bankModal_buyer_name_ar','bankModal_buyer_name','ar')"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
+          <div class="bm-field">
+            <div class="bm-label" dir="rtl">{% if ar %}اسم البنك{% else %}اسم البنك (AR){% endif %} <span class="req">*</span></div>
+            <div class="bm-input-wrap" dir="rtl">
+              <input type="text" id="bankModal_buyer_name_ar" class="bm-input" dir="rtl" placeholder="مثال: مصرف الراجحي"
+                     oninput="bTrans('bankModal_buyer_name_ar','bankModal_buyer_name','ar')">
+              <button type="button" class="bm-retrans ar" onclick="bRetrans('bankModal_buyer_name','bankModal_buyer_name_ar','en')"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="bm-row c2">
+          <div class="bm-field">
+            <div class="bm-label">{% if ar %}الفرع (EN){% else %}Branch{% endif %} <span class="req">*</span></div>
+            <div class="bm-input-wrap">
+              <input type="text" id="bankModal_buyer_branch" class="bm-input" dir="ltr" placeholder="e.g. Main Branch"
+                     oninput="bTrans('bankModal_buyer_branch','bankModal_buyer_branch_ar','en')">
+              <button type="button" class="bm-retrans" onclick="bRetrans('bankModal_buyer_branch_ar','bankModal_buyer_branch','ar')"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
+          <div class="bm-field">
+            <div class="bm-label" dir="rtl">{% if ar %}الفرع{% else %}الفرع (AR){% endif %} <span class="req">*</span></div>
+            <div class="bm-input-wrap" dir="rtl">
+              <input type="text" id="bankModal_buyer_branch_ar" class="bm-input" dir="rtl" placeholder="مثال: الفرع الرئيسي"
+                     oninput="bTrans('bankModal_buyer_branch_ar','bankModal_buyer_branch','ar')">
+              <button type="button" class="bm-retrans ar" onclick="bRetrans('bankModal_buyer_branch','bankModal_buyer_branch_ar','en')"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="bm-divider"></div>
+
+        <div class="bm-row c3">
+          <div class="bm-field">
+            <div class="bm-label">{% if ar %}رقم الحساب{% else %}Account No.{% endif %} <span class="req">*</span></div>
+            <input type="text" id="bankModal_buyer_account" class="bm-input mono" dir="ltr" placeholder="001234567890">
+          </div>
+          <div class="bm-field">
+            <div class="bm-label">IBAN <span class="req">*</span></div>
+            <input type="text" id="bankModal_buyer_iban" class="bm-input mono" dir="ltr" placeholder="SA0380000000608010167519">
+          </div>
+          <div class="bm-field">
+            <div class="bm-label">SWIFT <span class="req">*</span></div>
+            <input type="text" id="bankModal_buyer_swift" class="bm-input mono" dir="ltr" placeholder="RJHISARI" style="text-transform:uppercase;">
+          </div>
+        </div>
+
+        <label class="bm-primary-wrap">
+          <input type="checkbox" id="bankModal_buyer_primary">
+          <div>
+            <div class="bm-primary-label">{% if ar %}تعيين كحساب رئيسي{% else %}Set as primary account{% endif %}</div>
+            <div style="font-size:11px;color:#9ca3af;margin-top:1px;">{% if ar %}سيظهر هذا الحساب أولاً في القوائم{% else %}This account will appear first in listings{% endif %}</div>
+          </div>
+        </label>
+      </div>
+      <div class="pf-footer">
+        <button type="button" class="pf-btn secondary" data-bs-dismiss="modal"><i class="fas fa-times"></i> {% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button type="button" class="pf-btn primary" onclick="saveBuyerBankToArray()"><i class="fas fa-save"></i> {% if ar %}حفظ{% else %}Save Bank{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{# ══ DELETE CONFIRM ══════════════════════════════════════════ #}
+<div class="modal fade" id="delModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;border:none;box-shadow:0 12px 40px rgba(0,0,0,.15);">
+      <div class="modal-header border-0" style="background:#fff8f8;padding:14px 18px;">
+        <h6 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>{% if ar %}تأكيد الحذف{% else %}Confirm Delete{% endif %}</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:14px 18px;"><p id="delTxt" class="mb-0" style="font-size:13px;color:#374151;"></p></div>
+      <div class="modal-footer border-0" style="padding:10px 18px 14px;gap:8px;">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <form id="delForm" method="POST" class="d-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-sm btn-danger">{% if ar %}حذف{% else %}Delete{% endif %}</button>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
+
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
@@ -477,12 +711,9 @@ const GEO = {
 function initCountryDropdown(selected) {
   const sel = document.getElementById('b_country');
   sel.innerHTML = `<option value="">-- ${IS_AR?'اختر':'Select'} --</option>`;
-  Object.keys(GEO).forEach(c => {
-    sel.innerHTML += `<option value="${c}"${c===selected?' selected':''}>${c}</option>`;
-  });
+  Object.keys(GEO).forEach(c => sel.innerHTML += `<option value="${c}"${c===selected?' selected':''}>${c}</option>`);
   onCountryChange(selected ? '' : null, selected);
 }
-
 function onCountryChange(preCity, preCountry) {
   const country = preCountry || document.getElementById('b_country').value;
   const cities = GEO[country] || {};
@@ -491,7 +722,6 @@ function onCountryChange(preCity, preCountry) {
   Object.keys(cities).forEach(c => sel.innerHTML += `<option value="${c}"${c===preCity?' selected':''}>${c}</option>`);
   onCityChange(null, preCity);
 }
-
 function onCityChange(preDistrict, preCity) {
   const country = document.getElementById('b_country').value;
   const city = preCity || document.getElementById('b_city').value;
@@ -510,7 +740,7 @@ function bTrans(srcId, tgtId, sl) {
   const src=document.getElementById(srcId), tgt=document.getElementById(tgtId);
   const text = src ? src.value.trim() : '';
   if (!text) { if(tgt) tgt.value=''; return; }
-  const baseId = tgtId.replace('b_','').replace('_en','').replace('_ar','');
+  const baseId = tgtId.replace('b_','').replace('_en','').replace('_ar','').replace('bankModal_buyer_','');
   const spin = document.getElementById('spin_'+baseId);
   if (spin) spin.innerHTML='<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
   _bTimers[tgtId] = setTimeout(()=>{
@@ -539,19 +769,27 @@ function togAcc(key) {
   if(arr) arr.style.transform=hidden?'':'rotate(180deg)';
 }
 
+/* ══ BANK ARRAY STORAGE ══ */
+let _banks = [];
+let _currentBuyerId = null;
+
 /* ══ RESET FORM ══ */
 function resetBuyerForm() {
-  ['b_name_en','b_name_ar','b_vat','b_crn','b_phone','b_fax','b_email','b_website','b_postal'].forEach(id=>{
+  ['b_name_en','b_name_ar','b_vat','b_crn','b_phone','b_fax','b_email','b_website','b_postal',
+   'b_street_en','b_street_ar','b_building','b_additional'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   document.getElementById('b_status').value='active';
   document.getElementById('buyerFormId').value='';
   initCountryDropdown('Saudi Arabia');
+  _banks = [];
+  renderBankTable();
 }
 
 /* ══ OPEN ADD ══ */
 function openAddBuyer() {
   _currentBuyerId=null;
+  _banks = [];
   document.getElementById('buyerModalTitle').textContent=IS_AR?'إضافة مشتري':'Add Buyer';
   document.getElementById('buyerForm').action='{{ url_for("lookups.add_buyer") }}';
   resetBuyerForm();
@@ -561,11 +799,10 @@ function openAddBuyer() {
 /* ══ OPEN EDIT ══ */
 function openEditBuyer(id) {
   _currentBuyerId=id;
-  loadBuyerBanks(id);
-  _pendingBanks=[];
   document.getElementById('buyerModalTitle').textContent=IS_AR?'تعديل مشتري':'Edit Buyer';
   document.getElementById('buyerForm').action=`/buyers/${id}/edit`;
   document.getElementById('buyerFormId').value=id;
+
   fetch(`/buyers/${id}/json`).then(r=>r.json()).then(d=>{
     document.getElementById('b_name_en').value=d.buyer_name_en||'';
     document.getElementById('b_name_ar').value=d.buyer_name_ar||'';
@@ -577,8 +814,11 @@ function openEditBuyer(id) {
     document.getElementById('b_website').value=d.website||'';
     document.getElementById('b_postal').value=d.postal_code||'';
     document.getElementById('b_status').value=d.status||'active';
+    document.getElementById('b_street_en').value=d.street_name||'';
+    document.getElementById('b_street_ar').value=d.street_name_ar||'';
+    document.getElementById('b_building').value=d.building_number||'';
+    document.getElementById('b_additional').value=d.additional_number||'';
     initCountryDropdown(d.country||'Saudi Arabia');
-    // pre-select city and district after country loads
     setTimeout(()=>{
       document.getElementById('b_country').value=d.country||'Saudi Arabia';
       onCountryChange(d.city||'', d.country||'Saudi Arabia');
@@ -589,13 +829,81 @@ function openEditBuyer(id) {
       },50);
     },100);
   });
+
+  fetch(`/buyers/${id}/banks`).then(r=>r.json()).then(banks=>{
+    _banks = banks.map(b => ({
+      bank_name: b.bank_name || '',
+      bank_name_ar: b.bank_name_ar || '',
+      account_number: b.account_number || '',
+      branch: b.branch || '',
+      branch_ar: b.branch_ar || '',
+      swift_code: b.swift_code || '',
+      iban: b.iban || '',
+      is_primary: b.is_primary || false,
+      _dbId: b.id
+    }));
+    renderBankTable();
+  });
+
   new bootstrap.Modal(document.getElementById('buyerModal')).show();
 }
 
-/* ══ SAVE BUYER ══ */
+/* ══ SAVE BUYER — inject banks before submitting ══ */
 function saveBuyer() {
-  if (!validateForm(document.getElementById('buyerForm'))) return;
-  document.getElementById('buyerForm').submit();
+  const nameEn = document.getElementById('b_name_en');
+  if (!nameEn || !nameEn.value.trim()) {
+    alert(IS_AR ? 'اسم المشتري مطلوب' : 'Buyer name is required');
+    return;
+  }
+  
+  // Inject bank hidden fields BEFORE submitting
+  injectBankFields();
+  
+  // Small delay to ensure DOM updates, then submit
+  setTimeout(() => {
+    document.getElementById('buyerForm').submit();
+  }, 50);
+}
+
+function injectBankFields() {
+  const container = document.getElementById('bankHiddenFields');
+  if (!container) {
+    console.error('bankHiddenFields container not found!');
+    return;
+  }
+  
+  // Clear previous bank fields
+  container.innerHTML = '';
+  
+  console.log('=== injectBankFields ===');
+  console.log('_banks array:', _banks);
+  console.log('_banks.length:', _banks.length);
+  
+  _banks.forEach((bank, i) => {
+    const fields = [
+      ['bank_name', bank.bank_name || ''],
+      ['bank_name_ar', bank.bank_name_ar || ''],
+      ['account_number', bank.account_number || ''],
+      ['branch', bank.branch || ''],
+      ['branch_ar', bank.branch_ar || ''],
+      ['swift_code', bank.swift_code || ''],
+      ['iban', bank.iban || ''],
+      ['is_primary', bank.is_primary ? 'true' : 'false'],
+      ['_dbId', bank._dbId || '']
+    ];
+    
+    fields.forEach(([field, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = `banks[${i}][${field}]`;
+      input.value = value;
+      container.appendChild(input);
+      console.log(`  banks[${i}][${field}] = ${value}`);
+    });
+  });
+  
+  console.log('Total hidden inputs created:', container.children.length);
+  console.log('=== injectBankFields END ===');
 }
 
 /* ══ DELETE ══ */
@@ -607,17 +915,20 @@ function confDel(url, name) {
 
 /* ══ AG-GRID ══ */
 function rCode(p){return p.value?`<span class="code-badge">${p.value}</span>`:'';}
-function rStatus(p){return p.value==='active'||p.value===true?`<span class="st-active">${IS_AR?'نشيط':'Active'}</span>`:`<span class="st-inactive">${IS_AR?'غير نشيط':'Inactive'}</span>`;}
+function rStatus(p){return p.value==='active'||p.value===true
+  ?`<span class="st-pill st-active">${IS_AR?'نشيط':'Active'}</span>`
+  :`<span class="st-pill st-inactive">${IS_AR?'غير نشيط':'Inactive'}</span>`;}
 
 class ActR {
   init(p){
     this.g=document.createElement('div');
-    this.g.className='ag-act-cell';
+    this.g.className='pl-act';
     const d=p.data;
     const nm=(IS_AR&&d.ar?d.ar:d.en||'').replace(/'/g,"\\'");
     this.g.innerHTML=`
+      <a href="/lookups/buyers/${d.id}/view" class="pl-btn pl-view" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></a>
       <button class="pl-btn pl-edit" onclick="openEditBuyer(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-      <button class="pl-btn pl-del" onclick="confDel('/buyers/${d.id}/delete','${nm}')" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
+      <button class="pl-btn pl-del"  onclick="confDel('/buyers/${d.id}/delete','${nm}')" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
   }
   getGui(){return this.g;}
 }
@@ -633,49 +944,38 @@ const cols=[
   {headerName:IS_AR?'الهاتف':'Phone',field:'phone',width:130,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'الحالة':'Status',field:'status',width:100,cellRenderer:rStatus},
 ];
-if(ADM) cols.push({headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:110,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,resizable:false,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 8px'}});
-
-
-/* ── Status pill renderer ── */
-function rStatusPill(p) {
-  const v = (p.value || '').toLowerCase();
-  const cls = v === 'active' || v === 'approved' ? 'st-active' :
-              v === 'inactive' ? 'st-inactive' :
-              v === 'pending'  ? 'st-pending'  :
-              v === 'open'     ? 'st-open'     :
-              v === 'closed'   ? 'st-closed'   :
-              v === 'cancelled'? 'st-cancelled' : 'st-active';
-  const label = IS_AR ? {
-    active:'نشيط', inactive:'غير نشيط', approved:'معتمد',
-    pending:'معلق', open:'مفتوح', closed:'مغلق', cancelled:'ملغي'
-  }[v] || p.value : (p.value || '');
-  return `<span class="st-pill ${cls}"><i class="fas fa-circle" style="font-size:6px;"></i>${label}</span>`;
-}
-function rCodeBadge(p) {
-  return p.value ? `<span class="code-badge">${p.value}</span>` : '';
-}
+if(ADM) cols.push({
+  headerName:IS_AR?'إجراءات':'Actions',
+  field:'_a',
+  width:140,
+  pinned:IS_AR?'left':'right',
+  sortable:false,
+  suppressMenu:true,
+  resizable:false,
+  cellRenderer:ActR,
+  cellStyle:{overflow:'visible',padding:'0 8px'}
+});
 
 let gridApi;
+const _agLocale = IS_AR ? {
+  filterOoo:'تصفية...',equals:'يساوي',notEqual:'لا يساوي',contains:'يحتوي على',
+  notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',
+  blank:'فارغ',notBlank:'غير فارغ',lessThan:'أقل من',greaterThan:'أكبر من',
+  applyFilter:'تطبيق / Apply',clearFilter:'مسح / Clear',resetFilter:'إعادة تعيين',
+  addFilterCondition:'+ إضافة قاعدة / Add Rule',matchAll:'يطابق الكل / Match All',
+  matchAny:'يطابق أي / Match Any',andCondition:'و / AND',orCondition:'أو / OR',
+  noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...',searchOoo:'بحث...',
+  sortAscending:'تصاعدي',sortDescending:'تنازلي',
+} : {
+  filterOoo:'Filter...',applyFilter:'Apply / تطبيق',clearFilter:'Clear / مسح',
+  resetFilter:'Reset',addFilterCondition:'+ Add Rule / إضافة قاعدة',
+  matchAll:'Match All / بتطابق مع الكل',matchAny:'Match Any / يطابق أي',
+  andCondition:'AND / و',orCondition:'OR / أو',noRowsToShow:'No records found',searchOoo:'Search...',
+};
 
-  // Bilingual AG-Grid locale
-  const _agLocale = typeof IS_AR !== 'undefined' && IS_AR ? {
-    filterOoo:'تصفية...',equals:'يساوي',notEqual:'لا يساوي',contains:'يحتوي على',
-    notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',
-    blank:'فارغ',notBlank:'غير فارغ',lessThan:'أقل من',greaterThan:'أكبر من',
-    applyFilter:'تطبيق / Apply',clearFilter:'مسح / Clear',resetFilter:'إعادة تعيين',
-    addFilterCondition:'+ إضافة قاعدة / Add Rule',matchAll:'يطابق الكل / Match All',
-    matchAny:'يطابق أي / Match Any',andCondition:'و / AND',orCondition:'أو / OR',
-    noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...',searchOoo:'بحث...',
-    sortAscending:'تصاعدي',sortDescending:'تنازلي',
-  } : {
-    filterOoo:'Filter...',applyFilter:'Apply / تطبيق',clearFilter:'Clear / مسح',
-    resetFilter:'Reset',addFilterCondition:'+ Add Rule / إضافة قاعدة',
-    matchAll:'Match All / بتطابق مع الكل',matchAny:'Match Any / يطابق أي',
-    andCondition:'AND / و',orCondition:'OR / أو',noRowsToShow:'No records found',searchOoo:'Search...',
-  };
-  agGrid.createGrid(document.getElementById('buyerGrid'),{
-  columnDefs:cols,rowData:[],pagination:true,paginationPageSize:20,
-  animateRows:true, localeText:_agLocale,enableRtl:IS_AR,
+agGrid.createGrid(document.getElementById('buyerGrid'),{
+  columnDefs:cols, rowData:[], pagination:true, paginationPageSize:20,
+  animateRows:true, localeText:_agLocale, enableRtl:IS_AR,
   defaultColDef:{sortable:true,resizable:true,filter:true,filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}},
   onGridReady(p){gridApi=p.api;loadData();},
   onPaginationChanged(){upd();},
@@ -695,102 +995,132 @@ function upd(){
 document.getElementById('buyerForm').addEventListener('submit',()=>setTimeout(loadData,600));
 
 
-/* ══ BUYER BANK — popup modal pattern ══ */
-function openBuyerBank(bankId){
-  const mid='bankModal_buyer';
-  document.getElementById(mid+'_bank_id').value=bankId||'';
-  document.getElementById(mid+'_title').innerHTML=bankId?'<i class="fas fa-edit me-2"></i>Edit Bank':'<i class="fas fa-university me-2"></i>Add Bank Account';
-  if(!bankId){[mid+'_name',mid+'_account',mid+'_branch',mid+'_swift',mid+'_iban'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById(mid+'_primary').checked=false;}
+/* ════════════════════════════════════════════════
+   BANK — JS ARRAY PATTERN
+════════════════════════════════════════════════ */
+function openBuyerBank(bankIndex) {
+  const mid = 'bankModal_buyer';
+  document.getElementById(mid+'_bank_id').value = bankIndex !== undefined ? bankIndex : '';
+
+  if (bankIndex !== undefined && _banks[bankIndex]) {
+    const bank = _banks[bankIndex];
+    document.getElementById(mid+'_name').value     = bank.bank_name || '';
+    document.getElementById(mid+'_name_ar').value  = bank.bank_name_ar || '';
+    document.getElementById(mid+'_account').value  = bank.account_number || '';
+    document.getElementById(mid+'_branch').value   = bank.branch || '';
+    document.getElementById(mid+'_branch_ar').value= bank.branch_ar || '';
+    document.getElementById(mid+'_swift').value    = bank.swift_code || '';
+    document.getElementById(mid+'_iban').value     = bank.iban || '';
+    document.getElementById(mid+'_primary').checked= bank.is_primary || false;
+    document.getElementById(mid+'_title').innerHTML = '<i class="fas fa-edit me-2"></i>'+(IS_AR?'تعديل حساب بنكي':'Edit Bank Account');
+  } else {
+    ['_name','_name_ar','_account','_branch','_branch_ar','_swift','_iban'].forEach(s=>{
+      const el=document.getElementById(mid+s); if(el) el.value='';
+    });
+    document.getElementById(mid+'_primary').checked = false;
+    document.getElementById(mid+'_title').innerHTML = '<i class="fas fa-university me-2"></i>'+(IS_AR?'إضافة حساب بنكي':'Add Bank Account');
+  }
   new bootstrap.Modal(document.getElementById(mid)).show();
 }
-async function saveBuyerBank(){
-  const mid='bankModal_buyer'; const bankId=document.getElementById(mid+'_bank_id').value;
-  const buyerId=_currentBuyerId;
-  if(!buyerId){alert('Save the buyer first.');return;}
-  const bname=document.getElementById(mid+'_name')?.value.trim();
-  if(!bname){alert('Bank name is required.');return;}
-  const payload={bank_name:bname,account_number:document.getElementById(mid+'_account')?.value.trim()||'',branch:document.getElementById(mid+'_branch')?.value.trim()||'',swift_code:document.getElementById(mid+'_swift')?.value.trim()||'',iban:document.getElementById(mid+'_iban')?.value.trim()||'',is_primary:document.getElementById(mid+'_primary')?.checked||false};
-  const url=bankId?`/buyers/banks/${bankId}/edit`:`/buyers/${buyerId}/banks/add`;
-  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify(payload)});
-  const data=await res.json();
-  if(data.ok){bootstrap.Modal.getInstance(document.getElementById(mid))?.hide();loadBuyerBanks(buyerId);}
-  else{alert(data.error||'Failed to save bank.');}
-}
-async function loadBuyerBanks(buyerId){
-  if(!buyerId)return;
-  const res=await fetch(`/buyers/${buyerId}/banks`);
-  const banks=await res.json();
-  renderBuyerBanks(banks,buyerId);
-}
-function renderBuyerBanks(banks,buyerId){
-  const wrap=document.getElementById('bankList_buyer');
-  const badge=document.getElementById('bankBadge_buyer');
-  if(badge)badge.textContent=banks.length;
-  if(!wrap)return;
-  if(!banks.length){wrap.innerHTML='<div class="pf-empty"><i class="fas fa-university"></i>No bank accounts yet</div>';return;}
-  wrap.innerHTML=banks.map(b=>`<div class="pf-bank-card ${b.is_primary?'primary':''}"><div><div class="pf-bank-card-name"><i class="fas fa-university" style="color:#2563eb;font-size:14px;"></i>${b.bank_name||'—'}${b.is_primary?'<span class="pf-badge-primary">PRIMARY</span>':''}</div><div class="pf-bank-card-meta">${b.account_number?`<span><i class="fas fa-hashtag"></i>${b.account_number}</span>`:''} ${b.branch?`<span><i class="fas fa-map-marker-alt"></i>${b.branch}</span>`:''} ${b.swift_code?`<span><i class="fas fa-globe"></i>${b.swift_code}</span>`:''} ${b.iban?`<span><i class="fas fa-credit-card"></i>${b.iban}</span>`:''}</div></div><div class="pf-bank-actions"><button onclick="openBuyerBank(${b.id})" style="width:28px;height:28px;background:#fef3c7;color:#d97706;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-pencil-alt"></i></button><button onclick="deleteBuyerBank(${b.id})" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-trash"></i></button></div></div>`).join('');
-}
-async function deleteBuyerBank(bankId){
-  if(!confirm('Delete this bank account?'))return;
-  const res=await fetch(`/buyers/banks/${bankId}/delete`,{method:'POST',headers:{'X-CSRFToken':CSRF}});
-  const data=await res.json();
-  if(data.ok)loadBuyerBanks(_currentBuyerId);
-}
-function togAccBank(btn){const body=btn.nextElementSibling;body.classList.toggle('d-none');const icon=btn.querySelector('.fa-chevron-down,.fa-chevron-up');if(icon){icon.classList.toggle('fa-chevron-down');icon.classList.toggle('fa-chevron-up');}}
-function showBankForm(prefix){document.getElementById('bankForm_'+prefix).style.display='block';}
-function hideBankForm(prefix){document.getElementById('bankForm_'+prefix).style.display='none';['bk_name_','bk_acct_','bk_branch_','bk_swift_','bk_iban_'].forEach(p=>{const el=document.getElementById(p+prefix);if(el)el.value='';});const cb=document.getElementById('bk_primary_'+prefix);if(cb)cb.checked=false;}
-async function loadBanksPanel(prefix,apiBase,entityId){if(!entityId)return;const res=await fetch(apiBase+'/'+entityId+'/banks');const data=await res.json();renderBanksPanel(prefix,apiBase,entityId,data);}
-function renderBanksPanel(prefix,apiBase,entityId,banks){const wrap=document.getElementById('bankList_'+prefix);const badge=document.getElementById('bankBadge_'+prefix);if(badge)badge.textContent=banks.length;if(!wrap)return;if(!banks.length){wrap.innerHTML='<div style="color:#9ca3af;font-size:12px;">No bank details yet</div>';return;}wrap.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;"><thead><tr style="background:#f8fafc;border-bottom:1.5px solid #e2e8f0;"><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">Bank</th><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">Account</th><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">Branch</th><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">SWIFT</th><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">IBAN</th><th style="width:50px;"></th></tr></thead><tbody>${banks.map(b=>`<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 10px;font-weight:600;">${b.bank_name||b.bank_name_en||'—'}${b.is_primary?'<span style="margin-left:6px;background:#dcfce7;color:#16a34a;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">Primary</span>':''}</td><td style="padding:8px 10px;">${b.account_number||'—'}</td><td style="padding:8px 10px;">${b.branch||b.branch_en||'—'}</td><td style="padding:8px 10px;">${b.swift_code||'—'}</td><td style="padding:8px 10px;">${b.iban||'—'}</td><td style="padding:8px 10px;"><button onclick="deleteBankEntry('${prefix}','${apiBase}','${entityId}',${b.id})" style="width:26px;height:26px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;" title="Delete"><i class="fas fa-trash" style="font-size:10px;"></i></button></td></tr>`).join('')}</tbody></table>`;}
-async function saveBankEntry(prefix,apiBase,entityId){if(!entityId){alert('Save the record first, then add bank details.');return;}const bname=document.getElementById('bk_name_'+prefix)?.value.trim();if(!bname){alert('Bank name is required.');return;}const payload={bank_name:bname,bank_name_en:bname,account_number:document.getElementById('bk_acct_'+prefix)?.value.trim()||'',branch:document.getElementById('bk_branch_'+prefix)?.value.trim()||'',branch_en:document.getElementById('bk_branch_'+prefix)?.value.trim()||'',swift_code:document.getElementById('bk_swift_'+prefix)?.value.trim()||'',iban:document.getElementById('bk_iban_'+prefix)?.value.trim()||'',is_primary:document.getElementById('bk_primary_'+prefix)?.checked||false};const res=await fetch(apiBase+'/'+entityId+'/banks/add',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify(payload)});const data=await res.json();if(data.ok){hideBankForm(prefix);await loadBanksPanel(prefix,apiBase,entityId);}else{alert(data.error||'Failed to save bank.');}}
-async function deleteBankEntry(prefix,apiBase,entityId,bankId){if(!confirm('Delete this bank?'))return;const res=await fetch(apiBase+'/banks/'+bankId+'/delete',{method:'POST',headers:{'X-CSRFToken':CSRF}});const data=await res.json();if(data.ok)await loadBanksPanel(prefix,apiBase,entityId);}
 
+function saveBuyerBankToArray() {
+  const mid = 'bankModal_buyer';
+  const bankIndex = document.getElementById(mid+'_bank_id').value;
+
+  const bankData = {
+    bank_name:      document.getElementById(mid+'_name').value.trim(),
+    bank_name_ar:   document.getElementById(mid+'_name_ar').value.trim(),
+    account_number: document.getElementById(mid+'_account').value.trim(),
+    branch:         document.getElementById(mid+'_branch').value.trim(),
+    branch_ar:      document.getElementById(mid+'_branch_ar').value.trim(),
+    swift_code:     document.getElementById(mid+'_swift').value.trim(),
+    iban:           document.getElementById(mid+'_iban').value.trim(),
+    is_primary:     document.getElementById(mid+'_primary').checked,
+    _dbId:          (bankIndex !== '' && _banks[bankIndex]) ? _banks[bankIndex]._dbId : null
+  };
+
+  if (!bankData.bank_name || !bankData.account_number || !bankData.branch || !bankData.iban || !bankData.swift_code) {
+    alert(IS_AR?'جميع الحقول المطلوبة يجب ملؤها':'All required fields must be filled');
+    return;
+  }
+  if (bankData.is_primary) _banks.forEach(b => b.is_primary = false);
+  if (bankIndex !== '' && _banks[bankIndex]) { _banks[bankIndex] = bankData; }
+  else { _banks.push(bankData); }
+
+  bootstrap.Modal.getInstance(document.getElementById(mid))?.hide();
+  renderBankTable();
+  console.log('Bank saved to array. _banks:', _banks);
+}
+
+function deleteBankFromArray(index) {
+  if (!confirm(IS_AR?'حذف هذا الحساب البنكي؟':'Delete this bank account?')) return;
+  _banks.splice(index, 1);
+  renderBankTable();
+}
+
+function renderBankTable() {
+  const wrap  = document.getElementById('bankList_buyer');
+  const badge = document.getElementById('bankBadge_buyer');
+  if (!wrap) return;
+
+  if (badge) {
+    badge.textContent = _banks.length;
+    badge.style.display = _banks.length > 0 ? 'inline-flex' : 'none';
+  }
+
+  if (!_banks.length) {
+    wrap.innerHTML = `
+      <div class="bank-empty">
+        <i class="fas fa-university"></i>
+        <div class="bank-empty-text">${IS_AR?'لم يتم إضافة بيانات بنك بعد':'No bank accounts added yet'}</div>
+      </div>`;
+    return;
+  }
+
+  let html = `
+    <div class="bank-table-wrap">
+      <table class="bank-table">
+        <thead><tr>
+          <th>${IS_AR?'اسم البنك':'Bank Name'}</th>
+          <th>${IS_AR?'الفرع':'Branch'}</th>
+          <th>${IS_AR?'رقم الحساب':'Account No.'}</th>
+          <th>IBAN</th>
+          <th>SWIFT</th>
+          <th style="text-align:center;">${IS_AR?'رئيسي':'Primary'}</th>
+          <th style="text-align:center;width:72px;"></th>
+        </tr></thead>
+        <tbody>`;
+
+  _banks.forEach((b, i) => {
+    html += `
+      <tr class="${b.is_primary?'is-primary':''}" style="background:${b.is_primary?'#f0fdf4':''};">
+        <td>
+          <div class="bank-name-main">${b.bank_name||'—'}</div>
+          ${b.bank_name_ar?`<div class="bank-name-sub">${b.bank_name_ar}</div>`:''}
+        </td>
+        <td>
+          <div>${b.branch||'—'}</div>
+          ${b.branch_ar?`<div class="bank-name-sub">${b.branch_ar}</div>`:''}
+        </td>
+        <td><span class="bank-mono">${b.account_number||'—'}</span></td>
+        <td><span class="bank-mono-sm">${b.iban||'—'}</span></td>
+        <td><span class="bank-mono">${b.swift_code||'—'}</span></td>
+        <td style="text-align:center;">
+          ${b.is_primary
+            ?`<span class="bank-primary-badge"><i class="fas fa-check-circle"></i> ${IS_AR?'رئيسي':'Primary'}</span>`
+            :`<span class="bank-dash">—</span>`}
+        </td>
+        <td style="text-align:center;">
+          <div class="pl-act" style="justify-content:center;">
+            <button class="pl-btn pl-edit" onclick="openBuyerBank(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+            <button class="pl-btn pl-del" onclick="deleteBankFromArray(${i})" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  wrap.innerHTML = html;
+}
 </script>
-
-<!-- ══ BUYER BANK POPUP MODAL ══ -->
-<div class="modal fade pf-bank-modal" id="bankModal_buyer" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="pf-hdr">
-        <h5 id="bankModal_buyer_title"><i class="fas fa-university"></i> {% if ar %}حساب بنكي{% else %}Bank Account{% endif %}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div style="padding:22px;background:#f8fafc;">
-        <input type="hidden" id="bankModal_buyer_bank_id">
-        <div class="pf-row cols-2" style="margin-bottom:14px;">
-          <div class="pf-field">
-            <div class="pf-label">{% if ar %}اسم البنك{% else %}Bank Name{% endif %} <span class="req">*</span></div>
-            <input type="text" id="bankModal_buyer_name" class="pf-input" placeholder="e.g. Al Rajhi Bank">
-          </div>
-          <div class="pf-field">
-            <div class="pf-label">{% if ar %}رقم الحساب{% else %}Account Number{% endif %}</div>
-            <input type="text" id="bankModal_buyer_account" class="pf-input" dir="ltr">
-          </div>
-        </div>
-        <div class="pf-row cols-3" style="margin-bottom:14px;">
-          <div class="pf-field">
-            <div class="pf-label">{% if ar %}الفرع{% else %}Branch{% endif %}</div>
-            <input type="text" id="bankModal_buyer_branch" class="pf-input">
-          </div>
-          <div class="pf-field">
-            <div class="pf-label">SWIFT</div>
-            <input type="text" id="bankModal_buyer_swift" class="pf-input" dir="ltr" style="text-transform:uppercase;">
-          </div>
-          <div class="pf-field">
-            <div class="pf-label">IBAN</div>
-            <input type="text" id="bankModal_buyer_iban" class="pf-input" dir="ltr">
-          </div>
-        </div>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#374151;">
-          <input type="checkbox" id="bankModal_buyer_primary" style="width:16px;height:16px;accent-color:#2563eb;cursor:pointer;">
-          {% if ar %}تعيين كحساب رئيسي{% else %}Set as primary account{% endif %}
-        </label>
-      </div>
-      <div class="pf-footer">
-        <button type="button" class="pf-btn secondary" data-bs-dismiss="modal"><i class="fas fa-times"></i> {% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button type="button" class="pf-btn primary" onclick="saveBuyerBank()"><i class="fas fa-save"></i> {% if ar %}حفظ{% else %}Save Bank{% endif %}</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 {% endblock %}

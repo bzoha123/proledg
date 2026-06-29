@@ -6,9 +6,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
-
 /* ═══════════════════════════════════════════════════════
-   PROLEDG FORM DESIGN SYSTEM  v2
+   PROLEDG FORM DESIGN SYSTEM v2
    Used across: Sellers, Employees, Buyers, Vendors
 ═══════════════════════════════════════════════════════ */
 
@@ -166,6 +165,10 @@
 .st-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:10px; font-size:11px; font-weight:700; }
 .st-active   { background:#dcfce7; color:#15803d; }
 .st-inactive { background:#f1f5f9; color:#6b7280; }
+.st-pending  { background:#fef3c7; color:#d97706; }
+.st-open     { background:#dbeafe; color:#2563eb; }
+.st-closed   { background:#f1f5f9; color:#6b7280; }
+.st-cancelled{ background:#fee2e2; color:#dc2626; }
 .code-badge  { background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:5px; font-size:11px; font-weight:700; font-family:monospace; }
 
 /* ── Page toolbar ── */
@@ -188,6 +191,173 @@
 .field-label { font-size:11px;font-weight:700;color:#374151;margin-bottom:5px; }
 .field-input { width:100%;padding:8px 11px;font-size:13px;color:#1f2937;border:1.5px solid #d1d5db;border-radius:8px;background:white;outline:none;transition:border-color .15s;font-family:inherit; }
 .field-input:focus { border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+
+/* ── MCQ buttons ── */
+.mcq-wrap { display:flex; gap:6px; flex-wrap:wrap; }
+.mcq-opt {
+  padding:7px 14px; border:1.5px solid #d1d5db; border-radius:7px;
+  font-size:12px; font-weight:600; cursor:pointer; background:white;
+  color:#6b7280; transition:all .12s; display:flex; align-items:center; gap:4px;
+}
+.mcq-opt input[type="radio"] { display:none; }
+.mcq-opt.chosen { background:#eff6ff; color:#2563eb; border-color:#93c5fd; }
+.mcq-opt:hover { border-color:#93c5fd; }
+
+/* ── Accordion ── */
+.acc-header {
+  width:100%; padding:10px 16px; background:#f8fafc;
+  border:1.5px solid #e2e8f0; border-radius:8px;
+  display:flex; align-items:center; justify-content:space-between;
+  cursor:pointer; font-size:13px; font-weight:600; color:#374151;
+  transition:background .15s; margin-bottom:2px;
+}
+.acc-header:hover { background:#eff6ff; }
+.acc-header.open { border-radius:8px 8px 0 0; border-bottom:none; }
+.acc-title { display:flex; align-items:center; gap:8px; }
+.acc-icon-wrap {
+  width:28px; height:28px; border-radius:6px; background:#eff6ff;
+  display:flex; align-items:center; justify-content:center; color:#2563eb; font-size:12px;
+}
+.acc-body {
+  padding:16px; border:1.5px solid #e2e8f0; border-top:none;
+  border-radius:0 0 8px 8px; background:white; margin-bottom:4px;
+}
+.acc-body.hidden { display:none; }
+.acc-arrow { font-size:11px; color:#9ca3af; transition:transform .2s; }
+
+/* ── Field row / item ── */
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.field-row.one-col { grid-template-columns:1fr; }
+@media (max-width:640px) { .field-row { grid-template-columns:1fr; } }
+.field-item { position:relative; }
+.field-wrap { position:relative; }
+.retrans-btn {
+  position:absolute; right:6px; top:50%; transform:translateY(-50%);
+  width:24px; height:24px; background:#eff6ff; color:#2563eb;
+  border:none; border-radius:5px; cursor:pointer; font-size:9px;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .12s; z-index:2;
+}
+.retrans-btn:hover { background:#dbeafe; }
+.retrans-btn.ar-retrans { right:auto; left:6px; }
+.field-spin { position:absolute; right:34px; top:50%; transform:translateY(-50%); font-size:10px; }
+
+/* ── Employee modal header ── */
+.emp-modal-header {
+  background:linear-gradient(135deg,#1e3a5f,#2563eb);
+  padding:14px 22px; display:flex; align-items:center; justify-content:space-between;
+}
+.emp-modal-header h5 { margin:0; color:white; font-size:15px; font-weight:700; }
+.emp-modal-header .btn-close { filter:brightness(0) invert(1); opacity:.85; }
+.emp-topbar {
+  padding:14px 22px; background:#f8fafc; border-bottom:1px solid #e2e8f0;
+  display:flex; align-items:center;
+}
+.emp-codebox {
+  display:flex; align-items:center; gap:10px;
+  background:white; padding:8px 16px; border-radius:8px; border:1.5px solid #e2e8f0;
+}
+.emp-codebox .lbl { font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; }
+.emp-codebox .val { font-size:16px; font-weight:800; color:#1e3a5f; font-family:monospace; }
+
+/* ── Modal footer bar ── */
+.modal-footer-bar {
+  padding:12px 22px; background:#f8fafc; border-top:1.5px solid #e2e8f0;
+  display:flex; align-items:center; justify-content:flex-end; gap:8px;
+}
+.btn-footer {
+  padding:8px 18px; border-radius:7px; border:none; font-size:12px; font-weight:600;
+  cursor:pointer; display:flex; align-items:center; gap:5px; transition:all .12s;
+}
+.btn-footer:hover { transform:translateY(-1px); }
+.btn-footer-save { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; }
+.btn-footer-cancel { background:white; color:#6b7280; border:1.5px solid #d1d5db; }
+.btn-footer-reset { background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; }
+
+/* ── Allowance delete button ── */
+.allow-del {
+  width:24px; height:24px; border-radius:5px; border:none;
+  background:#fee2e2; color:#dc2626; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:9px;
+  transition:all .12s;
+}
+.allow-del:hover { background:#fca5a5; color:white; }
+
+/* ── Hijri badge ── */
+.hijri-badge {
+  font-size:10px; color:#059669; background:#f0fdf4; padding:2px 8px;
+  border-radius:4px; margin-top:3px; display:none; font-weight:600;
+  text-align:right; direction:rtl;
+}
+
+/* ── Translated flash ── */
+.translated-flash { animation:biFlash .5s ease; }
+@keyframes biFlash { 0%{background:#dbeafe} 100%{background:white} }
+
+/* ── Toolbar ── */
+.proledg-page { padding:0; }
+.page-heading { font-size:20px; font-weight:700; color:#1e3a5f; margin-bottom:16px; }
+.toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+.toolbar-left, .toolbar-right { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.tool-btn {
+  width:34px; height:34px; border-radius:7px; border:1.5px solid #d1d5db;
+  background:white; color:#6b7280; cursor:pointer; font-size:13px;
+  display:inline-flex; align-items:center; justify-content:center; text-decoration:none;
+  transition:all .12s;
+}
+.tool-btn:hover { border-color:#2563eb; color:#2563eb; background:#eff6ff; }
+.tool-btn-green { background:#16a34a; color:white; border:none; }
+.tool-btn-green:hover { background:#15803d; }
+.tool-btn-blue { background:#2563eb; color:white; border:none; }
+.tool-btn-blue:hover { background:#1d4ed8; }
+.search-form { position:relative; }
+.search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:12px; z-index:2; }
+.search-input { padding:7px 12px 7px 32px; border:1.5px solid #d1d5db; border-radius:7px; font-size:12px; outline:none; }
+.search-input:focus { border-color:#2563eb; }
+.sel-badge { font-size:11px; color:#6b7280; background:#f1f5f9; padding:4px 10px; border-radius:5px; font-weight:600; }
+
+/* ── Proledg pagination ── */
+.proledg-pagination {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 16px; background:#f8fafc; border:1px solid #e2e8f0; border-top:none;
+  border-radius:0 0 8px 8px;
+}
+.page-count { font-size:12px; color:#6b7280; font-weight:600; }
+
+/* ── Filter popup ── */
+.pl-filter-popup {
+  display:none; position:absolute; z-index:1000; background:white;
+  border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.15);
+  border:1px solid #e2e8f0; padding:12px; min-width:260px;
+}
+.pl-filter-popup.open { display:block; }
+.plfp-row { margin-bottom:8px; }
+.plfp-select, .plfp-input {
+  width:100%; padding:8px 10px; border:1.5px solid #d1d5db; border-radius:7px;
+  font-size:12px; outline:none;
+}
+.plfp-select:focus, .plfp-input:focus { border-color:#2563eb; }
+.plfp-search-wrap { position:relative; }
+.plfp-search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:11px; }
+.plfp-input { padding-left:30px; }
+.plfp-add-rule {
+  width:100%; padding:6px; border:1.5px dashed #d1d5db; border-radius:7px;
+  background:#f8fafc; color:#6b7280; cursor:pointer; font-size:11px; font-weight:600;
+}
+.plfp-add-rule:hover { border-color:#2563eb; color:#2563eb; }
+.plfp-footer { display:flex; gap:6px; margin-top:10px; justify-content:flex-end; }
+.plfp-btn-clear { padding:6px 14px; background:white; color:#6b7280; border:1.5px solid #d1d5db; border-radius:6px; font-size:11px; cursor:pointer; }
+.plfp-btn-apply { padding:6px 14px; background:#16a34a; color:white; border:none; border-radius:6px; font-size:11px; cursor:pointer; font-weight:600; }
+
+/* ── AG Grid action cell ── */
+.ag-act-cell { display:flex; align-items:center; gap:4px; height:100%; }
+
+/* ── Filter button on header ── */
+.plfilt {
+  background:none; border:none; cursor:pointer; padding:0 3px;
+  color:rgba(255,255,255,.6); font-size:10px;
+}
+.plfilt:hover { color:white; }
 </style>
 {% endblock %}
 
@@ -269,7 +439,6 @@
               <div class="val" id="empCodeDisplay">{% if ar %}(تلقائي){% else %}(Auto){% endif %}</div>
             </div>
             <div class="ms-auto d-flex align-items-center gap-4">
-
               <div class="form-check form-switch mb-0">
                 <input type="checkbox" name="is_active" id="f_is_active" class="form-check-input" checked>
                 <label for="f_is_active" class="form-check-label small fw-semibold">{% if ar %}نشيط{% else %}Active{% endif %}</label>
@@ -296,9 +465,6 @@
 
 {# Bilingual field: EN input (left) + AR input (right), both real, auto-translate #}
 {% macro bf(fname, len, lar, req=False) %}
-              {# EN portal: 🔄 button on EN side only (EN is primary)
-                 AR portal: 🔄 button on AR side only (AR is primary)
-                 Both inputs always editable. Auto-translate fires from primary side only. #}
               <div class="field-item">
                 <div class="field-label" dir="ltr" style="text-align:left">
                   {{ len }}{% if req %}<span class="field-req">*</span>{% endif %}
@@ -339,12 +505,7 @@
               </div>
 {% endmacro %}
 
-{# Single field: ONE input only — number/date. Value & label follow portal language.
-   NOTE: date inputs always stay dir="ltr" — RTL direction on native
-   <input type="date"> breaks the Chromium date-picker popup (it can
-   silently fail to open / not fire change events). Only the LABEL
-   follows the portal language; the picker widget itself stays LTR,
-   which is standard practice even in fully Arabic interfaces. #}
+{# Single field: ONE input only — number/date. #}
 {% macro sf(fname, ten, tar, ftype='text', req=False, span2=False) %}
               <div class="field-item{% if span2 %}" style="grid-column:1/-1;max-width:calc(50% - 8px){% endif %}">
                 <div class="field-label">{% if ar %}{{ tar }}{% else %}{{ ten }}{% endif %}{% if req %}<span class="field-req">*</span>{% endif %}</div>
@@ -355,9 +516,7 @@
               </div>
 {% endmacro %}
 
-{# Single dropdown: ONE select only, options shown in portal language
-   The select itself has name="{{ fname }}" so it submits directly.
-   A hidden _arval stores the Arabic equivalent for bilingual lookups. #}
+{# Single dropdown #}
 {% macro sd(fname, ten, tar, span2=False) %}
               <div class="field-item{% if span2 %}" style="grid-column:1/-1;max-width:calc(50% - 8px){% endif %}">
                 <div class="field-label">{% if ar %}{{ tar }}{% else %}{{ ten }}{% endif %}</div>
@@ -406,7 +565,6 @@
                 </div>
               </div>
               <hr style="border-color:#f1f5f9;margin:16px 0;">
-              {# Field order: Arrival → Entry → Birth → Age → Passport No → Passport Expiry → Iqama No → Iqama Expiry #}
               <div class="field-row">
                 {{ sf('arrival_date','Arrival Date','تاريخ الوصول','date') }}
                 {{ sf('entry_number','Entry Number','رقم الدخول') }}
@@ -467,7 +625,6 @@
 
           {# ══ 4. SALARY INFORMATION ══ #}
           {{ sec('salary','money-bill-wave','Salary Information','معلومات الراتب') }}
-              {# Salary Type — "Salary" pre-selected #}
               <div style="margin-bottom:18px;">
                 <div class="field-label" style="margin-bottom:8px;">{% if ar %}نوع الراتب{% else %}Salary Type{% endif %}</div>
                 <div class="mcq-wrap" id="salTypeGrp">
@@ -477,13 +634,7 @@
                 <input type="hidden" name="salary_type" id="f_salary_type" value="salary">
               </div>
 
-                            {# ── Salary fields: exact user-specified sequence ──────
-                 1 PO Rate  2 PO Number  3 Kafalat Number
-                 4 Basic Salary  5 Allowances  6 Net Salary
-                 7 Working Hours  8 Overtime Ratio  9 Overtime Rate
-              ─────────────────────────────────────────────────────── #}
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;">
-
                 {# 1 — PO Rate #}
                 <div>
                   <div class="field-label">{% if ar %}معدل طلب الشراء{% else %}PO Rate{% endif %}</div>
@@ -498,7 +649,7 @@
                   </div>
                 </div>
 
-                {# 2 — PO Number (alpha-numeric) #}
+                {# 2 — PO Number #}
                 <div>
                   <div class="field-label">{% if ar %}رقم طلب الشراء{% else %}PO Number{% endif %}</div>
                   <input type="text" name="po_number" id="f_po_number"
@@ -506,7 +657,7 @@
                          placeholder="{% if ar %}PO-001{% else %}PO-001{% endif %}">
                 </div>
 
-                {# 3 — Kafalat Number (alpha-numeric) #}
+                {# 3 — Kafalat Number #}
                 <div>
                   <div class="field-label">{% if ar %}رقم الكفالة{% else %}Kafalat Number{% endif %}</div>
                   <input type="text" name="kafalat_number" id="f_kafalat_number"
@@ -559,10 +710,9 @@
                          step="0.01" min="0" placeholder="0.00" readonly
                          title="{% if ar %}محسوب: (الأساسي ÷ 30 ÷ ساعات العمل) × نسبة الأوفرتايم{% else %}Auto: (Basic ÷ 30 ÷ Hours) × Ratio{% endif %}">
                 </div>
-
               </div>
 
-              {# 9 — Total Allowances at END — with Allowances button #}
+              {# 9 — Total Allowances #}
               <div style="border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:16px;">
                 <div style="background:#f8fafc;padding:10px 16px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
                   <div style="font-weight:700;font-size:13px;color:#374151;">
@@ -577,7 +727,6 @@
                     <span id="allowBadge" style="background:white;color:#2563eb;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;display:none;">0</span>
                   </button>
                 </div>
-                {# Allowances mini-grid shown inline in form #}
                 <div style="overflow-x:auto;">
                   <table style="width:100%;border-collapse:collapse;font-size:13px;" id="allowInlineTable">
                     <thead>
@@ -597,25 +746,20 @@
                     </tbody>
                   </table>
                 </div>
-                {# Total Allowances at very bottom #}
                 <div style="padding:10px 16px;background:#f0fdf4;border-top:1.5px solid #86efac;display:flex;justify-content:space-between;align-items:center;">
                   <span style="font-weight:600;color:#15803d;font-size:13px;">{% if ar %}إجمالي البدلات{% else %}Total Allowances{% endif %}</span>
                   <div style="display:flex;align-items:center;gap:10px;">
                     <input type="number" name="total_allowances" id="f_total_allowances"
                            style="border:none;background:transparent;font-weight:700;color:#15803d;font-size:18px;text-align:right;width:120px;"
                            step="0.01" min="0" readonly placeholder="0.00">
-                    <input type="hidden" name="net_salary_placeholder" value="0">
                   </div>
                 </div>
               </div>
-
-
             </div>
           </div>
 
           {# ══ 5. WORK INFORMATION ══ #}
           {{ sec('work','info-circle','Work Information','معلومات العمل') }}
-              {# Row 1: Month + Joining Date + End Date — matches Work Allocation form #}
               <div class="field-row">
                 <div class="field-item">
                   <div class="field-label">{% if ar %}الشهر{% else %}Month{% endif %}</div>
@@ -632,7 +776,6 @@
                 </div>
               </div>
 
-              {# Row 2: Status MCQ + Shift MCQ #}
               <div class="field-row">
                 <div class="field-item">
                   <div class="field-label">{% if ar %}الحالة{% else %}Status{% endif %}</div>
@@ -653,7 +796,6 @@
                 </div>
               </div>
 
-              {# Company/HR buyer #}
               <div class="field-row">
                 <div class="field-item">
                   <div class="field-label">{% if ar %}الشركة / HR{% else %}Company / HR{% endif %}</div>
@@ -661,7 +803,6 @@
                 </div>
               </div>
 
-              {# Company / Department / Section — bilingual auto-translate #}
               {% for fid, en_lbl, ar_lbl in [('company','Company','الشركة'),('department','Department','القسم'),('section','Section','القطاع')] %}
               <div class="field-row" style="margin-bottom:10px;">
                 <div class="field-item">
@@ -682,8 +823,11 @@
                 </div>
               </div>
               {% endfor %}
+            </div>
+          </div>
 
-{{ sec('hostel','home','Hostel Information','معلومات السكن') }}
+          {# ══ 6. HOSTEL INFORMATION ══ #}
+          {{ sec('hostel','home','Hostel Information','معلومات السكن') }}
               <div class="field-row">
                 {{ bf('hostel_name','Hostel Name','اسم السكن') }}
               </div>
@@ -696,8 +840,8 @@
             </div>
           </div>
 
-                              {# ══ 7. BANKING INFORMATION ══ #}
-          <div class="pl-accordion">
+          {# ══ 7. BANKING INFORMATION ══ #}
+          <div>
             <button type="button" class="pl-acc-header pl-acc-collapsed" onclick="togAccBank(this)">
               <span><i class="fas fa-university me-2 text-muted"></i>{% if ar %}معلومات البنك{% else %}Bank Information{% endif %}
                 <span id="bankBadge_emp" class="pf-badge-blue ms-2">0</span></span>
@@ -757,12 +901,10 @@
   </div>
 </div>
 
-<!-- ══ EMPLOYEE ALLOWANCES POPUP — Form only (grid shown in main form) ══ -->
+<!-- ══ EMPLOYEE ALLOWANCES POPUP ══ -->
 <div class="modal fade" id="allowPopup" tabindex="-1" style="z-index:1060;">
   <div class="modal-dialog modal-md">
     <div class="modal-content" style="border:none;border-radius:10px;overflow:hidden;">
-
-      {# Header #}
       <div style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
         <div>
           <div style="font-weight:700;font-size:15px;"><i class="fas fa-plus-circle me-2"></i>{% if ar %}إضافة بدل{% else %}Add Allowance{% endif %}</div>
@@ -770,8 +912,6 @@
         </div>
         <button type="button" class="btn-close" style="filter:brightness(0) invert(1);opacity:.8;" data-bs-dismiss="modal" onclick="onAllowPopupClose()"></button>
       </div>
-
-      {# Add form only — grid is shown in the main employee form #}
       <div style="padding:20px 24px;">
         <div style="margin-bottom:14px;">
           <div class="field-label" style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
@@ -793,8 +933,6 @@
         </div>
         <div id="ap_error" style="color:#dc2626;font-size:12px;margin-bottom:10px;display:none;"></div>
       </div>
-
-      {# Footer buttons #}
       <div style="padding:12px 20px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;">
         <button type="button" id="ap_cancel_edit_btn"
                 onclick="cancelAllowEdit()"
@@ -810,7 +948,6 @@
           <i class="fas fa-plus me-1"></i>{% if ar %}إضافة البدل{% else %}Add Allowance{% endif %}
         </button>
       </div>
-
     </div>
   </div>
 </div>
@@ -845,1286 +982,53 @@
     </div>
   </div></div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
-<script>
-const TR    = '{{ url_for("sellers.translate_text") }}';
-const CSRF  = '{{ csrf_token() }}';
-const IS_AR = {{ 'true' if ar else 'false' }};
-const EDURL = '{{ url_for("employees.employees_data") }}';
-const PRURL = '{{ url_for("lookups.professions_data") }}';
-const BYURL = '{{ url_for("lookups.buyers_data") }}';
-const ADM   = {{ 'true' if current_user.is_admin() else 'false' }};
-
-/* ════════ NATIONALITIES — correct Arabic spelling ════════ */
-const NATS=[
-  {en:'Saudi',ar:'سعودي'},{en:'Pakistani',ar:'باكستاني'},{en:'Indian',ar:'هندي'},
-  {en:'Egyptian',ar:'مصري'},{en:'Bangladeshi',ar:'بنغلاديشي'},{en:'Filipino',ar:'فلبيني'},
-  {en:'Yemeni',ar:'يمني'},{en:'Jordanian',ar:'أردني'},{en:'Syrian',ar:'سوري'},
-  {en:'Lebanese',ar:'لبناني'},{en:'Iraqi',ar:'عراقي'},{en:'Sudanese',ar:'سوداني'},
-  {en:'Ethiopian',ar:'إثيوبي'},{en:'Indonesian',ar:'إندونيسي'},{en:'Sri Lankan',ar:'سريلانكي'},
-  {en:'Nepalese',ar:'نيبالي'},{en:'Turkish',ar:'تركي'},{en:'British',ar:'بريطاني'},
-  {en:'American',ar:'أمريكي'},{en:'German',ar:'ألماني'},{en:'Chinese',ar:'صيني'},
-  {en:'Other',ar:'أخرى'}
-];
-
-/* ════════ GENERIC SINGLE-DROPDOWN POPULATOR ════════
-   Used for: nationality, document_type-independent statics
-   list = [{en,ar}], target select id = f_<name>, hidden val = f_<name>_val (+_arval)
-═══════════════════════════════════════════════════════ */
-function fillStaticDropdown(selectId, hiddenValId, hiddenArId, list, placeholder, selectedEn) {
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
-  sel.innerHTML = `<option value="">${placeholder}</option>`;
-  list.forEach(item => {
-    const label = IS_AR ? item.ar : item.en;
-    const sel_attr = item.en === selectedEn ? ' selected' : '';
-    sel.innerHTML += `<option value="${item.en}" data-ar="${item.ar}"${sel_attr}>${label}</option>`;
-  });
-  sel.onchange = function() {
-    const opt = sel.options[sel.selectedIndex];
-    // The select itself has name=fname, so its value submits directly.
-    // Only update the _arval hidden input (for Arabic equivalent storage).
-    const ha = document.getElementById(hiddenArId);
-    if (ha) ha.value = opt ? (opt.dataset.ar || '') : '';
-  };
-  if (selectedEn) sel.onchange();
-}
-
-function initNationality(selectedEn) {
-  fillStaticDropdown('f_nationality', null, 'f_nationality_arval', NATS,
-    IS_AR ? '-- اختر --' : '-- Select --', selectedEn || '');
-}
-
-/* ════════ ASYNC DROPDOWNS: Profession / Buyer / Bank ════════ */
-let _profCache = null, _buyerCache = null;
-
-function loadAsyncDropdown(url, cacheSetter, cacheGetter, selectId, hiddenValId, hiddenArId, placeholder, selectedVal, useId) {
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
-  const render = (items) => {
-    sel.innerHTML = `<option value="">${placeholder}</option>`;
-    items.forEach(item => {
-      const val = useId ? item.id : item.en;
-      const label = item.label;
-      const isSel = String(val) === String(selectedVal) ? ' selected' : '';
-      sel.innerHTML += `<option value="${val}" data-ar="${item.ar||''}"${isSel}>${label}</option>`;
-    });
-    sel.onchange = function() {
-      const opt = sel.options[sel.selectedIndex];
-      // select has name=fname so submits directly; only update _arval
-      const ha = document.getElementById(hiddenArId);
-      if (ha) ha.value = opt ? (opt.dataset.ar || '') : '';
-    };
-    if (selectedVal) sel.onchange();
-  };
-  const cached = cacheGetter();
-  if (cached) { render(cached); return; }
-  fetch(url).then(r => r.json()).then(data => {
-    cacheSetter(data);
-    render(data);
-  }).catch(() => {
-    sel.innerHTML = `<option value="">${placeholder}</option>`;
-  });
-}
-
-function initProfession(selectedEn) {
-  loadAsyncDropdown(PRURL, d => _profCache = d, () => _profCache,
-    'f_profession', null, 'f_profession_arval',
-    IS_AR ? '-- اختر المهنة --' : '-- Select Profession --', selectedEn || '', false);
-}
-function initBuyer(selectedId) {
-  loadAsyncDropdown(BYURL, d => _buyerCache = d, () => _buyerCache,
-    'f_buyer_id', null, null,
-    IS_AR ? '-- اختر مشتري --' : '-- Select a Buyer --', selectedId || '', true);
-}
-// initBank removed — bank name is now a free-text bilingual field
-
-/* ════════ STATIC: Document Type ════════ */
-const DOC_TYPES = [
-  {en:'ID Card', ar:'بطاقة الهوية'},
-  {en:'Passport', ar:'جواز السفر'},
-  {en:'Iqama', ar:'الإقامة'},
-  {en:'Work Permit', ar:'تصريح العمل'},
-  {en:'Contract', ar:'عقد العمل'},
-  {en:'Certificate', ar:'شهادة'},
-  {en:'Other', ar:'أخرى'},
-];
-function initDocType(selectedEn) {
-  fillStaticDropdown('f_document_type', 'f_document_type_val', null, DOC_TYPES,
-    IS_AR ? '-- اختر --' : '-- Select --', selectedEn || '');
-}
-
-/* ════════ MCQ ════════ */
-function pickMCQ(grpId, btn, hidId, val) {
-  document.querySelectorAll('#'+grpId+' .mcq-opt').forEach(b => b.classList.remove('chosen'));
-  btn.classList.add('chosen');
-  const h = document.getElementById(hidId);
-  if (h) h.value = val;
-}
-function setMCQ(grpId, val, hidId) {
-  document.querySelectorAll('#'+grpId+' .mcq-opt').forEach(b => {
-    const txt = b.textContent.trim();
-    const matches = (val === 'day' && txt.includes('Day')) ||
-                    (val === 'evening' && txt.includes('Evening')) ||
-                    (val === 'night' && txt.includes('Night')) ||
-                    (val === 'skilled' && (txt.includes('Skilled') && !txt.includes('Non'))) ||
-                    (val === 'non_skilled' && txt.includes('Non-Skilled')) ||
-                    (val === 'salary' && (txt.includes('Salary')||txt.includes('راتب')) && !txt.includes('Kafalat')) ||
-                    (val === 'azad' && (txt.includes('Azad')||txt.includes('أزاد'))) ||
-                    (val === 'kafalat' && (txt.includes('Kafalat')||txt.includes('كفالات'))) ||
-                    (val === 'IN' && txt.includes('IN')) ||
-                    (val === 'OUT' && txt.includes('OUT')) ||
-                    (val === 'مزدور' && txt.includes('مزدور') && !txt.includes('غير')) ||
-                    (val === 'نهاري' && txt.includes('نهاري')) ||
-                    (val === 'مسائي' && txt.includes('مسائي')) ||
-                    (val === 'ليلي' && txt.includes('ليلي'));
-    b.classList.toggle('chosen', matches);
-  });
-  const h = document.getElementById(hidId);
-  if (h) h.value = val;
-}
-
-/* ════════ AGE ════════ */
-function calcAge() {
-  const bd = document.getElementById('f_birth_date');
-  const disp = document.getElementById('f_age_display');
-  if (!bd || !disp) return;
-  if (!bd.value) { disp.value = ''; return; }
-  const b = new Date(bd.value), t = new Date();
-  let y = t.getFullYear()-b.getFullYear(), m = t.getMonth()-b.getMonth(), d = t.getDate()-b.getDate();
-  if (d < 0) { m--; d += new Date(t.getFullYear(), t.getMonth(), 0).getDate(); }
-  if (m < 0) { y--; m += 12; }
-  disp.value = IS_AR ? `${y} سنة ${m} شهر ${d} يوم` : `${y} Yrs ${m} Mo ${d} Days`;
-}
-
-/* ════════ HIJRI CALENDAR (display only, badge below input) ════════ */
-function gregToHijri(dateStr) {
-  if (!dateStr) return '';
-  try {
-    const d = new Date(dateStr + 'T12:00:00');
-    return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {day:'numeric',month:'long',year:'numeric'}).format(d);
-  } catch(e) { return ''; }
-}
-function wireHijriBadges() {
-  if (!IS_AR) return;
-  ['f_arrival_date','f_birth_date','f_passport_expiry','f_iqama_expiry','f_joining_date','f_insurance_expiry'].forEach(id => {
-    const inp = document.getElementById(id);
-    if (!inp) return;
-    let badge = document.getElementById('hb_'+id);
-    if (!badge) {
-      badge = document.createElement('div');
-      badge.id = 'hb_'+id;
-      badge.className = 'hijri-badge';
-      badge.setAttribute('dir','rtl');
-      inp.insertAdjacentElement('afterend', badge);
-    }
-    const update = () => {
-      if (inp.value) { badge.textContent = '📅 ' + gregToHijri(inp.value); badge.style.display='block'; }
-      else { badge.style.display='none'; }
-    };
-    // Remove old listeners by cloning is risky (loses other listeners) — just guard with a flag
-    if (!inp._hijriWired) {
-      inp.addEventListener('input', update);
-      inp.addEventListener('change', update);
-      inp._hijriWired = true;
-    }
-    update();
-  });
-}
-
-/* ════════ ALLOWANCES TABLE ════════════════════════════════════
-   Each row: serial #, Name (EN), Name (AR), Amount, Delete
-   Rows stored as hidden inputs (allow_name[], allow_name_ar[], allow_amount[])
-   submitted with the main form. calcNet() auto-updates totals.
-════════════════════════════════════════════════════════════════ */
-let _allowSerial = 0;
-
-function addAllowRow(name='', nameAr='', amount='') {
-  _allowSerial++;
-  const tbody = document.getElementById('allowTableBody');
-  // Remove empty placeholder row
-  const emptyRow = document.getElementById('allowEmptyRow');
-  if (emptyRow) emptyRow.remove();
-
-  const tr = document.createElement('tr');
-  tr.id = 'allowRow_' + _allowSerial;
-  tr.style.borderBottom = '1px solid #f1f5f9';
-  const serial = _allowSerial;
-  tr.innerHTML = `
-    <td style="padding:8px 12px;color:#6b7280;font-size:12px;text-align:${IS_AR?'right':'left'}">${serial}</td>
-    <td style="padding:6px 8px;">
-      <input type="text" name="allow_name[]" class="field-input" dir="ltr"
-             style="font-size:12px;padding:6px 8px;" placeholder="${IS_AR?'Name':'Allowance Name'}"
-             value="${name}" oninput="calcNet()">
-    </td>
-    <td style="padding:6px 8px;">
-      <input type="text" name="allow_name_ar[]" class="field-input" dir="rtl"
-             style="font-size:12px;padding:6px 8px;text-align:right;" placeholder="${IS_AR?'اسم البدل':'اسم البدل'}"
-             value="${nameAr}">
-    </td>
-    <td style="padding:6px 8px;">
-      <input type="number" name="allow_amount[]" class="field-input" dir="ltr"
-             style="font-size:12px;padding:6px 8px;" placeholder="0.00"
-             value="${amount}" min="0" step="0.01" oninput="calcNet()">
-    </td>
-    <td style="padding:6px 8px;text-align:center;">
-      <button type="button" class="allow-del" onclick="removeAllowRow('allowRow_${serial}')">
-        <i class="fas fa-times"></i>
-      </button>
-    </td>`;
-  tbody.appendChild(tr);
-  calcNet();
-}
-
-function removeAllowRow(rowId) {
-  const row = document.getElementById(rowId);
-  if (row) row.remove();
-  // Show empty placeholder if no rows left
-  const tbody = document.getElementById('allowTableBody');
-  if (tbody && tbody.querySelectorAll('tr:not(#allowEmptyRow)').length === 0) {
-    const tr = document.createElement('tr');
-    tr.id = 'allowEmptyRow';
-    tr.innerHTML = `<td colspan="5" style="text-align:center;padding:16px;color:#9ca3af;font-size:12px;">${IS_AR?'لا توجد بدلات — اضغط "إضافة بدل"':'No allowances yet — click "Add Allowance"'}</td>`;
-    tbody.appendChild(tr);
-  }
-  calcNet();
-}
-
-function getAllowTotal() {
-  let total = 0;
-  document.querySelectorAll('[name="allow_amount[]"]').forEach(inp => {
-    total += parseFloat(inp.value || 0) || 0;
-  });
-  return total;
-}
-
-/* ════════ NET SALARY ════════ */
-function calcNet() {
-  const basic      = parseFloat(document.getElementById('f_basic_salary')?.value    || 0) || 0;
-  const totalAllow = parseFloat(document.getElementById('f_total_allowances')?.value || 0) || 0;
-  const net        = basic + totalAllow;
-  // Update visible net salary field
-  const dispEl = document.getElementById('f_net_salary_display');
-  if (dispEl) dispEl.value = net.toFixed(2);
-  // Update hidden net_salary for form submission
-  const hidEl = document.getElementById('f_net_salary');
-  if (hidEl) hidEl.value = net.toFixed(2);
-}
-
-/* ════════ DOCUMENT UPLOAD — multiple files, each with own type ════════ */
-let _docSerial = 0;
-const DOC_TYPE_OPTIONS = [
-  {en:'ID Card',ar:'بطاقة الهوية'},
-  {en:'Passport',ar:'جواز السفر'},
-  {en:'Iqama',ar:'الإقامة'},
-  {en:'Work Permit',ar:'تصريح العمل'},
-  {en:'Contract',ar:'عقد العمل'},
-  {en:'Certificate',ar:'شهادة'},
-  {en:'Other',ar:'أخرى'},
-];
-
-function addDocRow() {
-  _docSerial++;
-  const serial = _docSerial;
-  const list = document.getElementById('docFilesList');
-  const wrapper = document.createElement('div');
-  wrapper.id = 'docRow_' + serial;
-  wrapper.style.cssText = 'display:flex;gap:10px;align-items:center;margin-bottom:8px;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;';
-
-  // Document type dropdown
-  const typeOpts = DOC_TYPE_OPTIONS.map(t =>
-    `<option value="${t.en}">${IS_AR ? t.ar : t.en}</option>`).join('');
-  const ph = IS_AR ? '-- اختر --' : '-- Select --';
-
-  wrapper.innerHTML = `
-    <span style="color:#9ca3af;font-size:12px;min-width:20px;">${serial}</span>
-    <select name="document_type[]" class="field-input" dir="${IS_AR?'rtl':'ltr'}"
-            style="flex:1.5;font-size:12px;padding:7px 10px;">
-      <option value="">${ph}</option>${typeOpts}
-    </select>
-    <label style="flex:2;display:flex;align-items:center;gap:8px;cursor:pointer;
-                  border:1.5px dashed #d1d5db;border-radius:7px;padding:7px 12px;
-                  background:white;font-size:12px;color:#6b7280;min-width:0;">
-      <i class="fas fa-paperclip"></i>
-      <span id="docLabel_${serial}">${IS_AR?'اختر ملفاً...':'Choose file...'}</span>
-      <input type="file" name="documents[]" accept=".pdf,.jpg,.jpeg,.png"
-             style="position:fixed;top:-9999px;left:-9999px;"
-             onchange="onDocFilePick(this,${serial})">
-    </label>
-    <button type="button" class="allow-del" onclick="document.getElementById('docRow_${serial}').remove()">
-      <i class="fas fa-times"></i>
-    </button>`;
-  list.appendChild(wrapper);
-}
-
-function onDocFilePick(inp, serial) {
-  const lbl = document.getElementById('docLabel_' + serial);
-  if (inp.files && inp.files[0]) {
-    const kb = Math.round(inp.files[0].size / 1024);
-    if (lbl) lbl.innerHTML = `<i class="fas fa-check-circle" style="color:#16a34a"></i> ${inp.files[0].name} (${kb} KB)`;
-  }
-}
-
-/* ════════ ACCORDION ════════ */
-function togAcc(key) {
-  const body = document.getElementById('body-'+key);
-  const btn = body.previousElementSibling;
-  const arr = document.getElementById('arr-'+key);
-  const hidden = body.classList.toggle('hidden');
-  btn.classList.toggle('open', !hidden);
-  if (arr) arr.style.transform = hidden ? '' : 'rotate(180deg)';
-}
-
-/* ════════ BILINGUAL TEXT TRANSLATE (auto, add mode only) ════════ */
-const _biTimers = {}, _biLock = {};
-let isEditEmp = false; // kept for reference but no longer blocks translation
-
-/* ════════ BILINGUAL AUTO-TRANSLATE ══════════════════════════════
-   biTrans(srcId, tgtId, srcLang):
-     Called on every keystroke in a bilingual input.
-     After 700ms debounce, translates and fills the OTHER side.
-     - Both sides are always editable — no locking
-     - Auto-translate works the same in ADD and EDIT mode
-     - If you manually edit the AR side after auto-fill, that's fine —
-       the EN side is untouched. Same in reverse.
-     - Retranslate (🔄) button: force re-translate that side on demand
-
-   EN portal example:
-     Type "Ali Hassan" in EN box → Arabic fills "علي حسن" automatically
-     Edit "علي حسن" manually → EN stays "Ali Hassan" untouched
-     Click 🔄 on EN box → re-translates EN value → overwrites AR again
-
-   AR portal example:
-     Type "علي حسن" in AR box → English fills "Ali Hassan" automatically
-     Edit "Ali Hassan" manually → AR stays "علي حسن" untouched
-     Click 🔄 on AR box → re-translates AR value → overwrites EN again
-════════════════════════════════════════════════════════════════ */
-function biTrans(srcId, tgtId, srcLang) {
-  // EN portal: only auto-translate EN→AR (srcLang='en'). AR changes don't auto-translate.
-  // AR portal: only auto-translate AR→EN (srcLang='ar'). EN changes don't auto-translate.
-  // To push the other direction, user must click the 🔄 retranslate button.
-  if (!IS_AR && srcLang === 'ar') return;  // EN portal: ignore AR keystrokes
-  if (IS_AR  && srcLang === 'en') return;  // AR portal: ignore EN keystrokes
-
-  if (_biLock[tgtId]) return;
-  const src = document.getElementById(srcId), tgt = document.getElementById(tgtId);
-  if (!src || !tgt) return;
-  const text = src.value.trim();
-  clearTimeout(_biTimers[tgtId]);
-  if (!text) { tgt.value = ''; return; }
-  // Numeric/code: mirror as Arabic-Indic numerals instantly (no API needed)
-  if (/^[\d٠-٩\s\-\+\(\)\.\/]+$/.test(text)) {
-    _biLock[tgtId] = true;
-    tgt.value = srcLang === 'en'
-      ? text.replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d])
-      : text.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
-    setTimeout(() => _biLock[tgtId] = false, 150);
-    return;
-  }
-  const tgtLang = srcLang === 'en' ? 'ar' : 'en';
-  const fieldBase = tgtId.replace(/^f_/, '').replace(/_ar$/, '');
-  const spin = document.getElementById('spin_' + fieldBase);
-  if (spin) spin.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
-  _biTimers[tgtId] = setTimeout(() => {
-    fetch(TR, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
-      body: JSON.stringify({text, direction:`${srcLang}|${tgtLang}`})
-    })
-    .then(r => r.json())
-    .then(d => {
-      if (d.translated && tgt) {
-        _biLock[tgtId] = true;
-        tgt.value = d.translated;
-        tgt.classList.add('translated-flash');
-        setTimeout(() => { tgt.classList.remove('translated-flash'); _biLock[tgtId] = false; }, 700);
-      }
-      if (spin) spin.innerHTML = '';
-    })
-    .catch(() => { if (spin) spin.innerHTML = ''; });
-  }, 700);
-}
-
-// biRetrans: manual retranslate button click
-// EN 🔄 button: reads f_name → translates to AR → writes f_name_ar  (srcLang='en', tgtLang='ar')
-// AR 🔄 button: reads f_name_ar → translates to EN → writes f_name  (srcLang='ar', tgtLang='en')
-function biRetrans(srcId, tgtId, srcLang) {
-  const src = document.getElementById(srcId), tgt = document.getElementById(tgtId);
-  const text = src ? src.value.trim() : '';
-  if (!text || !tgt) return;
-  const tgtLang = srcLang === 'en' ? 'ar' : 'en';
-  const fieldBase = tgtId.replace(/^f_/, '').replace(/_ar$/, '');
-  const spin = document.getElementById('spin_' + fieldBase);
-  if (spin) spin.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
-  fetch(TR, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
-    body: JSON.stringify({text, direction:`${srcLang}|${tgtLang}`})
-  })
-  .then(r => r.json())
-  .then(d => {
-    if (d.translated && tgt) {
-      tgt.value = d.translated;
-      tgt.classList.add('translated-flash');
-      setTimeout(() => tgt.classList.remove('translated-flash'), 700);
-    }
-    if (spin) spin.innerHTML = '';
-  })
-  .catch(() => { if (spin) spin.innerHTML = ''; });
-}
-
-function showRetransButtons(show) {
-  // Kept for compatibility — retranslate buttons are now always visible
-  // so this is a no-op, but old call sites won't break
-}
-
-
-/* ════════ FORM RESET (never use form.reset() — kills our selects) ════════ */
-function resetEmpForm() {
-  document.querySelectorAll('#empForm input[type="text"], #empForm input[type="number"], #empForm input[type="date"], #empForm input[type="email"]').forEach(el => el.value = '');
-  document.querySelectorAll('#empForm input[type="hidden"]').forEach(el => {
-    if (!['csrf_token','auto_code','_emp_id'].includes(el.name)) el.value = '';
-  });
-  document.getElementById('f_is_active').checked = true;
-  document.getElementById('f_is_muslim').checked = false;
-  document.getElementById('empCodeDisplay').textContent = IS_AR ? '(تلقائي)' : '(Auto)';
-  // Clear allowance table
-  const tbody = document.getElementById('allowTableBody');
-  if (tbody) {
-    tbody.innerHTML = `<tr id="allowEmptyRow"><td colspan="5" style="text-align:center;padding:16px;color:#9ca3af;font-size:12px;">${IS_AR?'لا توجد بدلات — اضغط "إضافة بدل"':'No allowances yet — click "Add Allowance"'}</td></tr>`;
-  }
-  _allowSerial   = 0;
-  _currentEmpId  = null;
-  _pendingAllows = [];
-  _pendingSerial = 0;
-  document.querySelectorAll('.pend-allow').forEach(el=>el.remove());
-  const taEl = document.getElementById('f_total_allowances');
-  if (taEl) taEl.value = '';
-  setAllowBtn(false);
-  const netDisp = document.getElementById('f_net_salary_display');
-  if (netDisp) netDisp.value = '';
-  const netHid = document.getElementById('f_net_salary');
-  if (netHid) netHid.value = '0';
-  // Clear doc upload rows
-  const docList = document.getElementById('docFilesList');
-  if (docList) docList.innerHTML = '';
-  _docSerial = 0;
-  // Clear bank section
-  _empPendingBanks = [];
-  renderEmpBankTable();
-  hideEmpBankRow();
-  document.querySelectorAll('.mcq-opt').forEach(b => b.classList.remove('chosen'));
-  setMCQ('shiftGrp',   'day',     'f_shift_type');
-  setMCQ('passLocGrp', 'IN',      'f_passport_location');
-  setMCQ('empTypeGrp', 'skilled', 'f_employee_type');
-  setMCQ('salTypeGrp', 'salary',  'f_salary_type');
-  // docName element removed (multi-file upload now used — docFilesList cleared above)
-  document.querySelectorAll('.hijri-badge').forEach(b => b.style.display='none');
-  showRetransButtons(false);
-}
-
-/* ════════ MODAL: ADD ════════ */
-function openAddEmp() {
-  isEditEmp = false;
-  document.getElementById('empModalTitle').textContent = IS_AR ? 'تفاصيل الموظف' : 'Employee Details';
-  document.getElementById('empForm').action = '{{ url_for("employees.add_employee") }}';
-  document.getElementById('empFormId').value = '';
-  resetEmpForm();
-  // Populate all dropdowns AFTER reset
-  initNationality('');
-  initProfession('');
-  initBuyer('');
-  initDocType('');
-  showRetransButtons(false);
-  setTimeout(wireHijriBadges, 50);
-  // Add mode: no DB id, allowances stored in JS
-  _currentEmpId  = null;
-  _pendingAllows = [];
-  _pendingSerial = 0;
-  setAllowBtn(true);   // Allow button works in Add mode too
-}
-
-/* ════════ MODAL: EDIT ════════ */
-function openEditEmp(id) {
-  isEditEmp = true;
-  document.getElementById('empModalTitle').textContent = IS_AR ? 'تعديل موظف' : 'Edit Employee';
-  document.getElementById('empForm').action = '/employees/' + id + '/edit';
-  document.getElementById('empFormId').value = id;
-  new bootstrap.Modal(document.getElementById('empModal')).show();
-  showRetransButtons(true);
-  // Enable allowances button immediately
-  _currentEmpId  = id;
-  _pendingAllows = [];  // clear any pending from add mode
-  setAllowBtn(true);
-
-  fetch('/employees/' + id + '/json').then(r => r.json()).then(d => {
-    document.getElementById('empCodeDisplay').textContent = d.employee_code;
-    document.getElementById('f_is_active').checked = d.is_active;
-    document.getElementById('f_is_muslim').checked = d.is_muslim;
-
-    // Text fields (bilingual)
-    const biFields = ['name','kafeel_name','kafeel_reference','education','address','home_city',
-                       'employee_reference','department','forman','hostel_name','hostel_location',
-                       'bank_name','bank_branch','crn','insurance_company',
-                       'company','section'];
-    biFields.forEach(f => {
-      const en = document.getElementById('f_'+f);
-      const arr = document.getElementById('f_'+f+'_ar');
-      if (en) en.value = d[f] || '';
-      if (arr) arr.value = d[f+'_ar'] || '';
-    });
-
-    // Single text/number/date fields
-    const singleFields = ['mobile','email','passport_number','entry_number','iqama_number',
-                           'room_number','swift_code','account_number','iban','labour_office',
-                           'rate','po_rate','po_number','basic_salary','food_allowance','rent',
-                           'working_hours','overtime_ratio','overtime_rate','kafalat_number',
-                           'arrival_date','birth_date','passport_expiry','iqama_expiry',
-                           'joining_date','insurance_expiry',
-                           'end_date_work','work_month'];
-    singleFields.forEach(f => {
-      const el = document.getElementById('f_'+f);
-      if (el) el.value = d[f] || '';
-    });
-    document.getElementById('f_net_salary').value = d.net_salary || 0;
-    const nd = document.getElementById('f_net_salary_display');
-    if (nd) nd.value = d.net_salary ? Number(d.net_salary).toFixed(2) : '0.00';
-
-    // MCQ
-    setMCQ('empTypeGrp', d.employee_type || '', 'f_employee_type');
-    setMCQ('salTypeGrp', d.salary_type || 'salary', 'f_salary_type');
-    setMCQ('shiftGrp', d.shift_type || 'day', 'f_shift_type');
-    setMCQ('workStatusGrp', d.work_status || 'active', 'f_work_status');
-    setMCQ('passLocGrp', d.passport_location || 'IN', 'f_passport_location');
-
-    // Load allowances and update badge + total (employee id already set above)
-    // allowances loaded when popup opens
-
-    // Dropdowns
-    initNationality(d.nationality || '');
-    initProfession(d.profession || '');
-    initBuyer(d.buyer_id || '');
-    // Set PO rate unit dropdown
-    const puEl = document.getElementById('f_po_rate_unit');
-    if (puEl && d.po_rate_unit) puEl.value = d.po_rate_unit;
-    initDocType(d.document_type || '');
-
-    // Age + Hijri
-    calcAge();
-    setTimeout(wireHijriBadges, 50);
-
-    // Load allowances into table
-    const tbody = document.getElementById('allowTableBody');
-    if (tbody) {
-      tbody.innerHTML = `<tr id="allowEmptyRow"><td colspan="5" style="text-align:center;padding:16px;color:#9ca3af;font-size:12px;">${IS_AR?'لا توجد بدلات':'No allowances yet'}</td></tr>`;
-    }
-    _allowSerial = 0;
-    (d.allowances || []).forEach(a => addAllowRow(a.name || '', a.name_ar || '', a.amount || 0));
-    const taEl = document.getElementById('f_total_allowances');
-    if (taEl) taEl.value = (d.total_allowances || 0).toFixed(2);
-    calcNet();
-    calcOvertimeRate();   // auto-fill overtime rate from loaded values
-  });
-}
-
-/* ════════ VIEW (read-only) ════════ */
-let currentViewId = null;
-function viewDateFmt(dateStr) {
-  if (!dateStr) return '';
-  if (IS_AR) {
-    const hijri = gregToHijri(dateStr);
-    return hijri ? hijri + ' هـ' : dateStr;
-  }
-  return dateStr;
-}
-function calcAgeStr(birthDate) {
-  if (!birthDate) return IS_AR ? 'غير محدد' : 'N/A';
-  const b = new Date(birthDate), t = new Date();
-  let y = t.getFullYear()-b.getFullYear();
-  if (t.getMonth() < b.getMonth() || (t.getMonth()===b.getMonth() && t.getDate()<b.getDate())) y--;
-  return IS_AR ? `${y} سنة` : `${y} Years`;
-}
-function openViewEmp(id) {
-  currentViewId = id;
-  fetch('/employees/' + id + '/json').then(r => r.json()).then(d => {
-    const na = IS_AR ? 'غير محدد' : 'N/A';
-    const yn = v => v ? (IS_AR?'نعم':'Yes') : (IS_AR?'لا':'No');
-    const rows = [
-      [IS_AR?'كود الموظف':'Employee Code', d.employee_code],
-      [IS_AR?'الاسم':'Name', IS_AR && d.name_ar ? d.name_ar : d.name],
-      [IS_AR?'اسم الكفيل':'Kafeel Name', (IS_AR && d.kafeel_name_ar ? d.kafeel_name_ar : d.kafeel_name) || na],
-      [IS_AR?'الجنسية':'Nationality', (IS_AR && d.nationality_ar ? d.nationality_ar : d.nationality) || na],
-      [IS_AR?'تاريخ الميلاد':'Birth Date', viewDateFmt(d.birth_date) || na],
-      [IS_AR?'العمر':'Age', calcAgeStr(d.birth_date)],
-      [IS_AR?'المهنة':'Profession', (IS_AR && d.profession_ar ? d.profession_ar : d.profession) || na],
-      [IS_AR?'نوع الموظف':'Employee Type', d.employee_type || na],
-      [IS_AR?'رقم الإقامة':'Iqama Number', d.iqama_number || na],
-      [IS_AR?'انتهاء الإقامة':'Iqama Expiry', viewDateFmt(d.iqama_expiry) || na],
-      [IS_AR?'رقم الجواز':'Passport Number', d.passport_number || na],
-      [IS_AR?'الهاتف':'Mobile', d.mobile || na],
-      [IS_AR?'البريد الإلكتروني':'Email', d.email || na],
-      [IS_AR?'القسم':'Department', (IS_AR && d.department_ar ? d.department_ar : d.department) || na],
-      [IS_AR?'نوع الراتب':'Salary Type', d.salary_type || na],
-      [IS_AR?'الراتب الأساسي':'Basic Salary', d.basic_salary ? Number(d.basic_salary).toLocaleString() : na],
-      [IS_AR?'الراتب الصافي':'Net Salary', d.net_salary ? Number(d.net_salary).toLocaleString() : na],
-      [IS_AR?'تاريخ الانضمام':'Joining Date', viewDateFmt(d.joining_date) || na],
-      [IS_AR?'اسم البنك':'Bank Name', (IS_AR && d.bank_name_ar ? d.bank_name_ar : d.bank_name) || na],
-      [IS_AR?'رقم الحساب':'Account Number', d.account_number || na],
-      [IS_AR?'نشيط':'Active', yn(d.is_active)],
-    ];
-    let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-    rows.forEach((r,i) => {
-      const bg = i%2===0 ? '#f9fafb' : 'white';
-      const dir = IS_AR ? 'text-align:right;direction:rtl;' : '';
-      html += `<tr style="background:${bg}"><td style="padding:8px 12px;font-weight:600;color:#374151;border-bottom:1px solid #f1f5f9;width:40%;${dir}">${r[0]}</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;${dir}">${r[1]}</td></tr>`;
-    });
-    html += '</table>';
-    document.getElementById('viewEmpTitle').textContent = (IS_AR?'بيانات الموظف: ':'Employee: ') + (IS_AR && d.name_ar ? d.name_ar : d.name);
-    document.getElementById('viewEmpBody').innerHTML = html;
-    new bootstrap.Modal(document.getElementById('viewEmpModal')).show();
-  });
-}
-function editFromView() {
-  const m = bootstrap.Modal.getInstance(document.getElementById('viewEmpModal'));
-  if (m) m.hide();
-  setTimeout(() => openEditEmp(currentViewId), 300);
-}
-
-/* ════════ OVERTIME AUTO-CALCULATION ═════════════════════════════
-   Overtime Rate = (Basic Salary / 30 / Working Hours) × Overtime Ratio
-   Fires whenever Basic Salary, Working Hours, or Overtime Ratio changes.
-════════════════════════════════════════════════════════════════ */
-function calcOvertimeRate() {
-  const basic   = parseFloat(document.getElementById('f_basic_salary')?.value  || 0) || 0;
-  const hours   = parseFloat(document.getElementById('f_working_hours')?.value  || 0) || 0;
-  const ratio   = parseFloat(document.getElementById('f_overtime_ratio')?.value || 0) || 0;
-  const otEl    = document.getElementById('f_overtime_rate');
-  if (!otEl) return;
-  if (basic > 0 && hours > 0 && ratio > 0) {
-    const otRate = (basic / 30 / hours) * ratio;
-    otEl.value = otRate.toFixed(4);
-  } else {
-    otEl.value = '';
-  }
-}
-// calcOvertimeRate is called via oninput on each field directly
-
-/* ════════ EMPLOYEE ALLOWANCES POPUP ════════════════════════════
-   Opens when "Allowances" button is clicked on the employee form.
-   Loads allowance types from /allowance-types/data.
-   Uses AJAX to add/edit/delete allowances for the current employee.
-   On close, updates f_total_allowances and recalculates net salary.
-════════════════════════════════════════════════════════════════ */
-const AT_URL = '{{ url_for("lookups.allowance_types_data") }}';
-
-/* ════════ EMPLOYEE ALLOWANCES POPUP ════════════════════════════
-   ADD MODE  (new employee, no DB id yet):
-     Allowances stored in JS _pendingAllows[].
-     On form submit, written as hidden inputs allow_type_id[] / allow_amount[].
-   EDIT MODE (existing employee):
-     AJAX saves to DB immediately.
-   Both modes: closing popup syncs f_total_allowances + recalculates Net Salary.
-════════════════════════════════════════════════════════════════ */
-let _atCache       = null;
-let _currentEmpId  = null;      // null = Add mode, number = Edit mode
-let _editingRowId  = null;
-let _pendingAllows = [];
-let _pendingSerial = 0;
-let _lastRows      = [];        // cache for edit-row lookup
-
-/* Enable / disable the Allowances button */
-function setAllowBtn(enabled) {
-  const btn = document.getElementById('btnAllowances');
-  if (!btn) return;
-  btn.style.pointerEvents = enabled ? 'auto'    : 'none';
-  btn.style.opacity       = enabled ? '1'       : '0.4';
-  btn.style.cursor        = enabled ? 'pointer' : 'not-allowed';
-  btn.style.background    = enabled ? '#16a34a' : '#9ca3af';
-}
-
-function openAllowancesPopup() {
-  // Header: show employee code + name
-  const code  = document.getElementById('empCodeDisplay')?.textContent || '';
-  const name  = document.getElementById('f_name')?.value || '';
-  const infoEl = document.getElementById('ap_emp_info');
-  if (infoEl) {
-    const codeStr = (code && code !== '(Auto)' && code !== '(تلقائي)') ? code : (IS_AR?'(جديد)':'(New)');
-    infoEl.textContent = codeStr + (name ? '  —  ' + name : '');
-  }
-  // Load types dropdown (used types will be greyed after rows load)
-  if (!_atCache) {
-    fetch(AT_URL).then(r=>r.json()).then(d=>{ _atCache=d; _fillTypeDropdown(d, []); });
-  } else { _fillTypeDropdown(_atCache, []); }
-  // Reset form
-  _resetApForm();
-  // Load rows
-  if (_currentEmpId) _loadFromDB(_currentEmpId);
-  else _renderRows(_pendingAllows);
-  new bootstrap.Modal(document.getElementById('allowPopup')).show();
-}
-
-function _fillTypeDropdown(types, usedTypeIds) {
-  const sel = document.getElementById('ap_type');
-  if (!sel) return;
-  const ph = IS_AR ? '-- اختر نوع البدل --' : '-- Select Type --';
-  const used = usedTypeIds || [];
-  sel.innerHTML = `<option value="">${ph}</option>`;
-  types.forEach(t => {
-    // Allow the currently-editing row's type to be re-selectable
-    const currentEditType = _editingRowId ? (() => {
-      const row = _currentEmpId
-        ? (_lastRows||[]).find(r=>String(r.id)===String(_editingRowId))
-        : (_pendingAllows||[]).find(a=>a._key===_editingRowId);
-      return row ? String(row.allowance_type_id) : null;
-    })() : null;
-    const isUsed = used.includes(String(t.id)) && String(t.id) !== currentEditType;
-    const disabled = isUsed ? ' disabled style="color:#9ca3af;"' : '';
-    const label = isUsed ? `${t.label} (${t.code}) ✓` : `${t.label} (${t.code})`;
-    sel.innerHTML += `<option value="${t.id}" data-code="${t.code}" data-en="${t.en}" data-ar="${t.ar}"${disabled}>${label}</option>`;
-  });
-}
-
-function _loadFromDB(empId) {
-  fetch(`/employees/${empId}/allowances`)
-  .then(r=>r.json())
-  .then(rows=>{ _lastRows=rows; _renderRows(rows); })
-  .catch(()=>_renderRows([]));
-}
-
-function _renderRows(rows) {
-  // ── Update inline grid shown in the MAIN employee form ─────────
-  const inlineBody = document.getElementById('allowInlineBody');
-  if (inlineBody) {
-    if (!rows || rows.length===0) {
-      inlineBody.innerHTML = `<tr id="allowInlineEmpty"><td colspan="4" style="text-align:center;padding:14px;color:#9ca3af;font-size:12px;">${IS_AR?'لا توجد بدلات — اضغط إدارة':'No allowances — click Manage to add'}</td></tr>`;
-    } else {
-      inlineBody.innerHTML = '';
-      rows.forEach((a,i) => {
-        const td = IS_AR?'text-align:right;direction:rtl;':'';
-        const nm = (IS_AR && a.name_ar) ? a.name_ar : (a.name||'');
-        const cd = a.allowance_code||a.code||'';
-        const rid = a.id||a._key;
-        const tr = document.createElement('tr');
-        tr.style.background = i%2===0?'#fff':'#f9fafb';
-        tr.innerHTML = `
-          <td style="padding:7px 12px;font-size:12px;color:#6b7280;${td}">${i+1}</td>
-          <td style="padding:7px 12px;${td}"><span class="code-badge">${cd}</span></td>
-          <td style="padding:7px 12px;font-weight:600;${td}">${nm}</td>
-          <td style="padding:7px 12px;${td}">
-            ${Number(a.amount).toLocaleString(undefined,{minimumFractionDigits:2})}
-            <button class="pl-btn pl-del" style="margin-left:8px;width:22px;height:22px;float:right;"
-                    onclick="_apDelete('${rid}')" title="${IS_AR?'حذف':'Delete'}">
-              <i class="fas fa-times" style="font-size:9px;"></i>
-            </button>
-          </td>`;
-        inlineBody.appendChild(tr);
-      });
-    }
-  }
-  // Refresh popup dropdown to mark used types
-  const usedIds = rows ? rows.map(r => String(r.allowance_type_id)) : [];
-  if (_atCache) _fillTypeDropdown(_atCache, usedIds);
-  let total = 0;
-  if (rows) rows.forEach(a => total += parseFloat(a.amount)||0);
-  _syncTotal(total); _syncBadge(rows ? rows.length : 0);
-}
-
-function _syncTotal(total) {
-  const el = document.getElementById('ap_total');
-  if (el) el.textContent = total.toLocaleString(undefined,{minimumFractionDigits:2});
-  const taEl = document.getElementById('f_total_allowances');
-  if (taEl) { taEl.value = total.toFixed(2); calcNet(); }
-}
-
-function _syncBadge(count) {
-  const b = document.getElementById('allowBadge');
-  if (!b) return;
-  b.textContent = count;
-  b.style.display = count>0 ? 'flex' : 'none';
-}
-
-function _resetApForm() {
-  document.getElementById('ap_type').value='';
-  document.getElementById('ap_amount').value='';
-  const e=document.getElementById('ap_error'); if(e) e.style.display='none';
-  _editingRowId=null;
-  const sb=document.getElementById('ap_save_btn');
-  if(sb) sb.innerHTML=`<i class="fas fa-plus me-1"></i>${IS_AR?'إضافة':'Add'}`;
-  const cb=document.getElementById('ap_cancel_edit_btn');
-  if(cb) cb.style.display='none';
-}
-
-function saveAllowance() {
-  const typeId = document.getElementById('ap_type').value;
-  const amount = parseFloat(document.getElementById('ap_amount').value||0);
-  const e      = document.getElementById('ap_error'); if(e) e.style.display='none';
-  if (!typeId)         { _apErr(IS_AR?'اختر نوع البدل':'Select an allowance type.'); return; }
-  if (!amount||amount<=0){ _apErr(IS_AR?'أدخل مبلغاً صحيحاً':'Enter a valid amount.'); return; }
-
-  const opt    = document.getElementById('ap_type').options[document.getElementById('ap_type').selectedIndex];
-  const tEn    = opt?opt.dataset.en:'';
-  const tAr    = opt?opt.dataset.ar:'';
-  const tCode  = opt?opt.dataset.code:'';
-
-  if (_currentEmpId) {
-    // EDIT MODE — save via AJAX
-    const url = _editingRowId
-      ? `/employees/allowances/${_editingRowId}/edit`
-      : `/employees/${_currentEmpId}/allowances/add`;
-    fetch(url, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-                 body: JSON.stringify({allowance_type_id:typeId, amount}) })
-    .then(r=>r.json())
-    .then(d=>{ if(!d.ok){_apErr(d.error||(IS_AR?'خطأ':'Error'));return;} _resetApForm(); _loadFromDB(_currentEmpId); })
-    .catch(()=>_apErr(IS_AR?'فشل الاتصال':'Connection failed'));
-
-  } else {
-    // ADD MODE — store in JS
-    const dup = _pendingAllows.find(a => String(a.allowance_type_id)===String(typeId) && a._key!==_editingRowId);
-    if (dup) { _apErr(IS_AR?'هذا النوع موجود بالفعل':'This allowance type already exists.'); return; }
-    if (_editingRowId) {
-      const row = _pendingAllows.find(a=>a._key===_editingRowId);
-      if (row) Object.assign(row, {allowance_type_id:typeId,name:tEn,name_ar:tAr,allowance_code:tCode,amount});
-    } else {
-      _pendingSerial++;
-      _pendingAllows.push({_key:'tmp_'+_pendingSerial, allowance_type_id:typeId, allowance_code:tCode, name:tEn, name_ar:tAr, amount});
-    }
-    _resetApForm();
-    _renderRows(_pendingAllows);
-  }
-}
-
-function _apEdit(rid) {
-  _editingRowId = rid;
-  let row = _currentEmpId
-    ? _lastRows.find(r=>String(r.id)===String(rid))
-    : _pendingAllows.find(a=>a._key===rid);
-  if (!row) return;
-  document.getElementById('ap_type').value   = row.allowance_type_id||'';
-  document.getElementById('ap_amount').value = row.amount||'';
-  document.getElementById('ap_amount').focus();
-  const sb=document.getElementById('ap_save_btn');
-  if(sb) sb.innerHTML=`<i class="fas fa-save me-1"></i>${IS_AR?'تحديث':'Update'}`;
-  const cb=document.getElementById('ap_cancel_edit_btn');
-  if(cb) cb.style.display='inline-flex';
-}
-
-function _apDelete(rid) {
-  if (!confirm(IS_AR?'حذف هذا البدل؟':'Delete this allowance?')) return;
-  if (_currentEmpId) {
-    fetch(`/employees/allowances/${rid}/delete`,
-      {method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:'{}'})
-    .then(r=>r.json()).then(d=>{ if(d.ok) _loadFromDB(_currentEmpId); });
-  } else {
-    _pendingAllows = _pendingAllows.filter(a=>a._key!==rid);
-    _renderRows(_pendingAllows);
-  }
-}
-
-function cancelAllowEdit() { _resetApForm(); }
-function _apErr(msg) { const e=document.getElementById('ap_error'); if(e){e.textContent=msg;e.style.display='block';} }
-
-function onAllowPopupClose() {
-  _resetApForm();
-  if (_currentEmpId) {
-    _loadFromDB(_currentEmpId);
-  } else {
-    const total = _pendingAllows.reduce((s,a)=>s+(parseFloat(a.amount)||0),0);
-    _syncTotal(total);
-    // Write pending as hidden inputs for form submission
-    document.querySelectorAll('.pend-allow').forEach(el=>el.remove());
-    _pendingAllows.forEach(a=>{
-      ['allow_type_id[]','allow_amount[]'].forEach((n,i)=>{
-        const inp=document.createElement('input');
-        inp.type='hidden'; inp.name=n; inp.value=i===0?a.allowance_type_id:a.amount;
-        inp.className='pend-allow';
-        document.getElementById('empForm').appendChild(inp);
-      });
-    });
-  }
-}
-
-/* ════════ EMPLOYEE BANKING — inline form + grid ════════════════
-   Add mode: stored in _empPendingBanks[], submitted as hidden inputs
-   Edit mode: saved via AJAX to /employees/<id>/banks/ (future)
-   For now, both modes use pending JS array approach.
-════════════════════════════════════════════════════════════════ */
-let _empPendingBanks = [];
-let _empBankEditKey  = null;
-let _ebTimer = null;
-
-function empBankTrans(srcId, tgtId, sl) {
-  if (!IS_AR && sl==='ar') return;
-  if ( IS_AR && sl==='en') return;
-  clearTimeout(_ebTimer);
-  const src=document.getElementById(srcId), tgt=document.getElementById(tgtId);
-  const text = src?src.value.trim():'';
-  if (!text) { if(tgt) tgt.value=''; return; }
-  _ebTimer = setTimeout(()=>{
-    fetch(TR,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-              body:JSON.stringify({text,direction:`${sl}|${sl==='en'?'ar':'en'}`})})
-    .then(r=>r.json()).then(d=>{ if(d.translated&&tgt) tgt.value=d.translated; })
-    .catch(()=>{});
-  },700);
-}
-function empBankRetrans(tgtId, srcId, tl) {
-  const src=document.getElementById(srcId), tgt=document.getElementById(tgtId);
-  const text=src?src.value.trim():'';
-  if (!text||!tgt) return;
-  fetch(TR,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-            body:JSON.stringify({text,direction:`${tl==='ar'?'en':'ar'}|${tl}`})})
-  .then(r=>r.json()).then(d=>{ if(d.translated) tgt.value=d.translated; });
-}
-
-
-/* ══ EMPLOYEE BANK — popup modal pattern ══ */
-function togAccBank(btn){const body=btn.nextElementSibling;body.classList.toggle('d-none');const icon=btn.querySelector('.fa-chevron-down,.fa-chevron-up');if(icon){icon.classList.toggle('fa-chevron-down');icon.classList.toggle('fa-chevron-up');}}
-
-function openEmpBank(bankId){
-  const mid='bankModal_emp';
-  document.getElementById(mid+'_bank_id').value=bankId||'';
-  document.getElementById(mid+'_title').innerHTML=bankId?'<i class="fas fa-edit me-2"></i>Edit Bank':'<i class="fas fa-university me-2"></i>Add Bank Account';
-  if(!bankId){
-    [mid+'_name',mid+'_account',mid+'_branch',mid+'_swift',mid+'_iban'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-    document.getElementById(mid+'_primary').checked=false;
-  }
-  new bootstrap.Modal(document.getElementById(mid)).show();
-}
-async function saveEmpBank(){
-  const mid='bankModal_emp'; const bankId=document.getElementById(mid+'_bank_id').value;
-  const empId=_currentEmpId;
-  if(!empId){alert('Save the employee first.');return;}
-  const bname=document.getElementById(mid+'_name')?.value.trim();
-  if(!bname){alert('Bank name is required.');return;}
-  const payload={bank_name:bname,account_number:document.getElementById(mid+'_account')?.value.trim()||'',branch:document.getElementById(mid+'_branch')?.value.trim()||'',swift_code:document.getElementById(mid+'_swift')?.value.trim()||'',iban:document.getElementById(mid+'_iban')?.value.trim()||'',is_primary:document.getElementById(mid+'_primary')?.checked||false};
-  const url=bankId?`/employees/banks/${bankId}/edit`:`/employees/${empId}/banks/add`;
-  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify(payload)});
-  const data=await res.json();
-  if(data.ok){bootstrap.Modal.getInstance(document.getElementById(mid))?.hide();loadEmpBanks(empId);}
-  else{alert(data.error||'Failed to save bank.');}
-}
-async function loadEmpBanks(empId){
-  if(!empId)return;
-  const res=await fetch(`/employees/${empId}/banks`);
-  const banks=await res.json();
-  renderEmpBanks(banks,empId);
-}
-function renderEmpBanks(banks,empId){
-  const wrap=document.getElementById('bankList_emp');
-  const badge=document.getElementById('bankBadge_emp');
-  if(badge)badge.textContent=banks.length;
-  if(!wrap)return;
-  if(!banks.length){wrap.innerHTML='<div class="pf-empty"><i class="fas fa-university"></i>No bank accounts yet</div>';return;}
-  wrap.innerHTML=banks.map(b=>`<div class="pf-bank-card ${b.is_primary?'primary':''}"><div><div class="pf-bank-card-name"><i class="fas fa-university" style="color:#2563eb;font-size:14px;"></i>${b.bank_name||'—'}${b.is_primary?'<span class="pf-badge-primary">PRIMARY</span>':''}</div><div class="pf-bank-card-meta">${b.account_number?`<span><i class="fas fa-hashtag"></i>${b.account_number}</span>`:''} ${b.branch?`<span><i class="fas fa-map-marker-alt"></i>${b.branch}</span>`:''} ${b.swift_code?`<span><i class="fas fa-globe"></i>${b.swift_code}</span>`:''} ${b.iban?`<span><i class="fas fa-credit-card"></i>${b.iban}</span>`:''}</div></div><div class="pf-bank-actions"><button onclick="openEmpBank(${b.id})" style="width:28px;height:28px;background:#fef3c7;color:#d97706;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-pencil-alt"></i></button><button onclick="deleteEmpBank(${b.id})" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-trash"></i></button></div></div>`).join('');
-}
-async function deleteEmpBank(bankId){
-  if(!confirm('Delete this bank account?'))return;
-  const res=await fetch(`/employees/banks/${bankId}/delete`,{method:'POST',headers:{'X-CSRFToken':CSRF}});
-  const data=await res.json();
-  if(data.ok)loadEmpBanks(_currentEmpId);
-}
-
-
-function rCode(p){return p.value?`<span class="code-badge">${p.value}</span>`:''}
-function rStatus(p){return p.value?`<span class="st-active">${IS_AR?'نشيط':'Active'}</span>`:`<span class="st-inactive">${IS_AR?'غير نشيط':'Inactive'}</span>`}
-function rNum(p){return p.value?Number(p.value).toLocaleString():'—'}
-// Date cell renderer: show Hijri in AR portal, Gregorian in EN portal
-function rDate(p){
-  if (!p.value) return '—';
-  if (IS_AR) {
-    const hijri = gregToHijri(p.value);
-    return hijri ? `<span dir="rtl">${hijri}</span>` : p.value;
-  }
-  return p.value;
-}
-class ActR {
-  init(p) {
-    this.g = document.createElement('div');
-    this.g.className = 'ag-act-cell';
-    const id = p.data.id, n = (p.data.name||'').replace(/'/g,"\\'");
-    this.g.innerHTML = `
-      <button class="pl-btn pl-view" title="${IS_AR?'عرض':'View'}" onclick="openViewEmp(${id})"><i class="fas fa-eye"></i></button>
-      <button class="pl-btn pl-edit" title="${IS_AR?'تعديل':'Edit'}" onclick="openEditEmp(${id})"><i class="fas fa-pencil-alt"></i></button>
-      <button class="pl-btn pl-del" title="${IS_AR?'حذف':'Delete'}" onclick="confDel('/employees/${id}/delete','${n}')"><i class="fas fa-trash"></i></button>`;
-  }
-  getGui(){return this.g;}
-}
-const cols = [
-  {headerName:'',field:'id',width:46,checkboxSelection:true,headerCheckboxSelection:true,sortable:false,suppressMenu:true,resizable:false,pinned:IS_AR?'right':'left'},
-  {headerName:S.code,field:'employee_code',width:130,pinned:IS_AR?'right':'left',cellRenderer:rCode,filter:'agTextColumnFilter'},
-  {headerName:S.name,field:'name',minWidth:160,filter:'agTextColumnFilter'},
-  {headerName:S.prof,field:'profession',width:150,filter:'agTextColumnFilter'},
-  {headerName:S.kafeel,field:'kafeel_name',width:140,filter:'agTextColumnFilter'},
-  {headerName:S.ref,field:'kafeel_reference',width:120,filter:'agTextColumnFilter'},
-  {headerName:S.nat,field:'nationality',width:110,filter:'agTextColumnFilter'},
-  {headerName:S.bdate,field:'birth_date',width:135,cellRenderer:rDate,filter:'agTextColumnFilter'},
-  {headerName:S.age,field:'age',width:140,filter:'agTextColumnFilter'},
-  {headerName:S.iqama,field:'iqama_number',width:125,filter:'agTextColumnFilter'},
-  {headerName:S.iqexp,field:'iqama_expiry',width:145,cellRenderer:rDate,filter:'agTextColumnFilter'},
-  {headerName:S.pass,field:'passport_number',width:125,filter:'agTextColumnFilter'},
-  {headerName:S.dept,field:'department',width:125,filter:'agTextColumnFilter'},
-  {headerName:S.stype,field:'salary_type',width:115,filter:'agSetColumnFilter'},
-  {headerName:S.basic,field:'basic_salary',width:125,cellRenderer:rNum,filter:'agNumberColumnFilter'},
-  {headerName:S.net,field:'net_salary',width:120,cellRenderer:rNum,filter:'agNumberColumnFilter'},
-  {headerName:S.status,field:'is_active',width:95,cellRenderer:rStatus},
-];
-if (ADM) cols.push({headerName:S.actions,field:'_a',width:140,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,resizable:false,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 8px'}});
-
-
-/* ── Status pill renderer ── */
-function rStatusPill(p) {
-  const v = (p.value || '').toLowerCase();
-  const cls = v === 'active' || v === 'approved' ? 'st-active' :
-              v === 'inactive' ? 'st-inactive' :
-              v === 'pending'  ? 'st-pending'  :
-              v === 'open'     ? 'st-open'     :
-              v === 'closed'   ? 'st-closed'   :
-              v === 'cancelled'? 'st-cancelled' : 'st-active';
-  const label = IS_AR ? {
-    active:'نشيط', inactive:'غير نشيط', approved:'معتمد',
-    pending:'معلق', open:'مفتوح', closed:'مغلق', cancelled:'ملغي'
-  }[v] || p.value : (p.value || '');
-  return `<span class="st-pill ${cls}"><i class="fas fa-circle" style="font-size:6px;"></i>${label}</span>`;
-}
-function rCodeBadge(p) {
-  return p.value ? `<span class="code-badge">${p.value}</span>` : '';
-}
-
-let gridApi;
-
-  // Bilingual AG-Grid locale
-  const _agLocale = typeof IS_AR !== 'undefined' && IS_AR ? {
-    filterOoo:'تصفية...',equals:'يساوي',notEqual:'لا يساوي',contains:'يحتوي على',
-    notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',
-    blank:'فارغ',notBlank:'غير فارغ',lessThan:'أقل من',greaterThan:'أكبر من',
-    applyFilter:'تطبيق / Apply',clearFilter:'مسح / Clear',resetFilter:'إعادة تعيين',
-    addFilterCondition:'+ إضافة قاعدة / Add Rule',matchAll:'يطابق الكل / Match All',
-    matchAny:'يطابق أي / Match Any',andCondition:'و / AND',orCondition:'أو / OR',
-    noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...',searchOoo:'بحث...',
-    sortAscending:'تصاعدي',sortDescending:'تنازلي',
-  } : {
-    filterOoo:'Filter...',applyFilter:'Apply / تطبيق',clearFilter:'Clear / مسح',
-    resetFilter:'Reset',addFilterCondition:'+ Add Rule / إضافة قاعدة',
-    matchAll:'Match All / بتطابق مع الكل',matchAny:'Match Any / يطابق أي',
-    andCondition:'AND / و',orCondition:'OR / أو',noRowsToShow:'No records found',searchOoo:'Search...',
-  };
-  agGrid.createGrid(document.getElementById('empGrid'), {
-  columnDefs: cols, rowData: [], pagination: true, paginationPageSize: 20,
-  rowSelection: 'multiple', suppressRowClickSelection: true, animateRows: true, enableRtl: IS_AR,
-  defaultColDef: {sortable:true,resizable:true,filter:true,suppressMenu:false,menuTabs:['filterMenuTab','generalMenuTab'],filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}},
-  onGridReady(p) { gridApi = p.api; loadData(); },
-  onFilterChanged() { upd(); }, onPaginationChanged() { upd(); }, onSelectionChanged() { upd(); },
-  getRowStyle(p) { return p.node.rowIndex%2===0 ? {background:'#fff'} : {background:'#fafbfc'}; }
-});
-
-function loadData() {
-  fetch(EDURL).then(r => r.json()).then(d => {
-    gridApi.setGridOption('rowData', d);
-    upd();
-  }).catch(err => console.error('Failed to load employee data:', err));
-}
-function upd() {
-  if (!gridApi) return;
-  const sel = gridApi.getSelectedRows().length, disp = gridApi.getDisplayedRowCount();
-  document.getElementById('selText').textContent = sel > 0 ? `${sel} ${IS_AR?'محدد':'selected'}` : `${disp} ${IS_AR?'سجل':'records'}`;
-  document.getElementById('pageInfo').textContent = `${disp} ${IS_AR?'سجل':'records'}`;
-}
-
-/* ════════ FILTER POPUP ════════ */
-let _aC = null;
-document.addEventListener('click', e => { if (!e.target.closest('.pl-filter-popup') && !e.target.closest('.plfilt')) document.getElementById('plFP').classList.remove('open'); });
-function openFP(col, btn) {
-  _aC = col;
-  const c = (gridApi.getFilterModel()||{})[col];
-  document.getElementById('plfpCond').value = c?.type || 'contains';
-  document.getElementById('plfpVal').value = c?.filter || '';
-  const r = btn.getBoundingClientRect(), p = document.getElementById('plFP');
-  p.style.top = (r.bottom+window.scrollY+4)+'px';
-  p.style.left = Math.min(r.left+window.scrollX, window.innerWidth-300)+'px';
-  p.classList.add('open');
-  setTimeout(() => document.getElementById('plfpVal').focus(), 50);
-}
-function applyCF() {
-  if (!_aC) return;
-  const c = document.getElementById('plfpCond').value, v = document.getElementById('plfpVal').value;
-  (!v && !['blank','notBlank'].includes(c)) ?
-    gridApi.setColumnFilterModel(_aC, null).then(()=>gridApi.onFilterChanged()) :
-    gridApi.setColumnFilterModel(_aC, {filterType:'text',type:c,filter:v}).then(()=>gridApi.onFilterChanged());
-  document.getElementById('plFP').classList.remove('open');
-}
-function clearCF() {
-  if (!_aC) return;
-  gridApi.setColumnFilterModel(_aC, null).then(()=>gridApi.onFilterChanged());
-  document.getElementById('plfpVal').value = '';
-  document.getElementById('plFP').classList.remove('open');
-}
-document.getElementById('plfpVal').addEventListener('keydown', e => { if (e.key==='Enter') applyCF(); });
-function injFI() {
-  document.querySelectorAll('.ag-header-cell[col-id]').forEach(cell => {
-    const cid = cell.getAttribute('col-id');
-    if (!cid || ['id','_a'].includes(cid)) return;
-    if (cell.querySelector('.plfilt')) return;
-    const lbl = cell.querySelector('.ag-header-cell-label');
-    if (!lbl) return;
-    const btn = document.createElement('button');
-    btn.className = 'plfilt';
-    btn.innerHTML = '<i class="fas fa-filter"></i>';
-    btn.style.cssText = 'background:none;border:none;cursor:pointer;padding:0 3px;color:#9ca3af;font-size:10px;margin-left:2px;';
-    btn.addEventListener('click', e => { e.stopPropagation(); openFP(cid, btn); });
-    lbl.appendChild(btn);
-  });
-}
-setTimeout(injFI, 800);
-
-/* ════════ DELETE ════════ */
-function confDel(url, name) {
-  document.getElementById('delForm').action = url;
-  document.getElementById('delTxt').textContent = (IS_AR?'حذف: ':'Delete: ') + name + '?';
-  new bootstrap.Modal(document.getElementById('delModal')).show();
-}
-
-document.getElementById('empForm').addEventListener('submit', () => setTimeout(loadData, 700));
-
-/* ══ biWrap — translate on input (for Work Info bilingual fields) ══ */
-function biWrap(el, targetId, dir) {
-  const src = (el instanceof Element ? el : event.target).value.trim();
-  if (!src) return;
-  const tgt = document.getElementById(targetId);
-  if (!tgt || tgt.value.trim()) return; // don't overwrite if already filled
-  const TURL = '{{ url_for("sellers.translate_text") }}';
-  const toLang = dir === 'en' ? 'ar' : 'en';
-  fetch(TURL, {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-    body: JSON.stringify({text:src, to:toLang})})
-  .then(r=>r.json()).then(d=>{ if(d.translation) tgt.value=d.translation; }).catch(()=>{});
-}
-function biWrapRetrans(srcVal, targetId, toLang) {
-  if (!srcVal) return;
-  const tgt = document.getElementById(targetId);
-  if (!tgt) return;
-  const TURL = '{{ url_for("sellers.translate_text") }}';
-  fetch(TURL, {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-    body: JSON.stringify({text:srcVal, to:toLang})})
-  .then(r=>r.json()).then(d=>{ if(d.translation) tgt.value=d.translation; }).catch(()=>{});
-}
-
-/* ══ Quick Add Profession ══ */
-function openAddProfModal() {
-  ['qp_name_en','qp_name_ar'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  const errEl=document.getElementById('qp_error'); if(errEl) errEl.style.display='none';
-  new bootstrap.Modal(document.getElementById('addProfModal')).show();
-}
-function saveQuickProfession() {
-  const en=(document.getElementById('qp_name_en')?.value||'').trim();
-  const ar_val=(document.getElementById('qp_name_ar')?.value||'').trim();
-  const errEl=document.getElementById('qp_error');
-  if(!en){if(errEl){errEl.textContent='Name (EN) required';errEl.style.display='block';}return;}
-  fetch('/professions/add-quick',{method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-    body:JSON.stringify({profession_en:en,profession_ar:ar_val})
-  }).then(r=>r.json()).then(d=>{
-    if(d.ok){
-      _profCache=null;
-      bootstrap.Modal.getInstance(document.getElementById('addProfModal'))?.hide();
-      const curVal=document.getElementById('f_profession')?.value||'';
-      initProfession(curVal);
-      if(d.id) setTimeout(()=>{const s=document.getElementById('f_profession');if(s)s.value=d.id;},500);
-    } else {if(errEl){errEl.textContent=d.error||'Error';errEl.style.display='block';}}
-  }).catch(()=>{if(errEl){errEl.textContent='Server error';errEl.style.display='block';}});
-}
-
-/* ══ Quick Add Allowance Type ══ */
-function openAddAllowTypeModal() {
-  ['qat_code','qat_name_en','qat_name_ar'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  const errEl=document.getElementById('qat_error'); if(errEl) errEl.style.display='none';
-  new bootstrap.Modal(document.getElementById('addAllowTypeModal')).show();
-}
-function saveQuickAllowType() {
-  const code=(document.getElementById('qat_code')?.value||'').trim().toUpperCase();
-  const en=(document.getElementById('qat_name_en')?.value||'').trim();
-  const ar_val=(document.getElementById('qat_name_ar')?.value||'').trim();
-  const errEl=document.getElementById('qat_error');
-  if(!code||!en){if(errEl){errEl.textContent='Code and Name (EN) required';errEl.style.display='block';}return;}
-  fetch('/allowance-types/add-quick',{method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-    body:JSON.stringify({allowance_code:code,allowance_name_en:en,allowance_name_ar:ar_val})
-  }).then(r=>r.json()).then(d=>{
-    if(d.ok){
-      _atCache=null;
-      bootstrap.Modal.getInstance(document.getElementById('addAllowTypeModal'))?.hide();
-      loadAllowTypes(()=>{});
-    } else {if(errEl){errEl.textContent=d.error||'Error';errEl.style.display='block';}}
-  }).catch(()=>{if(errEl){errEl.textContent='Server error';errEl.style.display='block';}});
-}
-
-/* ══ Set MCQ by value (for restoring work status/shift on edit) ══ */
-function setMCQ(groupId, val) {
-  const grp = document.getElementById(groupId);
-  if (!grp) return;
-  grp.querySelectorAll('.mcq-opt').forEach(lbl=>{
-    const isChosen = lbl.getAttribute('onclick')?.includes("'"+val+"'") || lbl.getAttribute('onclick')?.includes('"'+val+'"');
-    lbl.classList.toggle('chosen', !!isChosen);
-  });
-}
-
-
-
-/* ══ EMPLOYEE BANK — popup modal pattern ══ */
-function togAccBank(btn){const body=btn.nextElementSibling;body.classList.toggle('d-none');const icon=btn.querySelector('.fa-chevron-down,.fa-chevron-up');if(icon){icon.classList.toggle('fa-chevron-down');icon.classList.toggle('fa-chevron-up');}}
-
-function openEmpBank(bankId){
-  const mid='bankModal_emp';
-  document.getElementById(mid+'_bank_id').value=bankId||'';
-  document.getElementById(mid+'_title').innerHTML=bankId?'<i class="fas fa-edit me-2"></i>Edit Bank':'<i class="fas fa-university me-2"></i>Add Bank Account';
-  if(!bankId){
-    [mid+'_name',mid+'_account',mid+'_branch',mid+'_swift',mid+'_iban'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-    document.getElementById(mid+'_primary').checked=false;
-  }
-  new bootstrap.Modal(document.getElementById(mid)).show();
-}
-async function saveEmpBank(){
-  const mid='bankModal_emp'; const bankId=document.getElementById(mid+'_bank_id').value;
-  const empId=_currentEmpId;
-  if(!empId){alert('Save the employee first.');return;}
-  const bname=document.getElementById(mid+'_name')?.value.trim();
-  if(!bname){alert('Bank name is required.');return;}
-  const payload={bank_name:bname,account_number:document.getElementById(mid+'_account')?.value.trim()||'',branch:document.getElementById(mid+'_branch')?.value.trim()||'',swift_code:document.getElementById(mid+'_swift')?.value.trim()||'',iban:document.getElementById(mid+'_iban')?.value.trim()||'',is_primary:document.getElementById(mid+'_primary')?.checked||false};
-  const url=bankId?`/employees/banks/${bankId}/edit`:`/employees/${empId}/banks/add`;
-  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify(payload)});
-  const data=await res.json();
-  if(data.ok){bootstrap.Modal.getInstance(document.getElementById(mid))?.hide();loadEmpBanks(empId);}
-  else{alert(data.error||'Failed to save bank.');}
-}
-async function loadEmpBanks(empId){
-  if(!empId)return;
-  const res=await fetch(`/employees/${empId}/banks`);
-  const banks=await res.json();
-  renderEmpBanks(banks,empId);
-}
-function renderEmpBanks(banks,empId){
-  const wrap=document.getElementById('bankList_emp');
-  const badge=document.getElementById('bankBadge_emp');
-  if(badge)badge.textContent=banks.length;
-  if(!wrap)return;
-  if(!banks.length){wrap.innerHTML='<div class="pf-empty"><i class="fas fa-university"></i>No bank accounts yet</div>';return;}
-  wrap.innerHTML=banks.map(b=>`<div class="pf-bank-card ${b.is_primary?'primary':''}"><div><div class="pf-bank-card-name"><i class="fas fa-university" style="color:#2563eb;font-size:14px;"></i>${b.bank_name||'—'}${b.is_primary?'<span class="pf-badge-primary">PRIMARY</span>':''}</div><div class="pf-bank-card-meta">${b.account_number?`<span><i class="fas fa-hashtag"></i>${b.account_number}</span>`:''} ${b.branch?`<span><i class="fas fa-map-marker-alt"></i>${b.branch}</span>`:''} ${b.swift_code?`<span><i class="fas fa-globe"></i>${b.swift_code}</span>`:''} ${b.iban?`<span><i class="fas fa-credit-card"></i>${b.iban}</span>`:''}</div></div><div class="pf-bank-actions"><button onclick="openEmpBank(${b.id})" style="width:28px;height:28px;background:#fef3c7;color:#d97706;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-pencil-alt"></i></button><button onclick="deleteEmpBank(${b.id})" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-trash"></i></button></div></div>`).join('');
-}
-async function deleteEmpBank(bankId){
-  if(!confirm('Delete this bank account?'))return;
-  const res=await fetch(`/employees/banks/${bankId}/delete`,{method:'POST',headers:{'X-CSRFToken':CSRF}});
-  const data=await res.json();
-  if(data.ok)loadEmpBanks(_currentEmpId);
-}
-function togAccBank(btn){const body=btn.nextElementSibling;body.classList.toggle('d-none');const icon=btn.querySelector('.fa-chevron-down,.fa-chevron-up');if(icon){icon.classList.toggle('fa-chevron-down');icon.classList.toggle('fa-chevron-up');}}
-function showBankForm(prefix){document.getElementById('bankForm_'+prefix).style.display='block';}
-function hideBankForm(prefix){document.getElementById('bankForm_'+prefix).style.display='none';['bk_name_','bk_acct_','bk_branch_','bk_swift_','bk_iban_'].forEach(p=>{const el=document.getElementById(p+prefix);if(el)el.value='';});const cb=document.getElementById('bk_primary_'+prefix);if(cb)cb.checked=false;}
-async function loadBanksPanel(prefix,apiBase,entityId){if(!entityId)return;const res=await fetch(apiBase+'/'+entityId+'/banks');const data=await res.json();renderBanksPanel(prefix,apiBase,entityId,data);}
-function renderBanksPanel(prefix,apiBase,entityId,banks){const wrap=document.getElementById('bankList_'+prefix);const badge=document.getElementById('bankBadge_'+prefix);if(badge)badge.textContent=banks.length;if(!wrap)return;if(!banks.length){wrap.innerHTML='<div style="color:#9ca3af;font-size:12px;">No bank details yet</div>';return;}wrap.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;"><thead><tr style="background:#f8fafc;border-bottom:1.5px solid #e2e8f0;"><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">Bank</th><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">Account</th><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">Branch</th><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">SWIFT</th><th style="padding:7px 10px;text-align:left;color:#6b7280;font-size:10px;font-weight:700;">IBAN</th><th style="width:50px;"></th></tr></thead><tbody>${banks.map(b=>`<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 10px;font-weight:600;">${b.bank_name||b.bank_name_en||'—'}${b.is_primary?'<span style="margin-left:6px;background:#dcfce7;color:#16a34a;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700;">Primary</span>':''}</td><td style="padding:8px 10px;">${b.account_number||'—'}</td><td style="padding:8px 10px;">${b.branch||b.branch_en||'—'}</td><td style="padding:8px 10px;">${b.swift_code||'—'}</td><td style="padding:8px 10px;">${b.iban||'—'}</td><td style="padding:8px 10px;"><button onclick="deleteBankEntry('${prefix}','${apiBase}','${entityId}',${b.id})" style="width:26px;height:26px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;" title="Delete"><i class="fas fa-trash" style="font-size:10px;"></i></button></td></tr>`).join('')}</tbody></table>`;}
-async function saveBankEntry(prefix,apiBase,entityId){if(!entityId){alert('Save the record first, then add bank details.');return;}const bname=document.getElementById('bk_name_'+prefix)?.value.trim();if(!bname){alert('Bank name is required.');return;}const payload={bank_name:bname,bank_name_en:bname,account_number:document.getElementById('bk_acct_'+prefix)?.value.trim()||'',branch:document.getElementById('bk_branch_'+prefix)?.value.trim()||'',branch_en:document.getElementById('bk_branch_'+prefix)?.value.trim()||'',swift_code:document.getElementById('bk_swift_'+prefix)?.value.trim()||'',iban:document.getElementById('bk_iban_'+prefix)?.value.trim()||'',is_primary:document.getElementById('bk_primary_'+prefix)?.checked||false};const res=await fetch(apiBase+'/'+entityId+'/banks/add',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify(payload)});const data=await res.json();if(data.ok){hideBankForm(prefix);await loadBanksPanel(prefix,apiBase,entityId);}else{alert(data.error||'Failed to save bank.');}}
-async function deleteBankEntry(prefix,apiBase,entityId,bankId){if(!confirm('Delete this bank?'))return;const res=await fetch(apiBase+'/banks/'+bankId+'/delete',{method:'POST',headers:{'X-CSRFToken':CSRF}});const data=await res.json();if(data.ok)await loadBanksPanel(prefix,apiBase,entityId);}
-
-</script>
+<!-- ══ EMPLOYEE BANK POPUP MODAL ══ -->
+<div class="modal fade pf-bank-modal" id="bankModal_emp" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="pf-hdr">
+        <h5 id="bankModal_emp_title"><i class="fas fa-university"></i> {% if ar %}حساب بنكي{% else %}Bank Account{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div style="padding:22px;background:#f8fafc;">
+        <input type="hidden" id="bankModal_emp_bank_id">
+        <div class="pf-row cols-2" style="margin-bottom:14px;">
+          <div class="pf-field">
+            <div class="pf-label">{% if ar %}اسم البنك{% else %}Bank Name{% endif %} <span class="req">*</span></div>
+            <input type="text" id="bankModal_emp_name" class="pf-input" placeholder="e.g. Al Rajhi Bank">
+          </div>
+          <div class="pf-field">
+            <div class="pf-label">{% if ar %}رقم الحساب{% else %}Account Number{% endif %}</div>
+            <input type="text" id="bankModal_emp_account" class="pf-input" dir="ltr">
+          </div>
+        </div>
+        <div class="pf-row cols-3" style="margin-bottom:14px;">
+          <div class="pf-field">
+            <div class="pf-label">{% if ar %}الفرع{% else %}Branch{% endif %}</div>
+            <input type="text" id="bankModal_emp_branch" class="pf-input">
+          </div>
+          <div class="pf-field">
+            <div class="pf-label">SWIFT</div>
+            <input type="text" id="bankModal_emp_swift" class="pf-input" dir="ltr" style="text-transform:uppercase;">
+          </div>
+          <div class="pf-field">
+            <div class="pf-label">IBAN</div>
+            <input type="text" id="bankModal_emp_iban" class="pf-input" dir="ltr">
+          </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#374151;">
+          <input type="checkbox" id="bankModal_emp_primary" style="width:16px;height:16px;accent-color:#2563eb;cursor:pointer;">
+          {% if ar %}تعيين كحساب رئيسي{% else %}Set as primary account{% endif %}
+        </label>
+      </div>
+      <div class="pf-footer">
+        <button type="button" class="pf-btn secondary" data-bs-dismiss="modal"><i class="fas fa-times"></i> {% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button type="button" class="pf-btn primary" onclick="saveEmpBank()"><i class="fas fa-save"></i> {% if ar %}حفظ{% else %}Save Bank{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 {# ── Quick Add Profession Modal ── #}
 <div class="modal fade" id="addProfModal" tabindex="-1" style="z-index:1080;">
@@ -2187,53 +1091,1117 @@ async function deleteBankEntry(prefix,apiBase,entityId,bankId){if(!confirm('Dele
     </div>
   </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONSTANTS & GLOBALS
+// ═══════════════════════════════════════════════════════════════
+const TR    = '{{ url_for("sellers.translate_text") }}';
+const CSRF  = '{{ csrf_token() }}';
+const IS_AR = {{ 'true' if ar else 'false' }};
+const EDURL = '{{ url_for("employees.employees_data") }}';
+const PRURL = '{{ url_for("lookups.professions_data") }}';
+const BYURL = '{{ url_for("lookups.buyers_data") }}';
+const AT_URL = '{{ url_for("lookups.allowance_types_data") }}';
+const ADM   = {{ 'true' if current_user.is_admin() else 'false' }};
 
-<!-- ══ EMPLOYEE BANK POPUP MODAL ══ -->
-<div class="modal fade pf-bank-modal" id="bankModal_emp" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="pf-hdr">
-        <h5 id="bankModal_emp_title"><i class="fas fa-university"></i> {% if ar %}حساب بنكي{% else %}Bank Account{% endif %}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div style="padding:22px;background:#f8fafc;">
-        <input type="hidden" id="bankModal_emp_bank_id">
-        <div class="pf-row cols-2" style="margin-bottom:14px;">
-          <div class="pf-field">
-            <div class="pf-label">{% if ar %}اسم البنك{% else %}Bank Name{% endif %} <span class="req">*</span></div>
-            <input type="text" id="bankModal_emp_name" class="pf-input" placeholder="e.g. Al Rajhi Bank">
-          </div>
-          <div class="pf-field">
-            <div class="pf-label">{% if ar %}رقم الحساب{% else %}Account Number{% endif %}</div>
-            <input type="text" id="bankModal_emp_account" class="pf-input" dir="ltr">
-          </div>
+// Bilingual column labels for AG Grid
+const S = IS_AR ? {
+  code:'الكود', name:'الاسم', prof:'المهنة', kafeel:'الكفيل', ref:'المرجع',
+  nat:'الجنسية', bdate:'تاريخ الميلاد', age:'العمر', iqama:'الإقامة',
+  iqexp:'انتهاء الإقامة', pass:'رقم الجواز', dept:'القسم', stype:'نوع الراتب',
+  basic:'الراتب الأساسي', net:'الراتب الصافي', status:'الحالة', actions:'',
+} : {
+  code:'Code', name:'Name', prof:'Profession', kafeel:'Kafeel', ref:'Reference',
+  nat:'Nationality', bdate:'Birth Date', age:'Age', iqama:'Iqama',
+  iqexp:'Iqama Expiry', pass:'Passport', dept:'Department', stype:'Salary Type',
+  basic:'Basic Salary', net:'Net Salary', status:'Status', actions:'Actions',
+};
+
+// ════════ GLOBAL STATE ════════
+let _profCache = null, _buyerCache = null, _atCache = null;
+let _currentEmpId  = null;
+let _editingRowId  = null;
+let _pendingAllows = [];
+let _pendingSerial = 0;
+let _lastRows      = [];
+let _docSerial = 0;
+let _empPendingBanks = [];
+let _empBankEditKey = null;
+let _ebTimer = null;
+
+// ════════ NATIONALITIES ════════
+const NATS=[
+  {en:'Saudi',ar:'سعودي'},{en:'Pakistani',ar:'باكستاني'},{en:'Indian',ar:'هندي'},
+  {en:'Egyptian',ar:'مصري'},{en:'Bangladeshi',ar:'بنغلاديشي'},{en:'Filipino',ar:'فلبيني'},
+  {en:'Yemeni',ar:'يمني'},{en:'Jordanian',ar:'أردني'},{en:'Syrian',ar:'سوري'},
+  {en:'Lebanese',ar:'لبناني'},{en:'Iraqi',ar:'عراقي'},{en:'Sudanese',ar:'سوداني'},
+  {en:'Ethiopian',ar:'إثيوبي'},{en:'Indonesian',ar:'إندونيسي'},{en:'Sri Lankan',ar:'سريلانكي'},
+  {en:'Nepalese',ar:'نيبالي'},{en:'Turkish',ar:'تركي'},{en:'British',ar:'بريطاني'},
+  {en:'American',ar:'أمريكي'},{en:'German',ar:'ألماني'},{en:'Chinese',ar:'صيني'},
+  {en:'Other',ar:'أخرى'}
+];
+
+// ════════ UTILITY FUNCTIONS ════════
+
+function fillStaticDropdown(selectId, hiddenArId, list, placeholder, selectedEn) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  sel.innerHTML = `<option value="">${placeholder}</option>`;
+  list.forEach(item => {
+    const label = IS_AR ? item.ar : item.en;
+    const sel_attr = item.en === selectedEn ? ' selected' : '';
+    sel.innerHTML += `<option value="${item.en}" data-ar="${item.ar}"${sel_attr}>${label}</option>`;
+  });
+  sel.onchange = function() {
+    const opt = sel.options[sel.selectedIndex];
+    const ha = document.getElementById(hiddenArId);
+    if (ha) ha.value = opt ? (opt.dataset.ar || '') : '';
+  };
+  if (selectedEn) sel.onchange();
+}
+
+function initNationality(selectedEn) {
+  fillStaticDropdown('f_nationality', 'f_nationality_arval', NATS,
+    IS_AR ? '-- اختر --' : '-- Select --', selectedEn || '');
+}
+
+function loadAsyncDropdown(url, cacheSetter, cacheGetter, selectId, hiddenArId, placeholder, selectedVal, useId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const render = (items) => {
+    sel.innerHTML = `<option value="">${placeholder}</option>`;
+    items.forEach(item => {
+      const val = useId ? item.id : item.en;
+      const label = item.label;
+      const isSel = String(val) === String(selectedVal) ? ' selected' : '';
+      sel.innerHTML += `<option value="${val}" data-ar="${item.ar||''}"${isSel}>${label}</option>`;
+    });
+    sel.onchange = function() {
+      const opt = sel.options[sel.selectedIndex];
+      const ha = document.getElementById(hiddenArId);
+      if (ha) ha.value = opt ? (opt.dataset.ar || '') : '';
+    };
+    if (selectedVal) sel.onchange();
+  };
+  const cached = cacheGetter();
+  if (cached) { render(cached); return; }
+  fetch(url).then(r => r.json()).then(data => {
+    cacheSetter(data);
+    render(data);
+  }).catch(() => {
+    sel.innerHTML = `<option value="">${placeholder}</option>`;
+  });
+}
+
+function initProfession(selectedEn) {
+  loadAsyncDropdown(PRURL, d => _profCache = d, () => _profCache,
+    'f_profession', 'f_profession_arval',
+    IS_AR ? '-- اختر المهنة --' : '-- Select Profession --', selectedEn || '', false);
+}
+function initBuyer(selectedId) {
+  loadAsyncDropdown(BYURL, d => _buyerCache = d, () => _buyerCache,
+    'f_buyer_id', null,
+    IS_AR ? '-- اختر مشتري --' : '-- Select a Buyer --', selectedId || '', true);
+}
+
+// ════════ MCQ ════════
+function pickMCQ(grpId, btn, hidId, val) {
+  document.querySelectorAll('#'+grpId+' .mcq-opt').forEach(b => b.classList.remove('chosen'));
+  btn.classList.add('chosen');
+  const h = document.getElementById(hidId);
+  if (h) h.value = val;
+}
+function setMCQ(grpId, val, hidId) {
+  if (!hidId) {
+    // Called with 2 args for some cases — find the hidden input
+    const grp = document.getElementById(grpId);
+    if (!grp) return;
+    grp.querySelectorAll('.mcq-opt').forEach(lbl => {
+      const onclick = lbl.getAttribute('onclick') || '';
+      const isChosen = onclick.includes("'"+val+"'") || onclick.includes('"'+val+'"');
+      lbl.classList.toggle('chosen', !!isChosen);
+    });
+    return;
+  }
+  document.querySelectorAll('#'+grpId+' .mcq-opt').forEach(b => {
+    const txt = b.textContent.trim();
+    const matches = (val === 'day' && (txt.includes('Day')||txt.includes('نهاري'))) ||
+                    (val === 'night' && (txt.includes('Night')||txt.includes('ليلي'))) ||
+                    (val === 'rotating' && (txt.includes('Rotating')||txt.includes('متناوب'))) ||
+                    (val === 'skilled' && (txt.includes('Skilled')||txt.includes('مزدور')) && !txt.includes('Non') && !txt.includes('غير')) ||
+                    (val === 'non_skilled' && (txt.includes('Non-Skilled')||txt.includes('غير مزدور'))) ||
+                    (val === 'salary' && (txt.includes('Salary')||txt.includes('راتب')) && !txt.includes('Kafalat')) ||
+                    (val === 'azad' && (txt.includes('Azad')||txt.includes('أزاد'))) ||
+                    (val === 'active' && (txt.includes('Active')||txt.includes('نشيط'))) ||
+                    (val === 'inactive' && (txt.includes('Inactive')||txt.includes('غير نشيط'))) ||
+                    (val === 'IN' && txt.includes('IN')) ||
+                    (val === 'OUT' && txt.includes('OUT'));
+    b.classList.toggle('chosen', matches);
+  });
+  const h = document.getElementById(hidId);
+  if (h) h.value = val;
+}
+
+// ════════ AGE ════════
+function calcAge() {
+  const bd = document.getElementById('f_birth_date');
+  const disp = document.getElementById('f_age_display');
+  if (!bd || !disp) return;
+  if (!bd.value) { disp.value = ''; return; }
+  const b = new Date(bd.value), t = new Date();
+  let y = t.getFullYear()-b.getFullYear(), m = t.getMonth()-b.getMonth(), d = t.getDate()-b.getDate();
+  if (d < 0) { m--; d += new Date(t.getFullYear(), t.getMonth(), 0).getDate(); }
+  if (m < 0) { y--; m += 12; }
+  disp.value = IS_AR ? `${y} سنة ${m} شهر ${d} يوم` : `${y} Yrs ${m} Mo ${d} Days`;
+}
+
+// ════════ HIJRI CALENDAR ════════
+function gregToHijri(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr + 'T12:00:00');
+    return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {day:'numeric',month:'long',year:'numeric'}).format(d);
+  } catch(e) { return ''; }
+}
+function wireHijriBadges() {
+  if (!IS_AR) return;
+  ['f_arrival_date','f_birth_date','f_passport_expiry','f_iqama_expiry','f_joining_date','f_end_date_work','f_insurance_expiry'].forEach(id => {
+    const inp = document.getElementById(id);
+    if (!inp) return;
+    let badge = document.getElementById('hb_'+id);
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'hb_'+id;
+      badge.className = 'hijri-badge';
+      badge.setAttribute('dir','rtl');
+      inp.insertAdjacentElement('afterend', badge);
+    }
+    const update = () => {
+      if (inp.value) { badge.textContent = '📅 ' + gregToHijri(inp.value); badge.style.display='block'; }
+      else { badge.style.display='none'; }
+    };
+    if (!inp._hijriWired) {
+      inp.addEventListener('input', update);
+      inp.addEventListener('change', update);
+      inp._hijriWired = true;
+    }
+    update();
+  });
+}
+
+// ════════ NET SALARY ════════
+function calcNet() {
+  const basic      = parseFloat(document.getElementById('f_basic_salary')?.value    || 0) || 0;
+  const totalAllow = parseFloat(document.getElementById('f_total_allowances')?.value || 0) || 0;
+  const net        = basic + totalAllow;
+  const dispEl = document.getElementById('f_net_salary_display');
+  if (dispEl) dispEl.value = net.toFixed(2);
+  const hidEl = document.getElementById('f_net_salary');
+  if (hidEl) hidEl.value = net.toFixed(2);
+}
+
+// ════════ OVERTIME AUTO-CALCULATION ════════
+function calcOvertimeRate() {
+  const basic   = parseFloat(document.getElementById('f_basic_salary')?.value  || 0) || 0;
+  const hours   = parseFloat(document.getElementById('f_working_hours')?.value  || 0) || 0;
+  const ratio   = parseFloat(document.getElementById('f_overtime_ratio')?.value || 0) || 0;
+  const otEl    = document.getElementById('f_overtime_rate');
+  if (!otEl) return;
+  if (basic > 0 && hours > 0 && ratio > 0) {
+    const otRate = (basic / 30 / hours) * ratio;
+    otEl.value = otRate.toFixed(4);
+  } else {
+    otEl.value = '';
+  }
+}
+
+// ════════ DOCUMENT UPLOAD ════════
+const DOC_TYPE_OPTIONS = [
+  {en:'ID Card',ar:'بطاقة الهوية'},
+  {en:'Passport',ar:'جواز السفر'},
+  {en:'Iqama',ar:'الإقامة'},
+  {en:'Work Permit',ar:'تصريح العمل'},
+  {en:'Contract',ar:'عقد العمل'},
+  {en:'Certificate',ar:'شهادة'},
+  {en:'Other',ar:'أخرى'},
+];
+
+function addDocRow() {
+  _docSerial++;
+  const serial = _docSerial;
+  const list = document.getElementById('docFilesList');
+  const wrapper = document.createElement('div');
+  wrapper.id = 'docRow_' + serial;
+  wrapper.style.cssText = 'display:flex;gap:10px;align-items:center;margin-bottom:8px;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;';
+
+  const typeOpts = DOC_TYPE_OPTIONS.map(t =>
+    `<option value="${t.en}">${IS_AR ? t.ar : t.en}</option>`).join('');
+  const ph = IS_AR ? '-- اختر --' : '-- Select --';
+
+  wrapper.innerHTML = `
+    <span style="color:#9ca3af;font-size:12px;min-width:20px;">${serial}</span>
+    <select name="document_type[]" class="field-input" dir="${IS_AR?'rtl':'ltr'}"
+            style="flex:1.5;font-size:12px;padding:7px 10px;">
+      <option value="">${ph}</option>${typeOpts}
+    </select>
+    <label style="flex:2;display:flex;align-items:center;gap:8px;cursor:pointer;
+                  border:1.5px dashed #d1d5db;border-radius:7px;padding:7px 12px;
+                  background:white;font-size:12px;color:#6b7280;min-width:0;">
+      <i class="fas fa-paperclip"></i>
+      <span id="docLabel_${serial}">${IS_AR?'اختر ملفاً...':'Choose file...'}</span>
+      <input type="file" name="documents[]" accept=".pdf,.jpg,.jpeg,.png"
+             style="position:fixed;top:-9999px;left:-9999px;"
+             onchange="onDocFilePick(this,${serial})">
+    </label>
+    <button type="button" class="allow-del" onclick="document.getElementById('docRow_${serial}').remove()">
+      <i class="fas fa-times"></i>
+    </button>`;
+  list.appendChild(wrapper);
+}
+
+function onDocFilePick(inp, serial) {
+  const lbl = document.getElementById('docLabel_' + serial);
+  if (inp.files && inp.files[0]) {
+    const kb = Math.round(inp.files[0].size / 1024);
+    if (lbl) lbl.innerHTML = `<i class="fas fa-check-circle" style="color:#16a34a"></i> ${inp.files[0].name} (${kb} KB)`;
+  }
+}
+
+// ════════ ACCORDION ════════
+function togAcc(key) {
+  const body = document.getElementById('body-'+key);
+  const btn = body.previousElementSibling;
+  const arr = document.getElementById('arr-'+key);
+  const hidden = body.classList.toggle('hidden');
+  btn.classList.toggle('open', !hidden);
+  if (arr) arr.style.transform = hidden ? '' : 'rotate(180deg)';
+}
+
+// ════════ BILINGUAL TRANSLATE ════════
+const _biTimers = {}, _biLock = {};
+
+function biTrans(srcId, tgtId, srcLang) {
+  if (!IS_AR && srcLang === 'ar') return;
+  if (IS_AR  && srcLang === 'en') return;
+
+  if (_biLock[tgtId]) return;
+  const src = document.getElementById(srcId), tgt = document.getElementById(tgtId);
+  if (!src || !tgt) return;
+  const text = src.value.trim();
+  clearTimeout(_biTimers[tgtId]);
+  if (!text) { tgt.value = ''; return; }
+  if (/^[\d٠-٩\s\-\+\(\)\.\/]+$/.test(text)) {
+    _biLock[tgtId] = true;
+    tgt.value = srcLang === 'en'
+      ? text.replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d])
+      : text.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+    setTimeout(() => _biLock[tgtId] = false, 150);
+    return;
+  }
+  const tgtLang = srcLang === 'en' ? 'ar' : 'en';
+  const fieldBase = tgtId.replace(/^f_/, '').replace(/_ar$/, '');
+  const spin = document.getElementById('spin_' + fieldBase);
+  if (spin) spin.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
+  _biTimers[tgtId] = setTimeout(() => {
+    fetch(TR, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify({text, direction:`${srcLang}|${tgtLang}`})
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.translated && tgt) {
+        _biLock[tgtId] = true;
+        tgt.value = d.translated;
+        tgt.classList.add('translated-flash');
+        setTimeout(() => { tgt.classList.remove('translated-flash'); _biLock[tgtId] = false; }, 700);
+      }
+      if (spin) spin.innerHTML = '';
+    })
+    .catch(() => { if (spin) spin.innerHTML = ''; });
+  }, 700);
+}
+
+function biRetrans(srcId, tgtId, srcLang) {
+  const src = document.getElementById(srcId), tgt = document.getElementById(tgtId);
+  const text = src ? src.value.trim() : '';
+  if (!text || !tgt) return;
+  const tgtLang = srcLang === 'en' ? 'ar' : 'en';
+  const fieldBase = tgtId.replace(/^f_/, '').replace(/_ar$/, '');
+  const spin = document.getElementById('spin_' + fieldBase);
+  if (spin) spin.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
+  fetch(TR, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body: JSON.stringify({text, direction:`${srcLang}|${tgtLang}`})
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.translated && tgt) {
+      tgt.value = d.translated;
+      tgt.classList.add('translated-flash');
+      setTimeout(() => tgt.classList.remove('translated-flash'), 700);
+    }
+    if (spin) spin.innerHTML = '';
+  })
+  .catch(() => { if (spin) spin.innerHTML = ''; });
+}
+
+// ════════ FORM RESET ════════
+function resetEmpForm() {
+  document.querySelectorAll('#empForm input[type="text"], #empForm input[type="number"], #empForm input[type="date"], #empForm input[type="email"]').forEach(el => el.value = '');
+  document.querySelectorAll('#empForm input[type="hidden"]').forEach(el => {
+    if (!['csrf_token','auto_code','_emp_id'].includes(el.name)) el.value = '';
+  });
+  document.getElementById('f_is_active').checked = true;
+  document.getElementById('f_is_muslim').checked = false;
+  document.getElementById('empCodeDisplay').textContent = IS_AR ? '(تلقائي)' : '(Auto)';
+
+  // Clear allowance inline table
+  const inlineBody = document.getElementById('allowInlineBody');
+  if (inlineBody) {
+    inlineBody.innerHTML = `<tr id="allowInlineEmpty"><td colspan="4" style="text-align:center;padding:14px;color:#9ca3af;font-size:12px;">${IS_AR?'لا توجد بدلات — اضغط إدارة':'No allowances — click Manage to add'}</td></tr>`;
+  }
+  _currentEmpId  = null;
+  _pendingAllows = [];
+  _pendingSerial = 0;
+  document.querySelectorAll('.pend-allow').forEach(el=>el.remove());
+  const taEl = document.getElementById('f_total_allowances');
+  if (taEl) taEl.value = '';
+  setAllowBtn(false);
+  const netDisp = document.getElementById('f_net_salary_display');
+  if (netDisp) netDisp.value = '';
+  const netHid = document.getElementById('f_net_salary');
+  if (netHid) netHid.value = '0';
+  document.getElementById('allowBadge').style.display = 'none';
+
+  // Clear doc upload rows
+  const docList = document.getElementById('docFilesList');
+  if (docList) docList.innerHTML = '';
+  _docSerial = 0;
+
+  // Clear bank section
+  _empPendingBanks = [];
+  const bankList = document.getElementById('bankList_emp');
+  if (bankList) bankList.innerHTML = '<div class="pf-empty"><i class="fas fa-university"></i>'+(IS_AR?'لا توجد حسابات بنكية':'No bank accounts yet')+'</div>';
+  const bankBadge = document.getElementById('bankBadge_emp');
+  if (bankBadge) bankBadge.textContent = '0';
+
+  document.querySelectorAll('.mcq-opt').forEach(b => b.classList.remove('chosen'));
+  setMCQ('shiftGrp',   'day',     'f_shift_type');
+  setMCQ('passLocGrp', 'IN',      'f_passport_location');
+  setMCQ('empTypeGrp', 'skilled', 'f_employee_type');
+  setMCQ('salTypeGrp', 'salary',  'f_salary_type');
+  setMCQ('workStatusGrp', 'active', 'f_work_status');
+  document.querySelectorAll('.hijri-badge').forEach(b => b.style.display='none');
+}
+
+// ════════ VALIDATE FORM ════════
+function validateForm(form) {
+  const reqFields = form.querySelectorAll('[required]');
+  for (let el of reqFields) {
+    if (!el.value.trim()) {
+      el.focus();
+      alert((IS_AR?'يرجى ملء الحقل المطلوب: ':'Please fill required field: ') + (el.placeholder || el.name));
+      return false;
+    }
+  }
+  return true;
+}
+
+// ════════ MODAL: ADD ════════
+function openAddEmp() {
+  document.getElementById('empModalTitle').textContent = IS_AR ? 'تفاصيل الموظف' : 'Employee Details';
+  document.getElementById('empForm').action = '{{ url_for("employees.add_employee") }}';
+  document.getElementById('empFormId').value = '';
+  resetEmpForm();
+  initNationality('');
+  initProfession('');
+  initBuyer('');
+  setTimeout(wireHijriBadges, 50);
+  _currentEmpId  = null;
+  _pendingAllows = [];
+  _pendingSerial = 0;
+  setAllowBtn(true);
+}
+
+// ════════ MODAL: EDIT ════════
+function openEditEmp(id) {
+  document.getElementById('empModalTitle').textContent = IS_AR ? 'تعديل موظف' : 'Edit Employee';
+  document.getElementById('empForm').action = '/employees/' + id + '/edit';
+  document.getElementById('empFormId').value = id;
+  new bootstrap.Modal(document.getElementById('empModal')).show();
+  _currentEmpId  = id;
+  _pendingAllows = [];
+  setAllowBtn(true);
+
+  fetch('/employees/' + id + '/json').then(r => r.json()).then(d => {
+    document.getElementById('empCodeDisplay').textContent = d.employee_code;
+    document.getElementById('f_is_active').checked = d.is_active;
+    document.getElementById('f_is_muslim').checked = d.is_muslim;
+
+    // Bilingual text fields
+    const biFields = ['name','kafeel_name','kafeel_reference','education','address','home_city',
+                       'employee_reference','hostel_name','hostel_location','crn','insurance_company'];
+    biFields.forEach(f => {
+      const en = document.getElementById('f_'+f);
+      const arr = document.getElementById('f_'+f+'_ar');
+      if (en) en.value = d[f] || '';
+      if (arr) arr.value = d[f+'_ar'] || '';
+    });
+
+    // Work info bilingual fields
+    ['company','department','section'].forEach(f => {
+      const en = document.getElementById('f_'+f+'_en');
+      const arr = document.getElementById('f_'+f+'_ar');
+      if (en) en.value = d[f] || '';
+      if (arr) arr.value = d[f+'_ar'] || '';
+    });
+
+    // Single fields
+    const singleFields = ['mobile','email','passport_number','entry_number','iqama_number',
+                           'room_number','labour_office','po_rate','po_number','basic_salary',
+                           'working_hours','overtime_ratio','overtime_rate','kafalat_number',
+                           'arrival_date','birth_date','passport_expiry','iqama_expiry',
+                           'joining_date','insurance_expiry','end_date_work','work_month'];
+    singleFields.forEach(f => {
+      const el = document.getElementById('f_'+f);
+      if (el) el.value = d[f] || '';
+    });
+
+    // Net salary
+    document.getElementById('f_net_salary').value = d.net_salary || 0;
+    const nd = document.getElementById('f_net_salary_display');
+    if (nd) nd.value = d.net_salary ? Number(d.net_salary).toFixed(2) : '0.00';
+    document.getElementById('f_total_allowances').value = (d.total_allowances || 0).toFixed(2);
+
+    // MCQ
+    setMCQ('empTypeGrp', d.employee_type || 'skilled', 'f_employee_type');
+    setMCQ('salTypeGrp', d.salary_type || 'salary', 'f_salary_type');
+    setMCQ('shiftGrp', d.shift_type || 'day', 'f_shift_type');
+    setMCQ('workStatusGrp', d.work_status || 'active', 'f_work_status');
+    setMCQ('passLocGrp', d.passport_location || 'IN', 'f_passport_location');
+
+    // PO rate unit
+    const puEl = document.getElementById('f_po_rate_unit');
+    if (puEl && d.po_rate_unit) puEl.value = d.po_rate_unit;
+
+    // Dropdowns
+    initNationality(d.nationality || '');
+    initProfession(d.profession || '');
+    initBuyer(d.buyer_id || '');
+
+    // Age + Hijri
+    calcAge();
+    setTimeout(wireHijriBadges, 50);
+
+    // Load allowances into inline table
+    const inlineBody = document.getElementById('allowInlineBody');
+    if (inlineBody) {
+      inlineBody.innerHTML = '';
+    }
+    _renderRows(d.allowances || []);
+    calcNet();
+    calcOvertimeRate();
+
+    // Load banks
+    loadEmpBanks(id);
+  });
+}
+
+// ════════ VIEW (read-only) ════════
+let currentViewId = null;
+function viewDateFmt(dateStr) {
+  if (!dateStr) return '';
+  if (IS_AR) {
+    const hijri = gregToHijri(dateStr);
+    return hijri ? hijri + ' هـ' : dateStr;
+  }
+  return dateStr;
+}
+function calcAgeStr(birthDate) {
+  if (!birthDate) return IS_AR ? 'غير محدد' : 'N/A';
+  const b = new Date(birthDate), t = new Date();
+  let y = t.getFullYear()-b.getFullYear();
+  if (t.getMonth() < b.getMonth() || (t.getMonth()===b.getMonth() && t.getDate()<b.getDate())) y--;
+  return IS_AR ? `${y} سنة` : `${y} Years`;
+}
+function openViewEmp(id) {
+  currentViewId = id;
+  fetch('/employees/' + id + '/json').then(r => r.json()).then(d => {
+    const na = IS_AR ? 'غير محدد' : 'N/A';
+    const yn = v => v ? (IS_AR?'نعم':'Yes') : (IS_AR?'لا':'No');
+    const rows = [
+      [IS_AR?'كود الموظف':'Employee Code', d.employee_code],
+      [IS_AR?'الاسم':'Name', IS_AR && d.name_ar ? d.name_ar : d.name],
+      [IS_AR?'اسم الكفيل':'Kafeel Name', (IS_AR && d.kafeel_name_ar ? d.kafeel_name_ar : d.kafeel_name) || na],
+      [IS_AR?'الجنسية':'Nationality', (IS_AR && d.nationality_ar ? d.nationality_ar : d.nationality) || na],
+      [IS_AR?'تاريخ الميلاد':'Birth Date', viewDateFmt(d.birth_date) || na],
+      [IS_AR?'العمر':'Age', calcAgeStr(d.birth_date)],
+      [IS_AR?'المهنة':'Profession', (IS_AR && d.profession_ar ? d.profession_ar : d.profession) || na],
+      [IS_AR?'نوع الموظف':'Employee Type', d.employee_type || na],
+      [IS_AR?'رقم الإقامة':'Iqama Number', d.iqama_number || na],
+      [IS_AR?'انتهاء الإقامة':'Iqama Expiry', viewDateFmt(d.iqama_expiry) || na],
+      [IS_AR?'رقم الجواز':'Passport Number', d.passport_number || na],
+      [IS_AR?'الهاتف':'Mobile', d.mobile || na],
+      [IS_AR?'البريد الإلكتروني':'Email', d.email || na],
+      [IS_AR?'القسم':'Department', (IS_AR && d.department_ar ? d.department_ar : d.department) || na],
+      [IS_AR?'نوع الراتب':'Salary Type', d.salary_type || na],
+      [IS_AR?'الراتب الأساسي':'Basic Salary', d.basic_salary ? Number(d.basic_salary).toLocaleString() : na],
+      [IS_AR?'الراتب الصافي':'Net Salary', d.net_salary ? Number(d.net_salary).toLocaleString() : na],
+      [IS_AR?'تاريخ الانضمام':'Joining Date', viewDateFmt(d.joining_date) || na],
+      [IS_AR?'نشيط':'Active', yn(d.is_active)],
+    ];
+    let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+    rows.forEach((r,i) => {
+      const bg = i%2===0 ? '#f9fafb' : 'white';
+      const dir = IS_AR ? 'text-align:right;direction:rtl;' : '';
+      html += `<tr style="background:${bg}"><td style="padding:8px 12px;font-weight:600;color:#374151;border-bottom:1px solid #f1f5f9;width:40%;${dir}">${r[0]}</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;${dir}">${r[1]}</td></tr>`;
+    });
+    html += '</table>';
+    document.getElementById('viewEmpTitle').textContent = (IS_AR?'بيانات الموظف: ':'Employee: ') + (IS_AR && d.name_ar ? d.name_ar : d.name);
+    document.getElementById('viewEmpBody').innerHTML = html;
+    new bootstrap.Modal(document.getElementById('viewEmpModal')).show();
+  });
+}
+function editFromView() {
+  const m = bootstrap.Modal.getInstance(document.getElementById('viewEmpModal'));
+  if (m) m.hide();
+  setTimeout(() => openEditEmp(currentViewId), 300);
+}
+
+// ════════ ALLOWANCES ════════
+function setAllowBtn(enabled) {
+  const btn = document.getElementById('btnAllowances');
+  if (!btn) return;
+  btn.style.pointerEvents = enabled ? 'auto'    : 'none';
+  btn.style.opacity       = enabled ? '1'       : '0.4';
+  btn.style.cursor        = enabled ? 'pointer' : 'not-allowed';
+  btn.style.background    = enabled ? '#16a34a' : '#9ca3af';
+}
+
+function openAllowancesPopup() {
+  const code  = document.getElementById('empCodeDisplay')?.textContent || '';
+  const name  = document.getElementById('f_name')?.value || '';
+  const infoEl = document.getElementById('ap_emp_info');
+  if (infoEl) {
+    const codeStr = (code && code !== '(Auto)' && code !== '(تلقائي)') ? code : (IS_AR?'(جديد)':'(New)');
+    infoEl.textContent = codeStr + (name ? '  —  ' + name : '');
+  }
+  if (!_atCache) {
+    fetch(AT_URL).then(r=>r.json()).then(d=>{ _atCache=d; _fillTypeDropdown(d, []); });
+  } else { _fillTypeDropdown(_atCache, []); }
+  _resetApForm();
+  if (_currentEmpId) _loadFromDB(_currentEmpId);
+  else _renderRows(_pendingAllows);
+  new bootstrap.Modal(document.getElementById('allowPopup')).show();
+}
+
+function _fillTypeDropdown(types, usedTypeIds) {
+  const sel = document.getElementById('ap_type');
+  if (!sel) return;
+  const ph = IS_AR ? '-- اختر نوع البدل --' : '-- Select Type --';
+  const used = usedTypeIds || [];
+  sel.innerHTML = `<option value="">${ph}</option>`;
+  types.forEach(t => {
+    const currentEditType = _editingRowId ? (() => {
+      const row = _currentEmpId
+        ? (_lastRows||[]).find(r=>String(r.id)===String(_editingRowId))
+        : (_pendingAllows||[]).find(a=>a._key===_editingRowId);
+      return row ? String(row.allowance_type_id) : null;
+    })() : null;
+    const isUsed = used.includes(String(t.id)) && String(t.id) !== currentEditType;
+    const disabled = isUsed ? ' disabled style="color:#9ca3af;"' : '';
+    const label = isUsed ? `${t.label} (${t.code}) ✓` : `${t.label} (${t.code})`;
+    sel.innerHTML += `<option value="${t.id}" data-code="${t.code}" data-en="${t.en}" data-ar="${t.ar}"${disabled}>${label}</option>`;
+  });
+}
+
+function _loadFromDB(empId) {
+  fetch(`/employees/${empId}/allowances`)
+  .then(r=>r.json())
+  .then(rows=>{ _lastRows=rows; _renderRows(rows); })
+  .catch(()=>_renderRows([]));
+}
+
+function _renderRows(rows) {
+  const inlineBody = document.getElementById('allowInlineBody');
+  if (inlineBody) {
+    if (!rows || rows.length===0) {
+      inlineBody.innerHTML = `<tr id="allowInlineEmpty"><td colspan="4" style="text-align:center;padding:14px;color:#9ca3af;font-size:12px;">${IS_AR?'لا توجد بدلات — اضغط إدارة':'No allowances — click Manage to add'}</td></tr>`;
+    } else {
+      inlineBody.innerHTML = '';
+      rows.forEach((a,i) => {
+        const td = IS_AR?'text-align:right;direction:rtl;':'';
+        const nm = (IS_AR && a.name_ar) ? a.name_ar : (a.name||'');
+        const cd = a.allowance_code||a.code||'';
+        const rid = a.id||a._key;
+        const tr = document.createElement('tr');
+        tr.style.background = i%2===0?'#fff':'#f9fafb';
+        tr.innerHTML = `
+          <td style="padding:7px 12px;font-size:12px;color:#6b7280;${td}">${i+1}</td>
+          <td style="padding:7px 12px;${td}"><span class="code-badge">${cd}</span></td>
+          <td style="padding:7px 12px;font-weight:600;${td}">${nm}</td>
+          <td style="padding:7px 12px;${td}">
+            ${Number(a.amount).toLocaleString(undefined,{minimumFractionDigits:2})}
+            <button class="pl-btn pl-del" style="margin-left:8px;width:22px;height:22px;float:right;"
+                    onclick="_apDelete('${rid}')" title="${IS_AR?'حذف':'Delete'}">
+              <i class="fas fa-times" style="font-size:9px;"></i>
+            </button>
+          </td>`;
+        inlineBody.appendChild(tr);
+      });
+    }
+  }
+  const usedIds = rows ? rows.map(r => String(r.allowance_type_id)) : [];
+  if (_atCache) _fillTypeDropdown(_atCache, usedIds);
+  let total = 0;
+  if (rows) rows.forEach(a => total += parseFloat(a.amount)||0);
+  _syncTotal(total); _syncBadge(rows ? rows.length : 0);
+}
+
+function _syncTotal(total) {
+  const taEl = document.getElementById('f_total_allowances');
+  if (taEl) { taEl.value = total.toFixed(2); calcNet(); }
+}
+
+function _syncBadge(count) {
+  const b = document.getElementById('allowBadge');
+  if (!b) return;
+  b.textContent = count;
+  b.style.display = count>0 ? 'flex' : 'none';
+}
+
+function _resetApForm() {
+  document.getElementById('ap_type').value='';
+  document.getElementById('ap_amount').value='';
+  const e=document.getElementById('ap_error'); if(e) e.style.display='none';
+  _editingRowId=null;
+  const sb=document.getElementById('ap_save_btn');
+  if(sb) sb.innerHTML=`<i class="fas fa-plus me-1"></i>${IS_AR?'إضافة':'Add'}`;
+  const cb=document.getElementById('ap_cancel_edit_btn');
+  if(cb) cb.style.display='none';
+}
+
+function saveAllowance() {
+  const typeId = document.getElementById('ap_type').value;
+  const amount = parseFloat(document.getElementById('ap_amount').value||0);
+  const e      = document.getElementById('ap_error'); if(e) e.style.display='none';
+  if (!typeId)         { _apErr(IS_AR?'اختر نوع البدل':'Select an allowance type.'); return; }
+  if (!amount||amount<=0){ _apErr(IS_AR?'أدخل مبلغاً صحيحاً':'Enter a valid amount.'); return; }
+
+  const opt    = document.getElementById('ap_type').options[document.getElementById('ap_type').selectedIndex];
+  const tEn    = opt?opt.dataset.en:'';
+  const tAr    = opt?opt.dataset.ar:'';
+  const tCode  = opt?opt.dataset.code:'';
+
+  if (_currentEmpId) {
+    const url = _editingRowId
+      ? `/employees/allowances/${_editingRowId}/edit`
+      : `/employees/${_currentEmpId}/allowances/add`;
+    fetch(url, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+                 body: JSON.stringify({allowance_type_id:typeId, amount}) })
+    .then(r=>r.json())
+    .then(d=>{ if(!d.ok){_apErr(d.error||(IS_AR?'خطأ':'Error'));return;} _resetApForm(); _loadFromDB(_currentEmpId); })
+    .catch(()=>_apErr(IS_AR?'فشل الاتصال':'Connection failed'));
+  } else {
+    const dup = _pendingAllows.find(a => String(a.allowance_type_id)===String(typeId) && a._key!==_editingRowId);
+    if (dup) { _apErr(IS_AR?'هذا النوع موجود بالفعل':'This allowance type already exists.'); return; }
+    if (_editingRowId) {
+      const row = _pendingAllows.find(a=>a._key===_editingRowId);
+      if (row) Object.assign(row, {allowance_type_id:typeId,name:tEn,name_ar:tAr,allowance_code:tCode,amount});
+    } else {
+      _pendingSerial++;
+      _pendingAllows.push({_key:'tmp_'+_pendingSerial, allowance_type_id:typeId, allowance_code:tCode, name:tEn, name_ar:tAr, amount});
+    }
+    _resetApForm();
+    _renderRows(_pendingAllows);
+  }
+}
+
+function _apDelete(rid) {
+  if (!confirm(IS_AR?'حذف هذا البدل؟':'Delete this allowance?')) return;
+  if (_currentEmpId) {
+    fetch(`/employees/allowances/${rid}/delete`,
+      {method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:'{}'})
+    .then(r=>r.json()).then(d=>{ if(d.ok) _loadFromDB(_currentEmpId); });
+  } else {
+    _pendingAllows = _pendingAllows.filter(a=>a._key!==rid);
+    _renderRows(_pendingAllows);
+  }
+}
+
+function cancelAllowEdit() { _resetApForm(); }
+function _apErr(msg) { const e=document.getElementById('ap_error'); if(e){e.textContent=msg;e.style.display='block';} }
+
+function onAllowPopupClose() {
+  _resetApForm();
+  if (_currentEmpId) {
+    _loadFromDB(_currentEmpId);
+  } else {
+    const total = _pendingAllows.reduce((s,a)=>s+(parseFloat(a.amount)||0),0);
+    _syncTotal(total);
+    document.querySelectorAll('.pend-allow').forEach(el=>el.remove());
+    _pendingAllows.forEach(a=>{
+      ['allow_type_id[]','allow_amount[]'].forEach((n,i)=>{
+        const inp=document.createElement('input');
+        inp.type='hidden'; inp.name=n; inp.value=i===0?a.allowance_type_id:a.amount;
+        inp.className='pend-allow';
+        document.getElementById('empForm').appendChild(inp);
+      });
+    });
+  }
+}
+
+// ════════ EMPLOYEE BANKING ════════
+function togAccBank(btn) {
+  const body = btn.nextElementSibling;
+  body.classList.toggle('d-none');
+  const icon = btn.querySelector('.fa-chevron-down,.fa-chevron-up');
+  if (icon) {
+    icon.classList.toggle('fa-chevron-down');
+    icon.classList.toggle('fa-chevron-up');
+  }
+}
+
+function openEmpBank(bankId) {
+  const mid = 'bankModal_emp';
+  document.getElementById(mid+'_bank_id').value = bankId || '';
+  document.getElementById(mid+'_title').innerHTML = bankId
+    ? '<i class="fas fa-edit me-2"></i>'+(IS_AR?'تعديل حساب بنكي':'Edit Bank Account')
+    : '<i class="fas fa-university me-2"></i>'+(IS_AR?'إضافة حساب بنكي':'Add Bank Account');
+  if (!bankId) {
+    [mid+'_name', mid+'_account', mid+'_branch', mid+'_swift', mid+'_iban'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById(mid+'_primary').checked = false;
+  } else {
+    // Load existing bank data
+    fetch(`/employees/banks/${bankId}`)
+    .then(r => r.json())
+    .then(b => {
+      document.getElementById(mid+'_name').value = b.bank_name || '';
+      document.getElementById(mid+'_account').value = b.account_number || '';
+      document.getElementById(mid+'_branch').value = b.branch || '';
+      document.getElementById(mid+'_swift').value = b.swift_code || '';
+      document.getElementById(mid+'_iban').value = b.iban || '';
+      document.getElementById(mid+'_primary').checked = b.is_primary || false;
+    })
+    .catch(() => {});
+  }
+  new bootstrap.Modal(document.getElementById(mid)).show();
+}
+
+async function saveEmpBank() {
+  const mid = 'bankModal_emp';
+  const bankId = document.getElementById(mid+'_bank_id').value;
+  const empId = _currentEmpId;
+  if (!empId) { alert(IS_AR?'احفظ الموظف أولاً':'Save the employee first.'); return; }
+  const bname = document.getElementById(mid+'_name')?.value.trim();
+  if (!bname) { alert(IS_AR?'اسم البنك مطلوب':'Bank name is required.'); return; }
+  const payload = {
+    bank_name: bname,
+    account_number: document.getElementById(mid+'_account')?.value.trim() || '',
+    branch: document.getElementById(mid+'_branch')?.value.trim() || '',
+    swift_code: document.getElementById(mid+'_swift')?.value.trim() || '',
+    iban: document.getElementById(mid+'_iban')?.value.trim() || '',
+    is_primary: document.getElementById(mid+'_primary')?.checked || false
+  };
+  const url = bankId ? `/employees/banks/${bankId}/edit` : `/employees/${empId}/banks/add`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (data.ok) {
+    bootstrap.Modal.getInstance(document.getElementById(mid))?.hide();
+    loadEmpBanks(empId);
+  } else {
+    alert(data.error || (IS_AR?'فشل حفظ البنك':'Failed to save bank.'));
+  }
+}
+
+async function loadEmpBanks(empId) {
+  if (!empId) return;
+  const res = await fetch(`/employees/${empId}/banks`);
+  const banks = await res.json();
+  renderEmpBanks(banks, empId);
+}
+
+function renderEmpBanks(banks, empId) {
+  const wrap = document.getElementById('bankList_emp');
+  const badge = document.getElementById('bankBadge_emp');
+  if (badge) badge.textContent = banks.length;
+  if (!wrap) return;
+  if (!banks.length) {
+    wrap.innerHTML = '<div class="pf-empty"><i class="fas fa-university"></i>'+(IS_AR?'لا توجد حسابات بنكية':'No bank accounts yet')+'</div>';
+    return;
+  }
+  wrap.innerHTML = banks.map(b => `
+    <div class="pf-bank-card ${b.is_primary?'primary':''}">
+      <div>
+        <div class="pf-bank-card-name">
+          <i class="fas fa-university" style="color:#2563eb;font-size:14px;"></i>
+          ${b.bank_name||'—'}
+          ${b.is_primary?'<span class="pf-badge-primary">'+(IS_AR?'رئيسي':'PRIMARY')+'</span>':''}
         </div>
-        <div class="pf-row cols-3" style="margin-bottom:14px;">
-          <div class="pf-field">
-            <div class="pf-label">{% if ar %}الفرع{% else %}Branch{% endif %}</div>
-            <input type="text" id="bankModal_emp_branch" class="pf-input">
-          </div>
-          <div class="pf-field">
-            <div class="pf-label">SWIFT</div>
-            <input type="text" id="bankModal_emp_swift" class="pf-input" dir="ltr" style="text-transform:uppercase;">
-          </div>
-          <div class="pf-field">
-            <div class="pf-label">IBAN</div>
-            <input type="text" id="bankModal_emp_iban" class="pf-input" dir="ltr">
-          </div>
+        <div class="pf-bank-card-meta">
+          ${b.account_number?`<span><i class="fas fa-hashtag"></i>${b.account_number}</span>`:''}
+          ${b.branch?`<span><i class="fas fa-map-marker-alt"></i>${b.branch}</span>`:''}
+          ${b.swift_code?`<span><i class="fas fa-globe"></i>${b.swift_code}</span>`:''}
+          ${b.iban?`<span><i class="fas fa-credit-card"></i>${b.iban}</span>`:''}
         </div>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#374151;">
-          <input type="checkbox" id="bankModal_emp_primary" style="width:16px;height:16px;accent-color:#2563eb;cursor:pointer;">
-          {% if ar %}تعيين كحساب رئيسي{% else %}Set as primary account{% endif %}
-        </label>
       </div>
-      <div class="pf-footer">
-        <button type="button" class="pf-btn secondary" data-bs-dismiss="modal"><i class="fas fa-times"></i> {% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button type="button" class="pf-btn primary" onclick="saveEmpBank()"><i class="fas fa-save"></i> {% if ar %}حفظ{% else %}Save Bank{% endif %}</button>
+      <div class="pf-bank-actions">
+        <button onclick="openEmpBank(${b.id})" style="width:28px;height:28px;background:#fef3c7;color:#d97706;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-pencil-alt"></i></button>
+        <button onclick="deleteEmpBank(${b.id})" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-trash"></i></button>
       </div>
     </div>
-  </div>
-</div>
+  `).join('');
+}
 
+async function deleteEmpBank(bankId) {
+  if (!confirm(IS_AR?'حذف هذا الحساب البنكي؟':'Delete this bank account?')) return;
+  const res = await fetch(`/employees/banks/${bankId}/delete`, {
+    method: 'POST',
+    headers: {'X-CSRFToken': CSRF}
+  });
+  const data = await res.json();
+  if (data.ok) loadEmpBanks(_currentEmpId);
+}
+
+// ════════ BI WRAP ════════
+function biWrap(el, targetId, dir) {
+  const src = (el instanceof Element ? el : event.target).value.trim();
+  if (!src) return;
+  const tgt = document.getElementById(targetId);
+  if (!tgt || tgt.value.trim()) return;
+  const toLang = dir === 'en' ? 'ar' : 'en';
+  fetch(TR, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+    body: JSON.stringify({text: src, direction: `${dir}|${toLang}`})
+  })
+  .then(r => r.json())
+  .then(d => { if (d.translated) tgt.value = d.translated; })
+  .catch(() => {});
+}
+function biWrapRetrans(srcVal, targetId, toLang) {
+  if (!srcVal) return;
+  const tgt = document.getElementById(targetId);
+  if (!tgt) return;
+  const fromLang = toLang === 'ar' ? 'en' : 'ar';
+  fetch(TR, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+    body: JSON.stringify({text: srcVal, direction: `${fromLang}|${toLang}`})
+  })
+  .then(r => r.json())
+  .then(d => { if (d.translated) tgt.value = d.translated; })
+  .catch(() => {});
+}
+
+// ════════ QUICK ADD PROFESSION ════════
+function openAddProfModal() {
+  ['qp_name_en','qp_name_ar'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  const errEl=document.getElementById('qp_error'); if(errEl) errEl.style.display='none';
+  new bootstrap.Modal(document.getElementById('addProfModal')).show();
+}
+function saveQuickProfession() {
+  const en=(document.getElementById('qp_name_en')?.value||'').trim();
+  const ar_val=(document.getElementById('qp_name_ar')?.value||'').trim();
+  const errEl=document.getElementById('qp_error');
+  if(!en){if(errEl){errEl.textContent='Name (EN) required';errEl.style.display='block';}return;}
+  fetch('/professions/add-quick',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body:JSON.stringify({profession_en:en,profession_ar:ar_val})
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok){
+      _profCache=null;
+      bootstrap.Modal.getInstance(document.getElementById('addProfModal'))?.hide();
+      const curVal=document.getElementById('f_profession')?.value||'';
+      initProfession(curVal);
+      if(d.id) setTimeout(()=>{const s=document.getElementById('f_profession');if(s)s.value=d.id;},500);
+    } else {if(errEl){errEl.textContent=d.error||'Error';errEl.style.display='block';}}
+  }).catch(()=>{if(errEl){errEl.textContent='Server error';errEl.style.display='block';}});
+}
+
+// ════════ QUICK ADD ALLOWANCE TYPE ════════
+function openAddAllowTypeModal() {
+  ['qat_code','qat_name_en','qat_name_ar'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  const errEl=document.getElementById('qat_error'); if(errEl) errEl.style.display='none';
+  new bootstrap.Modal(document.getElementById('addAllowTypeModal')).show();
+}
+function saveQuickAllowType() {
+  const code=(document.getElementById('qat_code')?.value||'').trim().toUpperCase();
+  const en=(document.getElementById('qat_name_en')?.value||'').trim();
+  const ar_val=(document.getElementById('qat_name_ar')?.value||'').trim();
+  const errEl=document.getElementById('qat_error');
+  if(!code||!en){if(errEl){errEl.textContent='Code and Name (EN) required';errEl.style.display='block';}return;}
+  fetch('/allowance-types/add-quick',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body:JSON.stringify({allowance_code:code,allowance_name_en:en,allowance_name_ar:ar_val})
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok){
+      _atCache=null;
+      bootstrap.Modal.getInstance(document.getElementById('addAllowTypeModal'))?.hide();
+      // Refresh the allowance types dropdown
+      fetch(AT_URL).then(r=>r.json()).then(data=>{ _atCache=data; _fillTypeDropdown(data, []); });
+    } else {if(errEl){errEl.textContent=d.error||'Error';errEl.style.display='block';}}
+  }).catch(()=>{if(errEl){errEl.textContent='Server error';errEl.style.display='block';}});
+}
+
+// ════════ AG GRID ════════
+function rCode(p) { return p.value ? `<span class="code-badge">${p.value}</span>` : ''; }
+function rStatus(p) { return p.value ? `<span class="st-pill st-active"><i class="fas fa-circle" style="font-size:6px;"></i>${IS_AR?'نشيط':'Active'}</span>` : `<span class="st-pill st-inactive"><i class="fas fa-circle" style="font-size:6px;"></i>${IS_AR?'غير نشيط':'Inactive'}</span>`; }
+function rNum(p) { return p.value ? Number(p.value).toLocaleString() : '—'; }
+function rDate(p) {
+  if (!p.value) return '—';
+  if (IS_AR) {
+    const hijri = gregToHijri(p.value);
+    return hijri ? `<span dir="rtl">${hijri}</span>` : p.value;
+  }
+  return p.value;
+}
+
+class ActR {
+  init(p) {
+    this.g = document.createElement('div');
+    this.g.className = 'ag-act-cell';
+    const id = p.data.id, n = (p.data.name||'').replace(/'/g,"\\'");
+    this.g.innerHTML = `
+      <button class="pl-btn pl-view" title="${IS_AR?'عرض':'View'}" onclick="openViewEmp(${id})"><i class="fas fa-eye"></i></button>
+      <button class="pl-btn pl-edit" title="${IS_AR?'تعديل':'Edit'}" onclick="openEditEmp(${id})"><i class="fas fa-pencil-alt"></i></button>
+      <button class="pl-btn pl-del" title="${IS_AR?'حذف':'Delete'}" onclick="confDel('/employees/${id}/delete','${n}')"><i class="fas fa-trash"></i></button>`;
+  }
+  getGui() { return this.g; }
+}
+
+const cols = [
+  {headerName:'',field:'id',width:46,checkboxSelection:true,headerCheckboxSelection:true,sortable:false,suppressMenu:true,resizable:false,pinned:IS_AR?'right':'left'},
+  {headerName:S.code,field:'employee_code',width:130,pinned:IS_AR?'right':'left',cellRenderer:rCode,filter:'agTextColumnFilter'},
+  {headerName:S.name,field:'name',minWidth:160,filter:'agTextColumnFilter'},
+  {headerName:S.prof,field:'profession',width:150,filter:'agTextColumnFilter'},
+  {headerName:S.kafeel,field:'kafeel_name',width:140,filter:'agTextColumnFilter'},
+  {headerName:S.ref,field:'kafeel_reference',width:120,filter:'agTextColumnFilter'},
+  {headerName:S.nat,field:'nationality',width:110,filter:'agTextColumnFilter'},
+  {headerName:S.bdate,field:'birth_date',width:135,cellRenderer:rDate,filter:'agTextColumnFilter'},
+  {headerName:S.age,field:'age',width:140,filter:'agTextColumnFilter'},
+  {headerName:S.iqama,field:'iqama_number',width:125,filter:'agTextColumnFilter'},
+  {headerName:S.iqexp,field:'iqama_expiry',width:145,cellRenderer:rDate,filter:'agTextColumnFilter'},
+  {headerName:S.pass,field:'passport_number',width:125,filter:'agTextColumnFilter'},
+  {headerName:S.dept,field:'department',width:125,filter:'agTextColumnFilter'},
+  {headerName:S.stype,field:'salary_type',width:115,filter:'agSetColumnFilter'},
+  {headerName:S.basic,field:'basic_salary',width:125,cellRenderer:rNum,filter:'agNumberColumnFilter'},
+  {headerName:S.net,field:'net_salary',width:120,cellRenderer:rNum,filter:'agNumberColumnFilter'},
+  {headerName:S.status,field:'is_active',width:95,cellRenderer:rStatus},
+];
+if (ADM) cols.push({headerName:S.actions,field:'_a',width:140,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,resizable:false,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 8px'}});
+
+let gridApi;
+
+const _agLocale = IS_AR ? {
+  filterOoo:'تصفية...',equals:'يساوي',notEqual:'لا يساوي',contains:'يحتوي على',
+  notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',
+  blank:'فارغ',notBlank:'غير فارغ',lessThan:'أقل من',greaterThan:'أكبر من',
+  applyFilter:'تطبيق / Apply',clearFilter:'مسح / Clear',resetFilter:'إعادة تعيين',
+  addFilterCondition:'+ إضافة قاعدة / Add Rule',matchAll:'يطابق الكل / Match All',
+  matchAny:'يطابق أي / Match Any',andCondition:'و / AND',orCondition:'أو / OR',
+  noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...',searchOoo:'بحث...',
+  sortAscending:'تصاعدي',sortDescending:'تنازلي',
+} : {
+  filterOoo:'Filter...',applyFilter:'Apply / تطبيق',clearFilter:'Clear / مسح',
+  resetFilter:'Reset',addFilterCondition:'+ Add Rule / إضافة قاعدة',
+  matchAll:'Match All / بتطابق مع الكل',matchAny:'Match Any / يطابق أي',
+  andCondition:'AND / و',orCondition:'OR / أو',noRowsToShow:'No records found',searchOoo:'Search...',
+};
+
+agGrid.createGrid(document.getElementById('empGrid'), {
+  columnDefs: cols, rowData: [], pagination: true, paginationPageSize: 20,
+  rowSelection: 'multiple', suppressRowClickSelection: true, animateRows: true, enableRtl: IS_AR,
+  localeText: _agLocale,
+  defaultColDef: {sortable:true,resizable:true,filter:true,suppressMenu:false,menuTabs:['filterMenuTab','generalMenuTab'],filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}},
+  onGridReady(p) { gridApi = p.api; loadData(); },
+  onFilterChanged() { upd(); }, onPaginationChanged() { upd(); }, onSelectionChanged() { upd(); },
+  getRowStyle(p) { return p.node.rowIndex%2===0 ? {background:'#fff'} : {background:'#fafbfc'}; }
+});
+
+function loadData() {
+  fetch(EDURL).then(r => r.json()).then(d => {
+    gridApi.setGridOption('rowData', d);
+    upd();
+  }).catch(err => console.error('Failed to load employee data:', err));
+}
+function upd() {
+  if (!gridApi) return;
+  const sel = gridApi.getSelectedRows().length, disp = gridApi.getDisplayedRowCount();
+  document.getElementById('selText').textContent = sel > 0 ? `${sel} ${IS_AR?'محدد':'selected'}` : `${disp} ${IS_AR?'سجل':'records'}`;
+  document.getElementById('pageInfo').textContent = `${disp} ${IS_AR?'سجل':'records'}`;
+}
+
+// ════════ FILTER POPUP ════════
+let _aC = null;
+document.addEventListener('click', e => {
+  if (!e.target.closest('.pl-filter-popup') && !e.target.closest('.plfilt'))
+    document.getElementById('plFP').classList.remove('open');
+});
+function openFP(col, btn) {
+  _aC = col;
+  const c = (gridApi.getFilterModel()||{})[col];
+  document.getElementById('plfpCond').value = c?.type || 'contains';
+  document.getElementById('plfpVal').value = c?.filter || '';
+  const r = btn.getBoundingClientRect(), p = document.getElementById('plFP');
+  p.style.top = (r.bottom+window.scrollY+4)+'px';
+  p.style.left = Math.min(r.left+window.scrollX, window.innerWidth-300)+'px';
+  p.classList.add('open');
+  setTimeout(() => document.getElementById('plfpVal').focus(), 50);
+}
+function applyCF() {
+  if (!_aC) return;
+  const c = document.getElementById('plfpCond').value, v = document.getElementById('plfpVal').value;
+  (!v && !['blank','notBlank'].includes(c)) ?
+    gridApi.setColumnFilterModel(_aC, null).then(()=>gridApi.onFilterChanged()) :
+    gridApi.setColumnFilterModel(_aC, {filterType:'text',type:c,filter:v}).then(()=>gridApi.onFilterChanged());
+  document.getElementById('plFP').classList.remove('open');
+}
+function clearCF() {
+  if (!_aC) return;
+  gridApi.setColumnFilterModel(_aC, null).then(()=>gridApi.onFilterChanged());
+  document.getElementById('plfpVal').value = '';
+  document.getElementById('plFP').classList.remove('open');
+}
+document.getElementById('plfpVal').addEventListener('keydown', e => { if (e.key==='Enter') applyCF(); });
+function injFI() {
+  document.querySelectorAll('.ag-header-cell[col-id]').forEach(cell => {
+    const cid = cell.getAttribute('col-id');
+    if (!cid || ['id','_a'].includes(cid)) return;
+    if (cell.querySelector('.plfilt')) return;
+    const lbl = cell.querySelector('.ag-header-cell-label');
+    if (!lbl) return;
+    const btn = document.createElement('button');
+    btn.className = 'plfilt';
+    btn.innerHTML = '<i class="fas fa-filter"></i>';
+    btn.addEventListener('click', e => { e.stopPropagation(); openFP(cid, btn); });
+    lbl.appendChild(btn);
+  });
+}
+setTimeout(injFI, 800);
+
+// ════════ DELETE ════════
+function confDel(url, name) {
+  document.getElementById('delForm').action = url;
+  document.getElementById('delTxt').textContent = (IS_AR?'حذف: ':'Delete: ') + name + '?';
+  new bootstrap.Modal(document.getElementById('delModal')).show();
+}
+
+document.getElementById('empForm').addEventListener('submit', () => setTimeout(loadData, 700));
+</script>
 {% endblock %}

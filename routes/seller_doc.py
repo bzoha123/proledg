@@ -21,12 +21,14 @@ Register in app.py (or __init__.py):
 
 import os
 import uuid
+import mimetypes
 from datetime import datetime, date as _date
 from functools import wraps
 
 from flask import (
     Blueprint, render_template, redirect, url_for, flash,
     request, current_app, send_from_directory, jsonify, session,
+    Response,
 )
 from flask_login import login_required, current_user
 
@@ -36,8 +38,83 @@ seller_doc_bp = Blueprint('seller_doc', __name__)
 
 
 # ─────────────────────────────────────────────────────────────────────
-# PRIVATE HELPERS  (mirrors of the ones in sellers.py so this module
-# is fully self-contained — no circular imports)
+# MIME TYPE AND EXTENSION CONFIGURATION
+# ─────────────────────────────────────────────────────────────────────
+
+# Ensure proper MIME type detection for Office documents
+mimetypes.add_type('application/msword', '.doc')
+mimetypes.add_type('application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.docx')
+mimetypes.add_type('application/vnd.ms-excel', '.xls')
+mimetypes.add_type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '.xlsx')
+mimetypes.add_type('application/vnd.ms-powerpoint', '.ppt')
+mimetypes.add_type('application/vnd.openxmlformats-officedocument.presentationml.presentation', '.pptx')
+
+# Allowed MIME types for upload
+ALLOWED_MIMETYPES = {
+    # PDF
+    'application/pdf',
+    
+    # Images
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/bmp',
+    'image/webp',
+    'image/tiff',
+    
+    # Word Documents
+    'application/msword',  # .doc
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # .docx
+    
+    # Excel Documents
+    'application/vnd.ms-excel',  # .xls
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',  # .xlsx
+    
+    # PowerPoint
+    'application/vnd.ms-powerpoint',  # .ppt
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',  # .pptx
+    
+    # Text files
+    'text/plain',
+    'text/csv',
+    
+    # Rich Text
+    'application/rtf',
+    
+    # Archives
+    'application/zip',
+    'application/x-rar-compressed',
+    'application/x-7z-compressed',
+}
+
+# Allowed extensions (fallback when MIME type is unknown)
+ALLOWED_EXTENSIONS = {
+    # Images
+    'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff', 'tif',
+    # Documents
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+    # Text
+    'txt', 'csv', 'rtf',
+    # Archives
+    'zip', 'rar', '7z',
+}
+
+# MIME types that can be displayed inline in browser
+INLINE_MIMETYPES = {
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/bmp',
+    'image/webp',
+    'image/tiff',
+    'text/plain',
+    'text/csv',
+}
+
+
+# ─────────────────────────────────────────────────────────────────────
+# PRIVATE HELPERS
 # ─────────────────────────────────────────────────────────────────────
 
 def _t(en, ar):
@@ -56,10 +133,61 @@ def _admin_required(f):
 
 
 def _allowed_file(filename):
-    allowed = current_app.config.get(
-        'ALLOWED_EXTENSIONS', {'jpg', 'jpeg', 'png', 'pdf', 'docx', 'xlsx', 'doc'}
-    )
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed
+    """
+    Check if the file is allowed based on:
+    1. MIME type (most reliable)
+    2. File extension (fallback)
+    3. Common binary MIME types with known extensions
+    """
+    if not filename or '.' not in filename:
+        return False
+    
+    # Get file extension
+    ext = filename.rsplit('.', 1)[1].lower()
+    
+    # Get MIME type from filename
+    mime_type, _ = mimetypes.guess_type(filename)
+    
+    print(f"DEBUG _allowed_file: filename='{filename}', ext='{ext}', mime_type='{mime_type}'")
+    
+    # Check if MIME type is in allowed list
+    if mime_type and mime_type in ALLOWED_MIMETYPES:
+        print(f"DEBUG: MIME type '{mime_type}' is allowed")
+        return True
+    
+    # If MIME type is unknown, check extension
+    if ext in ALLOWED_EXTENSIONS:
+        print(f"DEBUG: Extension '{ext}' is allowed (MIME fallback)")
+        return True
+    
+    # Handle generic binary MIME types (application/octet-stream, etc.)
+    # If the extension is known, allow it
+    generic_mimes = {
+        'application/octet-stream',
+        'application/x-msdownload',
+        'binary/octet-stream',
+    }
+    if mime_type in generic_mimes and ext in ALLOWED_EXTENSIONS:
+        print(f"DEBUG: Generic MIME '{mime_type}' with known extension '{ext}' - allowed")
+        return True
+    
+    print(f"DEBUG: File type NOT allowed - ext='{ext}', mime='{mime_type}'")
+    return False
+
+
+def _allowed_file_size(file_storage, max_size_mb=16):
+    """
+    Check if file size is within allowed limit.
+    Returns (is_allowed: bool, size_in_bytes: int)
+    """
+    max_size_bytes = max_size_mb * 1024 * 1024
+    
+    # Get file size by seeking
+    file_storage.seek(0, 2)  # Seek to end
+    size = file_storage.tell()
+    file_storage.seek(0)  # Seek back to beginning
+    
+    return (size <= max_size_bytes), size
 
 
 def _save_file(file, seller_id):
@@ -107,6 +235,23 @@ def _doc_to_dict(doc):
     }
 
 
+def _get_mime_type(file_path):
+    """
+    Get the MIME type of a file based on its extension.
+    Returns 'application/octet-stream' if unknown.
+    """
+    mime_type, _ = mimetypes.guess_type(file_path)
+    return mime_type or 'application/octet-stream'
+
+
+def _can_display_inline(mime_type):
+    """
+    Check if a MIME type can be displayed inline in the browser.
+    PDFs and images can be shown inline, Office documents should download.
+    """
+    return mime_type in INLINE_MIMETYPES
+
+
 # ─────────────────────────────────────────────────────────────────────
 # 1. UPLOAD  POST /sellers/<id>/documents/upload
 #    Dual-mode: AJAX → JSON   |   plain form POST → flash + redirect
@@ -117,10 +262,10 @@ def upload_document(seller_id):
     is_ajax = bool(
         request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         or 'application/json' in request.headers.get('Accept', '')
-        or request.headers.get('X-CSRFToken')       # set by JS fetch()
+        or request.headers.get('X-CSRFToken')
     )
 
-    Seller.query.get_or_404(seller_id)              # 404 guard
+    Seller.query.get_or_404(seller_id)
     file = request.files.get('file')
 
     def _fail(msg):
@@ -131,8 +276,28 @@ def upload_document(seller_id):
 
     if not file or not file.filename:
         return _fail(_t('No file selected.', 'لم يتم اختيار ملف'))
+    
+    # Debug logging
+    print(f"DEBUG upload: filename='{file.filename}', content_type='{file.content_type}'")
+    
+    # Check file type
     if not _allowed_file(file.filename):
-        return _fail(_t('File type not allowed.', 'نوع الملف غير مسموح به'))
+        ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'unknown'
+        msg = _t(
+            f'File type not allowed. Got: .{ext}',
+            f'نوع الملف غير مسموح به. المستلم: .{ext}'
+        )
+        return _fail(msg)
+    
+    # Check file size (16 MB limit)
+    size_ok, file_size = _allowed_file_size(file, max_size_mb=16)
+    if not size_ok:
+        size_mb = file_size / (1024 * 1024)
+        msg = _t(
+            f'File too large ({size_mb:.1f} MB). Maximum size is 16 MB.',
+            f'الملف كبير جداً ({size_mb:.1f} ميغابايت). الحد الأقصى هو 16 ميغابايت.'
+        )
+        return _fail(msg)
 
     path = _save_file(file, seller_id)
     doc  = SellerDocument(
@@ -167,30 +332,61 @@ def upload_document(seller_id):
 
 # ─────────────────────────────────────────────────────────────────────
 # 2. VIEW INLINE  GET /sellers/documents/<did>/view
+#    Displays file in browser if possible (PDF, images, text)
+#    Forces download for Office documents (Excel, Word, PowerPoint)
 # ─────────────────────────────────────────────────────────────────────
 @seller_doc_bp.route('/sellers/documents/<int:did>/view')
 @login_required
 def view_document(did):
+    """
+    View a document inline in the browser.
+    - PDFs, images, and text files: displayed inline
+    - Office documents (Excel, Word, PPT): downloaded (browsers can't display them inline)
+    """
     doc    = SellerDocument.query.get_or_404(did)
     folder = os.path.join(current_app.config['UPLOAD_FOLDER'], str(doc.seller_id))
     fname  = doc.file_path.split(os.sep)[-1]
-    return send_from_directory(folder, fname, as_attachment=False)
+    mime   = _get_mime_type(doc.file_path)
+    
+    print(f"DEBUG view_document: file='{fname}', mime='{mime}', inline={_can_display_inline(mime)}")
+    
+    # For files that can be displayed inline (PDF, images, text)
+    if _can_display_inline(mime):
+        return send_from_directory(
+            folder, fname,
+            as_attachment=False,
+            mimetype=mime
+        )
+    
+    # For Office documents and other files, force download
+    # because browsers can't display them inline properly
+    return send_from_directory(
+        folder, fname,
+        as_attachment=True,
+        download_name=doc.document_name or fname,
+        mimetype=mime
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────
 # 3. DOWNLOAD  GET /sellers/documents/<did>/download
 #              GET /documents/<did>/download  (legacy alias)
+#    Always forces download regardless of file type
 # ─────────────────────────────────────────────────────────────────────
 @seller_doc_bp.route('/sellers/documents/<int:did>/download')
 @login_required
 def download_document(did):
+    """Always download the file, never display inline."""
     doc    = SellerDocument.query.get_or_404(did)
     folder = os.path.join(current_app.config['UPLOAD_FOLDER'], str(doc.seller_id))
     fname  = doc.file_path.split(os.sep)[-1]
+    mime   = _get_mime_type(doc.file_path)
+    
     return send_from_directory(
         folder, fname,
         as_attachment=True,
         download_name=doc.document_name or fname,
+        mimetype=mime
     )
 
 

@@ -1,417 +1,386 @@
 {% extends "base.html" %}
-{% block title %}{{ seller.seller_name }} – Seller MS{% endblock %}
+{% set ar = current_locale == 'ar' %}
+{% block title %}{{ seller.name }} – Seller MS{% endblock %}
+
+{% block extra_css %}
+<style>
+:root{
+  --navy:#1e3a5f;--blue:#2563eb;--blue-dk:#1d4ed8;--blue-50:#eff6ff;--blue-100:#dbeafe;
+  --green:#16a34a;--green-50:#f0fdf4;--teal:#0d9488;--teal-50:#f0fdfa;
+  --gray-50:#f8fafc;--gray-100:#f1f5f9;--gray-200:#e2e8f0;
+  --gray-300:#d1d5db;--gray-400:#9ca3af;--gray-600:#4b5563;--gray-700:#374151;--gray-900:#111827;
+  --red:#ef4444;--amber:#f59e0b;--purple:#7c3aed;--purple-50:#faf5ff;
+}
+
+/* ── Profile Header ── */
+.sv-header{
+  background:linear-gradient(135deg,#0f2040 0%,var(--navy) 40%,#1a56db 100%);
+  border-radius:16px;padding:28px 32px;margin-bottom:22px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+  box-shadow:0 8px 32px rgba(30,58,95,.25);
+  position:relative;overflow:hidden;
+}
+.sv-header::before{
+  content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;
+  border-radius:50%;background:rgba(255,255,255,.04);pointer-events:none;
+}
+.sv-avatar{
+  width:68px;height:68px;border-radius:16px;
+  background:linear-gradient(135deg,rgba(255,255,255,.25),rgba(255,255,255,.1));
+  border:2px solid rgba(255,255,255,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:800;color:#fff;flex-shrink:0;
+  box-shadow:0 4px 12px rgba(0,0,0,.2);
+}
+.sv-name{color:#fff;font-size:20px;font-weight:800;margin:0 0 2px;letter-spacing:-.2px;}
+.sv-name-ar{color:rgba(255,255,255,.7);font-size:13px;margin-bottom:8px;direction:rtl;}
+.sv-code{background:rgba(255,255,255,.15);color:#fff;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;font-family:monospace;border:1px solid rgba(255,255,255,.2);}
+.sv-status-active  {background:#dcfce7;color:#15803d;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.sv-status-inactive{background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.sv-meta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;}
+.sv-header-btns{display:flex;gap:8px;flex-wrap:wrap;z-index:1;}
+.sv-hdr-stat{display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 18px;min-width:80px;}
+.sv-hdr-stat-val{font-size:22px;font-weight:800;color:#fff;}
+.sv-hdr-stat-lbl{font-size:10px;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
+
+/* ── Cards ── */
+.sv-card{background:#fff;border:1px solid var(--gray-200);border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05);margin-bottom:16px;}
+.sv-card:last-child{margin-bottom:0;}
+.sv-card-header{padding:13px 18px;background:var(--gray-50);border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;}
+.sv-card-title{font-size:13px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px;}
+.sv-card-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.sv-card-body{padding:0;}
+
+/* ── Info Rows ── */
+.sv-info-row{display:flex;align-items:flex-start;padding:10px 18px;border-bottom:1px solid var(--gray-100);font-size:13px;}
+.sv-info-row:last-child{border-bottom:none;}
+.sv-info-label{width:200px;flex-shrink:0;font-weight:600;color:var(--gray-500,#6b7280);font-size:11.5px;text-transform:uppercase;letter-spacing:.3px;padding-top:1px;}
+.sv-info-value{color:var(--gray-900);word-break:break-word;font-size:13px;}
+.sv-info-value a{color:var(--blue);text-decoration:none;}
+.sv-info-value a:hover{text-decoration:underline;}
+.sv-info-value.mono{font-family:monospace;font-size:12.5px;color:var(--gray-700);}
+
+/* ── Bank Table ── */
+.sv-bank-tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
+.sv-bank-tbl thead tr{background:var(--navy);}
+.sv-bank-tbl thead th{padding:10px 14px;color:#fff;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.sv-bank-tbl tbody tr{border-bottom:1px solid var(--gray-100);transition:background .1s;}
+.sv-bank-tbl tbody tr:last-child{border-bottom:none;}
+.sv-bank-tbl tbody tr:hover{background:var(--blue-50);}
+.sv-bank-tbl tbody tr.is-primary{background:var(--green-50);}
+.sv-bank-tbl td{padding:11px 14px;color:var(--gray-700);vertical-align:middle;}
+.sv-bank-tbl .mono{font-family:monospace;font-size:11.5px;color:var(--gray-600);}
+.primary-badge{background:#dcfce7;color:#15803d;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:4px;}
+.sv-bank-name-cell strong{font-size:13px;color:var(--navy);}
+.sv-bank-name-cell small{font-size:11px;color:var(--gray-400);direction:rtl;display:block;margin-top:1px;}
+.sv-branch-cell{font-size:12.5px;}
+.sv-branch-cell small{font-size:11px;color:var(--gray-400);direction:rtl;display:block;margin-top:1px;}
+.sv-empty{text-align:center;padding:36px;color:var(--gray-400);}
+.sv-empty i{font-size:28px;display:block;margin-bottom:8px;opacity:.25;}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .sv-header{padding:20px;flex-direction:column;align-items:flex-start;}
+  .sv-info-row{flex-direction:column;gap:3px;}
+  .sv-info-label{width:100%;}
+  .sv-bank-tbl{font-size:11px;}
+  .sv-bank-tbl thead th,.sv-bank-tbl td{padding:8px 10px;}
+}
+</style>
+{% endblock %}
 
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if current_locale == 'ar' %}الرئيسية{% else %}Home{% endif %}</a></li>
-<li class="breadcrumb-item"><a href="{{ url_for('sellers.list_sellers') }}">{% if current_locale == 'ar' %}البائعون{% else %}Sellers{% endif %}</a></li>
-<li class="breadcrumb-item active">{{ seller.seller_name }}</li>
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('sellers.list_sellers') }}">{% if ar %}البائعون{% else %}Sellers{% endif %}</a></li>
+<li class="breadcrumb-item active">{{ seller.name }}</li>
 {% endblock %}
 
 {% block content %}
-<!-- Profile Header -->
-<div class="seller-profile-header mb-4">
-    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
-        <div class="d-flex align-items-center gap-4">
-            <div class="seller-avatar">
-                <span>{{ seller.seller_name[0].upper() }}</span>
-            </div>
-            <div>
-                <h1 class="h3 mb-1">{{ seller.seller_name }}</h1>
-                {% if seller.trade_name %}<p class="text-muted mb-1">{{ seller.trade_name }}</p>{% endif %}
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary-subtle text-primary fw-semibold">{{ seller.seller_code }}</span>
-                    <span class="badge status-{{ seller.status }}">{{ seller.status | title }}</span>
-                    {% if seller.seller_type %}<span class="badge bg-secondary-subtle text-secondary">{{ seller.seller_type | title }}</span>{% endif %}
-                </div>
-            </div>
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ url_for('sellers.edit_seller', id=seller.id) }}" class="btn btn-primary">
-                <i class="fas fa-edit me-1"></i>{% if current_locale == 'ar' %}تعديل{% else %}Edit{% endif %}
-            </a>
-            {% if current_user.is_admin() %}
-            <button class="btn btn-outline-danger" onclick="confirmDelete('{{ url_for('sellers.delete_seller', id=seller.id) }}', '{{ seller.seller_name }}')">
-                <i class="fas fa-trash me-1"></i>{% if current_locale == 'ar' %}حذف{% else %}Delete{% endif %}
-            </button>
-            {% endif %}
-        </div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- PROFILE HEADER                                             -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="sv-header">
+  <!-- Left: Avatar & Info -->
+  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+    <div class="sv-avatar">{{ (seller.name or 'S')[0].upper() }}</div>
+    <div>
+      <div class="sv-name">{{ seller.name }}</div>
+      {% if seller.name_ar %}
+      <div class="sv-name-ar">{{ seller.name_ar }}</div>
+      {% endif %}
+      <div class="sv-meta-row">
+        <span class="sv-code">{{ seller.seller_code or '—' }}</span>
+        <span class="sv-status-{{ seller.status or 'active' }}">{{ (seller.status or 'active')|title }}</span>
+        {% if seller.city %}
+        <span style="color:rgba(255,255,255,.7);font-size:12px;">
+          <i class="fas fa-map-marker-alt me-1"></i>{{ seller.city }}
+        </span>
+        {% endif %}
+      </div>
     </div>
+  </div>
+
+  <!-- Right: Stats -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <div class="sv-hdr-stat">
+      <span class="sv-hdr-stat-val">{{ banks|length }}</span>
+      <span class="sv-hdr-stat-lbl">{% if ar %}بنوك{% else %}Banks{% endif %}</span>
+    </div>
+    {% if current_user.is_admin() %}
+    <a href="{{ url_for('sellers.list_sellers') }}?edit={{ seller.id }}" 
+       class="btn btn-sm" 
+       style="background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.35);text-decoration:none;">
+      <i class="fas fa-arrow-left me-1"></i>{% if ar %}العودة{% else %}Back{% endif %}
+    </a>
+    {% endif %}
+  </div>
 </div>
 
-<!-- Profile Tabs -->
-<ul class="nav nav-tabs nav-tabs-modern" id="profileTabs">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#p-info" type="button">
-        <i class="fas fa-info-circle me-1"></i>{% if current_locale == 'ar' %}معلومات{% else %}Info{% endif %}
-    </button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#p-contacts" type="button">
-        <i class="fas fa-address-book me-1"></i>{% if current_locale == 'ar' %}جهات الاتصال{% else %}Contacts{% endif %}
-        <span class="badge bg-primary ms-1">{{ contacts|length }}</span>
-    </button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#p-documents" type="button">
-        <i class="fas fa-file-alt me-1"></i>{% if current_locale == 'ar' %}الوثائق{% else %}Documents{% endif %}
-        <span class="badge bg-primary ms-1">{{ documents|length }}</span>
-    </button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#p-activity" type="button">
-        <i class="fas fa-history me-1"></i>{% if current_locale == 'ar' %}السجل{% else %}Activity{% endif %}
-    </button></li>
-</ul>
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- SELLER INFORMATION CARDS                                   -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
 
-<div class="tab-content form-tab-content">
-
-    <!-- Info Tab -->
-    <div class="tab-pane fade show active" id="p-info">
-        <div class="row g-4">
-            <!-- General -->
-            <div class="col-12 col-lg-6">
-                <div class="card card-modern h-100">
-                    <div class="card-header"><h6 class="mb-0"><i class="fas fa-building me-2 text-primary"></i>{% if current_locale == 'ar' %}معلومات عامة{% else %}General Information{% endif %}</h6></div>
-                    <div class="card-body">
-                        {% macro info_row(label, value) %}
-                        <div class="info-row">
-                            <span class="info-label">{{ label }}</span>
-                            <span class="info-value">{{ value or '—' }}</span>
-                        </div>
-                        {% endmacro %}
-                        {{ info_row('Registration No.', seller.registration_number) }}
-                        {{ info_row('Tax No.', seller.tax_number) }}
-                        {{ info_row('VAT No.', seller.vat_number) }}
-                        {{ info_row('License No.', seller.license_number) }}
-                        {{ info_row('Industry', seller.industry_type) }}
-                        {% if seller.website %}
-                        <div class="info-row">
-                            <span class="info-label">Website</span>
-                            <a href="{{ seller.website }}" target="_blank" class="info-value">{{ seller.website }}</a>
-                        </div>
-                        {% endif %}
-                        {{ info_row('Created', seller.created_at.strftime('%d %b %Y')) }}
-                        {% if seller.notes %}
-                        <div class="mt-3">
-                            <p class="text-muted small mb-1">Notes:</p>
-                            <p class="mb-0">{{ seller.notes }}</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <!-- Contact -->
-            <div class="col-12 col-lg-6">
-                <div class="card card-modern h-100">
-                    <div class="card-header"><h6 class="mb-0"><i class="fas fa-phone me-2 text-success"></i>{% if current_locale == 'ar' %}معلومات الاتصال{% else %}Contact Information{% endif %}</h6></div>
-                    <div class="card-body">
-                        {% macro info_row(label, value) %}
-                        <div class="info-row">
-                            <span class="info-label">{{ label }}</span>
-                            <span class="info-value">{{ value or '—' }}</span>
-                        </div>
-                        {% endmacro %}
-                        {{ info_row('Contact Person', seller.contact_person) }}
-                        {{ info_row('Designation', seller.designation) }}
-                        {{ info_row('Mobile', seller.mobile) }}
-                        {{ info_row('Alt. Mobile', seller.alternate_mobile) }}
-                        {{ info_row('Telephone', seller.telephone) }}
-                        {% if seller.email %}
-                        <div class="info-row">
-                            <span class="info-label">Email</span>
-                            <a href="mailto:{{ seller.email }}" class="info-value">{{ seller.email }}</a>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <!-- Address -->
-            <div class="col-12 col-lg-6">
-                <div class="card card-modern h-100">
-                    <div class="card-header"><h6 class="mb-0"><i class="fas fa-map-marker-alt me-2 text-warning"></i>{% if current_locale == 'ar' %}العنوان{% else %}Address{% endif %}</h6></div>
-                    <div class="card-body">
-                        {% if seller.address1 or seller.city %}
-                        <address class="mb-0">
-                            {% if seller.address1 %}<div>{{ seller.address1 }}</div>{% endif %}
-                            {% if seller.address2 %}<div>{{ seller.address2 }}</div>{% endif %}
-                            {% if seller.city or seller.state %}<div>{{ seller.city }}{% if seller.state %}, {{ seller.state }}{% endif %} {{ seller.postal_code or '' }}</div>{% endif %}
-                            {% if seller.country %}<div class="fw-semibold">{{ seller.country }}</div>{% endif %}
-                        </address>
-                        {% else %}
-                        <p class="text-muted">—</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <!-- Business & Bank -->
-            <div class="col-12 col-lg-6">
-                <div class="card card-modern mb-4">
-                    <div class="card-header"><h6 class="mb-0"><i class="fas fa-briefcase me-2 text-info"></i>{% if current_locale == 'ar' %}معلومات تجارية{% else %}Business Info{% endif %}</h6></div>
-                    <div class="card-body">
-                        {% macro info_row(label, value) %}
-                        <div class="info-row">
-                            <span class="info-label">{{ label }}</span>
-                            <span class="info-value">{{ value or '—' }}</span>
-                        </div>
-                        {% endmacro %}
-                        {{ info_row('Payment Terms', seller.payment_terms) }}
-                        {{ info_row('Credit Days', seller.credit_days ~ ' days' if seller.credit_days else None) }}
-                        {{ info_row('Currency', seller.currency) }}
-                        {{ info_row('Delivery Terms', seller.delivery_terms) }}
-                    </div>
-                </div>
-                <div class="card card-modern">
-                    <div class="card-header"><h6 class="mb-0"><i class="fas fa-university me-2 text-purple"></i>{% if current_locale == 'ar' %}بيانات البنك{% else %}Bank Details{% endif %}</h6></div>
-                    <div class="card-body">
-                        {% macro info_row(label, value) %}
-                        <div class="info-row">
-                            <span class="info-label">{{ label }}</span>
-                            <span class="info-value">{{ value or '—' }}</span>
-                        </div>
-                        {% endmacro %}
-                        {{ info_row('Bank', seller.bank_name) }}
-                        {{ info_row('Account Holder', seller.account_holder) }}
-                        {{ info_row('Account No.', seller.account_number) }}
-                        {{ info_row('IBAN', seller.iban) }}
-                        {{ info_row('SWIFT', seller.swift_code) }}
-                    </div>
-                </div>
-            </div>
-        </div>
+  <!-- ── Card 1: Identification ── -->
+  <div class="sv-card">
+    <div class="sv-card-header">
+      <div class="sv-card-title">
+        <span class="sv-card-icon" style="background:#eff6ff;">
+          <i class="fas fa-id-card" style="color:var(--blue);"></i>
+        </span>
+        {% if ar %}بيانات التعريف{% else %}Identification{% endif %}
+      </div>
     </div>
-
-    <!-- Contacts Tab -->
-    <div class="tab-pane fade" id="p-contacts">
-        <div class="card card-modern border-top-0 rounded-top-0">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0"><i class="fas fa-address-book me-2"></i>{% if current_locale == 'ar' %}جهات الاتصال{% else %}Contacts{% endif %}</h6>
-                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addContactModal">
-                    <i class="fas fa-plus me-1"></i>{% if current_locale == 'ar' %}إضافة{% else %}Add Contact{% endif %}
-                </button>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th>{% if current_locale == 'ar' %}الاسم{% else %}Name{% endif %}</th>
-                                <th>{% if current_locale == 'ar' %}المسمى{% else %}Designation{% endif %}</th>
-                                <th>{% if current_locale == 'ar' %}الجوال{% else %}Mobile{% endif %}</th>
-                                <th>{% if current_locale == 'ar' %}البريد{% else %}Email{% endif %}</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for c in contacts %}
-                            <tr>
-                                <td class="fw-semibold">{{ c.contact_name }}</td>
-                                <td>{{ c.designation or '—' }}</td>
-                                <td>{{ c.mobile or '—' }}</td>
-                                <td>{% if c.email %}<a href="mailto:{{ c.email }}">{{ c.email }}</a>{% else %}—{% endif %}</td>
-                                <td>
-                                    <form method="POST" action="{{ url_for('sellers.delete_contact', cid=c.id) }}" class="d-inline"
-                                          onsubmit="return confirm('Delete this contact?')">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr><td colspan="5" class="text-center py-4 text-muted">{% if current_locale == 'ar' %}لا توجد جهات اتصال{% else %}No contacts added yet{% endif %}</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+    <div class="sv-card-body">
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}الكود{% else %}Code{% endif %}</span>
+        <span class="sv-info-value mono">{{ seller.seller_code or '—' }}</span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}رقم ضريبة القيمة المضافة{% else %}VAT Number{% endif %}</span>
+        <span class="sv-info-value mono">{{ seller.vat_number or '—' }}</span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}رقم السجل التجاري{% else %}CRN{% endif %}</span>
+        <span class="sv-info-value mono">{{ seller.crn or '—' }}</span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}الحالة{% else %}Status{% endif %}</span>
+        <span class="sv-info-value">{{ (seller.status or 'active')|title }}</span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}تاريخ الإنشاء{% else %}Created{% endif %}</span>
+        <span class="sv-info-value">{{ seller.created_at.strftime('%d %b %Y') if seller.created_at else '—' }}</span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}آخر تحديث{% else %}Updated{% endif %}</span>
+        <span class="sv-info-value">{{ seller.updated_at.strftime('%d %b %Y') if seller.updated_at else '—' }}</span>
+      </div>
     </div>
+  </div>
 
-    <!-- Documents Tab -->
-    <div class="tab-pane fade" id="p-documents">
-        <div class="card card-modern border-top-0 rounded-top-0">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>{% if current_locale == 'ar' %}الوثائق{% else %}Documents{% endif %}</h6>
-                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
-                    <i class="fas fa-upload me-1"></i>{% if current_locale == 'ar' %}رفع وثيقة{% else %}Upload Document{% endif %}
-                </button>
-            </div>
-            <div class="card-body">
-                {% if documents %}
-                <div class="row g-3">
-                    {% for doc in documents %}
-                    <div class="col-12 col-md-6 col-lg-4">
-                        <div class="doc-card">
-                            <div class="doc-icon">
-                                {% set ext = doc.file_path.rsplit('.', 1)[1].lower() if '.' in doc.file_path else '' %}
-                                {% if ext == 'pdf' %}<i class="fas fa-file-pdf text-danger"></i>
-                                {% elif ext in ['jpg','jpeg','png'] %}<i class="fas fa-file-image text-info"></i>
-                                {% else %}<i class="fas fa-file text-secondary"></i>{% endif %}
-                            </div>
-                            <div class="doc-body">
-                                <div class="doc-name fw-semibold">{{ doc.document_name }}</div>
-                                <div class="doc-type text-muted small">{{ doc.document_type | replace('_', ' ') | title }}</div>
-                                <div class="doc-size text-muted small">{{ doc.file_size | filesizeformat }}</div>
-                                {% if doc.expiry_date %}
-                                <div class="doc-expiry small {% if doc.expiry_date <= (now().date() if now() else doc.uploaded_at.date()) %}text-danger{% else %}text-warning{% endif %}">
-                                    <i class="fas fa-calendar me-1"></i>Expires: {{ doc.expiry_date.strftime('%d %b %Y') }}
-                                </div>
-                                {% endif %}
-                                <div class="doc-date text-muted small">{{ doc.uploaded_at.strftime('%d %b %Y') }}</div>
-                            </div>
-                            <div class="doc-actions">
-                                <a href="{{ url_for('sellers.view_document', did=doc.id) }}" class="btn btn-xs btn-outline-info" target="_blank" title="View"><i class="fas fa-eye"></i></a>
-                                <a href="{{ url_for('sellers.download_document', did=doc.id) }}" class="btn btn-xs btn-outline-success" title="Download"><i class="fas fa-download"></i></a>
-                                {% if current_user.is_admin() %}
-                                <form method="POST" action="{{ url_for('sellers.delete_document', did=doc.id) }}" class="d-inline" onsubmit="return confirm('Delete this document?')">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-xs btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
-                                </form>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="text-center py-5">
-                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">{% if current_locale == 'ar' %}لا توجد وثائق{% else %}No documents uploaded yet{% endif %}</p>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
-                        <i class="fas fa-upload me-1"></i>{% if current_locale == 'ar' %}رفع وثيقة{% else %}Upload Document{% endif %}
-                    </button>
-                </div>
-                {% endif %}
-            </div>
-        </div>
+  <!-- ── Card 2: Contact ── -->
+  <div class="sv-card">
+    <div class="sv-card-header">
+      <div class="sv-card-title">
+        <span class="sv-card-icon" style="background:#f0fdf4;">
+          <i class="fas fa-phone" style="color:var(--green);"></i>
+        </span>
+        {% if ar %}بيانات الاتصال{% else %}Contact{% endif %}
+      </div>
     </div>
+    <div class="sv-card-body">
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}الهاتف{% else %}Phone{% endif %}</span>
+        <span class="sv-info-value mono">
+          {% if seller.phone %}<a href="tel:{{ seller.phone }}">{{ seller.phone }}</a>{% else %}—{% endif %}
+        </span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}الفاكس{% else %}Fax{% endif %}</span>
+        <span class="sv-info-value mono">{{ seller.fax or '—' }}</span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}البريد الإلكتروني{% else %}Email{% endif %}</span>
+        <span class="sv-info-value">
+          {% if seller.email %}<a href="mailto:{{ seller.email }}">{{ seller.email }}</a>{% else %}—{% endif %}
+        </span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}الموقع الإلكتروني{% else %}Website{% endif %}</span>
+        <span class="sv-info-value">
+          {% if seller.website %}<a href="{{ seller.website }}" target="_blank">{{ seller.website }}</a>{% else %}—{% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
 
-    <!-- Activity Tab -->
-    <div class="tab-pane fade" id="p-activity">
-        <div class="card card-modern border-top-0 rounded-top-0">
-            <div class="card-header"><h6 class="mb-0"><i class="fas fa-history me-2"></i>{% if current_locale == 'ar' %}سجل النشاط{% else %}Activity Log{% endif %}</h6></div>
-            <div class="card-body">
-                {% if activity %}
-                <div class="activity-timeline">
-                    {% for log in activity %}
-                    <div class="activity-item">
-                        <div class="activity-dot"></div>
-                        <div class="activity-content">
-                            <div class="d-flex justify-content-between">
-                                <span class="fw-semibold">{{ log.action | replace('_', ' ') | title }}</span>
-                                <span class="text-muted small">{{ log.created_at.strftime('%d %b %Y %H:%M') }}</span>
-                            </div>
-                            <p class="text-muted small mb-0">{{ log.description }}</p>
-                            {% if log.user %}<p class="text-muted small mb-0">by {{ log.user.username }}</p>{% endif %}
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-muted text-center py-4">{% if current_locale == 'ar' %}لا يوجد سجل{% else %}No activity recorded{% endif %}</p>
-                {% endif %}
-            </div>
-        </div>
+  <!-- ── Card 3: Address (English) ── -->
+  <div class="sv-card">
+    <div class="sv-card-header">
+      <div class="sv-card-title">
+        <span class="sv-card-icon" style="background:#fffbeb;">
+          <i class="fas fa-map-marker-alt" style="color:var(--amber);"></i>
+        </span>
+        {% if ar %}العنوان (إنجليزي){% else %}Address (English){% endif %}
+      </div>
     </div>
+    <div class="sv-card-body">
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}الشارع{% else %}Street{% endif %}</span>
+        <span class="sv-info-value">{{ seller.street_name or '—' }}</span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}رقم المبنى{% else %}Building No.{% endif %}</span>
+        <span class="sv-info-value">{{ seller.building_number or '—' }}</span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}رقم إضافي{% else %}Additional No.{% endif %}</span>
+        <span class="sv-info-value">{{ seller.additional_number or '—' }}</span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}المنطقة{% else %}District{% endif %}</span>
+        <span class="sv-info-value">{{ seller.district or '—' }}</span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}المدينة{% else %}City{% endif %}</span>
+        <span class="sv-info-value">{{ seller.city or '—' }}</span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}الرمز البريدي{% else %}Postal Code{% endif %}</span>
+        <span class="sv-info-value">{{ seller.postal_code or '—' }}</span>
+      </div>
+      <div class="sv-info-row">
+        <span class="sv-info-label">{% if ar %}الدولة{% else %}Country{% endif %}</span>
+        <span class="sv-info-value">{{ seller.country or '—' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Card 4: Address (Arabic) ── -->
+  <div class="sv-card">
+    <div class="sv-card-header">
+      <div class="sv-card-title">
+        <span class="sv-card-icon" style="background:#fffbeb;">
+          <i class="fas fa-map-marker-alt" style="color:var(--amber);"></i>
+        </span>
+        {% if ar %}العنوان (عربي){% else %}Address (Arabic){% endif %}
+      </div>
+    </div>
+    <div class="sv-card-body" dir="rtl">
+      <div class="sv-info-row" style="direction:rtl;">
+        <span class="sv-info-label" style="text-align:right;">{% if ar %}الشارع{% else %}Street{% endif %}</span>
+        <span class="sv-info-value">{{ seller.street_name_ar or '—' }}</span>
+      </div>
+      <div class="sv-info-row" style="direction:rtl;">
+        <span class="sv-info-label" style="text-align:right;">{% if ar %}رقم المبنى{% else %}Building No.{% endif %}</span>
+        <span class="sv-info-value">{{ seller.building_number_ar or '—' }}</span>
+      </div>
+      <div class="sv-info-row" style="direction:rtl;">
+        <span class="sv-info-label" style="text-align:right;">{% if ar %}رقم إضافي{% else %}Additional No.{% endif %}</span>
+        <span class="sv-info-value">{{ seller.additional_number_ar or '—' }}</span>
+      </div>
+      <div class="sv-info-row" style="direction:rtl;">
+        <span class="sv-info-label" style="text-align:right;">{% if ar %}المنطقة{% else %}District{% endif %}</span>
+        <span class="sv-info-value">{{ seller.district_ar or '—' }}</span>
+      </div>
+      <div class="sv-info-row" style="direction:rtl;">
+        <span class="sv-info-label" style="text-align:right;">{% if ar %}المدينة{% else %}City{% endif %}</span>
+        <span class="sv-info-value">{{ seller.city_ar or '—' }}</span>
+      </div>
+      <div class="sv-info-row" style="direction:rtl;">
+        <span class="sv-info-label" style="text-align:right;">{% if ar %}الرمز البريدي{% else %}Postal Code{% endif %}</span>
+        <span class="sv-info-value">{{ seller.postal_code_ar or '—' }}</span>
+      </div>
+      <div class="sv-info-row" style="direction:rtl;">
+        <span class="sv-info-label" style="text-align:right;">{% if ar %}الدولة{% else %}Country{% endif %}</span>
+        <span class="sv-info-value">{{ seller.country_ar or '—' }}</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<!-- Add Contact Modal -->
-<div class="modal fade" id="addContactModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="POST" action="{{ url_for('sellers.add_contact', id=seller.id) }}">
-                {{ contact_form.hidden_tag() }}
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>{% if current_locale == 'ar' %}إضافة جهة اتصال{% else %}Add Contact{% endif %}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label required">{% if current_locale == 'ar' %}الاسم{% else %}Contact Name{% endif %}</label>
-                        {{ contact_form.contact_name(class="form-control") }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{% if current_locale == 'ar' %}المسمى الوظيفي{% else %}Designation{% endif %}</label>
-                        {{ contact_form.designation(class="form-control") }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{% if current_locale == 'ar' %}رقم الجوال{% else %}Mobile{% endif %}</label>
-                        {{ contact_form.mobile(class="form-control") }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{% if current_locale == 'ar' %}البريد الإلكتروني{% else %}Email{% endif %}</label>
-                        {{ contact_form.email(class="form-control") }}
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% if current_locale == 'ar' %}إلغاء{% else %}Cancel{% endif %}</button>
-                    <button type="submit" class="btn btn-primary">{% if current_locale == 'ar' %}إضافة{% else %}Add Contact{% endif %}</button>
-                </div>
-            </form>
-        </div>
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- BANK ACCOUNTS                                              -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="sv-card" style="margin-top:16px;">
+  <div class="sv-card-header">
+    <div class="sv-card-title">
+      <span class="sv-card-icon" style="background:var(--teal-50);">
+        <i class="fas fa-university" style="color:var(--teal);"></i>
+      </span>
+      {% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
     </div>
+    <span style="font-size:11px;color:var(--gray-400);font-weight:600;">
+      {{ banks|length }} {% if ar %}حساب{% else %}account{{ 's' if banks|length != 1 }}{% endif %}
+    </span>
+  </div>
+  <div class="sv-card-body">
+    {% if banks %}
+    <div style="overflow-x:auto;">
+      <table class="sv-bank-tbl">
+        <thead>
+          <tr>
+            <th>{% if ar %}اسم البنك{% else %}Bank Name{% endif %}</th>
+            <th>{% if ar %}الفرع{% else %}Branch{% endif %}</th>
+            <th>{% if ar %}رقم الحساب{% else %}Account No.{% endif %}</th>
+            <th>IBAN</th>
+            <th>SWIFT</th>
+            <th>{% if ar %}رئيسي{% else %}Primary{% endif %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in banks %}
+          <tr class="{{ 'is-primary' if b.is_primary else '' }}">
+            <td class="sv-bank-name-cell">
+              <strong>{{ b.bank_name or '—' }}</strong>
+              {% if b.bank_name_ar %}<small>{{ b.bank_name_ar }}</small>{% endif %}
+            </td>
+            <td class="sv-branch-cell">
+              {{ b.branch or '—' }}
+              {% if b.branch_ar %}<small>{{ b.branch_ar }}</small>{% endif %}
+            </td>
+            <td class="mono">{{ b.account_number or '—' }}</td>
+            <td class="mono" style="font-size:11.5px;">{{ b.iban or '—' }}</td>
+            <td class="mono">{{ b.swift_code or '—' }}</td>
+            <td>
+              {% if b.is_primary %}
+              <span class="primary-badge">
+                <i class="fas fa-check-circle"></i> 
+                {% if ar %}رئيسي{% else %}Primary{% endif %}
+              </span>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="sv-empty">
+      <i class="fas fa-university"></i>
+      {% if ar %}لا توجد حسابات بنكية{% else %}No bank accounts added{% endif %}
+    </div>
+    {% endif %}
+  </div>
 </div>
 
-<!-- Upload Document Modal -->
-<div class="modal fade" id="uploadDocModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="POST" action="{{ url_for('sellers.upload_document', id=seller.id) }}" enctype="multipart/form-data">
-                {{ doc_form.hidden_tag() }}
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-upload me-2"></i>{% if current_locale == 'ar' %}رفع وثيقة{% else %}Upload Document{% endif %}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label required">{% if current_locale == 'ar' %}نوع الوثيقة{% else %}Document Type{% endif %}</label>
-                        {{ doc_form.document_type(class="form-select") }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label required">{% if current_locale == 'ar' %}اسم الوثيقة{% else %}Document Name{% endif %}</label>
-                        {{ doc_form.document_name(class="form-control") }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{% if current_locale == 'ar' %}تاريخ الانتهاء{% else %}Expiry Date{% endif %}</label>
-                        {{ doc_form.expiry_date(class="form-control", type="date") }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label required">{% if current_locale == 'ar' %}اختر الملف{% else %}Choose File{% endif %}</label>
-                        <input type="file" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                        <div class="form-text">{% if current_locale == 'ar' %}PDF، JPG، JPEG، PNG فقط - الحد الأقصى 16MB{% else %}PDF, JPG, JPEG, PNG only – Max 16MB{% endif %}</div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% if current_locale == 'ar' %}إلغاء{% else %}Cancel{% endif %}</button>
-                    <button type="submit" class="btn btn-primary">{% if current_locale == 'ar' %}رفع{% else %}Upload{% endif %}</button>
-                </div>
-            </form>
-        </div>
-    </div>
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- BACK BUTTON                                                -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div style="margin-top:20px;text-align:center;">
+  <a href="{{ url_for('sellers.list_sellers') }}" class="btn btn-secondary">
+    <i class="fas fa-arrow-left me-1"></i>
+    {% if ar %}العودة إلى قائمة البائعين{% else %}Back to Sellers{% endif %}
+  </a>
 </div>
 
-<!-- Delete Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header border-0"><h5 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Confirm Delete</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body"><p id="deleteModalText"></p></div>
-            <div class="modal-footer border-0">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="deleteForm" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-danger">Delete</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function confirmDelete(url, name) {
-    document.getElementById('deleteForm').action = url;
-    document.getElementById('deleteModalText').textContent = 'Are you sure you want to delete: ' + name + '?';
-    new bootstrap.Modal(document.getElementById('deleteModal')).show();
-}
-// Restore correct tab from hash
-document.addEventListener('DOMContentLoaded', function() {
-    const hash = window.location.hash;
-    if (hash === '#contacts') { document.querySelector('[data-bs-target="#p-contacts"]').click(); }
-    else if (hash === '#documents') { document.querySelector('[data-bs-target="#p-documents"]').click(); }
-});
+// No JavaScript needed for this view
 </script>
 {% endblock %}

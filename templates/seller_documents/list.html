@@ -84,6 +84,12 @@
       <button class="tool-btn tool-btn-blue" onclick="refreshGrid()" title="{% if ar %}تحديث{% else %}Refresh{% endif %}"><i class="fas fa-sync-alt"></i></button>
       <button class="tool-btn" onclick="exportCSV()" title="{% if ar %}تصدير CSV{% else %}Export CSV{% endif %}"><i class="fas fa-file-export"></i></button>
       <button class="tool-btn" onclick="clearFilters()" title="{% if ar %}مسح الفلاتر{% else %}Clear Filters{% endif %}"><i class="fas fa-times-circle"></i></button>
+      <button onclick="openUploadModal()"
+        style="display:inline-flex;align-items:center;gap:7px;padding:7px 18px;border-radius:8px;border:none;cursor:pointer;background:#7c3aed;color:#fff;font-size:12.5px;font-weight:700;transition:all .15s;"
+        onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">
+        <i class="fas fa-plus"></i>
+        {% if ar %}إضافة مستند / Add Document{% else %}Add Document{% endif %}
+      </button>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
       <span id="sdSelText" style="font-size:12px;font-weight:600;color:var(--gray-400);">0 {% if ar %}سجل{% else %}records{% endif %}</span>
@@ -105,8 +111,7 @@
     <span id="sdPageInfo" style="font-size:12px;color:var(--gray-400);">–</span>
     <div style="display:flex;align-items:center;gap:8px;">
       <span style="font-size:12px;color:var(--gray-400);">{% if ar %}صفوف:{% else %}Rows:{% endif %}</span>
-      <select class="form-select form-select-sm" style="width:72px"
-        onchange="sdGrid&&sdGrid.setGridOption('paginationPageSize',+this.value)">
+      <select class="form-select form-select-sm" style="width:72px" onchange="sdGrid&&sdGrid.setGridOption('paginationPageSize',+this.value)">
         <option>10</option><option selected>20</option><option>50</option><option>100</option><option>200</option>
       </select>
     </div>
@@ -215,10 +220,122 @@
   </div>
 </div>
 
+<!-- ══ UPLOAD DOCUMENT MODAL ══ -->
+<div class="modal fade" id="uploadDocModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:660px;">
+    <div class="modal-content" style="border:none;border-radius:14px;overflow:hidden;box-shadow:0 25px 80px rgba(0,0,0,.22);">
+
+      <div style="background:linear-gradient(135deg,#5b21b6 0%,#7c3aed 100%);padding:16px 22px;display:flex;align-items:center;justify-content:space-between;">
+        <h5 style="margin:0;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-paperclip"></i>
+          {% if ar %}إضافة مستند جديد / Add New Document{% else %}Add New Document / إضافة مستند جديد{% endif %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:brightness(0) invert(1);opacity:.8;"></button>
+      </div>
+
+      <form id="uploadDocForm" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div style="padding:22px;">
+
+          <!-- Seller dropdown -->
+          <div style="margin-bottom:16px;">
+            <div class="ed-lbl">{% if ar %}البائع / Seller{% else %}Seller / البائع{% endif %} <span class="req">*</span></div>
+            <select id="upl_seller" name="seller_id" class="ed-inp ed-sel"
+              onchange="this.classList.remove('is-invalid');document.getElementById('err_upl_seller').classList.remove('show')">
+              <option value="">{% if ar %}-- اختر البائع --{% else %}-- Select Seller --{% endif %}</option>
+            </select>
+            <div class="sf-err" id="err_upl_seller"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
+          </div>
+
+          <!-- Doc Type + Doc Name -->
+          <div class="ed-fg">
+            <div>
+              <div class="ed-lbl">{% if ar %}نوع المستند / Doc Type{% else %}Doc Type{% endif %} <span class="req">*</span></div>
+              <select id="upl_type" name="document_type" class="ed-inp ed-sel"
+                onchange="this.classList.remove('is-invalid');document.getElementById('err_upl_type').classList.remove('show')">
+                <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
+                <option>Commercial Registration</option>
+                <option>VAT Certificate</option>
+                <option>Trade License</option>
+                <option>Municipal License</option>
+                <option>GOSI Certificate</option>
+                <option>Zakat Certificate</option>
+                <option>Saudization Certificate</option>
+                <option>ISO Certificate</option>
+                <option>Bank Letter</option>
+                <option>Contract</option>
+                <option>Other</option>
+              </select>
+              <div class="sf-err" id="err_upl_type"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
+            </div>
+            <div>
+              <div class="ed-lbl">{% if ar %}اسم المستند / Doc Name{% else %}Doc Name{% endif %} <span class="req">*</span></div>
+              <input type="text" id="upl_name" name="document_name" class="ed-inp"
+                placeholder="{% if ar %}مثال: رخصة 2025{% else %}e.g. Trade License 2025{% endif %}"
+                oninput="this.classList.remove('is-invalid');document.getElementById('err_upl_name').classList.remove('show')">
+              <div class="sf-err" id="err_upl_name"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
+            </div>
+          </div>
+
+          <!-- Issue Date + Expiry Date -->
+          <div class="ed-fg">
+            <div>
+              <div class="ed-lbl">{% if ar %}تاريخ الإصدار / Issue Date{% else %}Issue Date{% endif %} <span class="req">*</span></div>
+              <input type="date" id="upl_issue" name="issue_date" class="ed-inp"
+                oninput="this.classList.remove('is-invalid');document.getElementById('err_upl_issue').classList.remove('show')">
+              <div class="sf-err" id="err_upl_issue"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
+            </div>
+            <div>
+              <div class="ed-lbl">{% if ar %}تاريخ الانتهاء / Expiry Date{% else %}Expiry Date{% endif %}</div>
+              <input type="date" id="upl_expiry" name="expiry_date" class="ed-inp">
+            </div>
+          </div>
+
+          <!-- File upload zone -->
+          <div>
+            <div class="ed-lbl">{% if ar %}الملف / File{% else %}File{% endif %} <span class="req">*</span></div>
+            <label id="upl_zone" for="upl_file"
+              style="display:block;border:2px dashed #c4b5fd;border-radius:10px;padding:20px;text-align:center;cursor:pointer;background:#faf5ff;transition:all .15s;">
+              <i class="fas fa-cloud-upload-alt" style="font-size:26px;color:#7c3aed;display:block;margin-bottom:8px;"></i>
+              <div style="font-size:12.5px;font-weight:600;color:#4b5563;">{% if ar %}اسحب الملف هنا أو انقر للتصفح{% else %}Drag & drop or click to browse{% endif %}</div>
+              <div style="font-size:11px;color:#9ca3af;margin-top:3px;">PDF, JPG, PNG, DOCX, XLSX — {% if ar %}حتى 16 ميغابايت{% else %}up to 16 MB{% endif %}</div>
+              <input type="file" id="upl_file" name="file"
+                <input type="file" id="upl_file" name="file"
+  accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.rtf,.zip"
+  class="d-none" onchange="onUplFileChosen(this)">
+                
+            </label>
+            <div id="upl_chosen" style="display:none;margin-top:8px;padding:9px 13px;background:#ede9fe;border-radius:8px;font-size:12px;color:#5b21b6;font-weight:600;align-items:center;gap:8px;">
+              <i class="fas fa-file-alt" style="color:#7c3aed;"></i>
+              <span id="upl_chosen_name"></span>
+              <button type="button" onclick="clearUplFile()" style="margin-inline-start:auto;background:none;border:none;color:#7c3aed;cursor:pointer;"><i class="fas fa-times-circle"></i></button>
+            </div>
+            <div class="sf-err" id="err_upl_file"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}الملف مطلوب{% else %}File is required{% endif %}</span></div>
+          </div>
+
+        </div><!-- /padding -->
+
+        <div style="padding:14px 22px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+            {% if ar %}إلغاء / Cancel{% else %}Cancel{% endif %}
+          </button>
+          <button type="button" id="uplSaveBtn" onclick="submitUpload()"
+            style="padding:8px 20px;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:linear-gradient(135deg,#5b21b6,#7c3aed);color:#fff;display:inline-flex;align-items:center;gap:7px;">
+            <i class="fas fa-upload"></i>
+            {% if ar %}رفع المستند / Upload{% else %}Upload Document{% endif %}
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+
 <script>
 const CSRF    = '{{ csrf_token() }}';
 const IS_AR   = {{ 'true' if ar else 'false' }};
@@ -361,49 +478,54 @@ const colDefs = [
 ];
 
 let sdGrid;
-agGrid.createGrid(document.getElementById('sdGrid'), {
-  columnDefs: colDefs,
-  rowData: [],
-  pagination: true,
-  paginationPageSize: 20,
-  rowSelection: 'multiple',
-  suppressRowClickSelection: true,
-  animateRows: true,
-  enableRtl: IS_AR,
-  defaultColDef: {
-    sortable: true, resizable: true,
-    filter: true, suppressMenu: false,
-    menuTabs: ['filterMenuTab','generalMenuTab'],
-  },
-  onGridReady(p){ sdGrid = p.api; loadData(); },
-  onFilterChanged(){ updateBadge(); },
-  onPaginationChanged(){ updateBadge(); },
-  onSelectionChanged(){ updateBadge(); },
-  getRowStyle(p){ return p.node.rowIndex%2===0 ? {background:'#fff'} : {background:'#fafbfc'}; },
+document.addEventListener('DOMContentLoaded', () => {
+  sdGrid = agGrid.createGrid(document.getElementById('sdGrid'), {
+    columnDefs: colDefs,
+    rowData: [],
+    pagination: true,
+    paginationPageSize: 20,
+    rowSelection: 'multiple',
+    suppressRowClickSelection: true,
+    animateRows: true,
+    enableRtl: IS_AR,
+    defaultColDef: {
+      sortable: true, resizable: true,
+      filter: true, suppressMenu: false,
+      menuTabs: ['filterMenuTab','generalMenuTab'],
+    },
+    onGridReady(){ loadData(); },
+    onFilterChanged(){ updateBadge(); },
+    onPaginationChanged(){ updateBadge(); },
+    onSelectionChanged(){ updateBadge(); },
+    getRowStyle(p){ return p.node.rowIndex%2===0 ? {background:'#fff'} : {background:'#fafbfc'}; },
+  });
 });
 
 function loadData(){
-  fetch(DATA_URL).then(r=>r.json()).then(d=>{
-    sdGrid.setGridOption('rowData', d);
-    updateBadge();
-  });
+  if(!sdGrid) return;
+  fetch(DATA_URL)
+    .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(d => { sdGrid.setGridOption('rowData', d); updateBadge(); })
+    .catch(e => console.error('loadData error:', e));
 }
 function refreshGrid(){ loadData(); }
-function exportCSV(){ sdGrid.exportDataAsCsv({fileName:'seller_documents.csv'}); }
-function clearFilters(){ sdGrid.setFilterModel(null); }
+function exportCSV(){ sdGrid && sdGrid.exportDataAsCsv({fileName:'seller_documents.csv'}); }
+function clearFilters(){ sdGrid && sdGrid.setFilterModel(null); }
 
 function updateBadge(){
   if(!sdGrid) return;
-  const sel   = sdGrid.getSelectedRows().length;
-  const disp  = sdGrid.getDisplayedRowCount();
-  const total = (sdGrid.getGridOption('rowData')||[]).length;
-  document.getElementById('sdSelText').textContent = sel > 0
-    ? `${sel} ${IS_AR?'محدد':'selected'}`
-    : `${disp} ${IS_AR?'سجل':'records'}`;
-  const pg  = sdGrid.paginationGetCurrentPage()+1;
-  const pgs = sdGrid.paginationGetTotalPages();
-  document.getElementById('sdPageInfo').textContent =
-    `${disp} / ${total} — ${IS_AR?'صفحة':'Page'} ${pg}/${pgs}`;
+  try {
+    const sel   = sdGrid.getSelectedRows().length;
+    const disp  = sdGrid.getDisplayedRowCount();
+    const total = (sdGrid.getGridOption('rowData')||[]).length;
+    document.getElementById('sdSelText').textContent = sel > 0
+      ? `${sel} ${IS_AR?'محدد':'selected'}`
+      : `${disp} ${IS_AR?'سجل':'records'}`;
+    const pg  = sdGrid.paginationGetCurrentPage()+1;
+    const pgs = sdGrid.paginationGetTotalPages();
+    document.getElementById('sdPageInfo').textContent =
+      `${disp} / ${total} — ${IS_AR?'صفحة':'Page'} ${pg}/${pgs}`;
+  } catch(e) {}
 }
 
 /* ════ EDIT MODAL ════ */
@@ -486,6 +608,133 @@ async function confirmDeleteDoc(){
   } else {
     alert(IS_AR?'فشل الحذف':'Delete failed');
   }
+}  // ← THIS CLOSING BRACE WAS MISSING
+
+/* ════ UPLOAD MODAL ════ */
+function openUploadModal(){
+  // Always fetch fresh seller list
+  const sel = document.getElementById('upl_seller');
+  sel.innerHTML = `<option value="">${IS_AR?'-- اختر البائع --':'-- Select Seller --'}</option>`;
+  fetch('/sellers/data')
+    .then(r => r.json())
+    .then(data => {
+      data.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `[${s.seller_code}] ${s.name}`;
+        sel.appendChild(opt);
+      });
+    })
+    .catch(() => {});
+
+  // Reset all fields and errors
+  document.getElementById('upl_type').value  = '';
+  document.getElementById('upl_name').value  = '';
+  document.getElementById('upl_issue').value = '';
+  document.getElementById('upl_expiry').value= '';
+  clearUplFile();
+  ['err_upl_seller','err_upl_type','err_upl_name','err_upl_issue','err_upl_file'].forEach(id => {
+    document.getElementById(id)?.classList.remove('show');
+  });
+  ['upl_seller','upl_type','upl_name','upl_issue'].forEach(id => {
+    document.getElementById(id)?.classList.remove('is-invalid');
+  });
+  new bootstrap.Modal(document.getElementById('uploadDocModal')).show();
 }
+
+function onUplFileChosen(inp){
+  if(inp.files && inp.files[0]){
+    document.getElementById('upl_chosen').style.display = 'flex';
+    document.getElementById('upl_chosen_name').textContent =
+      inp.files[0].name + ' (' + (inp.files[0].size/1024).toFixed(1) + ' KB)';
+    document.getElementById('err_upl_file').classList.remove('show');
+    document.getElementById('upl_zone').style.borderColor = '#7c3aed';
+    document.getElementById('upl_zone').style.background  = '#ede9fe';
+  }
+}
+function clearUplFile(){
+  const inp = document.getElementById('upl_file');
+  if(inp) inp.value = '';
+  document.getElementById('upl_chosen').style.display = 'none';
+  document.getElementById('upl_chosen_name').textContent = '';
+  document.getElementById('upl_zone').style.borderColor = '#c4b5fd';
+  document.getElementById('upl_zone').style.background  = '#faf5ff';
+}
+
+async function submitUpload(){
+  const sellerEl  = document.getElementById('upl_seller');
+  const typeEl    = document.getElementById('upl_type');
+  const nameEl    = document.getElementById('upl_name');
+  const issueEl   = document.getElementById('upl_issue');
+  const fileInp   = document.getElementById('upl_file');
+
+  const sellerId  = sellerEl.value;
+  const docType   = typeEl.value;
+  const docName   = nameEl.value.trim();
+  const issueDate = issueEl.value;
+  let ok = true;
+
+  // Validate all required fields
+  if(!sellerId){ sellerEl.classList.add('is-invalid'); document.getElementById('err_upl_seller').classList.add('show'); ok=false; }
+  else         { sellerEl.classList.remove('is-invalid'); document.getElementById('err_upl_seller').classList.remove('show'); }
+  if(!docType) { typeEl.classList.add('is-invalid');   document.getElementById('err_upl_type').classList.add('show');   ok=false; }
+  else         { typeEl.classList.remove('is-invalid'); document.getElementById('err_upl_type').classList.remove('show'); }
+  if(!docName) { nameEl.classList.add('is-invalid');   document.getElementById('err_upl_name').classList.add('show');   ok=false; }
+  else         { nameEl.classList.remove('is-invalid'); document.getElementById('err_upl_name').classList.remove('show'); }
+  if(!issueDate){ issueEl.classList.add('is-invalid'); document.getElementById('err_upl_issue').classList.add('show'); ok=false; }
+  else          { issueEl.classList.remove('is-invalid'); document.getElementById('err_upl_issue').classList.remove('show'); }
+  if(!fileInp.files || !fileInp.files[0]){ document.getElementById('err_upl_file').classList.add('show'); ok=false; }
+  else { document.getElementById('err_upl_file').classList.remove('show'); }
+  if(!ok) return;
+
+  const btn = document.getElementById('uplSaveBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${IS_AR?'جاري الرفع...':'Uploading...'}`;
+
+  const fd = new FormData();
+  fd.append('document_type', docType);
+  fd.append('document_name', docName);
+  fd.append('issue_date',    issueDate);
+  fd.append('expiry_date',   document.getElementById('upl_expiry').value || '');
+  fd.append('file',          fileInp.files[0]);
+
+  try {
+    const res  = await fetch(`/sellers/${sellerId}/documents/upload`, {
+      method:  'POST',
+      headers: { 'X-CSRFToken': CSRF },
+      body:    fd,
+    });
+    const data = await res.json();
+    if(data.ok){
+      bootstrap.Modal.getInstance(document.getElementById('uploadDocModal'))?.hide();
+      loadData();  // refresh grid
+    } else {
+      alert(data.error || (IS_AR?'فشل رفع الملف':'Upload failed'));
+    }
+  } catch(e){
+    console.error('Upload error:', e);
+    alert(IS_AR?'خطأ في الاتصال':'Connection error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fas fa-upload"></i> ${IS_AR?'رفع المستند':'Upload Document'}`;
+  }
+}
+
+/* Drag-drop on upload zone */
+document.addEventListener('DOMContentLoaded', ()=>{
+  const zone = document.getElementById('upl_zone');
+  if(!zone) return;
+  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.style.borderColor='#7c3aed'; zone.style.background='#ede9fe'; });
+  zone.addEventListener('dragleave', ()=>{ zone.style.borderColor='#c4b5fd'; zone.style.background='#faf5ff'; });
+  zone.addEventListener('drop', e=>{
+    e.preventDefault();
+    zone.style.borderColor='#c4b5fd'; zone.style.background='#faf5ff';
+    const f = e.dataTransfer.files[0];
+    if(f){
+      try{ const dt=new DataTransfer(); dt.items.add(f); document.getElementById('upl_file').files=dt.files; }catch(ex){}
+      onUplFileChosen(document.getElementById('upl_file'));
+    }
+  });
+});
 </script>
 {% endblock %}
