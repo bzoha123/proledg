@@ -163,7 +163,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div>
-                  <select id="pr_status" class="f-inp">
+                  <select id="pr_status" class="f-inp" onchange="onPrStatusChange()">
                     <option value="Open">Open</option>
                     <option value="Pending">Pending</option>
                     <option value="Approved">Approved</option>
@@ -196,21 +196,25 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               <div class="f-grid4">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ الترحيل{% else %}Posting Date{% endif %}</div>
-                  <input type="date" id="pr_posting_date" class="f-inp" dir="ltr">
+                  <input type="date" id="pr_posting_date" class="f-inp" dir="ltr" disabled
+                         title="{% if ar %}يتم تفعيله تلقائياً عند الاعتماد{% else %}Activates automatically when Approved{% endif %}">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}صالح حتى{% else %}Valid Until{% endif %}</div>
-                  <input type="date" id="pr_valid_until" class="f-inp" dir="ltr">
+                  <input type="date" id="pr_valid_until" class="f-inp" dir="ltr" onchange="validatePrDates()">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ المستند{% else %}Document Date{% endif %}</div>
-                  <input type="date" id="pr_doc_date" class="f-inp" dir="ltr">
+                  <input type="date" id="pr_doc_date" class="f-inp" dir="ltr" readonly
+                         style="background:#f8fafc;color:#374151;"
+                         title="{% if ar %}دائماً تاريخ اليوم{% else %}Always today's date{% endif %}">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}التاريخ المطلوب{% else %}Required Date{% endif %}</div>
-                  <input type="date" id="pr_req_date" class="f-inp" dir="ltr">
+                  <input type="date" id="pr_req_date" class="f-inp" dir="ltr" onchange="validatePrDates()">
                 </div>
               </div>
+              <div id="prDateErr" style="display:none;background:#fee2e2;color:#dc2626;font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:12px;"></div>
               <div class="f-item">
                 <div class="f-lbl">{% if ar %}ملاحظات{% else %}Remarks{% endif %}</div>
                 <textarea id="pr_remarks" class="f-inp" rows="2" style="resize:vertical;"></textarea>
@@ -244,7 +248,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                   <thead><tr>
                     <th style="width:30px;">#</th>
                     <th style="min-width:85px;">{% if ar %}الكود{% else %}Item Code{% endif %}</th>
-                    <th style="min-width:150px;">{% if ar %}الوصف{% else %}Description{% endif %}</th>
+                    <th style="min-width:150px;">{% if ar %}الاسم{% else %}Name{% endif %}</th>
                     <th style="width:105px;">{% if ar %}تاريخ الحاجة{% else %}Req. Date{% endif %}</th>
                     <th style="min-width:100px;">{% if ar %}المستودع{% else %}Warehouse{% endif %}</th>
                     <th style="width:95px;">UoM</th>
@@ -380,6 +384,48 @@ const CSRF  = '{{ csrf_token() }}';
 let _liIdx = 0;
 let _attachments = [];
 let _prModal = null;  // Store modal instance
+let _itemMaster = [];   // Item Master rows, loaded once per modal-open
+let _itemMasterLoaded = false;
+
+async function loadItemMaster() {
+  try {
+    const res = await fetch('/items/data');
+    const all = await res.json();
+    _itemMaster = (all || []).filter(it => it.is_active === undefined || it.is_active);
+    _itemMasterLoaded = true;
+  } catch (e) {
+    console.error('Failed to load Item Master:', e);
+    _itemMaster = [];
+  }
+}
+
+/* ══ Posting Date: empty + disabled until status = Approved ══ */
+function onPrStatusChange() {
+  const statusEl = document.getElementById('pr_status');
+  const postEl   = document.getElementById('pr_posting_date');
+  if (!statusEl || !postEl) return;
+  if (statusEl.value === 'Approved') {
+    postEl.disabled = false;
+    if (!postEl.value) postEl.value = new Date().toISOString().split('T')[0];
+  } else {
+    postEl.disabled = true;
+    postEl.value = '';
+  }
+}
+
+/* ══ Date validation: valid_until >= today, required_date <= valid_until ══ */
+function validatePrDates() {
+  const errEl = document.getElementById('prDateErr');
+  const vu = document.getElementById('pr_valid_until').value;
+  const rd = document.getElementById('pr_req_date').value;
+  const today = new Date().toISOString().split('T')[0];
+  let msg = '';
+  if (vu && vu < today) msg = IS_AR ? 'يجب أن يكون "صالح حتى" بتاريخ اليوم أو بعده' : 'Valid Until must be today or later';
+  else if (rd && vu && rd > vu) msg = IS_AR ? 'يجب أن يكون "التاريخ المطلوب" قبل أو يساوي "صالح حتى"' : 'Required Date must be on/before Valid Until';
+  errEl.style.display = msg ? 'block' : 'none';
+  errEl.textContent = msg;
+  return !msg;
+}
 
 // Initialize modal on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -429,22 +475,85 @@ async function fetchDocNo() {
   }
 }
 
+/* ══ Item Master dropdown helpers ══ */
+function _itemCodeOptionsHtml(selectedCode) {
+  let html = '<option value="">' + (IS_AR ? '-- الكود --' : '-- Code --') + '</option>';
+  html += _itemMaster.map(it => {
+    const sel = it.item_code === selectedCode ? ' selected' : '';
+    return `<option value="${it.item_code}"${sel}>${it.item_code}</option>`;
+  }).join('');
+  if (selectedCode && !_itemMaster.some(it => it.item_code === selectedCode)) {
+    html += `<option value="${selectedCode}" selected>${selectedCode}</option>`;
+  }
+  return html;
+}
+
+function _itemNameOptionsHtml(selectedCode) {
+  let html = '<option value="">' + (IS_AR ? '-- الاسم --' : '-- Name --') + '</option>';
+  html += _itemMaster.map(it => {
+    const sel = it.item_code === selectedCode ? ' selected' : '';
+    const label = it.name_en + (it.name_ar ? ' / ' + it.name_ar : '');
+    return `<option value="${it.item_code}"${sel}>${label}</option>`;
+  }).join('');
+  if (selectedCode && !_itemMaster.some(it => it.item_code === selectedCode)) {
+    html += `<option value="${selectedCode}" selected>(${IS_AR ? 'غير معروف' : 'unknown item'})</option>`;
+  }
+  return html;
+}
+
+function _uomOptionsHtml(item, selectedUom) {
+  const list = (item && item.uoms && item.uoms.length) ? item.uoms : null;
+  if (!list) {
+    const fallback = selectedUom || 'unit';
+    return `<option value="${fallback}" selected>${fallback}</option>`;
+  }
+  return list.map(u => {
+    const val = u.unit_name;
+    const sel = (selectedUom ? selectedUom === val : u.is_default) ? ' selected' : '';
+    return `<option value="${val}"${sel}>${val}</option>`;
+  }).join('');
+}
+
+function onLiItemChange(idx, source) {
+  const codeSel = document.getElementById('plic_' + idx);
+  const nameSel = document.getElementById('plname_' + idx);
+  const code = source === 'name' ? (nameSel ? nameSel.value : '') : (codeSel ? codeSel.value : '');
+  const item = _itemMaster.find(it => it.item_code === code);
+
+  if (codeSel && codeSel.value !== code) codeSel.value = code;
+  if (nameSel && nameSel.value !== code) nameSel.value = code;
+
+  const descEl = document.getElementById('plid_' + idx); // hidden field, holds the name text actually submitted
+  const uomEl  = document.getElementById('pluom_' + idx);
+  const rateEl = document.getElementById('plrt_' + idx);
+  if (item) {
+    if (descEl) descEl.value = item.name_en + (item.name_ar ? ' / ' + item.name_ar : '');
+    if (uomEl)  uomEl.innerHTML = _uomOptionsHtml(item, null);
+    if (rateEl) rateEl.value = (item.main_rate || 0).toFixed(2);
+  } else {
+    if (descEl) descEl.value = '';
+    if (uomEl)  uomEl.innerHTML = _uomOptionsHtml(null, 'unit');
+  }
+  recalcLi(idx);
+}
+
 /* ══ Line Items ══ */
 function addLiRow(d) {
   const idx = _liIdx++;
   d = d || {};
-  const uoms = [['unit','Unit / وحدة'],['hour','Hour / ساعة'],['day','Day / يوم'],
-                ['month','Month / شهر'],['kg','KG / كجم'],['meter','Meter / متر'],
-                ['box','Box / صندوق'],['piece','Piece / قطعة']];
+  const item = d.item_code ? _itemMaster.find(it => it.item_code === d.item_code) : null;
   const row = `<tr id="plr_${idx}">
     <td style="text-align:center;color:#9ca3af;font-size:11px;padding:4px;">${_liIdx}</td>
-    <td><input type="text"   class="li-inp" name="li_item_code[]" value="${d.item_code||''}" style="width:80px;"></td>
-    <td><input type="text"   class="li-inp" name="li_item_desc[]" value="${d.item_desc||''}" style="min-width:130px;"></td>
+    <td><select class="li-inp" name="li_item_code[]" id="plic_${idx}" onchange="onLiItemChange(${idx},'code')" style="width:110px;">${_itemCodeOptionsHtml(d.item_code||'')}</select></td>
+    <td>
+      <select class="li-inp" id="plname_${idx}" onchange="onLiItemChange(${idx},'name')" style="min-width:160px;">${_itemNameOptionsHtml(d.item_code||'')}</select>
+      <input type="hidden" name="li_item_desc[]" id="plid_${idx}" value="${d.item_desc||(item?(item.name_en+(item.name_ar?' / '+item.name_ar:'')):'')}">
+    </td>
     <td><input type="date"   class="li-inp" name="li_required_date[]" value="${d.required_date||''}" dir="ltr" style="width:105px;"></td>
     <td><input type="text"   class="li-inp" name="li_warehouse[]" value="${d.warehouse||''}" style="min-width:90px;"></td>
-    <td><select class="li-inp" name="li_uom[]" style="width:90px;">${uoms.map(([v,l])=>`<option value="${v}"${d.uom===v?' selected':''}>${l}</option>`).join('')}</select></td>
+    <td><select class="li-inp" name="li_uom[]" id="pluom_${idx}" style="width:90px;">${_uomOptionsHtml(item, d.uom)}</select></td>
     <td><input type="number" class="li-inp" name="li_qty[]"      id="plq_${idx}"  value="${d.quantity||0}"  min="0" step="0.01" oninput="recalcLi(${idx})" style="width:62px;"></td>
-    <td><input type="number" class="li-inp" name="li_rate[]"     id="plrt_${idx}" value="${d.rate||0}"      min="0" step="0.01" oninput="recalcLi(${idx})" style="width:62px;"></td>
+    <td><input type="number" class="li-inp" name="li_rate[]"     id="plrt_${idx}" value="${d.rate||(item?item.main_rate:0)||0}" min="0" step="0.01" oninput="recalcLi(${idx})" style="width:62px;"></td>
     <td><input type="number" class="li-inp" name="li_discount[]" id="pld_${idx}"  value="${d.discount||0}"  min="0" step="0.01" oninput="recalcLi(${idx})" style="width:58px;"></td>
     <td><input type="number" class="li-inp" name="li_freight[]"  id="plf_${idx}"  value="${d.freight||0}"   min="0" step="0.01" oninput="recalcLi(${idx})" style="width:58px;"></td>
     <td><input type="number" class="li-inp" id="plt_${idx}"  name="li_taxable_disp[]" value="${d.taxable||0}" readonly
@@ -554,7 +663,7 @@ function updDocCount() {
 }
 
 /* ══ Open Add ══ */
-function openAdd() {
+async function openAdd() {
   console.log('openAdd() called');
   _liIdx = 0; _attachments = [];
   document.getElementById('pr_id').value = '';
@@ -565,9 +674,12 @@ function openAdd() {
     const e = document.getElementById(id); if (e) e.value = '';
   });
   const today = new Date().toISOString().split('T')[0];
-  ['pr_posting_date','pr_valid_until','pr_doc_date','pr_req_date'].forEach(id => {
-    const e = document.getElementById(id); if (e) e.value = today;
-  });
+  document.getElementById('pr_posting_date').value = '';
+  document.getElementById('pr_posting_date').disabled = true;
+  document.getElementById('pr_valid_until').value = today;
+  document.getElementById('pr_doc_date').value = today;   // always today, readonly
+  document.getElementById('pr_req_date').value = today;
+  document.getElementById('prDateErr').style.display = 'none';
   document.getElementById('pr_status').value = 'Open';
   document.getElementById('pr_vendor').value = '';
   document.getElementById('pr_doc_no').value = '';
@@ -587,7 +699,8 @@ function openAdd() {
   });
   // Fetch doc no from server
   fetchDocNo();
-  // Add first empty line item
+  // Load Item Master, then add first empty line item
+  await loadItemMaster();
   addLiRow();
   
   // Show modal
@@ -610,7 +723,7 @@ function openEdit(id) {
       if (!r.ok) throw new Error('Network response was not ok');
       return r.json();
     })
-    .then(d => {
+    .then(async d => {
       _liIdx = 0; _attachments = [];
       document.getElementById('pr_id').value = id;
       document.getElementById('prTitle').innerHTML =
@@ -623,11 +736,16 @@ function openEdit(id) {
       document.getElementById('pr_req_name').value = d.requester_name || '';
       document.getElementById('pr_approved_by').value = d.approved_by || '';
       document.getElementById('pr_remarks').value = d.remarks || '';
+      document.getElementById('pr_posting_date').disabled = (d.status !== 'Approved');
       document.getElementById('pr_posting_date').value = d.posting_date || '';
       document.getElementById('pr_valid_until').value  = d.valid_until  || '';
-      document.getElementById('pr_doc_date').value     = d.document_date || '';
+      document.getElementById('pr_doc_date').value     = new Date().toISOString().split('T')[0]; // re-stamped on every save
       document.getElementById('pr_req_date').value     = d.required_date || '';
+      document.getElementById('prDateErr').style.display = 'none';
+      onPrStatusChange(); // re-apply gating in case status forces an auto-fill
+      if (d.posting_date) document.getElementById('pr_posting_date').value = d.posting_date;
       // Line items
+      await loadItemMaster();
       document.getElementById('liBody').innerHTML = '';
       (d.items || []).forEach(li => addLiRow(li));
       if (!d.items?.length) addLiRow();
@@ -668,6 +786,7 @@ function openEdit(id) {
 /* ══ Save ══ */
 async function savePR() {
   console.log('savePR() called');
+  if (!validatePrDates()) { return; }
   
   try {
     const id  = document.getElementById('pr_id').value;

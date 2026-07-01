@@ -789,6 +789,8 @@ class PurchaseQuotation(db.Model):
             'purchase_quotation_id': self.purchase_quotation_id,
             'doc_no': self.doc_no or '',
             'purchase_request_id': self.purchase_request_id,
+            'requester': self.requester or '',
+            'requester_name': self.requester_name or '',
             'vendor_id': self.vendor_id,
             'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'status': self.status,
@@ -971,6 +973,7 @@ class GoodsReceiptNote(db.Model):
     created_by            = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     vendor = db.relationship('VendorMaster', backref=db.backref('grns', lazy=True))
+    purchase_order = db.relationship('PurchaseOrder', backref=db.backref('grn_docs', lazy=True))
 
     def to_dict(self):
         return {
@@ -978,6 +981,7 @@ class GoodsReceiptNote(db.Model):
             'goods_receipt_note_id': self.goods_receipt_note_id,
             'doc_no': self.doc_no or '',
             'purchase_order_id': self.purchase_order_id,
+            'po_no': self.purchase_order.doc_no if self.purchase_order else '',
             'vendor_id': self.vendor_id,
             'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'vendor_ref_no': self.vendor_ref_no or '',
@@ -1064,6 +1068,8 @@ class PurchaseInvoice(db.Model):
     created_by            = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     vendor = db.relationship('VendorMaster', backref=db.backref('purchase_invoices', lazy=True))
+    purchase_order = db.relationship('PurchaseOrder', backref=db.backref('invoices', lazy=True))
+    goods_receipt_note = db.relationship('GoodsReceiptNote', backref=db.backref('invoices', lazy=True))
 
     def to_dict(self):
         return {
@@ -1071,7 +1077,9 @@ class PurchaseInvoice(db.Model):
             'purchase_invoice_id': self.purchase_invoice_id,
             'doc_no': self.doc_no or '',
             'purchase_order_id': self.purchase_order_id,
+            'po_no': self.purchase_order.doc_no if self.purchase_order else '',
             'goods_receipt_note_id': self.goods_receipt_note_id,
+            'grn_no': self.goods_receipt_note.doc_no if self.goods_receipt_note else '',
             'vendor_id': self.vendor_id,
             'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'vendor_ref_no': self.vendor_ref_no or '', 'status': self.status,
@@ -1156,6 +1164,7 @@ class GoodsReturnRequest(db.Model):
     created_by              = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     vendor = db.relationship('VendorMaster', backref=db.backref('grrs', lazy=True))
+    purchase_invoice = db.relationship('PurchaseInvoice', backref=db.backref('return_requests', lazy=True))
 
     def to_dict(self):
         return {
@@ -1163,6 +1172,7 @@ class GoodsReturnRequest(db.Model):
             'goods_return_request_id': self.goods_return_request_id,
             'doc_no': self.doc_no or '',
             'purchase_invoice_id': self.purchase_invoice_id,
+            'pi_no': self.purchase_invoice.doc_no if self.purchase_invoice else '',
             'vendor_id': self.vendor_id,
             'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'vendor_ref_no': self.vendor_ref_no or '',
@@ -1250,6 +1260,7 @@ class PurchaseDebitMemo(db.Model):
     created_by              = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     vendor = db.relationship('VendorMaster', backref=db.backref('pdms', lazy=True))
+    goods_return_request = db.relationship('GoodsReturnRequest', backref=db.backref('debit_memos', lazy=True))
 
     def to_dict(self):
         return {
@@ -1257,6 +1268,7 @@ class PurchaseDebitMemo(db.Model):
             'purchase_debit_memo_id': self.purchase_debit_memo_id,
             'doc_no': self.doc_no or '',
             'goods_return_request_id': self.goods_return_request_id,
+            'grr_no': self.goods_return_request.doc_no if self.goods_return_request else '',
             'purchase_invoice_id': self.purchase_invoice_id,
             'vendor_id': self.vendor_id,
             'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
@@ -1428,7 +1440,50 @@ class ItemMaster(db.Model):
             'main_rate':          float(self.main_rate          or 0),
             'last_purchase_rate': float(self.last_purchase_rate or 0),
             'retail_rate':        float(self.retail_rate        or 0),
+            'wholesale_rate':     float(self.wholesale_rate     or 0),
+            'special_rate':       float(self.special_rate       or 0),
+            'mrp':                float(self.mrp                or 0),
+            'minimum_sp':         float(self.minimum_sp         or 0),
             'is_active': self.is_active,
+            'uoms': [u.to_dict() for u in self.uoms] if self.uoms else [],
         }
 
- 
+
+# ─────────────────────────────────────────────────────────────────
+# UNIT OF MEASUREMENT (master list) + ITEM ↔ UOM (multi per item)
+# ─────────────────────────────────────────────────────────────────
+class UnitOfMeasurement(db.Model):
+    __tablename__ = 'unit_of_measurement'
+    id           = db.Column(db.Integer, primary_key=True)
+    unit_name    = db.Column(db.String(50), nullable=False, unique=True)
+    unit_name_ar = db.Column(db.String(50))
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'unit_name': self.unit_name,
+            'unit_name_ar': self.unit_name_ar or '',
+        }
+
+
+class ItemUOM(db.Model):
+    __tablename__ = 'item_uom'
+    id         = db.Column(db.Integer, primary_key=True)
+    item_id    = db.Column(db.Integer, db.ForeignKey('item_master.id', ondelete='CASCADE'), nullable=False)
+    uom_id     = db.Column(db.Integer, db.ForeignKey('unit_of_measurement.id'), nullable=False)
+    is_default = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    item = db.relationship('ItemMaster', backref=db.backref('uoms', lazy=True, cascade='all,delete-orphan'))
+    uom  = db.relationship('UnitOfMeasurement', backref=db.backref('item_links', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'item_id': self.item_id,
+            'uom_id': self.uom_id,
+            'unit_name': self.uom.unit_name if self.uom else '',
+            'unit_name_ar': (self.uom.unit_name_ar or '') if self.uom else '',
+            'is_default': bool(self.is_default),
+        }

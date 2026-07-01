@@ -9,6 +9,7 @@ from models import (
     PurchaseAttachment, Invoice,
     PurchaseRequestLineItem, PurchaseQuotationLineItem, PurchaseOrderLineItem,
     GoodsReceiptLineItem, PurchaseInvoiceLineItem, GoodsReturnLineItem, PurchaseDebitMemoLineItem,
+    ItemMaster, UnitOfMeasurement, ItemUOM,
 )
 import os, re
 from werkzeug.utils import secure_filename
@@ -473,6 +474,146 @@ def vendor_doc_delete(doc_id):
     return jsonify({'ok': True})
 
 
+def _validate_pr_pq_dates(valid_until, required_date):
+    """valid_until must be >= today (document_date); required_date must be <= valid_until."""
+    today = date.today()
+    if valid_until and valid_until < today:
+        return 'Valid Until must be on/after the document date'
+    if required_date and valid_until and required_date > valid_until:
+        return 'Required Date must be on/before Valid Until'
+    return None
+
+
+def _next_item_code():
+    """Generate the next sequential item code. Format: ITM-0001, ITM-0002, ..."""
+    prefix = 'ITM'
+    like = f'{prefix}-%'
+    last = db.session.query(ItemMaster).filter(
+        ItemMaster.item_code.like(like)
+    ).order_by(ItemMaster.id.desc()).first()
+
+    n = 1
+    if last and last.item_code:
+        try:
+            n = int(last.item_code.split('-')[-1]) + 1
+        except (ValueError, IndexError):
+            n = ItemMaster.query.count() + 1
+    code = f'{prefix}-{n:04d}'
+    # Guard against a rare unique-constraint collision (e.g. manually entered codes)
+    while ItemMaster.query.filter_by(item_code=code).first():
+        n += 1
+        code = f'{prefix}-{n:04d}'
+    return code
+
+@pur_bp.route('/items/next-code')
+@login_required
+def item_next_code():
+    return jsonify({'item_code': _next_item_code()})
+
+
+# ══════════════════════════════════════════════════════════════════
+# ITEM MASTER — UNIT OF MEASUREMENT (multi-UOM per item)
+# NOTE: these routes were added here (purchase.py) rather than in
+# lookups.py because lookups.py was not provided. The URL paths
+# match what items.html calls, so this works regardless of which
+# blueprint file ends up owning them long-term.
+# ══════════════════════════════════════════════════════════════════
+
+@pur_bp.route('/items/uom/list')
+@login_required
+def uom_master_list():
+    """All global units, for the 'attach existing unit' dropdown."""
+    rows = UnitOfMeasurement.query.order_by(UnitOfMeasurement.unit_name).all()
+    return jsonify([u.to_dict() for u in rows])
+
+@pur_bp.route('/items/uom/add', methods=['POST'])
+@login_required
+def uom_master_add():
+    """Quick-add a brand new unit to the global master list."""
+    f = request.form
+    name = f.get('unit_name','').strip()
+    if not name:
+        return jsonify({'ok': False, 'error': 'Unit name is required'}), 400
+    existing = UnitOfMeasurement.query.filter(db.func.lower(UnitOfMeasurement.unit_name) == name.lower()).first()
+    if existing:
+        return jsonify({'ok': True, 'unit': existing.to_dict()})
+    unit = UnitOfMeasurement(unit_name=name, unit_name_ar=f.get('unit_name_ar','').strip() or None)
+    db.session.add(unit)
+    db.session.commit()
+    return jsonify({'ok': True, 'unit': unit.to_dict()})
+
+@pur_bp.route('/items/<int:item_id>/uoms')
+@login_required
+def item_uom_list(item_id):
+    """UOMs currently attached to one item."""
+    rows = ItemUOM.query.filter_by(item_id=item_id).order_by(ItemUOM.is_default.desc(), ItemUOM.id).all()
+    return jsonify([r.to_dict() for r in rows])
+
+@pur_bp.route('/items/<int:item_id>/uoms/add', methods=['POST'])
+@login_required
+def item_uom_add(item_id):
+    """Attach a unit to an item. Pass uom_id to link an existing global unit,
+    or unit_name (+ optional unit_name_ar) to create-and-link a new one."""
+    item = ItemMaster.query.get_or_404(item_id)
+    f = request.form
+    uom_id = f.get('uom_id')
+    if uom_id:
+        unit = UnitOfMeasurement.query.get(int(uom_id))
+        if not unit:
+            return jsonify({'ok': False, 'error': 'Unit not found'}), 404
+    else:
+        name = f.get('unit_name','').strip()
+        if not name:
+            return jsonify({'ok': False, 'error': 'Select a unit or enter a new unit name'}), 400
+        unit = UnitOfMeasurement.query.filter(db.func.lower(UnitOfMeasurement.unit_name) == name.lower()).first()
+        if not unit:
+            unit = UnitOfMeasurement(unit_name=name, unit_name_ar=f.get('unit_name_ar','').strip() or None)
+            db.session.add(unit)
+            db.session.flush()
+
+    dup = ItemUOM.query.filter_by(item_id=item_id, uom_id=unit.id).first()
+    if dup:
+        return jsonify({'ok': False, 'error': 'This unit is already attached to the item'}), 400
+
+    is_first = ItemUOM.query.filter_by(item_id=item_id).count() == 0
+    link = ItemUOM(item_id=item_id, uom_id=unit.id, is_default=is_first)
+    db.session.add(link)
+    if is_first:
+        item.uom = unit.unit_name  # keep legacy single-uom column in sync for grid display
+    db.session.commit()
+    return jsonify({'ok': True, 'item_uom': link.to_dict()})
+
+@pur_bp.route('/items/uoms/<int:item_uom_id>/delete', methods=['POST'])
+@login_required
+def item_uom_delete(item_uom_id):
+    link = ItemUOM.query.get_or_404(item_uom_id)
+    item_id = link.item_id
+    was_default = link.is_default
+    db.session.delete(link)
+    db.session.flush()
+    if was_default:
+        nxt = ItemUOM.query.filter_by(item_id=item_id).order_by(ItemUOM.id).first()
+        if nxt:
+            nxt.is_default = True
+            item = ItemMaster.query.get(item_id)
+            if item:
+                item.uom = nxt.uom.unit_name if nxt.uom else item.uom
+    db.session.commit()
+    return jsonify({'ok': True})
+
+@pur_bp.route('/items/uoms/<int:item_uom_id>/set-default', methods=['POST'])
+@login_required
+def item_uom_set_default(item_uom_id):
+    link = ItemUOM.query.get_or_404(item_uom_id)
+    ItemUOM.query.filter_by(item_id=link.item_id).update({'is_default': False})
+    link.is_default = True
+    item = ItemMaster.query.get(link.item_id)
+    if item:
+        item.uom = link.uom.unit_name if link.uom else item.uom
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
 # ══════════════════════════════════════════════════════════════════
 # PURCHASE REQUEST (PR)
 # ══════════════════════════════════════════════════════════════════
@@ -506,10 +647,25 @@ def pr_view(id):
     attachments = PurchaseAttachment.query.filter_by(doc_type='PR', doc_id=id).all()
     return render_template('purchase/pr_view.html', pr=pr, items=items, attachments=attachments)
 
+@pur_bp.route('/purchase/requests/<int:id>/summary')
+@login_required
+def pr_summary(id):
+    """Lightweight PR data for auto-filling Purchase Quotation form."""
+    pr = PurchaseRequest.query.get_or_404(id)
+    d = pr.to_dict()
+    d['items'] = [i.to_dict() for i in PurchaseRequestLineItem.query.filter_by(purchase_request_id=id).order_by(PurchaseRequestLineItem.line_number).all()]
+    return jsonify(d)
+
 @pur_bp.route('/purchase/requests/add', methods=['POST'])
 @login_required
 def pr_add():
     f = request.form
+    valid_until   = pd(f.get('valid_until'))
+    required_date = pd(f.get('required_date'))
+    err = _validate_pr_pq_dates(valid_until, required_date)
+    if err:
+        return jsonify({'ok': False, 'error': err}), 400
+
     pr = PurchaseRequest(
         doc_no=_next_doc_no('PR', PurchaseRequest),
         requester=f.get('requester','').strip(),
@@ -517,9 +673,9 @@ def pr_add():
         vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
         status=f.get('status','Open'),
         posting_date=pd(f.get('posting_date')),
-        valid_until=pd(f.get('valid_until')),
-        document_date=pd(f.get('document_date')),
-        required_date=pd(f.get('required_date')),
+        valid_until=valid_until,
+        document_date=date.today(),
+        required_date=required_date,
         remarks=f.get('remarks','').strip(),
         approved_by=f.get('approved_by','').strip(),
         created_by=current_user.id,
@@ -536,11 +692,19 @@ def pr_add():
 def pr_edit(id):
     pr = PurchaseRequest.query.get_or_404(id)
     f = request.form
+    valid_until   = pd(f.get('valid_until'))
+    required_date = pd(f.get('required_date'))
+    err = _validate_pr_pq_dates(valid_until, required_date)
+    if err:
+        return jsonify({'ok': False, 'error': err}), 400
+
     for fld in ['requester','requester_name','status','remarks','approved_by']:
         setattr(pr, fld, f.get(fld,'').strip())
     pr.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
-    for df in ['posting_date','valid_until','document_date','required_date']:
-        setattr(pr, df, pd(f.get(df)))
+    pr.posting_date  = pd(f.get('posting_date'))
+    pr.valid_until    = valid_until
+    pr.document_date  = date.today()
+    pr.required_date  = required_date
     tots = _save_doc_line_items(PurchaseRequestLineItem, 'purchase_request_id', id, f)
     for k,v in tots.items(): setattr(pr, k, v)
     _save_attachments('PR', id, request.files.getlist('attachments'))
@@ -564,7 +728,7 @@ def pr_delete(id):
 @pur_bp.route('/purchase/quotations')
 @login_required
 def pq_list():
-    prs = [{'id':p.purchase_request_id,'doc_no':p.doc_no} for p in PurchaseRequest.query.order_by(PurchaseRequest.purchase_request_id.desc()).all()]
+    prs = [{'id':p.purchase_request_id,'doc_no':p.doc_no} for p in PurchaseRequest.query.filter_by(status='Approved').order_by(PurchaseRequest.purchase_request_id.desc()).all()]
     return render_template('purchase/pq_list.html', vendors=_vendor_list(), prs=prs)
 
 @pur_bp.route('/purchase/quotations/data')
@@ -590,38 +754,58 @@ def pq_view(id):
     attachments = PurchaseAttachment.query.filter_by(doc_type='PQ', doc_id=id).all()
     return render_template('purchase/pq_view.html', doc=pq, items=items, attachments=attachments, doc_type='PQ')
 
+@pur_bp.route('/purchase/quotations/<int:id>/summary')
+@login_required
+def pq_summary(id):
+    """Lightweight PQ data for auto-filling Purchase Order form."""
+    pq = PurchaseQuotation.query.get_or_404(id)
+    d = pq.to_dict()
+    d['items'] = [i.to_dict() for i in PurchaseQuotationLineItem.query.filter_by(purchase_quotation_id=id).order_by(PurchaseQuotationLineItem.line_number).all()]
+    return jsonify(d)
+
 @pur_bp.route('/purchase/quotations/add', methods=['POST'])
 @login_required
 def pq_add():
     f = request.form
+    pr_id = int(f.get('pr_id')) if f.get('pr_id') else None
+    pr = PurchaseRequest.query.get(pr_id) if pr_id else None
+    if pr_id and (not pr or pr.status != 'Approved'):
+        return jsonify({'ok': False, 'error': 'Selected Purchase Request is not Approved'}), 400
+
+    valid_until   = pd(f.get('valid_until'))
+    required_date = pd(f.get('required_date'))
+    err = _validate_pr_pq_dates(valid_until, required_date)
+    if err:
+        return jsonify({'ok': False, 'error': err}), 400
+
     pq = PurchaseQuotation(
         doc_no=_next_doc_no('PQ', PurchaseQuotation),
-        purchase_request_id=int(f.get('pr_id')) if f.get('pr_id') else None,
+        purchase_request_id=pr_id,
         requester=f.get('requester','').strip(),
         requester_name=f.get('requester_name','').strip(),
         vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
         status=f.get('status','Open'),
         posting_date=pd(f.get('posting_date')),
-        valid_until=pd(f.get('valid_until')),
-        document_date=pd(f.get('document_date')),
-        required_date=pd(f.get('required_date')),
+        valid_until=valid_until,
+        document_date=date.today(),
+        required_date=required_date,
         remarks=f.get('remarks','').strip(),
         approved_by=f.get('approved_by','').strip(),
         created_by=current_user.id,
     )
     db.session.add(pq)
     db.session.flush()
-    
+
     tots = _save_doc_line_items(
-        PurchaseQuotationLineItem, 
-        'purchase_quotation_id', 
-        pq.purchase_quotation_id, 
+        PurchaseQuotationLineItem,
+        'purchase_quotation_id',
+        pq.purchase_quotation_id,
         f
     )
-    
+
     for k, v in tots.items():
         setattr(pq, k, float(v) if isinstance(v, Decimal) else v)
-    
+
     _save_attachments('PQ', pq.purchase_quotation_id, request.files.getlist('attachments'))
     db.session.commit()
     return jsonify({'ok': True, 'id': pq.purchase_quotation_id, 'doc_no': pq.doc_no})
@@ -631,25 +815,32 @@ def pq_add():
 def pq_edit(id):
     pq = PurchaseQuotation.query.get_or_404(id)
     f = request.form
+    valid_until   = pd(f.get('valid_until'))
+    required_date = pd(f.get('required_date'))
+    err = _validate_pr_pq_dates(valid_until, required_date)
+    if err:
+        return jsonify({'ok': False, 'error': err}), 400
+
     for fld in ['requester','requester_name','status','remarks','approved_by']:
         setattr(pq, fld, f.get(fld,'').strip())
-    
-    pq.purchase_request_id = int(f.get('pr_id')) if f.get('pr_id') else None  
+
+    pq.purchase_request_id = int(f.get('pr_id')) if f.get('pr_id') else None
     pq.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
-    
-    for df in ['posting_date','valid_until','document_date','required_date']:
-        setattr(pq, df, pd(f.get(df)))
-    
+    pq.posting_date  = pd(f.get('posting_date'))
+    pq.valid_until    = valid_until
+    pq.document_date  = date.today()
+    pq.required_date  = required_date
+
     tots = _save_doc_line_items(
-        PurchaseQuotationLineItem, 
-        'purchase_quotation_id', 
-        id, 
+        PurchaseQuotationLineItem,
+        'purchase_quotation_id',
+        id,
         f
     )
-    
+
     for k, v in tots.items():
         setattr(pq, k, float(v) if isinstance(v, Decimal) else v)
-    
+
     _save_attachments('PQ', id, request.files.getlist('attachments'))
     db.session.commit()
     return jsonify({'ok': True})
@@ -671,8 +862,8 @@ def pq_delete(id):
 @pur_bp.route('/purchase/orders')
 @login_required
 def po_list():
-    pqs = [{'id': p.purchase_quotation_id, 'doc_no': p.doc_no} 
-           for p in PurchaseQuotation.query.order_by(PurchaseQuotation.purchase_quotation_id.desc()).all()]
+    pqs = [{'id': p.purchase_quotation_id, 'doc_no': p.doc_no}
+           for p in PurchaseQuotation.query.filter_by(status='Approved').order_by(PurchaseQuotation.purchase_quotation_id.desc()).all()]
     return render_template('purchase/po_list.html', vendors=_vendor_list(), pqs=pqs)
 
 @pur_bp.route('/purchase/orders/data')
@@ -717,16 +908,23 @@ def po_view(id):
 def po_add():
     try:
         f = request.form
+        pq_id = int(f.get('pq_id')) if f.get('pq_id') else None
+        pq = PurchaseQuotation.query.get(pq_id) if pq_id else None
+        if pq_id and (not pq or pq.status != 'Approved'):
+            return jsonify({'ok': False, 'error': 'Selected Purchase Quotation is not Approved'}), 400
+
+        vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else (pq.vendor_id if pq else None)
+
         po = PurchaseOrder(
             doc_no=_next_doc_no('PO', PurchaseOrder),
-            purchase_quotation_id=int(f.get('pq_id')) if f.get('pq_id') else None,
-            vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
+            purchase_quotation_id=pq_id,
+            vendor_id=vendor_id,
             vendor_ref_no=f.get('vendor_ref_no', '').strip(),
             remarks=f.get('remarks', '').strip(),
             status=f.get('status', 'Open'),
             posting_date=pd(f.get('posting_date')),
             delivery_date=pd(f.get('delivery_date')),
-            document_date=pd(f.get('document_date')),
+            document_date=date.today(),
             created_by=current_user.id,
         )
         db.session.add(po)
@@ -754,15 +952,17 @@ def po_edit(id):
     try:
         po = PurchaseOrder.query.get_or_404(id)
         f = request.form
-        
-        po.purchase_quotation_id = int(f.get('pq_id')) if f.get('pq_id') else None
-        po.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
+        pq_id = int(f.get('pq_id')) if f.get('pq_id') else None
+        pq = PurchaseQuotation.query.get(pq_id) if pq_id else None
+
+        po.purchase_quotation_id = pq_id
+        po.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else (pq.vendor_id if pq else None)
         po.vendor_ref_no = f.get('vendor_ref_no', '').strip()
         po.remarks = f.get('remarks', '').strip()
         po.status = f.get('status', 'Open')
-        
-        for df in ['posting_date', 'delivery_date', 'document_date']:
-            setattr(po, df, pd(f.get(df)))
+        po.posting_date  = pd(f.get('posting_date'))
+        po.delivery_date = pd(f.get('delivery_date'))
+        po.document_date = date.today()
 
         tots = _save_doc_line_items(PurchaseOrderLineItem, 'purchase_order_id', id, f)
         for k, v in tots.items():
@@ -802,7 +1002,7 @@ def po_delete(id):
 @pur_bp.route('/purchase/grn')
 @login_required
 def grn_list():
-    pos = [{'id':p.purchase_order_id,'doc_no':p.doc_no} for p in PurchaseOrder.query.order_by(PurchaseOrder.purchase_order_id.desc()).all()]
+    pos = [{'id':p.purchase_order_id,'doc_no':p.doc_no} for p in PurchaseOrder.query.filter_by(status='Approved').order_by(PurchaseOrder.purchase_order_id.desc()).all()]
     return render_template('purchase/grn_list.html', vendors=_vendor_list(), pos=pos)
 
 @pur_bp.route('/purchase/grn/data')
@@ -827,41 +1027,73 @@ def grn_view(id):
         items=GoodsReceiptLineItem.query.filter_by(goods_receipt_note_id=id).order_by(GoodsReceiptLineItem.line_number).all(),
         attachments=PurchaseAttachment.query.filter_by(doc_type='GRN', doc_id=id).all())
 
+@pur_bp.route('/purchase/grn/<int:id>/summary')
+@login_required
+def grn_summary(id):
+    """Lightweight GRN data for auto-filling Purchase Invoice form."""
+    doc = GoodsReceiptNote.query.get_or_404(id)
+    d = doc.to_dict()
+    d['items'] = [i.to_dict() for i in GoodsReceiptLineItem.query
+                  .filter_by(goods_receipt_note_id=id)
+                  .order_by(GoodsReceiptLineItem.line_number).all()]
+    return jsonify(d)
+
 @pur_bp.route('/purchase/grn/add', methods=['POST'])
 @login_required
 def grn_add():
-    f = request.form
-    doc = GoodsReceiptNote(
-        doc_no=_next_doc_no('GRN', GoodsReceiptNote),
-        po_id=int(f.get('po_id')) if f.get('po_id') else None,
-        vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
-        contact_person=f.get('contact_person','').strip(),
-        vendor_ref_no=f.get('vendor_ref_no','').strip(),
-        status=f.get('status','Open'),
-        posting_date=pd(f.get('posting_date')), delivery_date=pd(f.get('delivery_date')),
-        document_date=pd(f.get('document_date')), created_by=current_user.id,
-    )
-    db.session.add(doc); db.session.flush()
-    tots = _save_doc_line_items(GoodsReceiptLineItem, 'goods_receipt_note_id', doc.goods_receipt_note_id, f)
-    for k,v in tots.items(): setattr(doc, k, v)
-    _save_attachments('GRN', doc.goods_receipt_note_id, request.files.getlist('attachments'))
-    db.session.commit()
-    return jsonify({'ok':True,'id':doc.goods_receipt_note_id,'doc_no':doc.doc_no})
+    try:
+        f = request.form
+        po_id = int(f.get('po_id')) if f.get('po_id') else None
+        po = PurchaseOrder.query.get(po_id) if po_id else None
+        if po_id and (not po or po.status != 'Approved'):
+            return jsonify({'ok': False, 'error': 'Selected Purchase Order is not Approved'}), 400
+
+        doc = GoodsReceiptNote(
+            doc_no=_next_doc_no('GRN', GoodsReceiptNote),
+            purchase_order_id=po_id,
+            vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
+            contact_person=f.get('contact_person','').strip(),
+            vendor_ref_no=f.get('vendor_ref_no','').strip(),
+            status=f.get('status','Open'),
+            posting_date=pd(f.get('posting_date')),
+            delivery_date=pd(f.get('delivery_date')),
+            document_date=date.today(),
+            created_by=current_user.id,
+        )
+        db.session.add(doc); db.session.flush()
+        tots = _save_doc_line_items(GoodsReceiptLineItem, 'goods_receipt_note_id', doc.goods_receipt_note_id, f)
+        for k,v in tots.items(): setattr(doc, k, v)
+        _save_attachments('GRN', doc.goods_receipt_note_id, request.files.getlist('attachments'))
+        db.session.commit()
+        return jsonify({'ok':True,'id':doc.goods_receipt_note_id,'doc_no':doc.doc_no})
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR in grn_add: {str(e)}")
+        import traceback; traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 @pur_bp.route('/purchase/grn/<int:id>/edit', methods=['POST'])
 @login_required
 def grn_edit(id):
-    doc = GoodsReceiptNote.query.get_or_404(id); f = request.form
-    doc.po_id=int(f.get('po_id')) if f.get('po_id') else None
-    doc.vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None
-    doc.contact_person=f.get('contact_person','').strip()
-    doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
-    doc.status=f.get('status','Open')
-    for df in ['posting_date','delivery_date','document_date']: setattr(doc, df, pd(f.get(df)))
-    tots = _save_doc_line_items(GoodsReceiptLineItem, 'goods_receipt_note_id', id, f)
-    for k,v in tots.items(): setattr(doc, k, v)
-    _save_attachments('GRN', id, request.files.getlist('attachments'))
-    db.session.commit(); return jsonify({'ok':True})
+    try:
+        doc = GoodsReceiptNote.query.get_or_404(id); f = request.form
+        doc.purchase_order_id = int(f.get('po_id')) if f.get('po_id') else None
+        doc.vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None
+        doc.contact_person=f.get('contact_person','').strip()
+        doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
+        doc.status=f.get('status','Open')
+        doc.posting_date  = pd(f.get('posting_date'))
+        doc.delivery_date = pd(f.get('delivery_date'))
+        doc.document_date = date.today()
+        tots = _save_doc_line_items(GoodsReceiptLineItem, 'goods_receipt_note_id', id, f)
+        for k,v in tots.items(): setattr(doc, k, v)
+        _save_attachments('GRN', id, request.files.getlist('attachments'))
+        db.session.commit(); return jsonify({'ok':True})
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR in grn_edit: {str(e)}")
+        import traceback; traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 @pur_bp.route('/purchase/grn/<int:id>/delete', methods=['POST'])
 @login_required
@@ -879,8 +1111,9 @@ def grn_delete(id):
 @pur_bp.route('/purchase/invoices')
 @login_required
 def pinv_list():
-    pos = [{'id':p.purchase_order_id,'doc_no':p.doc_no} for p in PurchaseOrder.query.order_by(PurchaseOrder.purchase_order_id.desc()).all()]
-    return render_template('purchase/pinv_list.html', vendors=_vendor_list(), pos=pos)
+    pos = [{'id':p.purchase_order_id,'doc_no':p.doc_no} for p in PurchaseOrder.query.filter_by(status='Approved').order_by(PurchaseOrder.purchase_order_id.desc()).all()]
+    grns = [{'id':g.goods_receipt_note_id,'doc_no':g.doc_no,'purchase_order_id':g.purchase_order_id} for g in GoodsReceiptNote.query.order_by(GoodsReceiptNote.goods_receipt_note_id.desc()).all()]
+    return render_template('purchase/pinv_list.html', vendors=_vendor_list(), pos=pos, grns=grns)
 
 @pur_bp.route('/purchase/invoices/data')
 @login_required
@@ -917,38 +1150,38 @@ def pinv_summary(id):
 def pinv_add():
     try:
         f = request.form
-        
-        print("=== PINV ADD ===")
-        print("Form keys:", list(f.keys()))
-        print("PO ID:", f.get('po_id'))
-        print("Item codes count:", len(f.getlist('li_item_code[]')))
-        
+        po_id = int(f.get('po_id')) if f.get('po_id') else None
+        po = PurchaseOrder.query.get(po_id) if po_id else None
+        if po_id and (not po or po.status != 'Approved'):
+            return jsonify({'ok': False, 'error': 'Selected Purchase Order is not Approved'}), 400
+
+        status = f.get('status','Open')
+        posting_date = pd(f.get('posting_date'))
+        if status != 'Open' and not posting_date:
+            posting_date = date.today()
+
         doc = PurchaseInvoice(
             doc_no=_next_doc_no('PINV', PurchaseInvoice),
-            purchase_order_id=int(f.get('po_id')) if f.get('po_id') else None,
-            vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
+            purchase_order_id=po_id,
+            goods_receipt_note_id=int(f.get('grn_id')) if f.get('grn_id') else None,
+            vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else (po.vendor_id if po else None),
             vendor_ref_no=f.get('vendor_ref_no','').strip(),
-            status=f.get('status','Open'),
-            posting_date=pd(f.get('posting_date')), 
+            status=status,
+            posting_date=posting_date,
             delivery_date=pd(f.get('delivery_date')),
-            document_date=pd(f.get('document_date')), 
+            document_date=date.today(),
             created_by=current_user.id,
         )
         db.session.add(doc)
         db.session.flush()
-        
-        print(f"Created invoice ID: {doc.purchase_invoice_id}")
-        
+
         tots = _save_doc_line_items(PurchaseInvoiceLineItem, 'purchase_invoice_id', doc.purchase_invoice_id, f)
-        
-        print("Totals:", tots)
-        
-        for k,v in tots.items(): 
+
+        for k,v in tots.items():
             setattr(doc, k, v)
         _save_attachments('PINV', doc.purchase_invoice_id, request.files.getlist('attachments'))
         
         db.session.commit()
-        print("Invoice saved successfully")
         
         return jsonify({'ok':True,'id':doc.purchase_invoice_id,'doc_no':doc.doc_no})
     
@@ -966,12 +1199,19 @@ def pinv_edit(id):
         doc = PurchaseInvoice.query.get_or_404(id)
         f = request.form
         
+        status = f.get('status','Open')
+        posting_date = pd(f.get('posting_date'))
+        if status != 'Open' and not posting_date:
+            posting_date = date.today()
+
         doc.purchase_order_id = int(f.get('po_id')) if f.get('po_id') else None
+        doc.goods_receipt_note_id = int(f.get('grn_id')) if f.get('grn_id') else None
         doc.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
         doc.vendor_ref_no = f.get('vendor_ref_no','').strip()
-        doc.status = f.get('status','Open')
-        for df in ['posting_date','delivery_date','document_date']: 
-            setattr(doc, df, pd(f.get(df)))
+        doc.status = status
+        doc.posting_date  = posting_date
+        doc.delivery_date = pd(f.get('delivery_date'))
+        doc.document_date = date.today()
         
         tots = _save_doc_line_items(PurchaseInvoiceLineItem, 'purchase_invoice_id', id, f)
         for k,v in tots.items(): 
@@ -1012,9 +1252,8 @@ def pinv_delete(id):
 @pur_bp.route('/purchase/returns')
 @login_required
 def grr_list():
-    pos  = [{'id':p.purchase_order_id,'doc_no':p.doc_no} for p in PurchaseOrder.query.order_by(PurchaseOrder.purchase_order_id.desc()).all()]
-    pins = [{'id':p.purchase_invoice_id,'doc_no':p.doc_no} for p in PurchaseInvoice.query.order_by(PurchaseInvoice.purchase_invoice_id.desc()).all()]
-    return render_template('purchase/grr_list.html', vendors=_vendor_list(), pos=pos, pinvs=pins)
+    pins = [{'id':p.purchase_invoice_id,'doc_no':p.doc_no} for p in PurchaseInvoice.query.filter_by(status='Approved').order_by(PurchaseInvoice.purchase_invoice_id.desc()).all()]
+    return render_template('purchase/grr_list.html', vendors=_vendor_list(), pinvs=pins)
 
 @pur_bp.route('/purchase/returns/data')
 @login_required
@@ -1046,42 +1285,106 @@ def grr_summary(id):
     d['items'] = [i.to_dict() for i in GoodsReturnLineItem.query.filter_by(goods_return_request_id=id).order_by(GoodsReturnLineItem.line_number).all()]
     return jsonify(d)
 
+def _validate_grr_qty(f, purchase_invoice_id):
+    """GRR line quantities must not exceed the original Purchase Invoice line quantity for that item."""
+    if not purchase_invoice_id:
+        return None
+    src_lines = PurchaseInvoiceLineItem.query.filter_by(purchase_invoice_id=purchase_invoice_id).all()
+    max_by_code = {}
+    for li in src_lines:
+        code = (li.item_code or '').strip()
+        max_by_code[code] = max_by_code.get(code, Decimal(0)) + Decimal(li.quantity or 0)
+
+    codes = f.getlist('li_item_code[]')
+    qtys  = f.getlist('li_qty[]')
+    for i in range(len(qtys)):
+        code = (codes[i] if i < len(codes) else '').strip()
+        try:
+            qty = Decimal(qtys[i] or '0')
+        except Exception:
+            qty = Decimal(0)
+        if qty <= 0:
+            continue
+        if code not in max_by_code:
+            return f'Item "{code}" is not part of the selected Purchase Invoice'
+        if qty > max_by_code[code]:
+            return f'Return quantity for "{code}" ({qty}) exceeds invoiced quantity ({max_by_code[code]})'
+    return None
+
+
 @pur_bp.route('/purchase/returns/add', methods=['POST'])
 @login_required
 def grr_add():
-    f = request.form
-    doc = GoodsReturnRequest(
-        doc_no=_next_doc_no('GRR', GoodsReturnRequest),
-        pi_id=int(f.get('pi_id')) if f.get('pi_id') else None,
-        po_id=int(f.get('po_id')) if f.get('po_id') else None,
-        vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
-        contact_person=f.get('contact_person','').strip(),
-        vendor_ref_no=f.get('vendor_ref_no','').strip(),
-        status=f.get('status','Open'),
-        posting_date=pd(f.get('posting_date')), delivery_date=pd(f.get('delivery_date')),
-        document_date=pd(f.get('document_date')), created_by=current_user.id,
-    )
-    db.session.add(doc); db.session.flush()
-    tots = _save_doc_line_items(GoodsReturnLineItem, 'goods_return_request_id', doc.goods_return_request_id, f)
-    for k,v in tots.items(): setattr(doc, k, v)
-    _save_attachments('GRR', doc.goods_return_request_id, request.files.getlist('attachments'))
-    db.session.commit(); return jsonify({'ok':True,'id':doc.goods_return_request_id,'doc_no':doc.doc_no})
+    try:
+        f = request.form
+        pi_id = int(f.get('pi_id')) if f.get('pi_id') else None
+        pinv = PurchaseInvoice.query.get(pi_id) if pi_id else None
+        if pi_id and (not pinv or pinv.status != 'Approved'):
+            return jsonify({'ok': False, 'error': 'Selected Purchase Invoice is not Approved'}), 400
+
+        err = _validate_grr_qty(f, pi_id)
+        if err:
+            return jsonify({'ok': False, 'error': err}), 400
+
+        delivery_date = pd(f.get('delivery_date'))
+        if delivery_date and delivery_date < date.today():
+            return jsonify({'ok': False, 'error': 'Delivery date must be on/after the document date'}), 400
+
+        doc = GoodsReturnRequest(
+            doc_no=_next_doc_no('GRR', GoodsReturnRequest),
+            purchase_invoice_id=pi_id,
+            vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
+            contact_person=f.get('contact_person','').strip(),
+            vendor_ref_no=f.get('vendor_ref_no','').strip(),
+            status=f.get('status','Open'),
+            posting_date=pd(f.get('posting_date')),
+            delivery_date=delivery_date,
+            document_date=date.today(),
+            created_by=current_user.id,
+        )
+        db.session.add(doc); db.session.flush()
+        tots = _save_doc_line_items(GoodsReturnLineItem, 'goods_return_request_id', doc.goods_return_request_id, f)
+        for k,v in tots.items(): setattr(doc, k, v)
+        _save_attachments('GRR', doc.goods_return_request_id, request.files.getlist('attachments'))
+        db.session.commit(); return jsonify({'ok':True,'id':doc.goods_return_request_id,'doc_no':doc.doc_no})
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR in grr_add: {str(e)}")
+        import traceback; traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 @pur_bp.route('/purchase/returns/<int:id>/edit', methods=['POST'])
 @login_required
 def grr_edit(id):
-    doc = GoodsReturnRequest.query.get_or_404(id); f = request.form
-    doc.pi_id=int(f.get('pi_id')) if f.get('pi_id') else None
-    doc.po_id=int(f.get('po_id')) if f.get('po_id') else None
-    doc.vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None
-    doc.contact_person=f.get('contact_person','').strip()
-    doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
-    doc.status=f.get('status','Open')
-    for df in ['posting_date','delivery_date','document_date']: setattr(doc, df, pd(f.get(df)))
-    tots = _save_doc_line_items(GoodsReturnLineItem, 'goods_return_request_id', id, f)
-    for k,v in tots.items(): setattr(doc, k, v)
-    _save_attachments('GRR', id, request.files.getlist('attachments'))
-    db.session.commit(); return jsonify({'ok':True})
+    try:
+        doc = GoodsReturnRequest.query.get_or_404(id); f = request.form
+        pi_id = int(f.get('pi_id')) if f.get('pi_id') else None
+
+        err = _validate_grr_qty(f, pi_id)
+        if err:
+            return jsonify({'ok': False, 'error': err}), 400
+
+        delivery_date = pd(f.get('delivery_date'))
+        if delivery_date and delivery_date < date.today():
+            return jsonify({'ok': False, 'error': 'Delivery date must be on/after the document date'}), 400
+
+        doc.purchase_invoice_id=pi_id
+        doc.vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None
+        doc.contact_person=f.get('contact_person','').strip()
+        doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
+        doc.status=f.get('status','Open')
+        doc.posting_date  = pd(f.get('posting_date'))
+        doc.delivery_date = delivery_date
+        doc.document_date = date.today()
+        tots = _save_doc_line_items(GoodsReturnLineItem, 'goods_return_request_id', id, f)
+        for k,v in tots.items(): setattr(doc, k, v)
+        _save_attachments('GRR', id, request.files.getlist('attachments'))
+        db.session.commit(); return jsonify({'ok':True})
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR in grr_edit: {str(e)}")
+        import traceback; traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 @pur_bp.route('/purchase/returns/<int:id>/delete', methods=['POST'])
 @login_required
@@ -1099,9 +1402,8 @@ def grr_delete(id):
 @pur_bp.route('/purchase/debit-memos')
 @login_required
 def pdm_list():
-    pos  = [{'id':p.purchase_order_id,'doc_no':p.doc_no} for p in PurchaseOrder.query.order_by(PurchaseOrder.purchase_order_id.desc()).all()]
-    grrs = [{'id':p.goods_return_request_id,'doc_no':p.doc_no} for p in GoodsReturnRequest.query.order_by(GoodsReturnRequest.goods_return_request_id.desc()).all()]
-    return render_template('purchase/pdm_list.html', vendors=_vendor_list(), pos=pos, grrs=grrs)
+    grrs = [{'id':p.goods_return_request_id,'doc_no':p.doc_no} for p in GoodsReturnRequest.query.filter_by(status='Approved').order_by(GoodsReturnRequest.goods_return_request_id.desc()).all()]
+    return render_template('purchase/pdm_list.html', vendors=_vendor_list(), grrs=grrs)
 
 @pur_bp.route('/purchase/debit-memos/data')
 @login_required
@@ -1128,39 +1430,63 @@ def pdm_view(id):
 @pur_bp.route('/purchase/debit-memos/add', methods=['POST'])
 @login_required
 def pdm_add():
-    f = request.form
-    doc = PurchaseDebitMemo(
-        doc_no=_next_doc_no('PDM', PurchaseDebitMemo),
-        po_id=int(f.get('po_id')) if f.get('po_id') else None,
-        grr_id=int(f.get('grr_id')) if f.get('grr_id') else None,
-        vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
-        contact_person=f.get('contact_person','').strip(),
-        vendor_ref_no=f.get('vendor_ref_no','').strip(),
-        status=f.get('status','Open'),
-        posting_date=pd(f.get('posting_date')), delivery_date=pd(f.get('delivery_date')),
-        document_date=pd(f.get('document_date')), created_by=current_user.id,
-    )
-    db.session.add(doc); db.session.flush()
-    tots = _save_doc_line_items(PurchaseDebitMemoLineItem, 'purchase_debit_memo_id', doc.purchase_debit_memo_id, f)
-    for k,v in tots.items(): setattr(doc, k, v)
-    _save_attachments('PDM', doc.purchase_debit_memo_id, request.files.getlist('attachments'))
-    db.session.commit(); return jsonify({'ok':True,'id':doc.purchase_debit_memo_id,'doc_no':doc.doc_no})
+    try:
+        f = request.form
+        grr_id = int(f.get('grr_id')) if f.get('grr_id') else None
+        grr = GoodsReturnRequest.query.get(grr_id) if grr_id else None
+        if grr_id and (not grr or grr.status != 'Approved'):
+            return jsonify({'ok': False, 'error': 'Selected Goods Return Request is not Approved'}), 400
+
+        doc = PurchaseDebitMemo(
+            doc_no=_next_doc_no('PDM', PurchaseDebitMemo),
+            goods_return_request_id=grr_id,
+            purchase_invoice_id=(grr.purchase_invoice_id if grr else None),
+            vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
+            contact_person=f.get('contact_person','').strip(),
+            vendor_ref_no=f.get('vendor_ref_no','').strip(),
+            status=f.get('status','Open'),
+            posting_date=pd(f.get('posting_date')),
+            delivery_date=pd(f.get('delivery_date')),
+            document_date=date.today(),
+            created_by=current_user.id,
+        )
+        db.session.add(doc); db.session.flush()
+        tots = _save_doc_line_items(PurchaseDebitMemoLineItem, 'purchase_debit_memo_id', doc.purchase_debit_memo_id, f)
+        for k,v in tots.items(): setattr(doc, k, v)
+        _save_attachments('PDM', doc.purchase_debit_memo_id, request.files.getlist('attachments'))
+        db.session.commit(); return jsonify({'ok':True,'id':doc.purchase_debit_memo_id,'doc_no':doc.doc_no})
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR in pdm_add: {str(e)}")
+        import traceback; traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 @pur_bp.route('/purchase/debit-memos/<int:id>/edit', methods=['POST'])
 @login_required
 def pdm_edit(id):
-    doc = PurchaseDebitMemo.query.get_or_404(id); f = request.form
-    doc.po_id=int(f.get('po_id')) if f.get('po_id') else None
-    doc.grr_id=int(f.get('grr_id')) if f.get('grr_id') else None
-    doc.vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None
-    doc.contact_person=f.get('contact_person','').strip()
-    doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
-    doc.status=f.get('status','Open')
-    for df in ['posting_date','delivery_date','document_date']: setattr(doc, df, pd(f.get(df)))
-    tots = _save_doc_line_items(PurchaseDebitMemoLineItem, 'purchase_debit_memo_id', id, f)
-    for k,v in tots.items(): setattr(doc, k, v)
-    _save_attachments('PDM', id, request.files.getlist('attachments'))
-    db.session.commit(); return jsonify({'ok':True})
+    try:
+        doc = PurchaseDebitMemo.query.get_or_404(id); f = request.form
+        grr_id = int(f.get('grr_id')) if f.get('grr_id') else None
+        grr = GoodsReturnRequest.query.get(grr_id) if grr_id else None
+
+        doc.goods_return_request_id = grr_id
+        doc.purchase_invoice_id = (grr.purchase_invoice_id if grr else None)
+        doc.vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None
+        doc.contact_person=f.get('contact_person','').strip()
+        doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
+        doc.status=f.get('status','Open')
+        doc.posting_date  = pd(f.get('posting_date'))
+        doc.delivery_date = pd(f.get('delivery_date'))
+        doc.document_date = date.today()
+        tots = _save_doc_line_items(PurchaseDebitMemoLineItem, 'purchase_debit_memo_id', id, f)
+        for k,v in tots.items(): setattr(doc, k, v)
+        _save_attachments('PDM', id, request.files.getlist('attachments'))
+        db.session.commit(); return jsonify({'ok':True})
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR in pdm_edit: {str(e)}")
+        import traceback; traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 @pur_bp.route('/purchase/debit-memos/<int:id>/delete', methods=['POST'])
 @login_required

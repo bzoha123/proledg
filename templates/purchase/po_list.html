@@ -156,42 +156,36 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               {# ── Row 1: PQ reference + Vendor info ── #}
               <div class="f-grid4" style="margin-bottom:12px;">
                 <div class="f-item">
-                  <div class="f-lbl">{% if ar %}رقم عرض السعر{% else %}Purchase Quotation ID{% endif %}</div>
+                  <div class="f-lbl">{% if ar %}رقم عرض السعر{% else %}Purchase Quotation No{% endif %} <span class="f-lbl-req" style="color:#ef4444;">*</span></div>
                   <select id="po_pq_id" class="f-inp" onchange="onPQChange()">
-                    <option value="">-- {% if ar %}اختياري{% else %}Optional{% endif %} --</option>
+                    <option value="">-- {% if ar %}اختر عرض سعر معتمد{% else %}Select an Approved PQ{% endif %} --</option>
                     {% for pq in pqs %}<option value="{{ pq.id }}">{{ pq.doc_no }}</option>{% endfor %}
                   </select>
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div>
-                  <select id="po_vendor" class="f-inp" onchange="onVendorChange()">
-                    <option value="">-- {% if ar %}اختر المورد{% else %}Select Vendor{% endif %} --</option>
-                    {% for v in vendors %}<option value="{{ v.id }}">{{ v.name }}</option>{% endfor %}
-                  </select>
-                </div>
-                <div class="f-item">
-                  <div class="f-lbl">{% if ar %}اسم المورد{% else %}Vendor Name{% endif %}</div>
                   <input type="text" id="po_vendor_name" class="f-inp" readonly
-                         style="background:#f8fafc;" placeholder="{% if ar %}يملأ تلقائياً{% else %}Auto-filled{% endif %}">
+                         style="background:#f8fafc;" placeholder="{% if ar %}يتم تحديده من عرض السعر{% else %}Derived from the Quotation{% endif %}">
+                  <input type="hidden" id="po_vendor">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}رقم مرجع المورد{% else %}Vendor Ref No{% endif %}</div>
                   <input type="text" id="po_vendor_ref" class="f-inp"
                          placeholder="{% if ar %}رقم مرجع المورد{% else %}Vendor reference number{% endif %}">
                 </div>
-              </div>
-
-              {# ── Row 2: No + Status + Dates ── #}
-              <div class="f-grid4" style="margin-bottom:12px;">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}رقم المستند{% else %}No{% endif %}</div>
                   <input type="text" id="po_doc_no" class="f-inp" readonly
                          style="background:#f0fdf4;color:#15803d;font-weight:700;font-size:14px;letter-spacing:.5px;"
                          placeholder="{% if ar %}تلقائي{% else %}Auto{% endif %}">
                 </div>
+              </div>
+
+              {# ── Row 2: Status + Dates ── #}
+              <div class="f-grid4" style="margin-bottom:12px;">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div>
-                  <select id="po_status" class="f-inp">
+                  <select id="po_status" class="f-inp" onchange="onPoStatusChange()">
                     <option value="Open" selected>Open</option>
                     <option value="Pending">Pending</option>
                     <option value="Approved">Approved</option>
@@ -201,22 +195,19 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ الترحيل{% else %}Posting Date{% endif %}</div>
-                  <input type="date" id="po_posting_date" class="f-inp" dir="ltr">
+                  <input type="date" id="po_posting_date" class="f-inp" dir="ltr" disabled
+                         title="{% if ar %}يتم تفعيله تلقائياً عند الاعتماد{% else %}Activates automatically when Approved{% endif %}">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ التسليم{% else %}Delivery Date{% endif %}</div>
                   <input type="date" id="po_delivery_date" class="f-inp" dir="ltr">
                 </div>
-              </div>
-
-              <div class="f-grid4" style="margin-bottom:12px;">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ المستند{% else %}Document Date{% endif %}</div>
-                  <input type="date" id="po_doc_date" class="f-inp" dir="ltr">
+                  <input type="date" id="po_doc_date" class="f-inp" dir="ltr" readonly
+                         style="background:#f8fafc;color:#374151;"
+                         title="{% if ar %}دائماً تاريخ اليوم{% else %}Always today's date{% endif %}">
                 </div>
-                <div class="f-item"></div>
-                <div class="f-item"></div>
-                <div class="f-item"></div>
               </div>
               <div class="f-item">
                 <div class="f-lbl">{% if ar %}ملاحظات{% else %}Remarks{% endif %}</div>
@@ -237,10 +228,10 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             </button>
             <div class="pur-section-body open">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                <button type="button" onclick="addLiRow()"
-                        style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:#2563eb;color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">
-                  <i class="fas fa-plus"></i>{% if ar %}إضافة صنف{% else %}Add Item{% endif %}
-                </button>
+                <span style="font-size:11px;color:#6b7280;">
+                  <i class="fas fa-lock me-1"></i>
+                  {% if ar %}البنود موروثة من عرض السعر وغير قابلة للتعديل{% else %}Items are inherited from the Quotation and locked{% endif %}
+                </span>
                 <span style="font-size:11px;color:#6b7280;">
                   <i class="fas fa-info-circle me-1"></i>
                   {% if ar %}المبلغ الخاضع = الكمية × السعر — الخصم{% else %}Taxable = Qty × Rate − Discount{% endif %}
@@ -251,7 +242,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                   <thead><tr>
                     <th style="width:30px;">#</th>
                     <th style="min-width:85px;">{% if ar %}الكود{% else %}Item Code{% endif %}</th>
-                    <th style="min-width:150px;">{% if ar %}الوصف{% else %}Description{% endif %}</th>
+                    <th style="min-width:150px;">{% if ar %}الاسم{% else %}Name{% endif %}</th>
                     <th style="width:105px;">{% if ar %}تاريخ الحاجة{% else %}Req. Date{% endif %}</th>
                     <th style="min-width:100px;">{% if ar %}المستودع{% else %}Warehouse{% endif %}</th>
                     <th style="width:95px;">UoM</th>
@@ -263,7 +254,6 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                     <th style="width:80px;">{% if ar %}كود الضريبة{% else %}Tax Code{% endif %}</th>
                     <th style="width:65px;">{% if ar %}الضريبة{% else %}Tax Amt{% endif %}</th>
                     <th style="width:80px;">{% if ar %}الإجمالي{% else %}Total{% endif %}</th>
-                    <th style="width:28px;"></th>
                   </tr></thead>
                   <tbody id="liBody"></tbody>
                   <tfoot>
@@ -421,52 +411,75 @@ async function fetchDocNo() {
   document.getElementById('poDocBadge').textContent = d.doc_no;
 }
 
-/* ══ Vendor selection → auto-fill vendor name ══ */
-const _vendorMap = {
-  {% for v in vendors %}{{ v.id }}: '{{ v.name }}',{% endfor %}
-};
-function onVendorChange() {
-  const sel = document.getElementById('po_vendor');
-  const nameEl = document.getElementById('po_vendor_name');
-  if (!sel || !nameEl) return;
-  const id = sel.value;
-  nameEl.value = id ? (_vendorMap[id] || sel.options[sel.selectedIndex]?.text || '') : '';
+/* ══ PQ selection → auto-fill vendor + dates + LOCKED line items ══ */
+let _pqPullInProgress = false;
+
+async function onPQChange() {
+  const pqId = document.getElementById('po_pq_id').value;
+  if (!pqId) {
+    document.getElementById('po_vendor').value = '';
+    document.getElementById('po_vendor_name').value = '';
+    return;
+  }
+  _pqPullInProgress = true;
+  try {
+    const res = await fetch('/purchase/quotations/' + pqId + '/summary');
+    if (!res.ok) throw new Error('Failed to fetch PQ');
+    const pq = await res.json();
+
+    document.getElementById('po_vendor').value = pq.vendor_id || '';
+    document.getElementById('po_vendor_name').value = pq.vendor_name || '';
+
+    document.getElementById('liBody').innerHTML = '';
+    _liIdx = 0;
+    if (pq.items && pq.items.length) {
+      pq.items.forEach(li => addLiRow(li));
+    } else {
+      addLiRow();
+    }
+    recalcSummary(); updLiCount();
+  } catch (e) {
+    console.error('Failed to load PQ:', e);
+    alert(IS_AR ? 'فشل تحميل عرض السعر' : 'Failed to load Purchase Quotation');
+  } finally {
+    _pqPullInProgress = false;
+  }
 }
 
-function onPQChange() {
-  // Optional: Could fetch PQ data to pre-fill vendor
+/* ══ Posting Date: empty + disabled until status = Approved ══ */
+function onPoStatusChange() {
+  const statusEl = document.getElementById('po_status');
+  const postEl   = document.getElementById('po_posting_date');
+  if (!statusEl || !postEl) return;
+  if (statusEl.value === 'Approved') {
+    postEl.disabled = false;
+    if (!postEl.value) postEl.value = new Date().toISOString().split('T')[0];
+  } else {
+    postEl.disabled = true;
+    postEl.value = '';
+  }
 }
 
-/* ══ Line Items ══ */
+/* ══ Line Items — locked/inherited from PQ, read-only ══ */
 function addLiRow(d) {
   const idx = _liIdx++;
   d = d || {};
-  const uoms = [['unit','Unit / وحدة'],['hour','Hour / ساعة'],['day','Day / يوم'],
-                ['month','Month / شهر'],['kg','KG / كجم'],['meter','Meter / متر'],
-                ['box','Box / صندوق'],['piece','Piece / قطعة']];
   const row = `<tr id="plr_${idx}">
     <td style="text-align:center;color:#9ca3af;font-size:11px;padding:4px;">${_liIdx}</td>
-    <td><input type="text"   class="li-inp" name="li_item_code[]" value="${d.item_code||''}" style="width:80px;"></td>
-    <td><input type="text"   class="li-inp" name="li_item_desc[]" value="${d.item_desc||''}" style="min-width:130px;"></td>
-    <td><input type="date"   class="li-inp" name="li_required_date[]" value="${d.required_date||''}" dir="ltr" style="width:105px;"></td>
-    <td><input type="text"   class="li-inp" name="li_warehouse[]" value="${d.warehouse||''}" style="min-width:90px;"></td>
-    <td><select class="li-inp" name="li_uom[]" style="width:90px;">${uoms.map(([v,l])=>`<option value="${v}"${d.uom===v?' selected':''}>${l}</option>`).join('')}</select></td>
-    <td><input type="number" class="li-inp" name="li_qty[]"      id="plq_${idx}"  value="${d.quantity||0}"  min="0" step="0.01" oninput="recalcLi(${idx})" style="width:62px;"></td>
-    <td><input type="number" class="li-inp" name="li_rate[]"     id="plrt_${idx}" value="${d.rate||0}"      min="0" step="0.01" oninput="recalcLi(${idx})" style="width:62px;"></td>
-    <td><input type="number" class="li-inp" name="li_discount[]" id="pld_${idx}"  value="${d.discount||0}"  min="0" step="0.01" oninput="recalcLi(${idx})" style="width:58px;"></td>
-    <td><input type="number" class="li-inp" name="li_freight[]"  id="plf_${idx}"  value="${d.freight||0}"   min="0" step="0.01" oninput="recalcLi(${idx})" style="width:58px;"></td>
+    <td><input type="text"   class="li-inp" name="li_item_code[]" value="${d.item_code||''}" readonly style="width:80px;background:#f3f4f6;"></td>
+    <td><input type="text"   class="li-inp" name="li_item_desc[]" value="${d.item_desc||''}" readonly style="min-width:130px;background:#f3f4f6;"></td>
+    <td><input type="date"   class="li-inp" name="li_required_date[]" value="${d.required_date||''}" dir="ltr" readonly style="width:105px;background:#f3f4f6;"></td>
+    <td><input type="text"   class="li-inp" name="li_warehouse[]" value="${d.warehouse||''}" readonly style="min-width:90px;background:#f3f4f6;"></td>
+    <td><input type="text"   class="li-inp" name="li_uom[]" value="${d.uom||'unit'}" readonly style="width:90px;background:#f3f4f6;"></td>
+    <td><input type="number" class="li-inp" name="li_qty[]"      id="plq_${idx}"  value="${d.quantity||0}"  readonly style="width:62px;background:#f3f4f6;"></td>
+    <td><input type="number" class="li-inp" name="li_rate[]"     id="plrt_${idx}" value="${d.rate||0}"      readonly style="width:62px;background:#f3f4f6;"></td>
+    <td><input type="number" class="li-inp" name="li_discount[]" id="pld_${idx}"  value="${d.discount||0}"  readonly style="width:58px;background:#f3f4f6;"></td>
+    <td><input type="number" class="li-inp" name="li_freight[]"  id="plf_${idx}"  value="${d.freight||0}"   readonly style="width:58px;background:#f3f4f6;"></td>
     <td><input type="number" class="li-inp" id="plt_${idx}"  name="li_taxable_disp[]" value="${d.taxable||0}" readonly
          style="width:76px;background:#fffbeb;color:#92400e;font-weight:600;" title="Qty × Rate − Discount"></td>
-    <td><select class="li-inp" name="li_tax_code[]" id="pltc_${idx}" onchange="recalcLi(${idx})" style="width:78px;">
-      <option value="VAT15"${(d.tax_code||'VAT15')==='VAT15'?' selected':''}>VAT 15%</option>
-      <option value="VAT0"${d.tax_code==='VAT0'?' selected':''}>VAT 0%</option>
-      <option value="EXEMPT"${d.tax_code==='EXEMPT'?' selected':''}>Exempt</option>
-    </select></td>
+    <td><input type="text" class="li-inp" name="li_tax_code[]" id="pltc_${idx}" value="${d.tax_code||'VAT15'}" readonly style="width:78px;background:#f3f4f6;"></td>
     <td><input type="number" class="li-inp" id="plta_${idx}" name="li_tax_amount_disp[]" value="${d.tax_amount||0}" readonly style="width:62px;background:#f3f4f6;"></td>
     <td><input type="number" class="li-inp" id="pltot_${idx}" name="li_total_disp[]" value="${d.total||0}" readonly style="width:76px;background:#f0fdf4;font-weight:700;color:#166534;"></td>
-    <td><button type="button" onclick="removeLi(${idx})"
-                style="width:22px;height:22px;border-radius:5px;border:none;background:#fee2e2;color:#b91c1c;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">
-      <i class="fas fa-times" style="font-size:9px;"></i></button></td>
   </tr>`;
   document.getElementById('liBody').insertAdjacentHTML('beforeend', row);
   recalcLi(idx);
@@ -568,9 +581,10 @@ function openAddPO() {
     const e = document.getElementById(id); if (e) e.value = '';
   });
   const today = new Date().toISOString().split('T')[0];
-  ['po_posting_date','po_delivery_date','po_doc_date'].forEach(id => {
-    const e = document.getElementById(id); if (e) e.value = today;
-  });
+  document.getElementById('po_posting_date').value = '';
+  document.getElementById('po_posting_date').disabled = true;
+  document.getElementById('po_delivery_date').value = today;
+  document.getElementById('po_doc_date').value = today;
   document.getElementById('po_status').value = 'Open';
   document.getElementById('po_vendor').value = '';
   document.getElementById('po_pq_id').value = '';
@@ -609,9 +623,10 @@ function openEditPO(id) {
     if (vnEl) vnEl.value = d.vendor_name || '';
     const rmEl = document.getElementById('po_remarks');
     if (rmEl) rmEl.value = d.remarks || '';
+    document.getElementById('po_posting_date').disabled = (d.status !== 'Approved');
     document.getElementById('po_posting_date').value  = d.posting_date  || '';
     document.getElementById('po_delivery_date').value = d.delivery_date || '';
-    document.getElementById('po_doc_date').value      = d.document_date || '';
+    document.getElementById('po_doc_date').value      = new Date().toISOString().split('T')[0]; // re-stamped on every save
     document.getElementById('liBody').innerHTML = '';
     (d.items || []).forEach(li => addLiRow(li));
     if (!d.items?.length) addLiRow();
@@ -636,6 +651,14 @@ function openEditPO(id) {
 
 /* ══ Save ══ */
 async function savePO() {
+  if (!document.getElementById('po_pq_id').value) {
+    alert(IS_AR ? 'يجب اختيار عرض سعر معتمد' : 'An Approved Purchase Quotation must be selected');
+    return;
+  }
+  if (_pqPullInProgress) {
+    alert(IS_AR ? 'يرجى الانتظار حتى يتم تحميل بيانات عرض السعر' : 'Please wait — still loading data from the Purchase Quotation');
+    return;
+  }
   const id  = document.getElementById('po_id').value;
   const url = id ? `/purchase/orders/${id}/edit` : '/purchase/orders/add';
   const fd  = new FormData();

@@ -57,7 +57,7 @@
       </div>
     </div>
     <div style="text-align:right;">
-      <div style="font-size:24px;font-weight:800;">SAR {{ '{:,.2f}'.format(pr.total_incl_vat or 0) }}</div>
+      <div style="font-size:24px;font-weight:800;">SAR {{ '{:,.2f}'.format(doc.total_incl_vat or 0) }}</div>
       <div style="font-size:12px;opacity:.8;margin-top:3px;">{% if ar %}الإجمالي شامل الضريبة{% else %}Total Incl. VAT{% endif %}</div>
     </div>
   </div>
@@ -74,13 +74,13 @@
           <div class="d-row"><div class="d-lbl">{% if ar %}اعتمد بواسطة{% else %}Approved By{% endif %}</div><div class="d-val">{{ doc.approved_by or '—' }}</div></div>
         </div>
         <div>
-          <div class="d-row"><div class="d-lbl">{% if ar %}تاريخ الترحيل{% else %}Posting Date{% endif %}</div><div class="d-val">{{ doc.posting_date.strftime('%d %b %Y') if pr.posting_date else '—' }}</div></div>
-          <div class="d-row"><div class="d-lbl">{% if ar %}صالح حتى{% else %}Valid Until{% endif %}</div><div class="d-val">{{ doc.valid_until.strftime('%d %b %Y') if pr.valid_until else '—' }}</div></div>
-          <div class="d-row"><div class="d-lbl">{% if ar %}تاريخ المستند{% else %}Doc Date{% endif %}</div><div class="d-val">{{ doc.document_date.strftime('%d %b %Y') if pr.document_date else '—' }}</div></div>
-          <div class="d-row"><div class="d-lbl">{% if ar %}التاريخ المطلوب{% else %}Required Date{% endif %}</div><div class="d-val">{{ doc.required_date.strftime('%d %b %Y') if pr.required_date else '—' }}</div></div>
+          <div class="d-row"><div class="d-lbl">{% if ar %}تاريخ الترحيل{% else %}Posting Date{% endif %}</div><div class="d-val">{{ doc.posting_date.strftime('%d %b %Y') if doc.posting_date else '—' }}</div></div>
+          <div class="d-row"><div class="d-lbl">{% if ar %}صالح حتى{% else %}Valid Until{% endif %}</div><div class="d-val">{{ doc.valid_until.strftime('%d %b %Y') if doc.valid_until else '—' }}</div></div>
+          <div class="d-row"><div class="d-lbl">{% if ar %}تاريخ المستند{% else %}Doc Date{% endif %}</div><div class="d-val">{{ doc.document_date.strftime('%d %b %Y') if doc.document_date else '—' }}</div></div>
+          <div class="d-row"><div class="d-lbl">{% if ar %}التاريخ المطلوب{% else %}Required Date{% endif %}</div><div class="d-val">{{ doc.required_date.strftime('%d %b %Y') if doc.required_date else '—' }}</div></div>
         </div>
         <div>
-          <div class="d-row"><div class="d-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div><div class="d-val">{{ doc.vendor.vendor_name_en if pr.vendor else '—' }}</div></div>
+          <div class="d-row"><div class="d-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div><div class="d-val">{{ doc.vendor.vendor_name_en if doc.vendor else '—' }}</div></div>
           <div class="d-row"><div class="d-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div><div class="d-val">{{ doc.status }}</div></div>
           <div class="d-row"><div class="d-lbl">{% if ar %}ملاحظات{% else %}Remarks{% endif %}</div><div class="d-val">{{ doc.remarks or '—' }}</div></div>
         </div>
@@ -94,7 +94,7 @@
     <div style="overflow-x:auto;padding:0;">
       <table class="li-vt">
         <thead><tr>
-          <th>#</th><th>{% if ar %}الكود{% else %}Code{% endif %}</th><th>{% if ar %}الوصف{% else %}Description{% endif %}</th>
+          <th>#</th><th>{% if ar %}الكود{% else %}Code{% endif %}</th><th>{% if ar %}الاسم{% else %}Name{% endif %}</th>
           <th>{% if ar %}تاريخ الحاجة{% else %}Req. Date{% endif %}</th><th>{% if ar %}المستودع{% else %}Warehouse{% endif %}</th>
           <th>UoM</th><th style="text-align:right;">{% if ar %}الكمية{% else %}Qty{% endif %}</th>
           <th style="text-align:right;">{% if ar %}السعر{% else %}Rate{% endif %}</th>
@@ -147,12 +147,12 @@
     </div>
     <div class="sum-card">
       <div style="font-size:11px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;"><i class="fas fa-calculator" style="color:#2563eb;margin-right:6px;"></i>{% if ar %}الملخص{% else %}Summary{% endif %}</div>
-      <div class="sum-row"><span>{% if ar %}قبل الخصم{% else %}Total before discount{% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(pr.total_before_discount or 0) }}</span></div>
-      <div class="sum-row"><span>{% if ar %}الخصم{% else %}Total discount{% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(pr.total_discount or 0) }}</span></div>
-      <div class="sum-row"><span>{% if ar %}الشحن{% else %}Freight{% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(pr.total_freight or 0) }}</span></div>
-      <div class="sum-row"><span>{% if ar %}بدون ضريبة{% else %}Excl. VAT (SAR){% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(pr.total_excl_vat or 0) }}</span></div>
-      <div class="sum-row"><span>{% if ar %}ضريبة القيمة المضافة{% else %}VAT Amount (SAR){% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(pr.vat_amount or 0) }}</span></div>
-      <div class="sum-total"><span style="font-weight:700;">{% if ar %}الإجمالي شامل الضريبة{% else %}Total Incl. VAT{% endif %}</span><span style="font-size:18px;font-weight:800;">SAR {{ '{:,.2f}'.format(pr.total_incl_vat or 0) }}</span></div>
+      <div class="sum-row"><span>{% if ar %}قبل الخصم{% else %}Total before discount{% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(doc.total_before_discount or 0) }}</span></div>
+      <div class="sum-row"><span>{% if ar %}الخصم{% else %}Total discount{% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(doc.total_discount or 0) }}</span></div>
+      <div class="sum-row"><span>{% if ar %}الشحن{% else %}Freight{% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(doc.total_freight or 0) }}</span></div>
+      <div class="sum-row"><span>{% if ar %}بدون ضريبة{% else %}Excl. VAT (SAR){% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(doc.total_excl_vat or 0) }}</span></div>
+      <div class="sum-row"><span>{% if ar %}ضريبة القيمة المضافة{% else %}VAT Amount (SAR){% endif %}</span><span style="font-weight:600;">SAR {{ '{:,.2f}'.format(doc.vat_amount or 0) }}</span></div>
+      <div class="sum-total"><span style="font-weight:700;">{% if ar %}الإجمالي شامل الضريبة{% else %}Total Incl. VAT{% endif %}</span><span style="font-size:18px;font-weight:800;">SAR {{ '{:,.2f}'.format(doc.total_incl_vat or 0) }}</span></div>
       <div style="margin-top:10px;display:flex;justify-content:space-between;font-size:13px;">
         <span style="color:#374151;">{% if ar %}المرفقات{% else %}Documents Attached{% endif %}</span>
         <span style="background:#eff6ff;color:#2563eb;padding:2px 12px;border-radius:10px;font-size:12px;font-weight:700;">{{ attachments|length }}</span>
