@@ -7,7 +7,7 @@ def _t(en, ar):
     return ar if session.get('lang') == 'ar' else en
 
 from flask_login import login_required, current_user
-from models import db, Seller, SellerBank, SellerDocument, ActivityLog
+from models import db, Seller, SellerBank, SellerDocument, ActivityLog, Warehouse, WarehouseLocation
 from forms import SellerForm, BankForm, SearchForm
 from functools import wraps
 
@@ -251,6 +251,62 @@ def _save_banks_from_form(seller_id):
             ).delete(synchronize_session='fetch')
 
 
+def _save_warehouses_from_form(seller_id):
+    """
+    Reads warehouses[N][field] ... from request.form and upserts Warehouse rows.
+    Fields per row: warehouse_name, warehouse_name_ar, location_id, _db_id.
+    Also deletes warehouses that were removed from the form.
+    """
+    i = 0
+    submitted_ids = set()
+    any_rows = False
+
+    while True:
+        prefix = f'warehouses[{i}]'
+        if f'{prefix}[warehouse_name]' not in request.form:
+            break
+        any_rows = True
+        wh_name = request.form.get(f'{prefix}[warehouse_name]', '').strip()
+        if not wh_name:
+            i += 1
+            continue
+
+        db_id_str  = request.form.get(f'{prefix}[_db_id]', '').strip()
+        wh_name_ar = request.form.get(f'{prefix}[warehouse_name_ar]', '').strip()
+        loc_id_str = request.form.get(f'{prefix}[location_id]', '').strip()
+        location_id = int(loc_id_str) if loc_id_str.isdigit() else None
+
+        if db_id_str:
+            submitted_ids.add(int(db_id_str))
+            wh = Warehouse.query.get(int(db_id_str))
+            if wh and wh.seller_id == seller_id:
+                wh.warehouse_name    = wh_name
+                wh.warehouse_name_ar = wh_name_ar
+                wh.location_id       = location_id
+                db.session.add(wh)
+        else:
+            wh = Warehouse(
+                seller_id         = seller_id,
+                warehouse_name    = wh_name,
+                warehouse_name_ar = wh_name_ar,
+                location_id       = location_id,
+            )
+            db.session.add(wh)
+            db.session.flush()
+            submitted_ids.add(wh.id)
+        i += 1
+
+    # Delete warehouses removed from the form (only if section was submitted)
+    if any_rows or request.form.get('warehouses_submitted') == '1':
+        existing_ids = {w.id for w in Warehouse.query.filter_by(seller_id=seller_id).all()}
+        to_delete = existing_ids - submitted_ids
+        if to_delete:
+            Warehouse.query.filter(
+                Warehouse.id.in_(to_delete),
+                Warehouse.seller_id == seller_id,
+            ).delete(synchronize_session='fetch')
+
+
 # ═════════════════════════════════════════════════════════════════════
 # SELLER ROUTES
 # ═════════════════════════════════════════════════════════════════════
@@ -317,6 +373,7 @@ def add_seller():
     log_activity('CREATE', 'seller', seller.id, f'Seller {seller.seller_code} created')
     _save_banks_from_form(seller.id)
     _save_docs_from_form(seller.id)
+    _save_warehouses_from_form(seller.id)
     db.session.commit()
     flash(_t(f'Seller {seller.seller_code} added successfully!',
              f'تم إضافة البائع {seller.seller_code} بنجاح'), 'success')
@@ -404,6 +461,7 @@ def edit_seller(id):
     log_activity('EDIT', 'seller', seller.id, f'Seller {seller.seller_code} updated')
     _save_banks_from_form(seller.id)
     _save_docs_from_form(seller.id)
+    _save_warehouses_from_form(seller.id)
     db.session.commit()
     flash(_t('Seller updated successfully!', 'تم تحديث البائع بنجاح'), 'success')
     return redirect(url_for('sellers.list_sellers'))
@@ -902,3 +960,49 @@ def translate_text():
         return jsonify({'translated': result.get('responseData',{}).get('translatedText','')})
     except Exception as e:
         return jsonify({'translated': '', 'error': str(e)})
+
+# ═════════════════════════════════════════════════════════════════════
+# WAREHOUSE ROUTES
+# ═════════════════════════════════════════════════════════════════════
+
+@sellers_bp.route('/sellers/<int:id>/warehouses')
+@login_required
+def seller_warehouses(id):
+    """Returns warehouses for loading into the JS array on edit."""
+    Seller.query.get_or_404(id)
+    whs = Warehouse.query.filter_by(seller_id=id).order_by(Warehouse.id).all()
+    return jsonify([w.to_dict() for w in whs])
+
+
+@sellers_bp.route('/warehouse-locations/data')
+@login_required
+def warehouse_locations_data():
+    lang = session.get('lang', 'en')
+    locs = WarehouseLocation.query.filter_by(is_active=True)\
+                                  .order_by(WarehouseLocation.location_name).all()
+    return jsonify([{
+        'id': l.id,
+        'en': l.location_name,
+        'ar': l.location_name_ar or l.location_name,
+        'label': l.location_name_ar if lang == 'ar' and l.location_name_ar else l.location_name,
+    } for l in locs])
+
+
+@sellers_bp.route('/warehouse-locations/add-quick', methods=['POST'])
+@login_required
+def add_warehouse_location_quick():
+    """Quick-add popup: create a warehouse location from the seller form."""
+    data = request.get_json() or {}
+    en = (data.get('location_name') or '').strip()
+    ar = (data.get('location_name_ar') or '').strip()
+    if not en:
+        return jsonify({'ok': False, 'error': 'Location name required'})
+    existing = WarehouseLocation.query.filter_by(location_name=en).first()
+    if existing:
+        return jsonify({'ok': True, 'id': existing.id, 'exists': True})
+    loc = WarehouseLocation(location_name=en, location_name_ar=ar or en)
+    db.session.add(loc)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': loc.id,
+                    'location_name': loc.location_name,
+                    'location_name_ar': loc.location_name_ar})

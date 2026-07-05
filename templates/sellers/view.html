@@ -368,6 +368,60 @@
 </div>
 
 <!-- ════════════════════════════════════════════════════════════ -->
+<!-- WAREHOUSES                                                 -->
+<!-- ════════════════════════════════════════════════════════════ -->
+{% set warehouses = seller.warehouses.all() %}
+<div class="sv-card" style="margin-top:16px;">
+  <div class="sv-card-header">
+    <div class="sv-card-title">
+      <span class="sv-card-icon" style="background:#ecfeff;">
+        <i class="fas fa-warehouse" style="color:#0891b2;"></i>
+      </span>
+      {% if ar %}المستودعات{% else %}Warehouses{% endif %}
+    </div>
+    <span style="font-size:11px;color:var(--gray-400);font-weight:600;">
+      {{ warehouses|length }} {% if ar %}مستودع{% else %}warehouse{{ 's' if warehouses|length != 1 }}{% endif %}
+    </span>
+  </div>
+  <div class="sv-card-body">
+    {% if warehouses %}
+    <div style="overflow-x:auto;">
+      <table class="sv-bank-tbl">
+        <thead>
+          <tr>
+            <th>{% if ar %}اسم المستودع{% else %}Warehouse Name{% endif %}</th>
+            <th>{% if ar %}الموقع{% else %}Location{% endif %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in warehouses %}
+          <tr>
+            <td class="sv-bank-name-cell">
+              <strong>{{ w.warehouse_name or '—' }}</strong>
+              {% if w.warehouse_name_ar %}<small>{{ w.warehouse_name_ar }}</small>{% endif %}
+            </td>
+            <td>{{ w.location.location_name if w.location else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="sv-empty">
+      <i class="fas fa-warehouse"></i>
+      {% if ar %}لا توجد مستودعات{% else %}No warehouses added{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+ 
+    <div class="sv-hdr-stat">
+      <span class="sv-hdr-stat-val">{{ seller.warehouses.count() }}</span>
+      <span class="sv-hdr-stat-lbl">{% if ar %}مستودعات{% else %}Warehouses{% endif %}</span>
+    </div>
+ 
+<!-- ════════════════════════════════════════════════════════════ -->
 <!-- BACK BUTTON                                                -->
 <!-- ════════════════════════════════════════════════════════════ -->
 <div style="margin-top:20px;text-align:center;">

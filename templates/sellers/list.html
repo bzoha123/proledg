@@ -8,7 +8,6 @@
 <style>
 /* ═══════════════════════════════════════════════════════════
    SELLER MS — Accordion Form System v5
-   Matches ProLedg reference UX
 ═══════════════════════════════════════════════════════════ */
 :root{
   --blue:#2563eb; --blue-dk:#1d4ed8; --blue-50:#eff6ff; --blue-100:#dbeafe;
@@ -21,8 +20,6 @@
   --shadow-modal:0 25px 80px rgba(0,0,0,.22);
   --shadow-sm:0 1px 4px rgba(0,0,0,.06);
 }
-
-/* ── AG-Grid ── */
 .ag-theme-alpine{
   --ag-font-family:'Segoe UI',system-ui,sans-serif; --ag-font-size:13px;
   --ag-header-background-color:var(--navy); --ag-header-foreground-color:#fff;
@@ -40,61 +37,28 @@
 .st-active{background:#dcfce7;color:#15803d;} .st-inactive{background:var(--gray-100);color:var(--gray-400);}
 .code-badge{background:var(--blue-50);color:var(--blue-dk);padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;font-family:monospace;}
 
-/* ══════════════════════════════════════════════
-   MAIN MODAL SHELL
-══════════════════════════════════════════════ */
 .sf-modal .modal-dialog{max-width:980px;}
 .sf-modal .modal-content{border:none;border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-modal);}
-
-/* Modal header */
-.sf-hdr{
-  background:linear-gradient(135deg,var(--navy) 0%,#1a56db 60%,var(--teal) 100%);
-  padding:16px 24px; display:flex; align-items:center; justify-content:space-between;
-}
+.sf-hdr{background:linear-gradient(135deg,var(--navy) 0%,#1a56db 60%,var(--teal) 100%);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;}
 .sf-hdr h5{margin:0;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;gap:10px;letter-spacing:.1px;}
 .sf-hdr .btn-close{filter:brightness(0) invert(1);opacity:.8;}
 .sf-hdr .btn-close:hover{opacity:1;}
-
-/* Scrollable body */
 .sf-body{max-height:72vh;overflow-y:auto;overflow-x:hidden;background:var(--gray-50);padding:0;}
 
-/* ══════════════════════════════════════════════
-   ACCORDION SECTIONS
-══════════════════════════════════════════════ */
 .acc-section{border-bottom:1px solid var(--gray-200);}
 .acc-section:last-child{border-bottom:none;}
-
-/* Section header row — clickable */
-.acc-head{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:15px 24px; cursor:pointer; background:#fff;
-  transition:background .15s;
-  user-select:none;
-}
+.acc-head{display:flex;align-items:center;justify-content:space-between;padding:15px 24px;cursor:pointer;background:#fff;transition:background .15s;user-select:none;}
 .acc-head:hover{background:#fafbfc;}
 .acc-head-left{display:flex;align-items:center;gap:12px;}
-.acc-head-icon{
-  width:34px;height:34px;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px; flex-shrink:0;
-}
+.acc-head-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
 .acc-head-icon.basic{background:#eff6ff;color:#2563eb;}
 .acc-head-icon.address{background:#f0fdf4;color:#16a34a;}
 .acc-head-icon.bank{background:#fff7ed;color:#ea580c;}
 .acc-head-icon.docs{background:#faf5ff;color:#7c3aed;}
+.acc-head-icon.warehouse{background:#ecfeff;color:#0891b2;}
 
-/* ══════════════════════════════════════════════
-   DOCUMENT SECTION
-══════════════════════════════════════════════ */
-.doc-add-btn{
-  display:inline-flex;align-items:center;gap:7px;
-  padding:8px 18px;border-radius:8px;border:none;cursor:pointer;
-  background:#7c3aed;color:#fff;font-size:12.5px;font-weight:700;
-  transition:all .15s;margin-bottom:16px;
-}
+.doc-add-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;border:none;cursor:pointer;background:#7c3aed;color:#fff;font-size:12.5px;font-weight:700;transition:all .15s;margin-bottom:16px;}
 .doc-add-btn:hover{background:#6d28d9;transform:translateY(-1px);box-shadow:0 3px 10px rgba(124,58,237,.3);}
-
-/* Doc table */
 .doc-tbl-wrap{border:1px solid var(--gray-200);border-radius:var(--r-md);overflow:hidden;}
 .doc-tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
 .doc-tbl thead tr{background:#4c1d95;}
@@ -104,63 +68,15 @@
 .doc-tbl tbody tr:hover{background:#faf5ff;}
 .doc-tbl td{padding:9px 12px;color:var(--gray-700);vertical-align:middle;}
 .doc-tbl .td-acts{display:flex;gap:4px;justify-content:center;}
-.doc-type-pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700;background:#ede9fe;color:#5b21b6;}
-.doc-empty{text-align:center;padding:22px;color:var(--gray-400);font-size:12.5px;background:#faf5ff;}
-.doc-empty i{font-size:22px;display:block;margin-bottom:6px;opacity:.3;color:#7c3aed;}
-.doc-save-note{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;font-size:12px;color:#92400e;margin-bottom:14px;}
-.doc-save-note i{color:#f59e0b;flex-shrink:0;}
-.expiry-warn{color:#dc2626;font-weight:700;}
-.expiry-ok{color:var(--green);}
-
-/* Doc sub-modal */
-.dm-modal .modal-dialog{max-width:680px;}
-.dm-modal .modal-content{border:none;border-radius:var(--r-lg);overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.28);}
-.dm-hdr{background:linear-gradient(135deg,#5b21b6 0%,#7c3aed 100%);padding:15px 22px;display:flex;align-items:center;justify-content:space-between;}
-.dm-hdr h5{margin:0;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;}
-.dm-hdr .btn-close{filter:brightness(0) invert(1);opacity:.8;}
-.dm-body{padding:22px 22px 18px;}
-.dm-footer{padding:14px 22px;background:var(--gray-50);border-top:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;gap:8px;}
-
-/* File upload area */
-.doc-file-zone{
-  border:2px dashed #c4b5fd;border-radius:10px;padding:20px;
-  text-align:center;cursor:pointer;background:#faf5ff;
-  transition:border-color .15s,background .15s;
-}
-.doc-file-zone:hover,.doc-file-zone.dragover{border-color:#7c3aed;background:#ede9fe;}
-.doc-file-zone i{font-size:26px;color:#7c3aed;display:block;margin-bottom:8px;}
-.doc-file-zone-txt{font-size:12.5px;color:var(--gray-600);font-weight:600;}
-.doc-file-zone-sub{font-size:11px;color:var(--gray-400);margin-top:3px;}
-.doc-chosen-file{display:none;align-items:center;gap:8px;padding:9px 13px;background:#ede9fe;border-radius:8px;margin-top:8px;font-size:12px;color:#5b21b6;font-weight:600;}
-.doc-chosen-file i{font-size:14px;color:#7c3aed;}
-.doc-chosen-file .rm-file{margin-inline-start:auto;background:none;border:none;color:#7c3aed;cursor:pointer;font-size:13px;padding:0;}
 .acc-head-title{font-size:13.5px;font-weight:700;color:var(--gray-900);}
 .acc-head-title span.ar-sub{font-size:11px;color:var(--gray-400);font-weight:500;margin-inline-start:8px;}
-.acc-chevron{
-  font-size:11px; color:var(--gray-400); transition:transform .25s ease;
-}
+.acc-chevron{font-size:11px;color:var(--gray-400);transition:transform .25s ease;}
 .acc-section.open .acc-chevron{transform:rotate(180deg);}
+.acc-body{max-height:0;overflow:hidden;transition:max-height .35s cubic-bezier(.4,0,.2,1),padding .25s ease;background:#fff;padding:0 24px;}
+.acc-section.open .acc-body{max-height:2000px;padding:20px 24px 24px;}
 
-/* Animated body */
-.acc-body{
-  max-height:0; overflow:hidden;
-  transition:max-height .35s cubic-bezier(.4,0,.2,1), padding .25s ease;
-  background:#fff; padding:0 24px;
-}
-.acc-section.open .acc-body{
-  max-height:2000px;
-  padding:20px 24px 24px;
-}
-
-/* ══════════════════════════════════════════════
-   BILINGUAL FIELD LAYOUT
-   Label row: EN label left, AR label right
-   Input row: EN input left, AR input right (auto-translated)
-══════════════════════════════════════════════ */
 .bi-group{margin-bottom:18px;}
 .bi-group:last-child{margin-bottom:0;}
-
-/* Label row */
 .bi-labels{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:5px;}
 .bi-lbl-en{font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:4px;}
 .bi-lbl-ar{font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:4px;justify-content:flex-end;direction:rtl;}
@@ -170,54 +86,25 @@
 .pip-ar{background:#fef3c7;color:#92400e;}
 .pip-src{background:#dcfce7;color:#15803d;}
 .pip-auto{background:#f1f5f9;color:#6b7280;}
-
-/* Input row */
 .bi-inputs{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .bi-wrap{position:relative;}
-
-/* Single-language field (no translation pair) */
 .mono-group{margin-bottom:18px;}
 .mono-group:last-child{margin-bottom:0;}
 .mono-lbl{font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:4px;margin-bottom:5px;}
-
-/* 2-col / 3-col / 4-col layouts for mono fields */
 .fg-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
 .fg-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px;}
 .fg-2:last-child,.fg-3:last-child{margin-bottom:0;}
 @media(max-width:680px){.fg-2,.fg-3,.bi-labels,.bi-inputs{grid-template-columns:1fr;}}
 
-/* ══════════════════════════════════════════════
-   INPUT STYLES
-══════════════════════════════════════════════ */
-.sf-inp{
-  width:100%;padding:9px 12px;font-size:13px;color:var(--gray-900);
-  border:1.5px solid var(--gray-300);border-radius:8px;background:#fff;
-  outline:none;font-family:inherit;box-sizing:border-box;
-  transition:border-color .15s,box-shadow .15s;
-}
+.sf-inp{width:100%;padding:9px 12px;font-size:13px;color:var(--gray-900);border:1.5px solid var(--gray-300);border-radius:8px;background:#fff;outline:none;font-family:inherit;box-sizing:border-box;transition:border-color .15s,box-shadow .15s;}
 .sf-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
 .sf-inp.secondary{background:#fafbfc;color:var(--gray-600);}
 .sf-inp.secondary:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,148,136,.1);}
 .sf-inp.is-invalid{border-color:var(--red);background:var(--red-50);}
 .sf-inp.is-invalid:focus{box-shadow:0 0 0 3px rgba(239,68,68,.1);}
-.sf-sel{
-  appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 10px center;background-size:16px;
-  padding-right:34px;
-}
-
-/* Translate spinner inside secondary input */
+.sf-sel{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:16px;padding-right:34px;}
 .sf-spin{position:absolute;top:50%;transform:translateY(-50%);right:10px;pointer-events:none;font-size:11px;color:var(--gray-400);}
-
-/* Retranslate button inside primary input */
-.sf-retrans{
-  position:absolute;top:50%;transform:translateY(-50%);right:9px;
-  width:22px;height:22px;border:none;border-radius:5px;
-  background:var(--blue-100);color:var(--blue);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:9px;
-  opacity:.7;transition:opacity .15s;
-}
+.sf-retrans{position:absolute;top:50%;transform:translateY(-50%);right:9px;width:22px;height:22px;border:none;border-radius:5px;background:var(--blue-100);color:var(--blue);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;opacity:.7;transition:opacity .15s;}
 .sf-retrans:hover{opacity:1;}
 .sf-inp.has-btn{padding-right:38px;}
 {% if ar %}
@@ -225,39 +112,21 @@
 .sf-inp.has-btn{padding-right:12px;padding-left:38px;}
 .sf-spin{right:auto;left:10px;}
 {% endif %}
-
-/* Flash on auto-fill */
 @keyframes autoFill{0%,100%{border-color:var(--gray-300);}50%{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,148,136,.12);}}
 .sf-inp.auto-filled{animation:autoFill .55s ease;}
-
-/* Validation feedback */
 .sf-err{font-size:11px;font-weight:600;color:var(--red);margin-top:4px;display:none;align-items:center;gap:4px;}
 .sf-err.show{display:flex;}
 .sf-err i{font-size:10px;}
-
-/* Color swatch */
 .color-wrap{display:flex;align-items:center;gap:10px;}
 .color-wrap .sf-inp{flex:1;font-family:monospace;}
 input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid var(--gray-300);border-radius:8px;cursor:pointer;flex-shrink:0;}
-
-/* File upload */
 .file-lbl{display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 14px;border:1.5px dashed var(--gray-300);border-radius:8px;background:#fff;transition:border-color .15s;}
 .file-lbl:hover{border-color:var(--blue);background:var(--blue-50);}
 .file-lbl i{color:var(--blue);font-size:14px;}
 .file-name{font-size:12px;color:var(--gray-400);}
 
-/* ══════════════════════════════════════════════
-   BANK SECTION INSIDE ACCORDION
-══════════════════════════════════════════════ */
-.bank-add-btn{
-  display:inline-flex;align-items:center;gap:7px;
-  padding:8px 18px;border-radius:8px;border:none;cursor:pointer;
-  background:var(--teal);color:#fff;font-size:12.5px;font-weight:700;
-  transition:all .15s;margin-bottom:16px;
-}
-.bank-add-btn:hover{background:#0f766e;transform:translateY(-1px);box-shadow:0 3px 10px rgba(13,148,136,.3);}
-
-/* Bank table */
+.bank-add-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;border:none;cursor:pointer;background:var(--teal);color:#fff;font-size:12.5px;font-weight:700;transition:all .15s;margin-bottom:16px;}
+.bank-add-btn:hover{filter:brightness(.94);transform:translateY(-1px);box-shadow:0 3px 10px rgba(13,148,136,.3);}
 .bank-tbl-wrap{border:1px solid var(--gray-200);border-radius:var(--r-md);overflow:hidden;}
 .bank-tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
 .bank-tbl thead tr{background:var(--navy);}
@@ -274,18 +143,8 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
 .primary-check{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#15803d;}
 .primary-check i{color:#16a34a;}
 
-/* ══════════════════════════════════════════════
-   MODAL FOOTER
-══════════════════════════════════════════════ */
-.sf-footer{
-  padding:14px 24px;background:#fff;border-top:1.5px solid var(--gray-200);
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-}
-.sf-btn{
-  padding:9px 22px;border-radius:9px;border:none;cursor:pointer;
-  font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px;
-  transition:all .15s;
-}
+.sf-footer{padding:14px 24px;background:#fff;border-top:1.5px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.sf-btn{padding:9px 22px;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px;transition:all .15s;}
 .sf-btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.15);}
 .sf-btn.save{background:linear-gradient(135deg,var(--green),#15803d);color:#fff;}
 .sf-btn.cancel{background:#fff;color:var(--gray-700);border:1.5px solid var(--gray-300);}
@@ -293,9 +152,6 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
 .sf-btn.danger{background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;}
 .sf-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none;}
 
-/* ══════════════════════════════════════════════
-   BANK DETAIL SUB-MODAL
-══════════════════════════════════════════════ */
 .bm-modal .modal-dialog{max-width:680px;}
 .bm-modal .modal-content{border:none;border-radius:var(--r-lg);overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.28);}
 .bm-hdr{background:linear-gradient(135deg,#ea580c 0%,#f97316 100%);padding:15px 22px;display:flex;align-items:center;justify-content:space-between;}
@@ -304,19 +160,8 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
 .bm-body{padding:22px 22px 0;}
 .bm-footer{padding:16px 22px;background:var(--gray-50);border-top:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;}
 .bm-hint{font-size:11px;color:var(--teal);font-style:italic;}
-
-/* Primary toggle */
-.primary-toggle{
-  display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:16px;
-  padding:11px 14px;background:var(--green-50);border:1.5px solid #bbf7d0;border-radius:8px;
-  font-size:13px;color:var(--gray-700);
-}
+.primary-toggle{display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:16px;padding:11px 14px;background:var(--green-50);border:1.5px solid #bbf7d0;border-radius:8px;font-size:13px;color:var(--gray-700);}
 .primary-toggle input{width:17px;height:17px;accent-color:var(--green);cursor:pointer;}
-
-/* ══════════════════════════════════════════════
-   VIEW + DELETE MODALS
-══════════════════════════════════════════════ */
-/* view modal styles removed — view page is now a dedicated route */
 </style>
 {% endblock %}
 
@@ -329,13 +174,10 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
 <div class="proledg-page">
   <h2 class="page-heading">{% if ar %}البائعون{% else %}Sellers{% endif %}</h2>
 
-  <!-- Toolbar -->
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
     <div style="display:flex;align-items:center;gap:8px;">
       {% if current_user.is_admin() %}
-      <button class="tool-btn tool-btn-green" onclick="openAddModal()" title="{% if ar %}إضافة بائع{% else %}Add Seller{% endif %}">
-        <i class="fas fa-plus"></i>
-      </button>
+      <button class="tool-btn tool-btn-green" onclick="openAddModal()" title="{% if ar %}إضافة بائع{% else %}Add Seller{% endif %}"><i class="fas fa-plus"></i></button>
       {% endif %}
       <button class="tool-btn tool-btn-blue" onclick="refreshGrid()" title="{% if ar %}تحديث{% else %}Refresh{% endif %}"><i class="fas fa-sync-alt"></i></button>
       <button class="tool-btn" onclick="exportCSV()" title="{% if ar %}تصدير{% else %}Export{% endif %}"><i class="fas fa-file-export"></i></button>
@@ -345,10 +187,7 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
       <span id="selText" style="font-size:12px;font-weight:600;color:var(--gray-400);">0 {% if ar %}سجل{% else %}records{% endif %}</span>
       <div style="position:relative;">
         <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:12px;pointer-events:none;"></i>
-        <input id="globalSearch" type="text"
-          style="padding:8px 12px 8px 32px;border:1.5px solid var(--gray-300);border-radius:8px;font-size:13px;outline:none;width:220px;"
-          placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"
-          oninput="gridApi&&gridApi.setGridOption('quickFilterText',this.value)">
+        <input id="globalSearch" type="text" style="padding:8px 12px 8px 32px;border:1.5px solid var(--gray-300);border-radius:8px;font-size:13px;outline:none;width:220px;" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" oninput="gridApi&&gridApi.setGridOption('quickFilterText',this.value)">
       </div>
     </div>
   </div>
@@ -366,18 +205,12 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════
-     ADD / EDIT SELLER — ACCORDION MODAL
-══════════════════════════════════════════════════════ -->
+<!-- ══ ADD / EDIT SELLER — ACCORDION MODAL ══ -->
 <div class="modal fade sf-modal" id="sellerModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-scrollable">
     <div class="modal-content">
-
       <div class="sf-hdr">
-        <h5 id="sfModalTitle">
-          <i class="fas fa-user-tie"></i>
-          {% if ar %}إضافة بائع / Add Seller{% else %}Add Seller / إضافة بائع{% endif %}
-        </h5>
+        <h5 id="sfModalTitle"><i class="fas fa-user-tie"></i>{% if ar %}إضافة بائع / Add Seller{% else %}Add Seller / إضافة بائع{% endif %}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
@@ -386,69 +219,42 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
           {{ seller_form.hidden_tag() }}
           <input type="hidden" id="sfSellerId" name="_seller_id">
 
-          <!-- ════════════════════════════════
-               SECTION 1: BASIC INFORMATION
-          ════════════════════════════════ -->
+          <!-- SECTION 1: BASIC INFORMATION -->
           <div class="acc-section open" id="sec-basic">
             <div class="acc-head" onclick="toggleSection('basic')">
               <div class="acc-head-left">
                 <div class="acc-head-icon basic"><i class="fas fa-user-circle"></i></div>
-                <div>
-                  <div class="acc-head-title">
-                    {% if ar %}المعلومات الأساسية{% else %}Basic Information{% endif %}
-                    <span class="ar-sub">{% if ar %}Basic Information{% else %}المعلومات الأساسية{% endif %}</span>
-                  </div>
-                </div>
+                <div><div class="acc-head-title">{% if ar %}المعلومات الأساسية{% else %}Basic Information{% endif %}<span class="ar-sub">{% if ar %}Basic Information{% else %}المعلومات الأساسية{% endif %}</span></div></div>
               </div>
               <i class="fas fa-chevron-up acc-chevron" id="chev-basic"></i>
             </div>
             <div class="acc-body" id="body-basic">
-
-              <!-- Name — bilingual -->
               <div class="bi-group">
                 <div class="bi-labels">
-                  <div class="bi-lbl-en">
-                    {% if ar %}الاسم{% else %}Name{% endif %}
-                    <span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span>
-                    <span class="req">*</span>
-                  </div>
-                  <div class="bi-lbl-ar">
-                    <span class="req">*</span>
-                    <span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>
-                    {% if ar %}Name{% else %}الاسم{% endif %}
-                  </div>
+                  <div class="bi-lbl-en">{% if ar %}الاسم{% else %}Name{% endif %}<span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span><span class="req">*</span></div>
+                  <div class="bi-lbl-ar"><span class="req">*</span><span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>{% if ar %}Name{% else %}الاسم{% endif %}</div>
                 </div>
                 <div class="bi-inputs">
                   <div class="bi-wrap">
-                    <input type="text" id="f_name_p" name="{% if ar %}name_ar{% else %}name{% endif %}"
-                      class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                      required autocomplete="off" oninput="scheduleTrans('name')">
-                    <button type="button" class="sf-retrans" onclick="retrans('name')" title="{% if ar %}إعادة ترجمة{% else %}Re-translate{% endif %}">
-                      <i class="fas fa-sync-alt"></i>
-                    </button>
+                    <input type="text" id="f_name_p" name="{% if ar %}name_ar{% else %}name{% endif %}" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}" required autocomplete="off" oninput="scheduleTrans('name')">
+                    <button type="button" class="sf-retrans" onclick="retrans('name')" title="{% if ar %}إعادة ترجمة{% else %}Re-translate{% endif %}"><i class="fas fa-sync-alt"></i></button>
                   </div>
                   <div class="bi-wrap">
-                    <input type="text" id="f_name_s" name="{% if ar %}name{% else %}name_ar{% endif %}"
-                      class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}" autocomplete="off">
+                    <input type="text" id="f_name_s" name="{% if ar %}name{% else %}name_ar{% endif %}" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}" autocomplete="off">
                     <span class="sf-spin" id="spin_name"></span>
                   </div>
                 </div>
                 <div class="sf-err" id="err_name"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}الاسم مطلوب{% else %}Name is required{% endif %}</span></div>
               </div>
 
-              <!-- VAT / CRN / Status — single fields (numbers/codes, no translation) -->
               <div class="fg-3">
                 <div>
-                  <div class="mono-lbl">
-                    {% if ar %}رقم ضريبة القيمة المضافة{% else %}VAT Number{% endif %} <span class="req">*</span>
-                  </div>
+                  <div class="mono-lbl">{% if ar %}رقم ضريبة القيمة المضافة{% else %}VAT Number{% endif %} <span class="req">*</span></div>
                   <input type="text" name="vat_number" id="f_vat" class="sf-inp" dir="ltr" oninput="clrInv(this,'err_vat')">
                   <div class="sf-err" id="err_vat"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
                 </div>
                 <div>
-                  <div class="mono-lbl">
-                    {% if ar %}رقم السجل التجاري{% else %}CRN{% endif %} <span class="req">*</span>
-                  </div>
+                  <div class="mono-lbl">{% if ar %}رقم السجل التجاري{% else %}CRN{% endif %} <span class="req">*</span></div>
                   <input type="text" name="crn" id="f_crn" class="sf-inp" dir="ltr" oninput="clrInv(this,'err_crn')">
                   <div class="sf-err" id="err_crn"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
                 </div>
@@ -461,197 +267,150 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
                 </div>
               </div>
 
-              <!-- Phone / Fax — single fields -->
               <div class="fg-2">
-                <div>
-                  <div class="mono-lbl">{% if ar %}الهاتف / Phone{% else %}Phone / الهاتف{% endif %}</div>
-                  <input type="text" name="phone" id="f_phone" class="sf-inp" dir="ltr" placeholder="e.g., 013 897 0166">
-                </div>
-                <div>
-                  <div class="mono-lbl">{% if ar %}الفاكس / Fax{% else %}Fax / الفاكس{% endif %}</div>
-                  <input type="text" name="fax" id="f_fax" class="sf-inp" dir="ltr" placeholder="e.g., 013 893 7050">
-                </div>
+                <div><div class="mono-lbl">{% if ar %}الهاتف / Phone{% else %}Phone / الهاتف{% endif %}</div><input type="text" name="phone" id="f_phone" class="sf-inp" dir="ltr" placeholder="e.g., 013 897 0166"></div>
+                <div><div class="mono-lbl">{% if ar %}الفاكس / Fax{% else %}Fax / الفاكس{% endif %}</div><input type="text" name="fax" id="f_fax" class="sf-inp" dir="ltr" placeholder="e.g., 013 893 7050"></div>
               </div>
 
-              <!-- Email / Website — single fields -->
               <div class="fg-2">
                 <div>
                   <div class="mono-lbl">{% if ar %}البريد الإلكتروني / Email{% else %}Email / البريد الإلكتروني{% endif %} <span class="req">*</span></div>
-                  <input type="email" name="email" id="f_email" class="sf-inp" dir="ltr"
-                    placeholder="info@company.com" oninput="validateEmail(this)">
+                  <input type="email" name="email" id="f_email" class="sf-inp" dir="ltr" placeholder="info@company.com" oninput="validateEmail(this)">
                   <div class="sf-err" id="err_email"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}صيغة غير صحيحة{% else %}Invalid email format{% endif %}</span></div>
                 </div>
-                <div>
-                  <div class="mono-lbl">{% if ar %}الموقع الإلكتروني / Website{% else %}Website / الموقع الإلكتروني{% endif %}</div>
-                  <input type="text" name="website" id="f_website" class="sf-inp" dir="ltr" placeholder="www.company.com">
-                </div>
+                <div><div class="mono-lbl">{% if ar %}الموقع الإلكتروني / Website{% else %}Website / الموقع الإلكتروني{% endif %}</div><input type="text" name="website" id="f_website" class="sf-inp" dir="ltr" placeholder="www.company.com"></div>
               </div>
 
-              <!-- Report color + logos -->
               <div class="fg-2">
                 <div>
                   <div class="mono-lbl">{% if ar %}رمز لون التقرير / Report Color{% else %}Report Color / رمز لون التقرير{% endif %} <span class="req">*</span></div>
                   <div class="color-wrap">
                     <input type="text" name="report_color" id="f_rcolor" class="sf-inp" dir="ltr" value="#16a34a">
-                    <input type="color" id="f_rswatch" class="c-swatch" value="#16a34a"
-                      oninput="document.getElementById('f_rcolor').value=this.value">
+                    <input type="color" id="f_rswatch" class="c-swatch" value="#16a34a" oninput="document.getElementById('f_rcolor').value=this.value">
                   </div>
                 </div>
               </div>
               <div class="fg-2">
                 <div>
                   <div class="mono-lbl">{% if ar %}الشعار / Logo{% else %}Logo / الشعار{% endif %}</div>
-                  <label class="file-lbl"><i class="fas fa-cloud-upload-alt"></i>
-                    <span id="logoName" class="file-name">{% if ar %}اختر ملف...{% else %}Choose file...{% endif %}</span>
-                    <input type="file" name="logo" accept=".jpg,.jpeg,.png" class="d-none" onchange="setFName(this,'logoName')">
-                  </label>
+                  <label class="file-lbl"><i class="fas fa-cloud-upload-alt"></i><span id="logoName" class="file-name">{% if ar %}اختر ملف...{% else %}Choose file...{% endif %}</span><input type="file" name="logo" accept=".jpg,.jpeg,.png" class="d-none" onchange="setFName(this,'logoName')"></label>
                 </div>
                 <div>
                   <div class="mono-lbl">{% if ar %}الشعار الخلفي / Background Logo{% else %}Background Logo / الشعار الخلفي{% endif %}</div>
-                  <label class="file-lbl"><i class="fas fa-cloud-upload-alt"></i>
-                    <span id="bgLogoName" class="file-name">{% if ar %}اختر ملف...{% else %}Choose file...{% endif %}</span>
-                    <input type="file" name="bg_logo" accept=".jpg,.jpeg,.png" class="d-none" onchange="setFName(this,'bgLogoName')">
-                  </label>
+                  <label class="file-lbl"><i class="fas fa-cloud-upload-alt"></i><span id="bgLogoName" class="file-name">{% if ar %}اختر ملف...{% else %}Choose file...{% endif %}</span><input type="file" name="bg_logo" accept=".jpg,.jpeg,.png" class="d-none" onchange="setFName(this,'bgLogoName')"></label>
                 </div>
               </div>
-
             </div><!-- /body-basic -->
           </div><!-- /sec-basic -->
 
-          <!-- ════════════════════════════════
-               SECTION 2: ADDRESS INFORMATION
-          ════════════════════════════════ -->
+          <!-- SECTION 2: WAREHOUSES -->
+          <div class="acc-section" id="sec-warehouse">
+            <div class="acc-head" onclick="toggleSection('warehouse')">
+              <div class="acc-head-left">
+                <div class="acc-head-icon warehouse"><i class="fas fa-warehouse"></i></div>
+                <div class="acc-head-title">{% if ar %}المستودعات{% else %}Warehouses{% endif %}<span class="ar-sub">{% if ar %}Warehouses{% else %}المستودعات{% endif %}</span>
+                  <span id="whCountBadge" style="background:#0891b2;color:#fff;padding:1px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-inline-start:8px;display:none;">0</span>
+                </div>
+              </div>
+              <i class="fas fa-chevron-down acc-chevron" id="chev-warehouse"></i>
+            </div>
+            <div class="acc-body" id="body-warehouse">
+              <button type="button" class="bank-add-btn" style="background:#0891b2;" onclick="openWhModal()">
+                <i class="fas fa-plus"></i>{% if ar %}إضافة مستودع / Add Warehouse{% else %}+ Add Warehouse / إضافة مستودع{% endif %}
+              </button>
+              <div id="whTblWrap" class="bank-tbl-wrap" style="display:none;">
+                <table class="bank-tbl">
+                  <thead><tr>
+                    <th>{% if ar %}اسم المستودع / Warehouse{% else %}Warehouse / اسم المستودع{% endif %}</th>
+                    <th>{% if ar %}الموقع / Location{% else %}Location / الموقع{% endif %}</th>
+                    <th>{% if ar %}الإجراءات / Actions{% else %}Actions / الإجراءات{% endif %}</th>
+                  </tr></thead>
+                  <tbody id="whTblBody"></tbody>
+                </table>
+              </div>
+              <div id="whEmptyMsg" class="bank-empty">
+                <i class="fas fa-warehouse"></i>{% if ar %}لم يتم إضافة مستودعات / No warehouses added{% else %}No warehouses added / لم يتم إضافة مستودعات{% endif %}
+              </div>
+            </div><!-- /body-warehouse -->
+          </div><!-- /sec-warehouse -->
+
+          <!-- SECTION 3: ADDRESS INFORMATION -->
           <div class="acc-section" id="sec-address">
             <div class="acc-head" onclick="toggleSection('address')">
               <div class="acc-head-left">
                 <div class="acc-head-icon address"><i class="fas fa-map-marker-alt"></i></div>
-                <div class="acc-head-title">
-                  {% if ar %}معلومات العنوان{% else %}Address Information{% endif %}
-                  <span class="ar-sub">{% if ar %}Address Information{% else %}معلومات العنوان{% endif %}</span>
-                </div>
+                <div class="acc-head-title">{% if ar %}معلومات العنوان{% else %}Address Information{% endif %}<span class="ar-sub">{% if ar %}Address Information{% else %}معلومات العنوان{% endif %}</span></div>
               </div>
               <i class="fas fa-chevron-down acc-chevron" id="chev-address"></i>
             </div>
             <div class="acc-body" id="body-address">
-
-              <!-- Country / City / District — dropdowns, single field -->
               <div class="fg-3">
                 <div>
                   <div class="mono-lbl">{% if ar %}الدولة / Country{% else %}Country / الدولة{% endif %}</div>
-                  <input type="hidden" name="country"    id="f_country_val">
-                  <input type="hidden" name="country_ar" id="f_country_ar_val">
-                  <select id="f_country_sel" class="sf-inp sf-sel" onchange="onCountryChange()">
-                    <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
-                  </select>
+                  <input type="hidden" name="country" id="f_country_val"><input type="hidden" name="country_ar" id="f_country_ar_val">
+                  <select id="f_country_sel" class="sf-inp sf-sel" onchange="onCountryChange()"><option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option></select>
                 </div>
                 <div>
                   <div class="mono-lbl">{% if ar %}المدينة / City{% else %}City / المدينة{% endif %}</div>
-                  <input type="hidden" name="city"    id="f_city_val">
-                  <input type="hidden" name="city_ar" id="f_city_ar_val">
-                  <select id="f_city_sel" class="sf-inp sf-sel" disabled onchange="onCityChange()">
-                    <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
-                  </select>
+                  <input type="hidden" name="city" id="f_city_val"><input type="hidden" name="city_ar" id="f_city_ar_val">
+                  <select id="f_city_sel" class="sf-inp sf-sel" disabled onchange="onCityChange()"><option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option></select>
                 </div>
                 <div>
                   <div class="mono-lbl">{% if ar %}المنطقة / District{% else %}District / المنطقة{% endif %}</div>
-                  <input type="hidden" name="district"    id="f_district_val">
-                  <input type="hidden" name="district_ar" id="f_district_ar_val">
-                  <select id="f_district_sel" class="sf-inp sf-sel" disabled onchange="onDistrictChange()">
-                    <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
-                  </select>
+                  <input type="hidden" name="district" id="f_district_val"><input type="hidden" name="district_ar" id="f_district_ar_val">
+                  <select id="f_district_sel" class="sf-inp sf-sel" disabled onchange="onDistrictChange()"><option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option></select>
                 </div>
               </div>
-
-              <!-- Street Name — bilingual -->
               <div class="bi-group">
                 <div class="bi-labels">
                   <div class="bi-lbl-en">{% if ar %}اسم الشارع{% else %}Street Name{% endif %} <span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span></div>
                   <div class="bi-lbl-ar"><span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span> {% if ar %}Street Name{% else %}اسم الشارع{% endif %}</div>
                 </div>
                 <div class="bi-inputs">
-                  <div class="bi-wrap">
-                    <input type="text" id="f_street_p" name="{% if ar %}street_name_ar{% else %}street_name{% endif %}" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}" oninput="scheduleTrans('street')">
-                    <button type="button" class="sf-retrans" onclick="retrans('street')"><i class="fas fa-sync-alt"></i></button>
-                  </div>
-                  <div class="bi-wrap">
-                    <input type="text" id="f_street_s" name="{% if ar %}street_name{% else %}street_name_ar{% endif %}" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}">
-                    <span class="sf-spin" id="spin_street"></span>
-                  </div>
+                  <div class="bi-wrap"><input type="text" id="f_street_p" name="{% if ar %}street_name_ar{% else %}street_name{% endif %}" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}" oninput="scheduleTrans('street')"><button type="button" class="sf-retrans" onclick="retrans('street')"><i class="fas fa-sync-alt"></i></button></div>
+                  <div class="bi-wrap"><input type="text" id="f_street_s" name="{% if ar %}street_name{% else %}street_name_ar{% endif %}" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}"><span class="sf-spin" id="spin_street"></span></div>
                 </div>
               </div>
-
-              <!-- Building / Additional — single (numbers) -->
               <div class="fg-2">
-                <div>
-                  <div class="mono-lbl">{% if ar %}رقم المبنى / Building No.{% else %}Building No. / رقم المبنى{% endif %}</div>
-                  <input type="text" name="building_number" id="f_building" class="sf-inp" dir="ltr">
-                </div>
-                <div>
-                  <div class="mono-lbl">{% if ar %}رقم إضافي / Additional No.{% else %}Additional No. / رقم إضافي{% endif %}</div>
-                  <input type="text" name="additional_number" id="f_additional" class="sf-inp" dir="ltr">
-                </div>
+                <div><div class="mono-lbl">{% if ar %}رقم المبنى / Building No.{% else %}Building No. / رقم المبنى{% endif %}</div><input type="text" name="building_number" id="f_building" class="sf-inp" dir="ltr"></div>
+                <div><div class="mono-lbl">{% if ar %}رقم إضافي / Additional No.{% else %}Additional No. / رقم إضافي{% endif %}</div><input type="text" name="additional_number" id="f_additional" class="sf-inp" dir="ltr"></div>
               </div>
-
-              <!-- Postal Code — single (number) -->
               <div class="fg-2">
-                <div>
-                  <div class="mono-lbl">{% if ar %}الرمز البريدي / Postal Code{% else %}Postal Code / الرمز البريدي{% endif %}</div>
-                  <input type="text" name="postal_code" id="f_postal" class="sf-inp" dir="ltr">
-                </div>
+                <div><div class="mono-lbl">{% if ar %}الرمز البريدي / Postal Code{% else %}Postal Code / الرمز البريدي{% endif %}</div><input type="text" name="postal_code" id="f_postal" class="sf-inp" dir="ltr"></div>
               </div>
-
-              <!-- Hidden AR fields for building/additional/postal (same value, no translation needed) -->
-              <input type="hidden" name="building_number_ar"   id="f_building_ar_val">
+              <input type="hidden" name="building_number_ar" id="f_building_ar_val">
               <input type="hidden" name="additional_number_ar" id="f_additional_ar_val">
-              <input type="hidden" name="postal_code_ar"       id="f_postal_ar_val">
-
+              <input type="hidden" name="postal_code_ar" id="f_postal_ar_val">
             </div><!-- /body-address -->
           </div><!-- /sec-address -->
 
-          <!-- ════════════════════════════════
-               SECTION 3: BANK INFORMATION
-          ════════════════════════════════ -->
+          <!-- SECTION 4: BANK INFORMATION -->
           <div class="acc-section" id="sec-bank">
             <div class="acc-head" onclick="toggleSection('bank')">
               <div class="acc-head-left">
                 <div class="acc-head-icon bank"><i class="fas fa-university"></i></div>
-                <div class="acc-head-title">
-                  {% if ar %}معلومات البنك{% else %}Bank Information{% endif %}
-                  <span class="ar-sub">{% if ar %}Bank Information{% else %}معلومات البنك{% endif %}</span>
+                <div class="acc-head-title">{% if ar %}معلومات البنك{% else %}Bank Information{% endif %}<span class="ar-sub">{% if ar %}Bank Information{% else %}معلومات البنك{% endif %}</span>
                   <span id="bankCountBadge" style="background:var(--teal);color:#fff;padding:1px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-inline-start:8px;display:none;">0</span>
                 </div>
               </div>
               <i class="fas fa-chevron-down acc-chevron" id="chev-bank"></i>
             </div>
             <div class="acc-body" id="body-bank">
-
-              <button type="button" class="bank-add-btn" onclick="openBankModal()">
-                <i class="fas fa-plus"></i>
-                {% if ar %}إضافة بيانات بنك / Add Bank Details{% else %}+ Add Bank Details / إضافة بيانات بنك{% endif %}
-              </button>
-
-              <!-- Bank table -->
+              <button type="button" class="bank-add-btn" onclick="openBankModal()"><i class="fas fa-plus"></i>{% if ar %}إضافة بيانات بنك / Add Bank Details{% else %}+ Add Bank Details / إضافة بيانات بنك{% endif %}</button>
               <div id="bankTblWrap" class="bank-tbl-wrap" style="display:none;">
                 <table class="bank-tbl">
-                  <thead>
-                    <tr>
-                      <th>{% if ar %}اسم البنك / Bank Name{% else %}Bank Name / اسم البنك{% endif %}</th>
-                      <th>{% if ar %}الفرع / Branch{% else %}Branch / الفرع{% endif %}</th>
-                      <th>{% if ar %}رقم الحساب / Account No.{% else %}Account No. / رقم الحساب{% endif %}</th>
-                      <th>IBAN</th>
-                      <th>SWIFT Code</th>
-                      <th>{% if ar %}رئيسي / Primary{% else %}Primary / رئيسي{% endif %}</th>
-                      <th>{% if ar %}الإجراءات / Actions{% else %}Actions / الإجراءات{% endif %}</th>
-                    </tr>
-                  </thead>
+                  <thead><tr>
+                    <th>{% if ar %}اسم البنك / Bank Name{% else %}Bank Name / اسم البنك{% endif %}</th>
+                    <th>{% if ar %}الفرع / Branch{% else %}Branch / الفرع{% endif %}</th>
+                    <th>{% if ar %}رقم الحساب / Account No.{% else %}Account No. / رقم الحساب{% endif %}</th>
+                    <th>IBAN</th><th>SWIFT Code</th>
+                    <th>{% if ar %}رئيسي / Primary{% else %}Primary / رئيسي{% endif %}</th>
+                    <th>{% if ar %}الإجراءات / Actions{% else %}Actions / الإجراءات{% endif %}</th>
+                  </tr></thead>
                   <tbody id="bankTblBody"></tbody>
                 </table>
               </div>
-              <div id="bankEmptyMsg" class="bank-empty">
-                <i class="fas fa-university"></i>
-                {% if ar %}لم يتم إضافة بيانات بنك / No bank details added{% else %}No bank details added / لم يتم إضافة بيانات بنك{% endif %}
-              </div>
-
+              <div id="bankEmptyMsg" class="bank-empty"><i class="fas fa-university"></i>{% if ar %}لم يتم إضافة بيانات بنك / No bank details added{% else %}No bank details added / لم يتم إضافة بيانات بنك{% endif %}</div>
             </div><!-- /body-bank -->
           </div><!-- /sec-bank -->
 
@@ -659,27 +418,17 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
       </div><!-- /sf-body -->
 
       <div class="sf-footer">
-        <button type="button" class="sf-btn reset" onclick="resetForm()">
-          <i class="fas fa-redo"></i>
-          {% if ar %}إعادة تعيين / Reset{% else %}Reset / إعادة تعيين{% endif %}
-        </button>
+        <button type="button" class="sf-btn reset" onclick="resetForm()"><i class="fas fa-redo"></i>{% if ar %}إعادة تعيين / Reset{% else %}Reset / إعادة تعيين{% endif %}</button>
         <div style="display:flex;gap:8px;">
-          <button type="button" class="sf-btn cancel" data-bs-dismiss="modal">
-            <i class="fas fa-times"></i>
-            {% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}
-          </button>
-          <button type="button" class="sf-btn save" onclick="submitSellerForm()">
-            <i class="fas fa-save"></i>
-            {% if ar %}حفظ / Save{% else %}Save / حفظ{% endif %}
-          </button>
+          <button type="button" class="sf-btn cancel" data-bs-dismiss="modal"><i class="fas fa-times"></i>{% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}</button>
+          <button type="button" class="sf-btn save" onclick="submitSellerForm()"><i class="fas fa-save"></i>{% if ar %}حفظ / Save{% else %}Save / حفظ{% endif %}</button>
         </div>
       </div>
-
     </div>
   </div>
 </div>
 
-<!-- ══ DELETE MODAL ══ -->
+<!-- DELETE MODAL -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
   <div class="modal-dialog modal-sm modal-dialog-centered">
     <div class="modal-content" style="border:none;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);">
@@ -690,251 +439,159 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
       <div class="modal-body" style="padding:12px 20px;"><p id="deleteText" style="font-size:14px;color:var(--gray-700);margin:0;"></p></div>
       <div class="modal-footer border-0" style="padding:0 20px 18px;">
         <button class="sf-btn cancel" data-bs-dismiss="modal" style="padding:7px 16px;font-size:12px;">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <form id="deleteForm" method="POST" class="d-inline">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="sf-btn danger" style="padding:7px 16px;font-size:12px;">{% if ar %}حذف{% else %}Delete{% endif %}</button>
-        </form>
+        <form id="deleteForm" method="POST" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="sf-btn danger" style="padding:7px 16px;font-size:12px;">{% if ar %}حذف{% else %}Delete{% endif %}</button></form>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- BANK DETAIL SUB-MODAL                                   -->
-<!-- ════════════════════════════════════════════════════════ -->
+<!-- BANK DETAIL SUB-MODAL -->
 <div class="modal fade bm-modal" id="bankModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-
-            <!-- ──── HEADER ──── -->
-            <div class="bm-hdr">
-                <h5 id="bmTitle">
-                    <i class="fas fa-university"></i>
-                    {% if ar %}إضافة تفاصيل البنك / Add Bank Details{% else %}Add Bank Details / إضافة تفاصيل البنك{% endif %}
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="bm-hdr">
+        <h5 id="bmTitle"><i class="fas fa-university"></i>{% if ar %}إضافة تفاصيل البنك / Add Bank Details{% else %}Add Bank Details / إضافة تفاصيل البنك{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="bm-body" style="padding:20px 22px 4px;">
+        <input type="hidden" id="bm_idx" value="">
+        <style>
+          .bm-section-lbl{display:flex;align-items:center;gap:7px;margin:0 0 12px;color:var(--gray-400);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+          .bm-section-lbl i{font-size:11px;}
+          .bm-section-lbl::after{content:'';flex:1;height:1px;background:var(--gray-200);}
+          .bm-section{margin-bottom:18px;} .bm-section:last-child{margin-bottom:0;}
+        </style>
+        <div class="bm-section">
+          <div class="bm-section-lbl"><i class="fas fa-user-circle"></i>{% if ar %}صاحب الحساب / Account holder{% else %}Account holder / صاحب الحساب{% endif %}</div>
+          <div class="bi-group" style="margin-bottom:0;">
+            <div class="bi-labels">
+              <div class="bi-lbl-en">{% if ar %}اسم البنك{% else %}Bank Name{% endif %}<span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span><span class="req">*</span></div>
+              <div class="bi-lbl-ar"><span class="req">*</span><span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>{% if ar %}Bank Name{% else %}اسم البنك{% endif %}</div>
             </div>
-
-            <!-- ──── BODY ──── -->
-            <div class="bm-body" style="padding:20px 22px 4px;">
-                <input type="hidden" id="bm_idx" value="">
-
-                <!-- ══ SECTION DIVIDER HELPER ══
-                     Reuse the same pattern as the main form's section labels -->
-                <style>
-                    .bm-section-lbl {
-                        display: flex;
-                        align-items: center;
-                        gap: 7px;
-                        margin: 0 0 12px;
-                        color: var(--gray-400);
-                        font-size: 10.5px;
-                        font-weight: 700;
-                        text-transform: uppercase;
-                        letter-spacing: .06em;
-                    }
-                    .bm-section-lbl i { font-size: 11px; }
-                    .bm-section-lbl::after {
-                        content: '';
-                        flex: 1;
-                        height: 1px;
-                        background: var(--gray-200);
-                    }
-                    .bm-section { margin-bottom: 18px; }
-                    .bm-section:last-child { margin-bottom: 0; }
-                </style>
-
-                <!-- ══ A: ACCOUNT HOLDER ══ -->
-                <div class="bm-section">
-                    <div class="bm-section-lbl">
-                        <i class="fas fa-user-circle"></i>
-                        {% if ar %}صاحب الحساب / Account holder{% else %}Account holder / صاحب الحساب{% endif %}
-                    </div>
-
-                    <!-- Bank Name — bilingual -->
-                    <div class="bi-group" style="margin-bottom:0;">
-                        <div class="bi-labels">
-                            <div class="bi-lbl-en">
-                                {% if ar %}اسم البنك{% else %}Bank Name{% endif %}
-                                <span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span>
-                                <span class="req">*</span>
-                            </div>
-                            <div class="bi-lbl-ar">
-                                <span class="req">*</span>
-                                <span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>
-                                {% if ar %}Bank Name{% else %}اسم البنك{% endif %}
-                            </div>
-                        </div>
-                        <div class="bi-inputs">
-                            <div class="bi-wrap">
-                                <input type="text" id="bm_name_p" class="sf-inp has-btn"
-                                       dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                                       placeholder="{% if ar %}أدخل اسم البنك{% else %}Enter bank name{% endif %}"
-                                       oninput="scheduleBMTrans('bm_name');clearBmErr()">
-                                <button type="button" class="sf-retrans" onclick="retransBM('bm_name')"
-                                        title="{% if ar %}إعادة ترجمة{% else %}Re-translate{% endif %}">
-                                    <i class="fas fa-sync-alt"></i>
-                                </button>
-                            </div>
-                            <div class="bi-wrap">
-                                <input type="text" id="bm_name_s" class="sf-inp secondary"
-                                       dir="{% if ar %}ltr{% else %}rtl{% endif %}"
-                                       placeholder="{% if ar %}Enter bank name{% else %}أدخل اسم البنك{% endif %}">
-                                <span class="sf-spin" id="bm_name_spin"></span>
-                            </div>
-                        </div>
-                        <div class="sf-err" id="err_bm_name">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <span>{% if ar %}اسم البنك مطلوب{% else %}Bank name is required{% endif %}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ══ B: BRANCH ══ -->
-                <div class="bm-section">
-                    <div class="bm-section-lbl">
-                        <i class="fas fa-code-branch"></i>
-                        {% if ar %}الفرع / Branch{% else %}Branch / الفرع{% endif %}
-                    </div>
-
-                    <!-- Branch — bilingual -->
-                    <div class="bi-group" style="margin-bottom:0;">
-                        <div class="bi-labels">
-                            <div class="bi-lbl-en">
-                                {% if ar %}الفرع{% else %}Branch{% endif %}
-                                <span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span>
-                                <span class="req">*</span>
-                            </div>
-                            <div class="bi-lbl-ar">
-                                <span class="req">*</span>
-                                <span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>
-                                {% if ar %}Branch{% else %}الفرع{% endif %}
-                            </div>
-                        </div>
-                        <div class="bi-inputs">
-                            <div class="bi-wrap">
-                                <input type="text" id="bm_branch_p" class="sf-inp has-btn"
-                                       dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                                       placeholder="{% if ar %}أدخل اسم الفرع{% else %}Enter branch name{% endif %}"
-                                       oninput="scheduleBMTrans('bm_branch');clrInv(this,'err_bm_branch')">
-                                <button type="button" class="sf-retrans" onclick="retransBM('bm_branch')"
-                                        title="{% if ar %}إعادة ترجمة{% else %}Re-translate{% endif %}">
-                                    <i class="fas fa-sync-alt"></i>
-                                </button>
-                            </div>
-                            <div class="bi-wrap">
-                                <input type="text" id="bm_branch_s" class="sf-inp secondary"
-                                       dir="{% if ar %}ltr{% else %}rtl{% endif %}"
-                                       placeholder="{% if ar %}Enter branch name{% else %}أدخل اسم الفرع{% endif %}">
-                                <span class="sf-spin" id="bm_branch_spin"></span>
-                            </div>
-                        </div>
-                        <div class="sf-err" id="err_bm_branch">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <span>{% if ar %}الفرع مطلوب{% else %}Branch is required{% endif %}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ══ C: TRANSFER CODES ══ -->
-                <div class="bm-section">
-                    <div class="bm-section-lbl">
-                        <i class="fas fa-exchange-alt"></i>
-                        {% if ar %}تفاصيل التحويل / Transfer details{% else %}Transfer details / تفاصيل التحويل{% endif %}
-                    </div>
-
-                    <!-- Account Number — full width -->
-                    <div class="mono-group" style="margin-bottom:12px;">
-                        <div class="mono-lbl">
-                            {% if ar %}رقم الحساب / Account Number{% else %}Account Number / رقم الحساب{% endif %}
-                            <span class="req">*</span>
-                        </div>
-                        <input type="text" id="bm_account" class="sf-inp" dir="ltr"
-                               placeholder="{% if ar %}أدخل رقم الحساب{% else %}Enter account number{% endif %}"
-                               oninput="clrInv(this,'err_bm_account')">
-                        <div class="sf-err" id="err_bm_account">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <span>{% if ar %}مطلوب{% else %}Required{% endif %}</span>
-                        </div>
-                    </div>
-
-                    <!-- IBAN + SWIFT — side by side -->
-                    <div class="fg-2" style="margin-bottom:0;">
-                        <div>
-                            <div class="mono-lbl">
-                                {% if ar %}رقم الآيبان / IBAN{% else %}IBAN / رقم الآيبان{% endif %}
-                                <span class="req">*</span>
-                            </div>
-                            <input type="text" id="bm_iban" class="sf-inp" dir="ltr"
-                                   style="font-family:monospace;letter-spacing:.03em;"
-                                   placeholder="e.g. SA0380000000608010167519"
-                                   oninput="clrInv(this,'err_bm_iban')">
-                            <div class="sf-err" id="err_bm_iban">
-                                <i class="fas fa-exclamation-circle"></i>
-                                <span>{% if ar %}مطلوب{% else %}Required{% endif %}</span>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="mono-lbl">
-                                {% if ar %}كود السويفت / SWIFT Code{% else %}SWIFT Code / كود السويفت{% endif %}
-                                <span class="req">*</span>
-                            </div>
-                            <input type="text" id="bm_swift" class="sf-inp" dir="ltr"
-                                   style="font-family:monospace;text-transform:uppercase;letter-spacing:.06em;"
-                                   placeholder="e.g. RJHISARI"
-                                   oninput="clrInv(this,'err_bm_swift')">
-                            <div class="sf-err" id="err_bm_swift">
-                                <i class="fas fa-exclamation-circle"></i>
-                                <span>{% if ar %}مطلوب{% else %}Required{% endif %}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ══ D: PRIMARY TOGGLE ══ -->
-                <div class="bm-section" style="margin-bottom:16px;">
-                    <label class="primary-toggle" style="margin-top:0;">
-                        <input type="checkbox" id="bm_primary">
-                        <span>
-                            <i class="fas fa-star" style="color:var(--amber);font-size:12px;"></i>
-                            {% if ar %}تعيين كبنك رئيسي / Set as Primary Bank{% else %}Set as Primary Bank / تعيين كبنك رئيسي{% endif %}
-                        </span>
-                    </label>
-                    <p class="bm-hint" style="margin-top:8px;">
-                        <i class="fas fa-info-circle me-1"></i>
-                        {% if ar %}يمكن تعيين حساب بنكي واحد فقط كحساب رئيسي. / Only one bank account can be set as primary.
-                        {% else %}Only one bank account can be set as primary. / يمكن تعيين حساب بنكي واحد فقط كحساب رئيسي.{% endif %}
-                    </p>
-                </div>
-
-            </div><!-- /bm-body -->
-
-            <!-- ──── FOOTER ──── -->
-            <div class="bm-footer">
-                <button type="button" class="sf-btn reset" onclick="
-                    ['bm_name_p','bm_name_s','bm_account','bm_branch_p','bm_branch_s','bm_swift','bm_iban']
-                        .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-                    document.getElementById('bm_primary').checked=false;
-                    clearBmErr();
-                ">
-                    <i class="fas fa-redo"></i>
-                    {% if ar %}إعادة تعيين / Reset{% else %}Reset / إعادة تعيين{% endif %}
-                </button>
-                <div style="display:flex;gap:8px;">
-                    <button type="button" class="sf-btn cancel" data-bs-dismiss="modal">
-                        <i class="fas fa-times"></i>
-                        {% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}
-                    </button>
-                    <button type="button" class="sf-btn save" onclick="saveBankEntry()">
-                        <i class="fas fa-plus"></i>
-                        {% if ar %}إضافة بيانات البنك / Add Bank Detail{% else %}Add Bank Detail / إضافة بيانات البنك{% endif %}
-                    </button>
-                </div>
+            <div class="bi-inputs">
+              <div class="bi-wrap"><input type="text" id="bm_name_p" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}" placeholder="{% if ar %}أدخل اسم البنك{% else %}Enter bank name{% endif %}" oninput="scheduleBMTrans('bm_name');clearBmErr()"><button type="button" class="sf-retrans" onclick="retransBM('bm_name')" title="{% if ar %}إعادة ترجمة{% else %}Re-translate{% endif %}"><i class="fas fa-sync-alt"></i></button></div>
+              <div class="bi-wrap"><input type="text" id="bm_name_s" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}" placeholder="{% if ar %}Enter bank name{% else %}أدخل اسم البنك{% endif %}"><span class="sf-spin" id="bm_name_spin"></span></div>
             </div>
-
-        </div><!-- /modal-content -->
-    </div><!-- /modal-dialog -->
+            <div class="sf-err" id="err_bm_name"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}اسم البنك مطلوب{% else %}Bank name is required{% endif %}</span></div>
+          </div>
+        </div>
+        <div class="bm-section">
+          <div class="bm-section-lbl"><i class="fas fa-code-branch"></i>{% if ar %}الفرع / Branch{% else %}Branch / الفرع{% endif %}</div>
+          <div class="bi-group" style="margin-bottom:0;">
+            <div class="bi-labels">
+              <div class="bi-lbl-en">{% if ar %}الفرع{% else %}Branch{% endif %}<span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span><span class="req">*</span></div>
+              <div class="bi-lbl-ar"><span class="req">*</span><span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>{% if ar %}Branch{% else %}الفرع{% endif %}</div>
+            </div>
+            <div class="bi-inputs">
+              <div class="bi-wrap"><input type="text" id="bm_branch_p" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}" placeholder="{% if ar %}أدخل اسم الفرع{% else %}Enter branch name{% endif %}" oninput="scheduleBMTrans('bm_branch');clrInv(this,'err_bm_branch')"><button type="button" class="sf-retrans" onclick="retransBM('bm_branch')" title="{% if ar %}إعادة ترجمة{% else %}Re-translate{% endif %}"><i class="fas fa-sync-alt"></i></button></div>
+              <div class="bi-wrap"><input type="text" id="bm_branch_s" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}" placeholder="{% if ar %}Enter branch name{% else %}أدخل اسم الفرع{% endif %}"><span class="sf-spin" id="bm_branch_spin"></span></div>
+            </div>
+            <div class="sf-err" id="err_bm_branch"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}الفرع مطلوب{% else %}Branch is required{% endif %}</span></div>
+          </div>
+        </div>
+        <div class="bm-section">
+          <div class="bm-section-lbl"><i class="fas fa-exchange-alt"></i>{% if ar %}تفاصيل التحويل / Transfer details{% else %}Transfer details / تفاصيل التحويل{% endif %}</div>
+          <div class="mono-group" style="margin-bottom:12px;">
+            <div class="mono-lbl">{% if ar %}رقم الحساب / Account Number{% else %}Account Number / رقم الحساب{% endif %}<span class="req">*</span></div>
+            <input type="text" id="bm_account" class="sf-inp" dir="ltr" placeholder="{% if ar %}أدخل رقم الحساب{% else %}Enter account number{% endif %}" oninput="clrInv(this,'err_bm_account')">
+            <div class="sf-err" id="err_bm_account"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
+          </div>
+          <div class="fg-2" style="margin-bottom:0;">
+            <div>
+              <div class="mono-lbl">{% if ar %}رقم الآيبان / IBAN{% else %}IBAN / رقم الآيبان{% endif %}<span class="req">*</span></div>
+              <input type="text" id="bm_iban" class="sf-inp" dir="ltr" style="font-family:monospace;letter-spacing:.03em;" placeholder="e.g. SA0380000000608010167519" oninput="clrInv(this,'err_bm_iban')">
+              <div class="sf-err" id="err_bm_iban"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
+            </div>
+            <div>
+              <div class="mono-lbl">{% if ar %}كود السويفت / SWIFT Code{% else %}SWIFT Code / كود السويفت{% endif %}<span class="req">*</span></div>
+              <input type="text" id="bm_swift" class="sf-inp" dir="ltr" style="font-family:monospace;text-transform:uppercase;letter-spacing:.06em;" placeholder="e.g. RJHISARI" oninput="clrInv(this,'err_bm_swift')">
+              <div class="sf-err" id="err_bm_swift"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="bm-section" style="margin-bottom:16px;">
+          <label class="primary-toggle" style="margin-top:0;">
+            <input type="checkbox" id="bm_primary">
+            <span><i class="fas fa-star" style="color:var(--amber);font-size:12px;"></i>{% if ar %}تعيين كبنك رئيسي / Set as Primary Bank{% else %}Set as Primary Bank / تعيين كبنك رئيسي{% endif %}</span>
+          </label>
+          <p class="bm-hint" style="margin-top:8px;"><i class="fas fa-info-circle me-1"></i>{% if ar %}يمكن تعيين حساب بنكي واحد فقط كحساب رئيسي.{% else %}Only one bank account can be set as primary.{% endif %}</p>
+        </div>
+      </div>
+      <div class="bm-footer">
+        <button type="button" class="sf-btn reset" onclick="['bm_name_p','bm_name_s','bm_account','bm_branch_p','bm_branch_s','bm_swift','bm_iban'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('bm_primary').checked=false;clearBmErr();"><i class="fas fa-redo"></i>{% if ar %}إعادة تعيين / Reset{% else %}Reset / إعادة تعيين{% endif %}</button>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="sf-btn cancel" data-bs-dismiss="modal"><i class="fas fa-times"></i>{% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}</button>
+          <button type="button" class="sf-btn save" onclick="saveBankEntry()"><i class="fas fa-plus"></i>{% if ar %}إضافة بيانات البنك / Add Bank Detail{% else %}Add Bank Detail / إضافة بيانات البنك{% endif %}</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div><!-- /bankModal -->
+
+<!-- WAREHOUSE DETAIL SUB-MODAL -->
+<div class="modal fade bm-modal" id="whModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="bm-hdr" style="background:linear-gradient(135deg,#0e7490 0%,#0891b2 100%);">
+        <h5 id="whTitle"><i class="fas fa-warehouse"></i>{% if ar %}إضافة مستودع / Add Warehouse{% else %}Add Warehouse / إضافة مستودع{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="bm-body" style="padding:20px 22px 4px;">
+        <input type="hidden" id="wh_idx" value="">
+        <div class="bi-group">
+          <div class="bi-labels">
+            <div class="bi-lbl-en">{% if ar %}اسم المستودع{% else %}Warehouse Name{% endif %}<span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span><span class="req">*</span></div>
+            <div class="bi-lbl-ar"><span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>{% if ar %}Warehouse Name{% else %}اسم المستودع{% endif %}</div>
+          </div>
+          <div class="bi-inputs">
+            <div class="bi-wrap"><input type="text" id="wh_name_p" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}" placeholder="{% if ar %}أدخل اسم المستودع{% else %}Enter warehouse name{% endif %}" oninput="scheduleBMTrans('wh_name');clrInv(this,'err_wh_name')"><button type="button" class="sf-retrans" onclick="retransBM('wh_name')"><i class="fas fa-sync-alt"></i></button></div>
+            <div class="bi-wrap"><input type="text" id="wh_name_s" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}" placeholder="{% if ar %}Enter warehouse name{% else %}أدخل اسم المستودع{% endif %}"><span class="sf-spin" id="wh_name_spin"></span></div>
+          </div>
+          <div class="sf-err" id="err_wh_name"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}اسم المستودع مطلوب{% else %}Warehouse name is required{% endif %}</span></div>
+        </div>
+        <div class="mono-group" style="margin-bottom:6px;">
+          <div class="mono-lbl">{% if ar %}الموقع / Location{% else %}Location / الموقع{% endif %}</div>
+          <select id="wh_location" class="sf-inp sf-sel" onchange="onWhLocationChange(this)">
+            <option value="">{% if ar %}— اختر الموقع —{% else %}— Select Location —{% endif %}</option>
+            <option value="__new__">{% if ar %}+ إضافة موقع جديد{% else %}+ Add New Location{% endif %}</option>
+          </select>
+        </div>
+      </div>
+      <div class="bm-footer">
+        <button type="button" class="sf-btn cancel" data-bs-dismiss="modal"><i class="fas fa-times"></i>{% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}</button>
+        <button type="button" class="sf-btn save" onclick="saveWhEntry()"><i class="fas fa-plus"></i>{% if ar %}حفظ / Save{% else %}Save / حفظ{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK-ADD WAREHOUSE LOCATION MODAL -->
+<div class="modal fade bm-modal" id="whLocModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="bm-hdr" style="background:linear-gradient(135deg,#0e7490 0%,#0891b2 100%);">
+        <h5><i class="fas fa-map-marker-alt"></i>{% if ar %}إضافة موقع / Add Location{% else %}Add Location / إضافة موقع{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="bm-body" style="padding:20px 22px 8px;">
+        <div class="bi-group" style="margin-bottom:0;">
+          <div class="bi-labels">
+            <div class="bi-lbl-en">{% if ar %}اسم الموقع{% else %}Location Name{% endif %}<span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span><span class="req">*</span></div>
+            <div class="bi-lbl-ar"><span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>{% if ar %}Location Name{% else %}اسم الموقع{% endif %}</div>
+          </div>
+          <div class="bi-inputs">
+            <div class="bi-wrap"><input type="text" id="whLoc_name_p" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}" placeholder="{% if ar %}أدخل اسم الموقع{% else %}Enter location name{% endif %}" oninput="scheduleBMTrans('whLoc_name')"><button type="button" class="sf-retrans" onclick="retransBM('whLoc_name')"><i class="fas fa-sync-alt"></i></button></div>
+            <div class="bi-wrap"><input type="text" id="whLoc_name_s" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}" placeholder="{% if ar %}Enter location name{% else %}أدخل اسم الموقع{% endif %}"><span class="sf-spin" id="whLoc_name_spin"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="bm-footer">
+        <button type="button" class="sf-btn cancel" data-bs-dismiss="modal"><i class="fas fa-times"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button type="button" class="sf-btn save" onclick="saveWhQuickLocation()"><i class="fas fa-save"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -967,10 +624,9 @@ const IS_AR = {{ 'true' if ar else 'false' }};
 const SRC = IS_AR ? 'ar' : 'en';
 const TGT = IS_AR ? 'en' : 'ar';
 const DIR = SRC+'|'+TGT;
+const WH_LOCS_URL      = '{{ url_for("sellers.warehouse_locations_data") }}';
+const WH_LOC_QUICK_URL = '{{ url_for("sellers.add_warehouse_location_quick") }}';
 
-/* ════════════════════════════════════
-   ACCORDION
-════════════════════════════════════ */
 function toggleSection(key){
   const sec = document.getElementById('sec-'+key);
   const body = document.getElementById('body-'+key);
@@ -980,17 +636,12 @@ function toggleSection(key){
   chev.className = 'fas acc-chevron ' + (isOpen ? 'fa-chevron-down' : 'fa-chevron-up');
 }
 
-/* ════════════════════════════════════
-   TRANSLATION ENGINE
-════════════════════════════════════ */
 const _T={}, _B={};
 function isNumLike(s){ return /^[\d٠-٩\s\-\+\(\)\.\/\#]+$/.test(s.trim()); }
-
 function _translate(text, dir, cb){
   fetch(TRANSLATE_URL,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify({text,direction:dir})})
   .then(r=>r.json()).then(d=>cb(d.translated||'')).catch(()=>cb(''));
 }
-
 function scheduleTrans(key){
   const p=document.getElementById('f_'+key+'_p'), s=document.getElementById('f_'+key+'_s');
   const spin=document.getElementById('spin_'+key);
@@ -1017,7 +668,6 @@ function retrans(key){
   _translate(text,DIR,res=>{if(res&&s){s.value=res;s.classList.add('auto-filled');setTimeout(()=>s.classList.remove('auto-filled'),600);}if(spin)spin.innerHTML='';});
 }
 
-/* Bank modal translation */
 const _BT={}, _BB={};
 function scheduleBMTrans(key){
   const p=document.getElementById(key+'_p'), s=document.getElementById(key+'_s');
@@ -1041,26 +691,15 @@ function retransBM(key){
   _translate(text,DIR,res=>{if(res){s.value=res;s.classList.add('auto-filled');setTimeout(()=>s.classList.remove('auto-filled'),600);}});
 }
 
-/* ════════════════════════════════════
-   VALIDATION
-════════════════════════════════════ */
 const EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function setInv(el,errId,msg){el.classList.add('is-invalid');const e=document.getElementById(errId);if(e){if(msg)e.querySelector('span').textContent=msg;e.classList.add('show');}}
 function clrInv(el,errId){el.classList.remove('is-invalid');const e=document.getElementById(errId);if(e)e.classList.remove('show');}
 function validateEmail(inp){const v=inp.value.trim();if(!v){clrInv(inp,'err_email');return;}EMAIL_RE.test(v)?clrInv(inp,'err_email'):setInv(inp,'err_email');}
-
 function clearBmErr(){
-  ['err_bm_name','err_bm_account','err_bm_branch','err_bm_swift','err_bm_iban'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.classList.remove('show');
-  });
-  ['bm_name_p','bm_account','bm_branch_p','bm_swift','bm_iban'].forEach(id=>{
-    document.getElementById(id)?.classList.remove('is-invalid');
-  });
+  ['err_bm_name','err_bm_account','err_bm_branch','err_bm_swift','err_bm_iban'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('show');});
+  ['bm_name_p','bm_account','bm_branch_p','bm_swift','bm_iban'].forEach(id=>{document.getElementById(id)?.classList.remove('is-invalid');});
 }
 
-/* ════════════════════════════════════
-   AG-GRID
-════════════════════════════════════ */
 function renderName(p){
   const c=p.data.report_color||'#16a34a';
   const n=IS_AR&&p.data.name_ar?p.data.name_ar:(p.value||'');
@@ -1114,16 +753,12 @@ function updateBadge(){
   const pg=gridApi.paginationGetCurrentPage()+1,pgs=gridApi.paginationGetTotalPages();
   document.getElementById('pageInfo').textContent=`${disp} / ${total} — ${IS_AR?'صفحة':'Page'} ${pg}/${pgs}`;
 }
-
 function confirmDelete(url,name){
   document.getElementById('deleteText').textContent=(IS_AR?'حذف: ':'Delete: ')+name;
   document.getElementById('deleteForm').action=url;
   new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
 
-/* ════════════════════════════════════
-   GEO DROPDOWNS
-════════════════════════════════════ */
 function geoInit(selC,selCi,selD){
   selC=selC||'Saudi Arabia';selCi=selCi||'';selD=selD||'';
   const cs=document.getElementById('f_country_sel');
@@ -1159,14 +794,9 @@ function onCountryChange(){const s=document.getElementById('f_country_sel'),en=s
 function onCityChange(){const s=document.getElementById('f_city_sel'),en=s.value,o=s.selectedOptions[0],c=document.getElementById('f_country_sel').value;document.getElementById('f_city_val').value=en;document.getElementById('f_city_ar_val').value=o?o.dataset.ar:'';fillDistricts(c,en,'');}
 function onDistrictChange(){const v=document.getElementById('f_district_sel').value;document.getElementById('f_district_val').value=v;document.getElementById('f_district_ar_val').value=v;}
 
-/* ════════════════════════════════════
-   IN-MEMORY BANK STORE
-   Banks are held in JS array until seller form saves.
-   On edit, existing DB banks are loaded into this array too.
-════════════════════════════════════ */
-let _banks = [];      // {_id, bank_name, bank_name_ar, account_number, branch, swift_code, iban, is_primary, _dbId}
-let _bankSeq = 0;     // local sequence for new entries
-
+/* ══ BANKS ══ */
+let _banks = [];
+let _bankSeq = 0;
 function renderBankTable(){
   const wrap=document.getElementById('bankTblWrap');
   const body=document.getElementById('bankTblBody');
@@ -1189,13 +819,11 @@ function renderBankTable(){
       </div></td>
     </tr>`).join('');
 }
-
 function openBankModal(editIdx){
   document.getElementById('bm_idx').value = (editIdx!=null) ? editIdx : '';
   document.getElementById('bmTitle').innerHTML = editIdx!=null
     ? `<i class="fas fa-edit me-2"></i>${IS_AR?'تعديل بيانات البنك / Edit Bank Details':'Edit Bank Details / تعديل بيانات البنك'}`
     : `<i class="fas fa-university me-2"></i>${IS_AR?'إضافة تفاصيل البنك / Add Bank Details':'Add Bank Details / إضافة تفاصيل البنك'}`;
-
   if(editIdx!=null){
     const b=_banks[editIdx];
     document.getElementById('bm_name_p').value    = IS_AR ? (b.bank_name_ar||b.bank_name||'') : (b.bank_name||'');
@@ -1211,100 +839,175 @@ function openBankModal(editIdx){
     document.getElementById('bm_primary').checked=false;
   }
   clearBmErr();
-  // Auto-open bank section
   const sec=document.getElementById('sec-bank');
   if(!sec.classList.contains('open')) toggleSection('bank');
   new bootstrap.Modal(document.getElementById('bankModal')).show();
 }
-
 function saveBankEntry(){
-  const name_p  = (document.getElementById('bm_name_p').value||'').trim();
-  const account = (document.getElementById('bm_account').value||'').trim();
-  const branch_p = (document.getElementById('bm_branch_p').value||'').trim();
-  const swift   = (document.getElementById('bm_swift').value||'').trim();
-  const iban    = (document.getElementById('bm_iban').value||'').trim();
+  const name_p=(document.getElementById('bm_name_p').value||'').trim();
+  const account=(document.getElementById('bm_account').value||'').trim();
+  const branch_p=(document.getElementById('bm_branch_p').value||'').trim();
+  const swift=(document.getElementById('bm_swift').value||'').trim();
+  const iban=(document.getElementById('bm_iban').value||'').trim();
   let ok = true;
-
-  if(!name_p)  { setInv(document.getElementById('bm_name_p'),  'err_bm_name');   ok=false; }
-  if(!account) { setInv(document.getElementById('bm_account'), 'err_bm_account'); ok=false; }
-  if(!branch_p){ setInv(document.getElementById('bm_branch_p'),'err_bm_branch');  ok=false; }
-  if(!swift)   { setInv(document.getElementById('bm_swift'),   'err_bm_swift');   ok=false; }
-  if(!iban)    { setInv(document.getElementById('bm_iban'),    'err_bm_iban');    ok=false; }
+  if(!name_p){setInv(document.getElementById('bm_name_p'),'err_bm_name');ok=false;}
+  if(!account){setInv(document.getElementById('bm_account'),'err_bm_account');ok=false;}
+  if(!branch_p){setInv(document.getElementById('bm_branch_p'),'err_bm_branch');ok=false;}
+  if(!swift){setInv(document.getElementById('bm_swift'),'err_bm_swift');ok=false;}
+  if(!iban){setInv(document.getElementById('bm_iban'),'err_bm_iban');ok=false;}
   if(!ok) return;
-
-  const name_s   = (document.getElementById('bm_name_s').value||'').trim();
-  const branch_s = (document.getElementById('bm_branch_s').value||'').trim();
-  const isPrimary = document.getElementById('bm_primary').checked;
-  const idxStr    = document.getElementById('bm_idx').value;
-  const editIdx   = idxStr !== '' ? parseInt(idxStr) : null;
-
+  const name_s=(document.getElementById('bm_name_s').value||'').trim();
+  const branch_s=(document.getElementById('bm_branch_s').value||'').trim();
+  const isPrimary=document.getElementById('bm_primary').checked;
+  const idxStr=document.getElementById('bm_idx').value;
+  const editIdx=idxStr!==''?parseInt(idxStr):null;
   if(isPrimary) _banks.forEach(b => b.is_primary = false);
-
-  const entry = {
+  const entry={
     bank_name:      IS_AR ? name_s   : name_p,
     bank_name_ar:   IS_AR ? name_p   : name_s,
     account_number: account,
     branch:         IS_AR ? branch_s : branch_p,
     branch_ar:      IS_AR ? branch_p : branch_s,
-    swift_code:     swift,
-    iban:           iban,
-    is_primary:     isPrimary,
+    swift_code:     swift, iban: iban, is_primary: isPrimary,
   };
-
-  if(editIdx != null){
-    entry._dbId = _banks[editIdx]._dbId;
-    _banks[editIdx] = entry;
-  } else {
-    entry._id = ++_bankSeq;
-    _banks.push(entry);
-  }
-
+  if(editIdx != null){entry._dbId=_banks[editIdx]._dbId;_banks[editIdx]=entry;}
+  else{entry._id=++_bankSeq;_banks.push(entry);}
   renderBankTable();
   bootstrap.Modal.getInstance(document.getElementById('bankModal'))?.hide();
 }
-
 function editBankEntry(idx){ openBankModal(idx); }
 function deleteBankEntry(idx){
   if(!confirm(IS_AR?'هل تريد حذف هذا الحساب البنكي؟':'Delete this bank account?')) return;
-  _banks.splice(idx,1);
-  renderBankTable();
+  _banks.splice(idx,1); renderBankTable();
 }
-
-/* ════════════════════════════════════
-   HIDDEN BANK FIELDS INJECTION
-   Inject bank data as hidden fields before submit
-════════════════════════════════════ */
 function injectBankFields(){
   document.querySelectorAll('#sellerForm .bank-hidden-input').forEach(e=>e.remove());
   const form=document.getElementById('sellerForm');
   _banks.forEach((b,i)=>{
     const fields={
-      [`banks[${i}][bank_name]`]:      b.bank_name||'',
-      [`banks[${i}][bank_name_ar]`]:   b.bank_name_ar||'',
-      [`banks[${i}][account_number]`]: b.account_number||'',
-      [`banks[${i}][branch]`]:         b.branch||'',
-      [`banks[${i}][branch_ar]`]:      b.branch_ar||'',
-      [`banks[${i}][swift_code]`]:     b.swift_code||'',
-      [`banks[${i}][iban]`]:           b.iban||'',
-      [`banks[${i}][is_primary]`]:     b.is_primary?'1':'0',
-      [`banks[${i}][_db_id]`]:         b._dbId||'',
+      [`banks[${i}][bank_name]`]:b.bank_name||'',[`banks[${i}][bank_name_ar]`]:b.bank_name_ar||'',
+      [`banks[${i}][account_number]`]:b.account_number||'',[`banks[${i}][branch]`]:b.branch||'',
+      [`banks[${i}][branch_ar]`]:b.branch_ar||'',[`banks[${i}][swift_code]`]:b.swift_code||'',
+      [`banks[${i}][iban]`]:b.iban||'',[`banks[${i}][is_primary]`]:b.is_primary?'1':'0',[`banks[${i}][_db_id]`]:b._dbId||'',
     };
-    Object.entries(fields).forEach(([n,v])=>{
-      const h=document.createElement('input');
-      h.type='hidden';h.name=n;h.value=v;h.className='bank-hidden-input';
-      form.appendChild(h);
-    });
+    Object.entries(fields).forEach(([n,v])=>{const h=document.createElement('input');h.type='hidden';h.name=n;h.value=v;h.className='bank-hidden-input';form.appendChild(h);});
   });
 }
 
-/* ════════════════════════════════════
-   MODAL OPEN / CLOSE
-════════════════════════════════════ */
-let currentSellerId=null;
+/* ══ WAREHOUSES ══ */
+let _whs = [];
+let _whLocations = [];
+function loadWhLocations(cb){
+  fetch(WH_LOCS_URL).then(r=>r.json()).then(d=>{_whLocations=d; if(cb)cb();}).catch(()=>{_whLocations=[]; if(cb)cb();});
+}
+function whLocOptions(selId){
+  let h=`<option value="">${IS_AR?'— اختر الموقع —':'— Select Location —'}</option>`;
+  _whLocations.forEach(l=>{h+=`<option value="${l.id}" ${String(l.id)===String(selId)?'selected':''}>${l.label}</option>`;});
+  h+=`<option value="__new__">${IS_AR?'+ إضافة موقع جديد':'+ Add New Location'}</option>`;
+  return h;
+}
+function renderWhTable(){
+  const wrap=document.getElementById('whTblWrap');
+  const body=document.getElementById('whTblBody');
+  const empty=document.getElementById('whEmptyMsg');
+  const badge=document.getElementById('whCountBadge');
+  if(badge){badge.textContent=_whs.length;badge.style.display=_whs.length?'inline-block':'none';}
+  if(!_whs.length){if(wrap)wrap.style.display='none';if(empty)empty.style.display='block';return;}
+  if(wrap)wrap.style.display='block';if(empty)empty.style.display='none';
+  body.innerHTML=_whs.map((w,i)=>`
+    <tr>
+      <td><strong>${w.warehouse_name||'—'}</strong>${w.warehouse_name_ar?`<br><small style="color:var(--gray-400);font-size:11px;">${w.warehouse_name_ar}</small>`:''}</td>
+      <td>${w.location_name||'—'}</td>
+      <td><div class="td-acts">
+        <button class="pl-btn pl-edit" onclick="openWhModal(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+        <button class="pl-btn pl-del" onclick="deleteWhEntry(${i})" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
+      </div></td>
+    </tr>`).join('');
+}
+function openWhModal(editIdx){
+  document.getElementById('wh_idx').value = (editIdx!=null)?editIdx:'';
+  const selId = (editIdx!=null && _whs[editIdx]) ? _whs[editIdx].location_id : '';
+  document.getElementById('wh_location').innerHTML = whLocOptions(selId);
+  document.getElementById('whTitle').innerHTML = editIdx!=null
+    ? `<i class="fas fa-edit"></i> ${IS_AR?'تعديل مستودع / Edit Warehouse':'Edit Warehouse / تعديل مستودع'}`
+    : `<i class="fas fa-warehouse"></i> ${IS_AR?'إضافة مستودع / Add Warehouse':'Add Warehouse / إضافة مستودع'}`;
+  if(editIdx!=null){
+    const w=_whs[editIdx];
+    document.getElementById('wh_name_p').value = IS_AR ? (w.warehouse_name_ar||w.warehouse_name||'') : (w.warehouse_name||'');
+    document.getElementById('wh_name_s').value = IS_AR ? (w.warehouse_name||'') : (w.warehouse_name_ar||'');
+  } else {
+    document.getElementById('wh_name_p').value='';
+    document.getElementById('wh_name_s').value='';
+  }
+  document.getElementById('err_wh_name')?.classList.remove('show');
+  document.getElementById('wh_name_p')?.classList.remove('is-invalid');
+  const sec=document.getElementById('sec-warehouse');
+  if(sec && !sec.classList.contains('open')) toggleSection('warehouse');
+  new bootstrap.Modal(document.getElementById('whModal')).show();
+}
+function onWhLocationChange(sel){
+  if(sel.value==='__new__'){
+    sel.value='';
+    document.getElementById('whLoc_name_p').value='';
+    document.getElementById('whLoc_name_s').value='';
+    new bootstrap.Modal(document.getElementById('whLocModal')).show();
+  }
+}
+function saveWhQuickLocation(){
+  const p=(document.getElementById('whLoc_name_p').value||'').trim();
+  const s=(document.getElementById('whLoc_name_s').value||'').trim();
+  const en = IS_AR ? s : p;
+  const ar = IS_AR ? p : s;
+  if(!en){alert(IS_AR?'اسم الموقع مطلوب':'Location name is required');return;}
+  fetch(WH_LOC_QUICK_URL,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body:JSON.stringify({location_name:en,location_name_ar:ar})})
+  .then(r=>r.json()).then(d=>{
+    if(!d.ok){alert(d.error||'Error');return;}
+    loadWhLocations(()=>{ document.getElementById('wh_location').innerHTML = whLocOptions(d.id); });
+    bootstrap.Modal.getInstance(document.getElementById('whLocModal'))?.hide();
+  }).catch(()=>alert('Network error'));
+}
+function saveWhEntry(){
+  const name_p=(document.getElementById('wh_name_p').value||'').trim();
+  if(!name_p){setInv(document.getElementById('wh_name_p'),'err_wh_name');return;}
+  const name_s=(document.getElementById('wh_name_s').value||'').trim();
+  const locSel=document.getElementById('wh_location');
+  const locId = locSel.value && locSel.value!=='__new__' ? locSel.value : '';
+  const locName = locId ? locSel.options[locSel.selectedIndex].text : '';
+  const idxStr=document.getElementById('wh_idx').value;
+  const editIdx = idxStr!=='' ? parseInt(idxStr) : null;
+  const entry={
+    warehouse_name:    IS_AR ? name_s : name_p,
+    warehouse_name_ar: IS_AR ? name_p : name_s,
+    location_id: locId, location_name: locName,
+    _dbId: (editIdx!=null && _whs[editIdx]) ? _whs[editIdx]._dbId : null
+  };
+  if(editIdx!=null) _whs[editIdx]=entry; else _whs.push(entry);
+  renderWhTable();
+  bootstrap.Modal.getInstance(document.getElementById('whModal'))?.hide();
+}
+function deleteWhEntry(idx){
+  if(!confirm(IS_AR?'حذف هذا المستودع؟':'Delete this warehouse?'))return;
+  _whs.splice(idx,1); renderWhTable();
+}
+function injectWhFields(){
+  document.querySelectorAll('#sellerForm .wh-hidden-input').forEach(e=>e.remove());
+  const form=document.getElementById('sellerForm');
+  _whs.forEach((w,i)=>{
+    const fields={
+      [`warehouses[${i}][warehouse_name]`]:w.warehouse_name||'',
+      [`warehouses[${i}][warehouse_name_ar]`]:w.warehouse_name_ar||'',
+      [`warehouses[${i}][location_id]`]:w.location_id||'',
+      [`warehouses[${i}][_db_id]`]:w._dbId||'',
+    };
+    Object.entries(fields).forEach(([n,v])=>{const h=document.createElement('input');h.type='hidden';h.name=n;h.value=v;h.className='wh-hidden-input';form.appendChild(h);});
+  });
+  const flag=document.createElement('input');flag.type='hidden';flag.name='warehouses_submitted';flag.value='1';flag.className='wh-hidden-input';form.appendChild(flag);
+}
 
+let currentSellerId=null;
 function clearAllFields(){
-  const ids=['f_name_p','f_name_s','f_vat','f_crn','f_phone','f_fax','f_email','f_website',
-             'f_street_p','f_street_s','f_building','f_additional','f_postal'];
+  const ids=['f_name_p','f_name_s','f_vat','f_crn','f_phone','f_fax','f_email','f_website','f_street_p','f_street_s','f_building','f_additional','f_postal'];
   ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.querySelectorAll('#sellerForm .sf-inp').forEach(el=>el.classList.remove('is-invalid'));
   document.querySelectorAll('#sellerForm .sf-err').forEach(el=>el.classList.remove('show'));
@@ -1315,15 +1018,14 @@ function clearAllFields(){
   ['logoName','bgLogoName'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=IS_AR?'اختر ملف...':'Choose file...';});
   document.querySelectorAll('.sf-spin').forEach(e=>e.innerHTML='');
   _banks=[];_bankSeq=0;renderBankTable();
-  // Reset all sections: basic open, others closed
-  ['basic','address','bank'].forEach(k=>{
+  _whs=[];renderWhTable();
+  ['basic','warehouse','address','bank'].forEach(k=>{
     const sec=document.getElementById('sec-'+k);
     const chev=document.getElementById('chev-'+k);
     if(k==='basic'){sec.classList.add('open');chev.className='fas acc-chevron fa-chevron-up';}
     else{sec.classList.remove('open');chev.className='fas acc-chevron fa-chevron-down';}
   });
 }
-
 function openAddModal(){
   currentSellerId=null;
   document.getElementById('sfModalTitle').innerHTML='<i class="fas fa-user-tie"></i> '+(IS_AR?'إضافة بائع / Add Seller':'Add Seller / إضافة بائع');
@@ -1333,7 +1035,6 @@ function openAddModal(){
   geoInit();
   new bootstrap.Modal(document.getElementById('sellerModal')).show();
 }
-
 function openEditModal(id){
   currentSellerId=id;
   document.getElementById('sfModalTitle').innerHTML='<i class="fas fa-user-edit"></i> '+(IS_AR?'تعديل بائع / Edit Seller':'Edit Seller / تعديل بائع');
@@ -1344,12 +1045,9 @@ function openEditModal(id){
   fetch('/sellers/'+id+'/json').then(r=>r.json()).then(d=>{
     document.getElementById('f_name_p').value  = IS_AR?(d.name_ar||''):(d.name||'');
     document.getElementById('f_name_s').value  = IS_AR?(d.name||''):(d.name_ar||'');
-    ['vat','crn','phone','fax','email','website'].forEach(f=>{
-      const el=document.getElementById('f_'+f);if(el)el.value=d[f==='vat'?'vat_number':f==='crn'?'crn':f]||'';
-    });
-    // fix field name mapping
     const vm=document.getElementById('f_vat');if(vm)vm.value=d.vat_number||'';
     const crnEl=document.getElementById('f_crn');if(crnEl)crnEl.value=d.crn||'';
+    ['phone','fax','email','website'].forEach(f=>{const el=document.getElementById('f_'+f);if(el)el.value=d[f]||'';});
     const st=document.getElementById('f_status');if(st)st.value=d.status||'active';
     const rc=document.getElementById('f_rcolor');if(rc)rc.value=d.report_color||'#16a34a';
     const sw=document.getElementById('f_rswatch');if(sw)sw.value=d.report_color||'#16a34a';
@@ -1358,22 +1056,25 @@ function openEditModal(id){
     document.getElementById('f_building').value   = d.building_number||'';
     document.getElementById('f_additional').value = d.additional_number||'';
     document.getElementById('f_postal').value     = d.postal_code||'';
-    // mirror values to hidden AR fields (same value for numbers)
     document.getElementById('f_building_ar_val').value   = d.building_number_ar||d.building_number||'';
     document.getElementById('f_additional_ar_val').value = d.additional_number_ar||d.additional_number||'';
     document.getElementById('f_postal_ar_val').value     = d.postal_code_ar||d.postal_code||'';
     geoInit(d.country||'Saudi Arabia',d.city||'',d.district||'');
-    // Load banks from DB into in-memory array
     _banks=(d.banks||[]).map(b=>({...b,bank_name_ar:b.bank_name_ar||'',_dbId:b.id}));
     renderBankTable();
+    fetch('/sellers/'+id+'/warehouses').then(r=>r.json()).then(list=>{
+      _whs=list.map(w=>({
+        warehouse_name:w.warehouse_name||'',warehouse_name_ar:w.warehouse_name_ar||'',
+        location_id:w.location_id||'',location_name:w.location_name||'',_dbId:w.id
+      }));
+      renderWhTable();
+    }).catch(()=>{});
   });
   new bootstrap.Modal(document.getElementById('sellerModal')).show();
 }
-
 function resetForm(){ clearAllFields(); geoInit(); }
 function setFName(inp,id){const e=document.getElementById(id);if(e)e.textContent=inp.files[0]?inp.files[0].name:(IS_AR?'اختر ملف...':'Choose file...');}
 
-/* Mirror numeric-only fields to their AR hidden equivalents on input */
 ['f_building','f_additional','f_postal'].forEach(id=>{
   const el=document.getElementById(id);
   if(!el)return;
@@ -1383,51 +1084,33 @@ function setFName(inp,id){const e=document.getElementById(id);if(e)e.textContent
 
 function submitSellerForm(){
   let ok = true;
-
-  /* ── required text fields: [elementId, errorDivId] ── */
-  const required = [
-    ['f_name_p',  'err_name'],
-    ['f_vat',     'err_vat'],
-    ['f_crn',     'err_crn'],
-    ['f_email',   'err_email'],
-  ];
-
+  const required = [['f_name_p','err_name'],['f_vat','err_vat'],['f_crn','err_crn'],['f_email','err_email']];
   required.forEach(([elId, errId]) => {
     const el = document.getElementById(elId);
     if(!el) return;
-    if(!el.value.trim()){
-      setInv(el, errId, IS_AR ? 'هذا الحقل مطلوب' : 'This field is required');
-      ok = false;
-    } else {
-      clrInv(el, errId);
-    }
+    if(!el.value.trim()){ setInv(el, errId, IS_AR ? 'هذا الحقل مطلوب' : 'This field is required'); ok = false; }
+    else { clrInv(el, errId); }
   });
-
-  /* ── email format (only if non-empty) ── */
   const emailEl = document.getElementById('f_email');
   if(emailEl && emailEl.value.trim() && !EMAIL_RE.test(emailEl.value.trim())){
-    setInv(emailEl, 'err_email', IS_AR ? 'صيغة البريد الإلكتروني غير صحيحة' : 'Invalid email format');
-    ok = false;
+    setInv(emailEl, 'err_email', IS_AR ? 'صيغة البريد الإلكتروني غير صحيحة' : 'Invalid email format'); ok = false;
   }
-
   if(!ok){
-    /* open the accordion section that contains the first invalid field */
     const firstErr = document.querySelector('#sellerForm .sf-inp.is-invalid');
     if(firstErr){
       const sec = firstErr.closest('.acc-section');
-      if(sec && !sec.classList.contains('open')){
-        const key = sec.id.replace('sec-','');
-        toggleSection(key);
-      }
+      if(sec && !sec.classList.contains('open')){ toggleSection(sec.id.replace('sec-','')); }
       setTimeout(() => firstErr.focus(), 300);
     }
-    return;   /* ← modal stays open, form never submits */
+    return;
   }
-
   injectBankFields();
+  injectWhFields();
   document.getElementById('sellerForm').submit();
 }
 
+// preload warehouse locations
+loadWhLocations();
 document.getElementById('sellerForm').addEventListener('submit',()=>setTimeout(loadData,800));
 </script>
 {% endblock %}

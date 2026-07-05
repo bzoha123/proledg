@@ -145,6 +145,52 @@ class ActivityLog(db.Model):
     ip_address = db.Column(db.String(45))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+
+# ─────────────────────────────────────────────────────────────────
+# WAREHOUSE LOCATION MASTER  (lookup)
+# ─────────────────────────────────────────────────────────────────
+class WarehouseLocation(db.Model):
+    __tablename__ = 'warehouse_locations'
+    id               = db.Column(db.Integer, primary_key=True)
+    location_name    = db.Column(db.String(150), nullable=False)
+    location_name_ar = db.Column(db.String(150))
+    is_active        = db.Column(db.Boolean, default=True)
+    created_at       = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'location_name': self.location_name,
+            'location_name_ar': self.location_name_ar or '',
+            'is_active': self.is_active,
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# SELLER WAREHOUSE  (one seller -> many warehouses)
+# ─────────────────────────────────────────────────────────────────
+class Warehouse(db.Model):
+    __tablename__ = 'warehouses'
+    id                = db.Column(db.Integer, primary_key=True)
+    seller_id         = db.Column(db.Integer, db.ForeignKey('sellers.id', ondelete='CASCADE'), nullable=False)
+    warehouse_name    = db.Column(db.String(200), nullable=False)
+    warehouse_name_ar = db.Column(db.String(200))
+    location_id       = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id'))
+    created_at        = db.Column(db.DateTime, default=datetime.utcnow)
+
+    seller   = db.relationship('Seller', backref=db.backref('warehouses', cascade='all, delete-orphan', lazy='dynamic'))
+    location = db.relationship('WarehouseLocation', lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'seller_id': self.seller_id,
+            'warehouse_name': self.warehouse_name,
+            'warehouse_name_ar': self.warehouse_name_ar or '',
+            'location_id': self.location_id or '',
+            'location_name': self.location.location_name if self.location else '',
+        }
+
 # BUYER MASTER
 # ─────────────────────────────────────────────────────────────────
 class BuyerMaster(db.Model):
@@ -235,111 +281,255 @@ class ProfessionMaster(db.Model):
         return {'id': self.id, 'name_en': self.name_en,
                 'name_ar': self.name_ar or '', 'is_active': self.is_active}
 
+# ═══════════════════════════════════════════════════════════════════
+# REPLACE the existing Employee, AllowanceType, and EmployeeAllowance
+# classes in models.py with the versions below.
+# (EmployeeBank and WorkAllocation stay as they are.)
+#
+# Notes:
+#  - Columns cover every field bind_employee() / employee_json() touch,
+#    so saving no longer silently drops data.
+#  - employee_type is REMOVED per request.
+#  - overtime_rate column added (your formula writes to it).
+#  - `name`/`name_ar` are the primary name columns the routes use
+#    (the old model called them name_en/name_ar — routes use `name`).
+#    A `name_en` hybrid alias is provided so any code using name_en
+#    still works.
+# ═══════════════════════════════════════════════════════════════════
 
-# ─────────────────────────────────────────────────────────────────
-# EMPLOYEE
-# ─────────────────────────────────────────────────────────────────
 class Employee(db.Model):
     __tablename__ = 'employees'
     id               = db.Column(db.Integer, primary_key=True)
     employee_code    = db.Column(db.String(20), unique=True, nullable=False)
+    auto_code        = db.Column(db.Boolean, default=True)
     is_active        = db.Column(db.Boolean, default=True)
     is_muslim        = db.Column(db.Boolean, default=False)
-    name_en          = db.Column(db.String(200), nullable=False)
+
+    # ── Identity (bilingual) ──
+    name             = db.Column(db.String(200), nullable=False)   # English name
     name_ar          = db.Column(db.String(200))
-    profession_id    = db.Column(db.Integer, db.ForeignKey('profession_master.id'))
     nationality      = db.Column(db.String(100))
-    date_of_birth    = db.Column(db.Date)
-    date_of_joining  = db.Column(db.Date)
-    iqama_number     = db.Column(db.String(50))
-    iqama_expiry     = db.Column(db.Date)
+    nationality_ar   = db.Column(db.String(100))
+    profession       = db.Column(db.String(150))
+    profession_ar    = db.Column(db.String(150))
+    profession_id    = db.Column(db.Integer, db.ForeignKey('profession_master.id'))
+    education        = db.Column(db.String(150))
+    education_ar     = db.Column(db.String(150))
+
+    # ── Kafeel / sponsor ──
+    kafeel_name          = db.Column(db.String(200))
+    kafeel_name_ar       = db.Column(db.String(200))
+    kafeel_reference     = db.Column(db.String(100))
+    kafeel_reference_ar  = db.Column(db.String(100))
+    kafalat_number       = db.Column(db.String(100))
+
+    # ── Documents / IDs ──
     passport_number  = db.Column(db.String(50))
     passport_expiry  = db.Column(db.Date)
-    basic_salary     = db.Column(db.Numeric(12, 2), default=0)
-    phone            = db.Column(db.String(30))
+    passport_location= db.Column(db.String(20), default='IN')
+    entry_number     = db.Column(db.String(50))
+    iqama_number     = db.Column(db.String(50))
+    iqama_expiry     = db.Column(db.Date)
+    document_type    = db.Column(db.String(80))
+
+    # ── Dates ──
+    arrival_date     = db.Column(db.Date)
+    birth_date       = db.Column(db.Date)
+    joining_date     = db.Column(db.Date)
+    end_date_work    = db.Column(db.Date)
+
+    # ── Contact ──
+    mobile           = db.Column(db.String(30))
     email            = db.Column(db.String(120))
+    address          = db.Column(db.String(300))
+    address_ar       = db.Column(db.String(300))
+    home_city        = db.Column(db.String(120))
+    home_city_ar     = db.Column(db.String(120))
+
+    # ── Employment / references ──
+    employee_reference    = db.Column(db.String(120))
+    employee_reference_ar = db.Column(db.String(120))
+    company          = db.Column(db.String(200))
+    company_ar       = db.Column(db.String(200))
+    department       = db.Column(db.String(150))
+    department_ar    = db.Column(db.String(150))
+    section          = db.Column(db.String(150))
+    section_ar       = db.Column(db.String(150))
+    forman           = db.Column(db.String(150))
+    forman_ar        = db.Column(db.String(150))
+    work_month       = db.Column(db.String(30))
+    work_status      = db.Column(db.String(30), default='active')
+    shift_type       = db.Column(db.String(30), default='day')
+
+    # ── Payroll ──
+    salary_type      = db.Column(db.String(30), default='salary')
+    basic_salary     = db.Column(db.Numeric(12, 2), default=0)
+    total_allowances = db.Column(db.Numeric(12, 2), default=0)
+    net_salary       = db.Column(db.Numeric(12, 2), default=0)
+    po_number        = db.Column(db.String(80))
+    po_rate          = db.Column(db.Numeric(12, 2), default=0)
+    po_rate_unit     = db.Column(db.String(20), default='hour')
+    working_hours    = db.Column(db.Numeric(6, 2), default=8)
+    overtime_ratio   = db.Column(db.Numeric(6, 2), default=1.5)
+    overtime_rate    = db.Column(db.Numeric(12, 2), default=0)
+
+    # ── Hostel ──
+    hostel_name        = db.Column(db.String(200))
+    hostel_name_ar     = db.Column(db.String(200))
+    room_number        = db.Column(db.String(50))
+    hostel_location    = db.Column(db.String(200))
+    hostel_location_ar = db.Column(db.String(200))
+
+    # ── Bank details live in the SEPARATE employee_banks table ──
+    # (managed via /employees/<id>/banks API, one employee → many banks)
+
+    # ── Compliance ──
+    crn                   = db.Column(db.String(60))
+    crn_ar                = db.Column(db.String(60))
+    insurance_company     = db.Column(db.String(200))
+    insurance_company_ar  = db.Column(db.String(200))
+    insurance_expiry      = db.Column(db.Date)
+    labour_office         = db.Column(db.String(150))
+
+    # ── Misc / relations ──
+    buyer_id         = db.Column(db.Integer, db.ForeignKey('buyers.id'))
+    document_path    = db.Column(db.String(300))
     created_at       = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at       = db.Column(db.DateTime, default=datetime.utcnow)
     created_by       = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    profession = db.relationship('ProfessionMaster', backref=db.backref('employees', lazy=True))
+    profession_rel = db.relationship('ProfessionMaster', backref=db.backref('employees', lazy=True))
+    buyer          = db.relationship('BuyerMaster', backref=db.backref('employees', lazy=True))
+
+    # routes call emp.allowance_rows.order_by(...).all() and .all()
+    allowance_rows = db.relationship('EmployeeAllowance',
+                        backref='employee_ref',
+                        lazy='dynamic',
+                        cascade='all, delete-orphan')
+
+    # one employee → many bank accounts (separate employee_banks table)
+    banks = db.relationship('EmployeeBank',
+                        backref='employee_ref',
+                        lazy='dynamic',
+                        cascade='all, delete-orphan')
+
+    # one employee → many documents (separate employee_documents table)
+    documents = db.relationship('EmployeeDocument',
+                        backref='employee_ref',
+                        lazy='dynamic',
+                        cascade='all, delete-orphan')
+
+    # one employee → many documents (separate employee_documents table)
+    documents = db.relationship('EmployeeDocument',
+                        backref='employee_ref',
+                        lazy='dynamic',
+                        cascade='all, delete-orphan')
+
+    # Back-compat: some code may still reference name_en
+    @property
+    def name_en(self):
+        return self.name
+    @name_en.setter
+    def name_en(self, v):
+        self.name = v
 
     def to_dict(self):
         return {
             'id': self.id, 'employee_code': self.employee_code,
-            'name_en': self.name_en, 'name_ar': self.name_ar or '',
+            'name': self.name, 'name_ar': self.name_ar or '',
             'nationality': self.nationality or '',
-            'profession_id': self.profession_id,
-            'profession_name': self.profession.name_en if self.profession else '',
+            'profession': self.profession or '',
             'basic_salary': float(self.basic_salary or 0),
-            'phone': self.phone or '', 'email': self.email or '',
+            'total_allowances': float(self.total_allowances or 0),
+            'net_salary': float(self.net_salary or 0),
+            'mobile': self.mobile or '', 'email': self.email or '',
             'is_active': self.is_active,
         }
 
 
-
-# ─────────────────────────────────────────────────────────────────
-# EMPLOYEE BANK   (stored in employee_banks)
-# ─────────────────────────────────────────────────────────────────
-class EmployeeBank(db.Model):
-    __tablename__ = 'employee_banks'
-    id             = db.Column(db.Integer, primary_key=True)
-    employee_id    = db.Column(db.Integer, db.ForeignKey('employees.id', ondelete='CASCADE'), nullable=False)
-    bank_name      = db.Column(db.String(150), nullable=False)
-    account_number = db.Column(db.String(50))
-    branch         = db.Column(db.String(100))
-    swift_code     = db.Column(db.String(20))
-    iban           = db.Column(db.String(50))
-    is_primary     = db.Column(db.Boolean, default=False)
-    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
-
-    employee = db.relationship('Employee', backref=db.backref('banks', lazy=True, cascade='all,delete-orphan'))
-
-    def to_dict(self):
-        return {
-            'id': self.id, 'employee_id': self.employee_id,
-            'bank_name': self.bank_name, 'account_number': self.account_number or '',
-            'branch': self.branch or '', 'swift_code': self.swift_code or '',
-            'iban': self.iban or '', 'is_primary': self.is_primary,
-        }
-
-# ─────────────────────────────────────────────────────────────────
-# ALLOWANCE TYPE
-# ─────────────────────────────────────────────────────────────────
 class AllowanceType(db.Model):
     __tablename__ = 'allowance_types'
-    id        = db.Column(db.Integer, primary_key=True)
-    name_en   = db.Column(db.String(150), nullable=False)
-    name_ar   = db.Column(db.String(150))
-    is_active = db.Column(db.Boolean, default=True)
-    created_at= db.Column(db.DateTime, default=datetime.utcnow)
+    id                = db.Column(db.Integer, primary_key=True)
+    allowance_code    = db.Column(db.String(20))
+    allowance_name_en = db.Column(db.String(150), nullable=False)
+    allowance_name_ar = db.Column(db.String(150))
+    is_active         = db.Column(db.Boolean, default=True)
+    created_at        = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
-        return {'id': self.id, 'name_en': self.name_en,
-                'name_ar': self.name_ar or '', 'is_active': self.is_active}
+        return {'id': self.id,
+                'allowance_code': self.allowance_code or '',
+                'allowance_name_en': self.allowance_name_en,
+                'allowance_name_ar': self.allowance_name_ar or '',
+                'is_active': self.is_active}
 
 
-# ─────────────────────────────────────────────────────────────────
-# EMPLOYEE ALLOWANCE
-# ─────────────────────────────────────────────────────────────────
 class EmployeeAllowance(db.Model):
     __tablename__ = 'employee_allowances'
     id                = db.Column(db.Integer, primary_key=True)
     employee_id       = db.Column(db.Integer, db.ForeignKey('employees.id', ondelete='CASCADE'), nullable=False)
-    allowance_type_id = db.Column(db.Integer, db.ForeignKey('allowance_types.id'), nullable=False)
+    allowance_type_id = db.Column(db.Integer, db.ForeignKey('allowance_types.id'))
+    allowance_code    = db.Column(db.String(20))
+    name              = db.Column(db.String(150))
+    name_ar           = db.Column(db.String(150))
     amount            = db.Column(db.Numeric(12, 2), default=0)
     created_at        = db.Column(db.DateTime, default=datetime.utcnow)
 
-    employee       = db.relationship('Employee',      backref=db.backref('allowances', lazy=True))
     allowance_type = db.relationship('AllowanceType', backref=db.backref('employee_allowances', lazy=True))
 
     def to_dict(self):
         return {
             'id': self.id, 'employee_id': self.employee_id,
             'allowance_type_id': self.allowance_type_id,
-            'allowance_name': self.allowance_type.name_en if self.allowance_type else '',
+            'allowance_code': self.allowance_code or (self.allowance_type.allowance_code if self.allowance_type else ''),
+            'name': self.name or (self.allowance_type.allowance_name_en if self.allowance_type else ''),
+            'name_ar': self.name_ar or (self.allowance_type.allowance_name_ar if self.allowance_type else ''),
             'amount': float(self.amount or 0),
         }
 
+
+class EmployeeBank(db.Model):
+    __tablename__ = 'employee_banks'
+    id             = db.Column(db.Integer, primary_key=True)
+    employee_id    = db.Column(db.Integer, db.ForeignKey('employees.id', ondelete='CASCADE'), nullable=False)
+    bank_name      = db.Column(db.String(150), nullable=False)
+    bank_name_ar   = db.Column(db.String(150))
+    branch         = db.Column(db.String(120))
+    branch_ar      = db.Column(db.String(120))
+    account_number = db.Column(db.String(60))
+    swift_code     = db.Column(db.String(30))
+    iban           = db.Column(db.String(60))
+    is_primary     = db.Column(db.Boolean, default=False)
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'employee_id': self.employee_id,
+            'bank_name': self.bank_name, 'bank_name_ar': self.bank_name_ar or '',
+            'branch': self.branch or '', 'branch_ar': self.branch_ar or '',
+            'account_number': self.account_number or '',
+            'swift_code': self.swift_code or '', 'iban': self.iban or '',
+            'is_primary': self.is_primary,
+        }
+
+
+class EmployeeDocument(db.Model):
+    __tablename__ = 'employee_documents'
+    id            = db.Column(db.Integer, primary_key=True)
+    employee_id   = db.Column(db.Integer, db.ForeignKey('employees.id', ondelete='CASCADE'), nullable=False)
+    document_type = db.Column(db.String(80))
+    file_path     = db.Column(db.String(300), nullable=False)
+    original_name = db.Column(db.String(200))
+    uploaded_at   = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'employee_id': self.employee_id,
+            'document_type': self.document_type or '',
+            'file_path': self.file_path,
+            'original_name': self.original_name or '',
+            'uploaded_at': self.uploaded_at.strftime('%Y-%m-%d %H:%M') if self.uploaded_at else '',
+        }
 
 # ─────────────────────────────────────────────────────────────────
 # WORK ALLOCATION

@@ -408,6 +408,7 @@
         {% endif %}
       </div>
     </div>
+    
 
     <!-- ── DOCUMENTS ── -->
     <div class="info-card full">
@@ -429,6 +430,54 @@
   </div>
 </div>
 
+
+    <!-- ── DEPARTMENTS ── -->
+    <div class="info-card full">
+      <div class="info-card-header">
+        <i class="fas fa-sitemap"></i>
+        <h5>{% if ar %}الأقسام{% else %}Departments{% endif %}</h5>
+        <span style="margin-left:8px;background:var(--blue-100);color:var(--blue-dk);padding:2px 9px;border-radius:8px;font-size:10px;font-weight:700;">{{ buyer.departments|length }}</span>
+      </div>
+      <div class="info-card-body" style="padding:0;">
+        {% if buyer.departments %}
+        <div class="bank-table-wrap" style="margin:0;border:none;">
+          <table class="bank-table">
+            <thead>
+              <tr>
+                <th>{% if ar %}اسم القسم{% else %}Department Name{% endif %}</th>
+                <th>{% if ar %}الموقع{% else %}Location{% endif %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for d in buyer.departments %}
+              <tr>
+                <td>
+                  <div class="bank-name-main">{{ d.department_name or '—' }}</div>
+                  {% if d.department_name_ar %}
+                  <div class="bank-name-sub">{{ d.department_name_ar }}</div>
+                  {% endif %}
+                </td>
+                <td>{{ d.location.location_name if d.location else '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding:30px;">
+          <i class="fas fa-sitemap"></i>
+          <p>{% if ar %}لا توجد أقسام{% else %}No departments{% endif %}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+
+
+        <div class="info-row">
+          <div class="info-label">{% if ar %}ترتيب الراتب{% else %}Salary Order{% endif %}</div>
+          <div class="info-value">{{ buyer.salary_order or 1 }}</div>
+        </div>
 <script>
 const BUYER_ID = {{ buyer.id }};
 const IS_AR    = {{ 'true' if ar else 'false' }};

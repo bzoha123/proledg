@@ -4,8 +4,16 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from config import config
 from models import db, User, ActivityLog
-from routes.vendor_doc import vendor_doc_bp
-from routes.buyer_doc  import buyer_doc_bp
+
+try:
+    from flask_migrate import Migrate
+except Exception as exc:  # pragma: no cover - defensive for env issues
+    Migrate = None
+    MIGRATE_IMPORT_ERROR = exc
+else:
+    MIGRATE_IMPORT_ERROR = None
+from database.routes.vendor_doc import vendor_doc_bp
+from database.routes.buyer_doc  import buyer_doc_bp
 # Try to import Flask-Babel; gracefully degrade if missing
 try:
     import importlib
@@ -18,6 +26,7 @@ except (ImportError, ModuleNotFoundError):
 
 login_manager = LoginManager()
 csrf = CSRFProtect()
+migrate = Migrate() if Migrate is not None else None
 
 def get_locale():
     return session.get('lang', 'en')
@@ -29,6 +38,8 @@ def create_app(config_name='default'):
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
+    if migrate is not None:
+        migrate.init_app(app, db)
 
     if BABEL_AVAILABLE:
         babel = Babel()
@@ -51,16 +62,16 @@ def create_app(config_name='default'):
         )
 
     # Register blueprints
-    from routes.auth import auth_bp
-    from routes.dashboard import dashboard_bp
-    from routes.sellers import sellers_bp
-    from routes.employees import employees_bp
-    from routes.work_allocations import wa_bp
-    from routes.invoices import inv_bp
-    from routes.purchase import pur_bp
-    from routes.lookups import lookups_bp
-
-
+    from database.routes.auth import auth_bp
+    from database.routes.dashboard import dashboard_bp
+    from database.routes.sellers import sellers_bp
+    from database.routes.employees import employees_bp
+    from database.routes.work_allocations import wa_bp
+    from database.routes.invoices import inv_bp
+    from database.routes.purchase import pur_bp
+    from database.routes.lookups import lookups_bp
+    from database.routes.employee_import import emp_import_bp
+    app.register_blueprint(emp_import_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(sellers_bp)

@@ -20,7 +20,7 @@ def _t(en, ar): return ar if session.get('lang')=='ar' else en
 @lookups_bp.route('/professions')
 @login_required
 def list_professions():
-    items = ProfessionMaster.query.order_by(ProfessionMaster.profession_en).all()
+    items = ProfessionMaster.query.order_by(ProfessionMaster.name_en).all()
     return render_template('lookups/professions.html', items=items)
 
 @lookups_bp.route('/professions/add', methods=['POST'])
@@ -32,10 +32,10 @@ def add_profession():
     if not en:
         flash(_t('English name required','الاسم الإنجليزي مطلوب'),'danger')
         return redirect(url_for('lookups.list_professions'))
-    if ProfessionMaster.query.filter_by(profession_en=en).first():
+    if ProfessionMaster.query.filter_by(name_en=en).first():
         flash(_t(f'"{en}" already exists.',f'"{en}" موجود بالفعل'),'warning')
         return redirect(url_for('lookups.list_professions'))
-    db.session.add(ProfessionMaster(profession_en=en, profession_ar=ar))
+    db.session.add(ProfessionMaster(name_en=en, name_ar=ar))
     db.session.commit()
     flash(_t(f'Profession "{en}" added.',f'تم إضافة المهنة "{ar or en}"'),'success')
     return redirect(url_for('lookups.list_professions'))
@@ -45,8 +45,8 @@ def add_profession():
 @admin_required
 def edit_profession(id):
     p = ProfessionMaster.query.get_or_404(id)
-    p.profession_en = request.form.get('profession_en', p.profession_en).strip()
-    p.profession_ar = request.form.get('profession_ar', p.profession_ar or '').strip()
+    p.name_en = request.form.get('profession_en', p.name_en).strip()
+    p.name_ar = request.form.get('profession_ar', p.name_ar or '').strip()
     p.is_active = request.form.get('is_active') == 'on'
     db.session.commit()
     flash(_t('Updated.','تم التحديث'),'success')
@@ -61,13 +61,114 @@ def delete_profession(id):
     flash(_t('Deleted.','تم الحذف'),'success')
     return redirect(url_for('lookups.list_professions'))
 
+@lookups_bp.route('/professions/add-quick', methods=['POST'])
+@login_required
+def add_profession_quick():
+    d = request.get_json(silent=True) or {}
+    name_en = (d.get('profession_en') or d.get('name_en') or '').strip()
+    name_ar = (d.get('profession_ar') or d.get('name_ar') or '').strip()
+    if not name_en:
+        return jsonify({'ok': False, 'error': 'English name is required'}), 400
+    existing = ProfessionMaster.query.filter(
+        db.func.lower(ProfessionMaster.name_en) == name_en.lower()
+    ).first()
+    if existing:
+        return jsonify({'ok': True, 'id': existing.id, 'duplicate': True})
+    p = ProfessionMaster(name_en=name_en, name_ar=name_ar, is_active=True)
+    db.session.add(p)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': p.id})
+ 
+ 
+@lookups_bp.route('/allowance-types/add-quick', methods=['POST'])
+@login_required
+def add_allowance_type_quick():
+    d = request.get_json(silent=True) or {}
+    code    = (d.get('allowance_code') or '').strip().upper()
+    name_en = (d.get('allowance_name_en') or '').strip()
+    name_ar = (d.get('allowance_name_ar') or '').strip()
+    if not name_en:
+        return jsonify({'ok': False, 'error': 'English name is required'}), 400
+    existing = AllowanceType.query.filter(
+        db.func.lower(AllowanceType.allowance_name_en) == name_en.lower()
+    ).first()
+    if existing:
+        return jsonify({'ok': True, 'id': existing.id, 'duplicate': True})
+    a = AllowanceType(
+        allowance_code=code or None,
+        allowance_name_en=name_en,
+        allowance_name_ar=name_ar,
+        is_active=True,
+    )
+    db.session.add(a)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': a.id})
+ 
+ 
+# ── data endpoints the dropdowns read (in case yours differ) ──
+# The form expects each row shaped as: {id, label, en, ar, code}
+
 @lookups_bp.route('/professions/data')
 @login_required
 def professions_data():
-    lang = session.get('lang','en')
-    items = ProfessionMaster.query.filter_by(is_active=True).order_by(ProfessionMaster.profession_en).all()
-    return jsonify([{'id':p.id,'en':p.profession_en,'ar':p.profession_ar or p.profession_en,
-                     'label':p.profession_ar if lang=='ar' else p.profession_en} for p in items])
+    rows = ProfessionMaster.query.filter_by(is_active=True).order_by(ProfessionMaster.name_en).all()
+    return jsonify([
+        {'id': p.id, 'label': p.name_en, 'en': p.name_en, 'ar': p.name_ar or ''}
+        for p in rows
+    ])
+ 
+ 
+@lookups_bp.route('/department-locations/data')
+@login_required
+def department_locations_data():
+    try:
+        from models import DepartmentLocation
+    except Exception:
+        DepartmentLocation = None
+
+    if DepartmentLocation is None:
+        return jsonify([])
+
+    rows = DepartmentLocation.query.filter_by(is_active=True).order_by(DepartmentLocation.location_name).all()
+    return jsonify([
+        {'id': r.id, 'label': r.location_name, 'en': r.location_name, 'ar': r.location_name_ar or ''}
+        for r in rows
+    ])
+
+@lookups_bp.route('/department-locations/add-quick', methods=['POST'])
+@login_required
+def add_department_location_quick():
+    try:
+        from models import DepartmentLocation
+    except Exception:
+        return jsonify({'ok': False, 'error': 'Department location model unavailable'}), 500
+
+    data = request.get_json(silent=True) or {}
+    en = (data.get('location_name') or data.get('name_en') or '').strip()
+    ar = (data.get('location_name_ar') or data.get('name_ar') or '').strip()
+    if not en:
+        return jsonify({'ok': False, 'error': 'Location name is required'}), 400
+
+    existing = DepartmentLocation.query.filter(
+        db.func.lower(DepartmentLocation.location_name) == en.lower()
+    ).first()
+    if existing:
+        return jsonify({'ok': True, 'id': existing.id, 'duplicate': True})
+
+    loc = DepartmentLocation(location_name=en, location_name_ar=ar or en, is_active=True)
+    db.session.add(loc)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': loc.id})
+
+@lookups_bp.route('/allowance-types/data')
+@login_required
+def allowance_types_data():
+    rows = AllowanceType.query.filter_by(is_active=True).order_by(AllowanceType.allowance_name_en).all()
+    return jsonify([
+        {'id': a.id, 'label': a.allowance_name_en, 'en': a.allowance_name_en,
+         'ar': a.allowance_name_ar or '', 'code': a.allowance_code or ''}
+        for a in rows
+    ])
 # ── BUYERS ───────────────────────────────────────────────────────────
 @lookups_bp.route('/buyers')
 @login_required
@@ -450,19 +551,6 @@ def delete_allowance_type(id):
     flash(_t('Allowance type deleted.','تم حذف نوع البدل.'),'success')
     return redirect(url_for('lookups.list_allowance_types'))
 
-@lookups_bp.route('/allowance-types/data')
-@login_required
-def allowance_types_data():
-    lang = session.get('lang','en')
-    types = AllowanceType.query.filter_by(is_active=True).order_by(AllowanceType.allowance_code).all()
-    return jsonify([{
-        'id':   t.id,
-        'code': t.allowance_code,
-        'en':   t.allowance_name_en,
-        'ar':   t.allowance_name_ar or t.allowance_name_en,
-        'label': t.allowance_name_ar if lang=='ar' and t.allowance_name_ar else t.allowance_name_en,
-    } for t in types])
-
 # ── EMPLOYEE ALLOWANCES ──────────────────────────────────────────────
 @lookups_bp.route('/allowances')
 @login_required
@@ -551,44 +639,6 @@ def _recalc(emp):
     total = sum(a.amount for a in emp.allowance_rows.all())
     emp.total_allowances = total
     emp.net_salary = (emp.basic_salary or 0) + total
-
-
-@lookups_bp.route('/professions/add-quick', methods=['POST'])
-@login_required
-def add_profession_quick():
-    from flask import request as req
-    data = req.get_json() or {}
-    en = (data.get('profession_en') or '').strip()
-    ar = (data.get('profession_ar') or '').strip()
-    if not en:
-        return jsonify({'ok': False, 'error': 'Name required'})
-    # Check duplicate
-    existing = ProfessionMaster.query.filter_by(profession_en=en).first()
-    if existing:
-        return jsonify({'ok': True, 'id': existing.id, 'exists': True})
-    p = ProfessionMaster(profession_en=en, profession_ar=ar or en)
-    db.session.add(p)
-    db.session.commit()
-    return jsonify({'ok': True, 'id': p.id, 'profession_en': p.profession_en, 'profession_ar': p.profession_ar})
-
-
-@lookups_bp.route('/allowance-types/add-quick', methods=['POST'])
-@login_required
-def add_allowance_type_quick():
-    from flask import request as req
-    data = req.get_json() or {}
-    code = (data.get('allowance_code') or '').strip().upper()
-    en   = (data.get('allowance_name_en') or '').strip()
-    ar   = (data.get('allowance_name_ar') or '').strip()
-    if not code or not en:
-        return jsonify({'ok': False, 'error': 'Code and Name required'})
-    existing = AllowanceType.query.filter_by(allowance_code=code).first()
-    if existing:
-        return jsonify({'ok': True, 'id': existing.id, 'exists': True})
-    at = AllowanceType(allowance_code=code, allowance_name_en=en, allowance_name_ar=ar or en, is_active=True)
-    db.session.add(at)
-    db.session.commit()
-    return jsonify({'ok': True, 'id': at.id})
 
 
 # ══════════════════════════════════════════════════════════════════

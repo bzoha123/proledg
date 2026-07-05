@@ -159,6 +159,9 @@
 .acc-header.open .acc-arrow { color: var(--blue); }
 .acc-body  { padding: 20px 22px; background: white; }
 .acc-body.hidden { display: none !important; }
+/* lists sit flush inside accordion bodies (their own margins are for full-width use) */
+.acc-body .bank-table-wrap,
+.acc-body .bank-empty { margin: 0 0 0 0; }
 
 /* ── Field rows ────────────────────────────────────────────── */
 .field-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
@@ -455,7 +458,7 @@
                 </div>
               </div>
 
-              <div class="field-row-1" style="max-width:240px;">
+              <div class="field-row">
                 <div class="field-item">
                   <div class="field-label">{% if ar %}الحالة{% else %}Status{% endif %}</div>
                   <select name="status" id="b_status" class="field-input">
@@ -463,11 +466,42 @@
                     <option value="inactive">{% if ar %}غير نشيط{% else %}Inactive{% endif %}</option>
                   </select>
                 </div>
+                <div class="field-item">
+                  <div class="field-label">{% if ar %}ترتيب الراتب{% else %}Salary Order{% endif %} <span class="field-req">*</span></div>
+                  <select name="salary_order" id="b_salary_order" class="field-input">
+                    <option value="1" selected>1</option>
+                    <option value="2">2</option>
+                  </select>
+                </div>
               </div>
 
             </div>
 
-            {# ══ 2. ADDRESS ══ #}
+            {# ══ 2. DEPARTMENTS ══ #}
+            <button type="button" class="acc-header" onclick="togAcc('bdept')">
+              <div class="acc-title">
+                <div class="acc-icon-wrap"><i class="fas fa-sitemap"></i></div>
+                {% if ar %}الأقسام{% else %}Departments{% endif %}
+                <span id="deptBadge_buyer" class="bank-count-badge" style="margin-left:8px;">0</span>
+              </div>
+              <i class="fas fa-chevron-down acc-arrow" id="arr-bdept"></i>
+            </button>
+            <div class="acc-body hidden" id="body-bdept">
+              <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+                <button type="button" onclick="openBuyerDept()" class="bank-add-btn">
+                  <i class="fas fa-plus"></i> {% if ar %}إضافة قسم{% else %}Add Department{% endif %}
+                </button>
+              </div>
+              <div id="deptList_buyer">
+                <div class="bank-empty">
+                  <i class="fas fa-sitemap"></i>
+                  <div class="bank-empty-text">{% if ar %}لم يتم إضافة أقسام بعد{% else %}No departments added yet{% endif %}</div>
+                </div>
+              </div>
+              <div id="deptHiddenFields"></div>
+            </div>
+
+            {# ══ 3. ADDRESS ══ #}
             <button type="button" class="acc-header" onclick="togAcc('baddress')">
               <div class="acc-title">
                 <div class="acc-icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
@@ -531,28 +565,31 @@
 
             </div>
 
-          </div>{# /accordion wrapper #}
-
-          {# ══ 3. BANK ACCOUNTS ══ #}
-          <div class="bank-section-head">
-            <div class="bank-section-title">
-              <i class="fas fa-university"></i>
-              {% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
-              <span id="bankBadge_buyer" class="bank-count-badge">0</span>
-            </div>
-            <button type="button" onclick="openBuyerBank()" class="bank-add-btn">
-              <i class="fas fa-plus"></i> {% if ar %}إضافة بنك{% else %}Add Bank{% endif %}
+            {# ══ 4. BANK ACCOUNTS ══ #}
+            <button type="button" class="acc-header" onclick="togAcc('bbank')">
+              <div class="acc-title">
+                <div class="acc-icon-wrap"><i class="fas fa-university"></i></div>
+                {% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
+                <span id="bankBadge_buyer" class="bank-count-badge" style="margin-left:8px;">0</span>
+              </div>
+              <i class="fas fa-chevron-down acc-arrow" id="arr-bbank"></i>
             </button>
-          </div>
-          <div id="bankList_buyer">
-            <div class="bank-empty">
-              <i class="fas fa-university"></i>
-              <div class="bank-empty-text">{% if ar %}لم يتم إضافة بيانات بنك بعد{% else %}No bank accounts added yet{% endif %}</div>
+            <div class="acc-body hidden" id="body-bbank">
+              <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+                <button type="button" onclick="openBuyerBank()" class="bank-add-btn">
+                  <i class="fas fa-plus"></i> {% if ar %}إضافة بنك{% else %}Add Bank{% endif %}
+                </button>
+              </div>
+              <div id="bankList_buyer">
+                <div class="bank-empty">
+                  <i class="fas fa-university"></i>
+                  <div class="bank-empty-text">{% if ar %}لم يتم إضافة بيانات بنك بعد{% else %}No bank accounts added yet{% endif %}</div>
+                </div>
+              </div>
+              <div id="bankHiddenFields"></div>
             </div>
-          </div>
 
-          <!-- Bank hidden fields container -->
-          <div id="bankHiddenFields"></div>
+          </div>{# /accordion wrapper #}
 
         </form>
       </div>
@@ -659,6 +696,92 @@
 </div>
 
 
+{# ══ DEPARTMENT POPUP MODAL ═════════════════════════════════ #}
+<div class="modal fade pf-bank-modal" id="deptModal_buyer" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="pf-hdr">
+        <h5 id="deptModal_buyer_title"><i class="fas fa-sitemap"></i> {% if ar %}قسم{% else %}Department{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="bm-body">
+        <input type="hidden" id="deptModal_buyer_idx">
+
+        <div class="bm-row c2">
+          <div class="bm-field">
+            <div class="bm-label">{% if ar %}اسم القسم (EN){% else %}Department Name{% endif %} <span class="req">*</span></div>
+            <div class="bm-input-wrap">
+              <input type="text" id="deptModal_buyer_name" class="bm-input" dir="ltr" placeholder="e.g. Finance"
+                     oninput="bTrans('deptModal_buyer_name','deptModal_buyer_name_ar','en')">
+              <button type="button" class="bm-retrans" onclick="bRetrans('deptModal_buyer_name_ar','deptModal_buyer_name','ar')"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
+          <div class="bm-field">
+            <div class="bm-label" dir="rtl">{% if ar %}اسم القسم{% else %}اسم القسم (AR){% endif %}</div>
+            <div class="bm-input-wrap" dir="rtl">
+              <input type="text" id="deptModal_buyer_name_ar" class="bm-input" dir="rtl" placeholder="مثال: المالية"
+                     oninput="bTrans('deptModal_buyer_name_ar','deptModal_buyer_name','ar')">
+              <button type="button" class="bm-retrans ar" onclick="bRetrans('deptModal_buyer_name','deptModal_buyer_name_ar','en')"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="bm-row c2">
+          <div class="bm-field">
+            <div class="bm-label">{% if ar %}الموقع{% else %}Location{% endif %}</div>
+            <select id="deptModal_buyer_location" class="bm-input" onchange="deptOnLocationChange(this)"></select>
+          </div>
+        </div>
+      </div>
+      <div class="pf-footer">
+        <button type="button" class="pf-btn secondary" data-bs-dismiss="modal"><i class="fas fa-times"></i> {% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button type="button" class="pf-btn primary" onclick="saveBuyerDeptToArray()"><i class="fas fa-save"></i> {% if ar %}حفظ{% else %}Save Department{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{# ══ QUICK-ADD DEPARTMENT LOCATION MODAL ════════════════════ #}
+<div class="modal fade pf-bank-modal" id="deptLocModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="pf-hdr">
+        <h5><i class="fas fa-map-marker-alt"></i> {% if ar %}إضافة موقع{% else %}Add Location{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="bm-body">
+        <div class="bm-row">
+          <div class="bm-field">
+            <div class="bm-label">{% if ar %}اسم الموقع (EN){% else %}Location Name{% endif %} <span class="req">*</span></div>
+            <div class="bm-input-wrap">
+              <input type="text" id="deptLocNameEn" class="bm-input" dir="ltr" placeholder="e.g. Riyadh Industrial Area"
+                     oninput="bTrans('deptLocNameEn','deptLocNameAr','en')">
+              <button type="button" class="bm-retrans" onclick="bRetrans('deptLocNameAr','deptLocNameEn','ar')"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
+        </div>
+        <div class="bm-row">
+          <div class="bm-field">
+            <div class="bm-label" dir="rtl">{% if ar %}اسم الموقع{% else %}اسم الموقع (AR){% endif %}</div>
+            <div class="bm-input-wrap" dir="rtl">
+              <input type="text" id="deptLocNameAr" class="bm-input" dir="rtl" placeholder="مثال: المنطقة الصناعية بالرياض"
+                     oninput="bTrans('deptLocNameAr','deptLocNameEn','ar')">
+              <span class="field-spin" id="spin_deptLocNameAr"></span>
+              <button type="button" class="bm-retrans ar" onclick="bRetrans('deptLocNameEn','deptLocNameAr','en')"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pf-footer">
+        <button type="button" class="pf-btn secondary" data-bs-dismiss="modal"><i class="fas fa-times"></i> {% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button type="button" class="pf-btn primary" onclick="deptSaveQuickLocation()"><i class="fas fa-save"></i> {% if ar %}حفظ{% else %}Save{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 {# ══ DELETE CONFIRM ══════════════════════════════════════════ #}
 <div class="modal fade" id="delModal" tabindex="-1">
   <div class="modal-dialog modal-sm">
@@ -689,6 +812,8 @@ const CSRF    = '{{ csrf_token() }}';
 const IS_AR   = {{ 'true' if ar else 'false' }};
 const ADM     = {{ 'true' if current_user.is_admin() else 'false' }};
 const DATA_URL= '{{ url_for("lookups.buyers_data") }}';
+const DEPT_LOCS_URL      = '{{ url_for("lookups.department_locations_data") }}';
+const DEPT_LOC_QUICK_URL = '{{ url_for("lookups.add_department_location_quick") }}';
 
 /* ══ COUNTRY / CITY / DISTRICT DATA ══ */
 const GEO = {
@@ -740,7 +865,7 @@ function bTrans(srcId, tgtId, sl) {
   const src=document.getElementById(srcId), tgt=document.getElementById(tgtId);
   const text = src ? src.value.trim() : '';
   if (!text) { if(tgt) tgt.value=''; return; }
-  const baseId = tgtId.replace('b_','').replace('_en','').replace('_ar','').replace('bankModal_buyer_','');
+  const baseId = tgtId.replace('b_','').replace('_en','').replace('_ar','').replace('bankModal_buyer_','').replace('deptModal_buyer_','');
   const spin = document.getElementById('spin_'+baseId);
   if (spin) spin.innerHTML='<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
   _bTimers[tgtId] = setTimeout(()=>{
@@ -773,6 +898,11 @@ function togAcc(key) {
 let _banks = [];
 let _currentBuyerId = null;
 
+/* ══ DEPARTMENT ARRAY STORAGE ══ */
+let _depts = [];
+let _deptLocations = [];
+let _deptPendingIdx = null;   // index of dept row awaiting quick-add location
+
 /* ══ RESET FORM ══ */
 function resetBuyerForm() {
   ['b_name_en','b_name_ar','b_vat','b_crn','b_phone','b_fax','b_email','b_website','b_postal',
@@ -780,16 +910,20 @@ function resetBuyerForm() {
     const el=document.getElementById(id); if(el) el.value='';
   });
   document.getElementById('b_status').value='active';
+  const so=document.getElementById('b_salary_order'); if(so) so.value='1';
   document.getElementById('buyerFormId').value='';
   initCountryDropdown('Saudi Arabia');
   _banks = [];
   renderBankTable();
+  _depts = [];
+  renderDeptTable();
 }
 
 /* ══ OPEN ADD ══ */
 function openAddBuyer() {
   _currentBuyerId=null;
   _banks = [];
+  _depts = [];
   document.getElementById('buyerModalTitle').textContent=IS_AR?'إضافة مشتري':'Add Buyer';
   document.getElementById('buyerForm').action='{{ url_for("lookups.add_buyer") }}';
   resetBuyerForm();
@@ -814,6 +948,7 @@ function openEditBuyer(id) {
     document.getElementById('b_website').value=d.website||'';
     document.getElementById('b_postal').value=d.postal_code||'';
     document.getElementById('b_status').value=d.status||'active';
+    const so=document.getElementById('b_salary_order'); if(so) so.value=String(d.salary_order||1);
     document.getElementById('b_street_en').value=d.street_name||'';
     document.getElementById('b_street_ar').value=d.street_name_ar||'';
     document.getElementById('b_building').value=d.building_number||'';
@@ -845,21 +980,31 @@ function openEditBuyer(id) {
     renderBankTable();
   });
 
+  fetch(`/buyers/${id}/departments`).then(r=>r.json()).then(depts=>{
+    _depts = depts.map(d => ({
+      department_name: d.department_name || '',
+      department_name_ar: d.department_name_ar || '',
+      location_id: d.location_id || '',
+      location_name: d.location_name || '',
+      _dbId: d.id
+    }));
+    renderDeptTable();
+  });
+
   new bootstrap.Modal(document.getElementById('buyerModal')).show();
 }
 
-/* ══ SAVE BUYER — inject banks before submitting ══ */
+/* ══ SAVE BUYER — inject banks + departments before submitting ══ */
 function saveBuyer() {
   const nameEn = document.getElementById('b_name_en');
   if (!nameEn || !nameEn.value.trim()) {
     alert(IS_AR ? 'اسم المشتري مطلوب' : 'Buyer name is required');
     return;
   }
-  
-  // Inject bank hidden fields BEFORE submitting
+
   injectBankFields();
-  
-  // Small delay to ensure DOM updates, then submit
+  injectDeptFields();
+
   setTimeout(() => {
     document.getElementById('buyerForm').submit();
   }, 50);
@@ -867,18 +1012,8 @@ function saveBuyer() {
 
 function injectBankFields() {
   const container = document.getElementById('bankHiddenFields');
-  if (!container) {
-    console.error('bankHiddenFields container not found!');
-    return;
-  }
-  
-  // Clear previous bank fields
+  if (!container) return;
   container.innerHTML = '';
-  
-  console.log('=== injectBankFields ===');
-  console.log('_banks array:', _banks);
-  console.log('_banks.length:', _banks.length);
-  
   _banks.forEach((bank, i) => {
     const fields = [
       ['bank_name', bank.bank_name || ''],
@@ -891,19 +1026,35 @@ function injectBankFields() {
       ['is_primary', bank.is_primary ? 'true' : 'false'],
       ['_dbId', bank._dbId || '']
     ];
-    
     fields.forEach(([field, value]) => {
       const input = document.createElement('input');
       input.type = 'hidden';
       input.name = `banks[${i}][${field}]`;
       input.value = value;
       container.appendChild(input);
-      console.log(`  banks[${i}][${field}] = ${value}`);
     });
   });
-  
-  console.log('Total hidden inputs created:', container.children.length);
-  console.log('=== injectBankFields END ===');
+}
+
+function injectDeptFields() {
+  const container = document.getElementById('deptHiddenFields');
+  if (!container) return;
+  container.innerHTML = '';
+  _depts.forEach((dept, i) => {
+    const fields = [
+      ['department_name', dept.department_name || ''],
+      ['department_name_ar', dept.department_name_ar || ''],
+      ['location_id', dept.location_id || ''],
+      ['_dbId', dept._dbId || '']
+    ];
+    fields.forEach(([field, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = `departments[${i}][${field}]`;
+      input.value = value;
+      container.appendChild(input);
+    });
+  });
 }
 
 /* ══ DELETE ══ */
@@ -942,6 +1093,7 @@ const cols=[
   {headerName:IS_AR?'الرقم الضريبي':'VAT Number',field:'vat_number',width:160,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'رقم السجل التجاري':'CRN',field:'crn',width:130,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'الهاتف':'Phone',field:'phone',width:130,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'ترتيب الراتب':'Salary Order',field:'salary_order',width:120,filter:'agNumberColumnFilter'},
   {headerName:IS_AR?'الحالة':'Status',field:'status',width:100,cellRenderer:rStatus},
 ];
 if(ADM) cols.push({
@@ -1049,7 +1201,6 @@ function saveBuyerBankToArray() {
 
   bootstrap.Modal.getInstance(document.getElementById(mid))?.hide();
   renderBankTable();
-  console.log('Bank saved to array. _banks:', _banks);
 }
 
 function deleteBankFromArray(index) {
@@ -1122,5 +1273,165 @@ function renderBankTable() {
   html += `</tbody></table></div>`;
   wrap.innerHTML = html;
 }
+
+
+/* ════════════════════════════════════════════════
+   DEPARTMENT — JS ARRAY PATTERN
+════════════════════════════════════════════════ */
+function loadDeptLocations(cb) {
+  fetch(DEPT_LOCS_URL).then(r=>r.json())
+    .then(d=>{ _deptLocations = d; if(cb) cb(); })
+    .catch(()=>{ _deptLocations = []; if(cb) cb(); });
+}
+
+function deptLocationOptions(selectedId) {
+  let html = `<option value="">${IS_AR?'— اختر الموقع —':'— Select Location —'}</option>`;
+  _deptLocations.forEach(l => {
+    html += `<option value="${l.id}" ${String(l.id)===String(selectedId)?'selected':''}>${l.label}</option>`;
+  });
+  html += `<option value="__new__">${IS_AR?'+ إضافة موقع جديد':'+ Add New Location'}</option>`;
+  return html;
+}
+
+function openBuyerDept(idx) {
+  const mid = 'deptModal_buyer';
+  document.getElementById(mid+'_idx').value = idx !== undefined ? idx : '';
+
+  const locSel = document.getElementById(mid+'_location');
+  const preLoc = (idx !== undefined && _depts[idx]) ? _depts[idx].location_id : '';
+  locSel.innerHTML = deptLocationOptions(preLoc);
+
+  if (idx !== undefined && _depts[idx]) {
+    const d = _depts[idx];
+    document.getElementById(mid+'_name').value    = d.department_name || '';
+    document.getElementById(mid+'_name_ar').value = d.department_name_ar || '';
+    document.getElementById(mid+'_title').innerHTML = '<i class="fas fa-edit me-2"></i>'+(IS_AR?'تعديل قسم':'Edit Department');
+  } else {
+    document.getElementById(mid+'_name').value = '';
+    document.getElementById(mid+'_name_ar').value = '';
+    document.getElementById(mid+'_title').innerHTML = '<i class="fas fa-sitemap me-2"></i>'+(IS_AR?'إضافة قسم':'Add Department');
+  }
+  new bootstrap.Modal(document.getElementById(mid)).show();
+}
+
+function deptOnLocationChange(sel) {
+  if (sel.value === '__new__') {
+    _deptPendingIdx = sel;          // remember which select triggered it
+    sel.value = '';
+    document.getElementById('deptLocNameEn').value = '';
+    document.getElementById('deptLocNameAr').value = '';
+    new bootstrap.Modal(document.getElementById('deptLocModal')).show();
+  }
+}
+
+function deptSaveQuickLocation() {
+  const en = document.getElementById('deptLocNameEn').value.trim();
+  const ar = document.getElementById('deptLocNameAr').value.trim();
+  if (!en) { alert(IS_AR?'اسم الموقع مطلوب':'Location name is required'); return; }
+  fetch(DEPT_LOC_QUICK_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body:JSON.stringify({location_name:en, location_name_ar:ar})
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    if(!d.ok){ alert(d.error||'Error'); return; }
+    loadDeptLocations(()=>{
+      const locSel = document.getElementById('deptModal_buyer_location');
+      locSel.innerHTML = deptLocationOptions(d.id);   // select the newly added
+      _deptPendingIdx = null;
+    });
+    bootstrap.Modal.getInstance(document.getElementById('deptLocModal')).hide();
+  })
+  .catch(()=>alert('Network error'));
+}
+
+function saveBuyerDeptToArray() {
+  const mid = 'deptModal_buyer';
+  const idx = document.getElementById(mid+'_idx').value;
+
+  const locSel = document.getElementById(mid+'_location');
+  const locId  = locSel.value && locSel.value !== '__new__' ? locSel.value : '';
+  const locName= locSel.value && locSel.value !== '__new__'
+                 ? locSel.options[locSel.selectedIndex].text : '';
+
+  const deptData = {
+    department_name:    document.getElementById(mid+'_name').value.trim(),
+    department_name_ar: document.getElementById(mid+'_name_ar').value.trim(),
+    location_id:        locId,
+    location_name:      locName,
+    _dbId:              (idx !== '' && _depts[idx]) ? _depts[idx]._dbId : null
+  };
+
+  if (!deptData.department_name) {
+    alert(IS_AR?'اسم القسم مطلوب':'Department name is required');
+    return;
+  }
+
+  if (idx !== '' && _depts[idx]) { _depts[idx] = deptData; }
+  else { _depts.push(deptData); }
+
+  bootstrap.Modal.getInstance(document.getElementById(mid))?.hide();
+  renderDeptTable();
+}
+
+function deleteDeptFromArray(index) {
+  if (!confirm(IS_AR?'حذف هذا القسم؟':'Delete this department?')) return;
+  _depts.splice(index, 1);
+  renderDeptTable();
+}
+
+function renderDeptTable() {
+  const wrap  = document.getElementById('deptList_buyer');
+  const badge = document.getElementById('deptBadge_buyer');
+  if (!wrap) return;
+
+  if (badge) {
+    badge.textContent = _depts.length;
+    badge.style.display = _depts.length > 0 ? 'inline-flex' : 'none';
+  }
+
+  if (!_depts.length) {
+    wrap.innerHTML = `
+      <div class="bank-empty">
+        <i class="fas fa-sitemap"></i>
+        <div class="bank-empty-text">${IS_AR?'لم يتم إضافة أقسام بعد':'No departments added yet'}</div>
+      </div>`;
+    return;
+  }
+
+  let html = `
+    <div class="bank-table-wrap">
+      <table class="bank-table">
+        <thead><tr>
+          <th>${IS_AR?'اسم القسم':'Department Name'}</th>
+          <th>${IS_AR?'الموقع':'Location'}</th>
+          <th style="text-align:center;width:72px;"></th>
+        </tr></thead>
+        <tbody>`;
+
+  _depts.forEach((d, i) => {
+    html += `
+      <tr>
+        <td>
+          <div class="bank-name-main">${d.department_name||'—'}</div>
+          ${d.department_name_ar?`<div class="bank-name-sub">${d.department_name_ar}</div>`:''}
+        </td>
+        <td>${d.location_name||'<span class="bank-dash">—</span>'}</td>
+        <td style="text-align:center;">
+          <div class="pl-act" style="justify-content:center;">
+            <button class="pl-btn pl-edit" onclick="openBuyerDept(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+            <button class="pl-btn pl-del" onclick="deleteDeptFromArray(${i})" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  wrap.innerHTML = html;
+}
+
+// Load department locations once on page load
+document.addEventListener('DOMContentLoaded', () => loadDeptLocations());
 </script>
 {% endblock %}

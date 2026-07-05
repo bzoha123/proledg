@@ -358,6 +358,66 @@
   color:rgba(255,255,255,.6); font-size:10px;
 }
 .plfilt:hover { color:white; }
+/* ═══════════════════════════════════════════════════════
+   EMPLOYEE POLISH v4 — form, view, popups
+═══════════════════════════════════════════════════════ */
+.emp-modal-header, .pf-hdr {
+  background: linear-gradient(135deg,#0f2447 0%,#1e3a5f 45%,#2563eb 100%) !important;
+}
+.field-input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+.field-input:hover:not(:focus) { border-color:#cbd5e1; }
+
+/* Auto-calculated fields — clear readonly cue */
+#f_net_salary_display, #f_overtime_rate {
+  background:linear-gradient(0deg,#ecfdf5,#f0fdf4) !important;
+  border-color:#a7f3d0 !important; color:#047857 !important; font-weight:700 !important;
+}
+
+/* Accordion headers — subtle accent + smoother hover */
+.acc-header { transition:background .15s, box-shadow .15s; }
+.acc-header:hover { box-shadow:inset 3px 0 0 #2563eb; }
+.acc-header.open { box-shadow:inset 3px 0 0 #2563eb; }
+
+/* Bank cards — lift + primary accent */
+.pf-bank-card { transition:border-color .15s, box-shadow .15s, transform .1s; }
+.pf-bank-card:hover { box-shadow:0 4px 14px rgba(15,23,42,.08); transform:translateY(-1px); }
+.pf-bank-card.primary { box-shadow:inset 3px 0 0 #16a34a; }
+
+/* Popups — rounded, deeper shadow */
+#addProfModal .modal-content, #addAllowTypeModal .modal-content,
+#allowPopup .modal-content, .pf-bank-modal .modal-content {
+  border:none; border-radius:14px; overflow:hidden; box-shadow:0 24px 70px rgba(15,23,42,.25);
+}
+
+/* View modal — professional data table */
+#viewEmpBody table tr:hover td { background:#f1f5f9 !important; }
+#viewEmpBody td:first-child { color:#475569 !important; }
+.emp-view-section {
+  font-size:11px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
+  color:#1e3a5f; padding:14px 16px 6px; background:#f8fafc;
+  border-top:1px solid #e2e8f0; display:flex; align-items:center; gap:7px;
+}
+.emp-view-section i { color:#2563eb; }
+
+/* Footer buttons — consistent lift */
+.btn-footer, .pf-btn { transition:transform .12s, box-shadow .15s, filter .15s; }
+.btn-footer:hover, .pf-btn:hover { transform:translateY(-1px); box-shadow:0 5px 14px rgba(0,0,0,.13); }
+
+/* Re-translate button inside popup inputs */
+.pf-input-wrap { position:relative; }
+.pf-input-wrap .pf-input { padding-right:36px; }
+.pf-input-wrap .pf-retrans {
+  position:absolute; right:7px; top:50%; transform:translateY(-50%);
+  width:24px; height:24px; border:none; border-radius:6px;
+  background:#eff6ff; color:#2563eb; cursor:pointer; font-size:10px;
+  display:flex; align-items:center; justify-content:center; opacity:.75; transition:opacity .15s;
+}
+.pf-input-wrap .pf-retrans:hover { opacity:1; }
+[dir="rtl"] .pf-input-wrap .pf-input { padding-right:12px; padding-left:36px; }
+[dir="rtl"] .pf-input-wrap .pf-retrans { right:auto; left:7px; }
+
+/* ── Import drop zone hover ── */
+#impDrop:hover { border-color: #2563eb !important; background: #f8faff !important; }
 </style>
 {% endblock %}
 
@@ -378,6 +438,10 @@
       <button class="tool-btn tool-btn-blue" onclick="loadData()" title="{% if ar %}تحديث{% else %}Refresh{% endif %}"><i class="fas fa-sync-alt"></i></button>
       <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'employees.csv'})" title="Export"><i class="fas fa-file-export"></i></button>
       <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null)" title="Clear Filters"><i class="fas fa-times-circle"></i></button>
+      {% if current_user.is_admin() %}
+      <button class="tool-btn" id="btnImportExcel" title="{% if ar %}استيراد إكسل{% else %}Import Excel{% endif %}"><i class="fas fa-file-import"></i></button>
+      <a href="/employees/import/template" class="tool-btn" title="{% if ar %}تحميل القالب{% else %}Download Template{% endif %}"><i class="fas fa-file-download"></i></a>
+      {% endif %}
       <a href="{{ url_for('lookups.list_professions') }}" class="tool-btn" title="{% if ar %}المهن{% else %}Professions{% endif %}"><i class="fas fa-briefcase"></i></a>
       <a href="{{ url_for('lookups.list_buyers') }}" class="tool-btn" title="{% if ar %}المشترون{% else %}Buyers{% endif %}"><i class="fas fa-shopping-cart"></i></a>
     </div>
@@ -635,7 +699,6 @@
               </div>
 
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;">
-                {# 1 — PO Rate #}
                 <div>
                   <div class="field-label">{% if ar %}معدل طلب الشراء{% else %}PO Rate{% endif %}</div>
                   <div style="display:flex;gap:6px;">
@@ -648,32 +711,24 @@
                     </select>
                   </div>
                 </div>
-
-                {# 2 — PO Number #}
                 <div>
                   <div class="field-label">{% if ar %}رقم طلب الشراء{% else %}PO Number{% endif %}</div>
                   <input type="text" name="po_number" id="f_po_number"
                          class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
                          placeholder="{% if ar %}PO-001{% else %}PO-001{% endif %}">
                 </div>
-
-                {# 3 — Kafalat Number #}
                 <div>
                   <div class="field-label">{% if ar %}رقم الكفالة{% else %}Kafalat Number{% endif %}</div>
                   <input type="text" name="kafalat_number" id="f_kafalat_number"
                          class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
                          placeholder="{% if ar %}KAF-001{% else %}KAF-001{% endif %}">
                 </div>
-
-                {# 4 — Basic Salary #}
                 <div>
                   <div class="field-label">{% if ar %}الراتب الأساسي{% else %}Basic Salary{% endif %}</div>
                   <input type="number" name="basic_salary" id="f_basic_salary"
                          class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
                          step="0.01" min="0" placeholder="0.00" oninput="calcNet();calcOvertimeRate()">
                 </div>
-
-                {# 5 — Net Salary (auto-calculated, readonly) #}
                 <div>
                   <div class="field-label">{% if ar %}الراتب الصافي{% else %}Net Salary{% endif %}</div>
                   <input type="number" id="f_net_salary_display"
@@ -682,8 +737,6 @@
                          readonly placeholder="0.00">
                   <input type="hidden" name="net_salary" id="f_net_salary" value="0">
                 </div>
-
-                {# 6 — Working Hours #}
                 <div>
                   <div class="field-label">{% if ar %}ساعات العمل{% else %}Working Hours{% endif %}</div>
                   <input type="number" name="working_hours" id="f_working_hours"
@@ -691,8 +744,6 @@
                          step="0.5" min="0" placeholder="8"
                          oninput="calcOvertimeRate()">
                 </div>
-
-                {# 7 — Overtime Ratio #}
                 <div>
                   <div class="field-label">{% if ar %}نسبة الأوفرتايم{% else %}Overtime Ratio{% endif %}</div>
                   <input type="number" name="overtime_ratio" id="f_overtime_ratio"
@@ -700,8 +751,6 @@
                          step="0.25" min="1" placeholder="1.5"
                          oninput="calcOvertimeRate()">
                 </div>
-
-                {# 8 — Overtime Rate (auto-calculated) #}
                 <div>
                   <div class="field-label">{% if ar %}معدل الأوفرتايم{% else %}Overtime Rate{% endif %}</div>
                   <input type="number" name="overtime_rate" id="f_overtime_rate"
@@ -712,7 +761,6 @@
                 </div>
               </div>
 
-              {# 9 — Total Allowances #}
               <div style="border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:16px;">
                 <div style="background:#f8fafc;padding:10px 16px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
                   <div style="font-weight:700;font-size:13px;color:#374151;">
@@ -841,20 +889,15 @@
           </div>
 
           {# ══ 7. BANKING INFORMATION ══ #}
-          <div>
-            <button type="button" class="pl-acc-header pl-acc-collapsed" onclick="togAccBank(this)">
-              <span><i class="fas fa-university me-2 text-muted"></i>{% if ar %}معلومات البنك{% else %}Bank Information{% endif %}
-                <span id="bankBadge_emp" class="pf-badge-blue ms-2">0</span></span>
-              <i class="fas fa-chevron-down" style="font-size:11px;color:#6b7280;"></i>
-            </button>
-            <div class="pl-acc-body d-none">
+          {{ sec('bank','university','Banking Information','معلومات البنك') }}
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-                <div class="pf-section-hdr" style="margin:0;border:none;padding:0;">
-                  <i class="fas fa-university"></i>{% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
+                <div style="font-size:13px;font-weight:700;color:#374151;display:flex;align-items:center;gap:8px;">
+                  <i class="fas fa-university" style="color:#2563eb;"></i>{% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
+                  <span id="bankBadge_emp" class="pf-badge-blue">0</span>
                 </div>
                 <button type="button" onclick="openEmpBank()"
-                  style="padding:7px 14px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;">
-                  <i class="fas fa-plus"></i> {% if ar %}إضافة{% else %}Add Bank{% endif %}
+                  style="padding:7px 16px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
+                  <i class="fas fa-plus"></i> {% if ar %}إضافة حساب{% else %}Add Bank{% endif %}
                 </button>
               </div>
               <div id="bankList_emp">
@@ -894,7 +937,7 @@
       <div class="modal-footer-bar">
         <button type="button" class="btn-footer btn-footer-reset" onclick="resetEmpForm()"><i class="fas fa-redo me-1"></i>{% if ar %}إعادة تعيين{% else %}Reset{% endif %}</button>
         <button type="button" class="btn-footer btn-footer-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button type="button" class="btn-footer btn-footer-save" onclick="if(validateForm(document.getElementById('empForm')))document.getElementById('empForm').submit()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+        <button type="button" class="btn-footer btn-footer-save" onclick="if(validateForm(document.getElementById('empForm'))){injectEmpBanks();document.getElementById('empForm').submit();}"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
       </div>
 
     </div>
@@ -996,17 +1039,37 @@
         <div class="pf-row cols-2" style="margin-bottom:14px;">
           <div class="pf-field">
             <div class="pf-label">{% if ar %}اسم البنك{% else %}Bank Name{% endif %} <span class="req">*</span></div>
-            <input type="text" id="bankModal_emp_name" class="pf-input" placeholder="e.g. Al Rajhi Bank">
+            <div class="pf-input-wrap">
+              <input type="text" id="bankModal_emp_name" class="pf-input" placeholder="e.g. Al Rajhi Bank"
+                     dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                     oninput="biTransPair('bankModal_emp_name','bankModal_emp_name_ar','{% if ar %}ar{% else %}en{% endif %}')">
+              <button type="button" class="pf-retrans" onclick="biTransRetrans('bankModal_emp_name','bankModal_emp_name_ar','{% if ar %}ar{% else %}en{% endif %}')"><i class="fas fa-sync-alt"></i></button>
+            </div>
           </div>
+          <div class="pf-field">
+            <div class="pf-label" dir="rtl">{% if ar %}اسم البنك (EN){% else %}Bank Name (AR){% endif %}</div>
+            <input type="text" id="bankModal_emp_name_ar" class="pf-input" dir="{% if ar %}ltr{% else %}rtl{% endif %}">
+          </div>
+        </div>
+        <div class="pf-row cols-2" style="margin-bottom:14px;">
           <div class="pf-field">
             <div class="pf-label">{% if ar %}رقم الحساب{% else %}Account Number{% endif %}</div>
             <input type="text" id="bankModal_emp_account" class="pf-input" dir="ltr">
           </div>
+          <div class="pf-field">
+            <div class="pf-label">{% if ar %}الفرع{% else %}Branch{% endif %}</div>
+            <div class="pf-input-wrap">
+              <input type="text" id="bankModal_emp_branch" class="pf-input"
+                     dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                     oninput="biTransPair('bankModal_emp_branch','bankModal_emp_branch_ar','{% if ar %}ar{% else %}en{% endif %}')">
+              <button type="button" class="pf-retrans" onclick="biTransRetrans('bankModal_emp_branch','bankModal_emp_branch_ar','{% if ar %}ar{% else %}en{% endif %}')"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
         </div>
         <div class="pf-row cols-3" style="margin-bottom:14px;">
           <div class="pf-field">
-            <div class="pf-label">{% if ar %}الفرع{% else %}Branch{% endif %}</div>
-            <input type="text" id="bankModal_emp_branch" class="pf-input">
+            <div class="pf-label" dir="rtl">{% if ar %}الفرع (EN){% else %}Branch (AR){% endif %}</div>
+            <input type="text" id="bankModal_emp_branch_ar" class="pf-input" dir="{% if ar %}ltr{% else %}rtl{% endif %}">
           </div>
           <div class="pf-field">
             <div class="pf-label">SWIFT</div>
@@ -1041,11 +1104,19 @@
       <div class="modal-body">
         <div style="margin-bottom:10px;">
           <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;">{% if ar %}الاسم (EN){% else %}Name (EN){% endif %} *</div>
-          <input type="text" id="qp_name_en" class="field-input" placeholder="e.g. Welder">
+          <div class="pf-input-wrap">
+            <input type="text" id="qp_name_en" class="field-input" placeholder="e.g. Welder"
+                   oninput="biTransPair('qp_name_en','qp_name_ar','en')">
+            <button type="button" class="pf-retrans" onclick="biTransRetrans('qp_name_en','qp_name_ar','en')"><i class="fas fa-sync-alt"></i></button>
+          </div>
         </div>
         <div>
           <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;text-align:right;" dir="rtl">الاسم (AR)</div>
-          <input type="text" id="qp_name_ar" class="field-input" dir="rtl" placeholder="مثال: لحام">
+          <div class="pf-input-wrap" dir="rtl">
+            <input type="text" id="qp_name_ar" class="field-input" dir="rtl" placeholder="مثال: لحام"
+                   oninput="biTransPair('qp_name_ar','qp_name_en','ar')">
+            <button type="button" class="pf-retrans" onclick="biTransRetrans('qp_name_ar','qp_name_en','ar')"><i class="fas fa-sync-alt"></i></button>
+          </div>
         </div>
         <div id="qp_error" style="color:#dc2626;font-size:11px;margin-top:6px;display:none;"></div>
       </div>
@@ -1074,11 +1145,19 @@
         </div>
         <div style="margin-bottom:10px;">
           <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;">{% if ar %}الاسم (EN){% else %}Name (EN){% endif %} *</div>
-          <input type="text" id="qat_name_en" class="field-input" placeholder="e.g. Housing">
+          <div class="pf-input-wrap">
+            <input type="text" id="qat_name_en" class="field-input" placeholder="e.g. Housing"
+                   oninput="biTransPair('qat_name_en','qat_name_ar','en')">
+            <button type="button" class="pf-retrans" onclick="biTransRetrans('qat_name_en','qat_name_ar','en')"><i class="fas fa-sync-alt"></i></button>
+          </div>
         </div>
         <div>
           <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;text-align:right;" dir="rtl">الاسم (AR)</div>
-          <input type="text" id="qat_name_ar" class="field-input" dir="rtl" placeholder="مثال: بدل السكن">
+          <div class="pf-input-wrap" dir="rtl">
+            <input type="text" id="qat_name_ar" class="field-input" dir="rtl" placeholder="مثال: بدل السكن"
+                   oninput="biTransPair('qat_name_ar','qat_name_en','ar')">
+            <button type="button" class="pf-retrans" onclick="biTransRetrans('qat_name_ar','qat_name_en','ar')"><i class="fas fa-sync-alt"></i></button>
+          </div>
         </div>
         <div id="qat_error" style="color:#dc2626;font-size:11px;margin-top:6px;display:none;"></div>
       </div>
@@ -1086,6 +1165,110 @@
         <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
         <button class="btn btn-sm btn-success fw-bold" onclick="saveQuickAllowType()">
           <i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+  EMPLOYEE EXCEL IMPORT — MODAL
+═══════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="empImportModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content" style="border:none;border-radius:14px;overflow:hidden;box-shadow:0 24px 70px rgba(15,23,42,.25);">
+      <div class="emp-modal-header">
+        <h5><i class="fas fa-file-import me-2"></i>{% if ar %}استيراد الموظفين من إكسل{% else %}Import Employees from Excel{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" style="background:#f8fafc;padding:22px;">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <div style="font-size:12.5px;color:#6b7280;">
+            <i class="fas fa-info-circle me-1" style="color:#2563eb;"></i>
+            {% if ar %}استخدم القالب الرسمي، ثم ارفع الملف هنا. الصفوف غير الصالحة سيتم تخطيها مع تقرير مفصل.{% else %}Use the official template, then upload it here. Invalid rows are skipped with a detailed report.{% endif %}
+          </div>
+          <a href="/employees/import/template" class="btn btn-sm btn-outline-primary" style="border-radius:8px;font-weight:600;">
+            <i class="fas fa-file-download me-1"></i>{% if ar %}تحميل القالب{% else %}Download Sample Template{% endif %}
+          </a>
+        </div>
+
+        <div id="impDrop"
+             style="border:2px dashed #cbd5e1;border-radius:12px;background:#fff;padding:34px 20px;text-align:center;cursor:pointer;transition:border-color .15s, background .15s;"
+             onclick="document.getElementById('impFile').click()"
+             ondragover="event.preventDefault();this.style.borderColor='#2563eb';this.style.background='#eff6ff';"
+             ondragleave="this.style.borderColor='#cbd5e1';this.style.background='#fff';"
+             ondrop="impOnDrop(event)">
+          <i class="fas fa-cloud-upload-alt" style="font-size:36px;color:#93c5fd;"></i>
+          <div style="font-weight:700;color:#374151;margin-top:10px;font-size:14px;">
+            {% if ar %}اسحب وأفلت ملف الإكسل هنا{% else %}Drag & drop your Excel file here{% endif %}
+          </div>
+          <div style="font-size:12px;color:#9ca3af;margin:4px 0 12px;">{% if ar %}أو{% else %}or{% endif %}</div>
+          <button type="button" class="btn btn-sm btn-primary" style="border-radius:8px;font-weight:600;" onclick="event.stopPropagation();document.getElementById('impFile').click()">
+            <i class="fas fa-folder-open me-1"></i>{% if ar %}تصفح الملفات{% else %}Browse File{% endif %}
+          </button>
+          <div id="impFileName" style="margin-top:12px;font-size:12.5px;color:#16a34a;font-weight:600;display:none;">
+            <i class="fas fa-file-excel me-1"></i><span></span>
+          </div>
+          <input type="file" id="impFile" accept=".xlsx,.xls" style="display:none;" onchange="impFilePicked(this)">
+        </div>
+
+        <div id="impProgress" style="display:none;margin-top:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            <span style="font-size:12.5px;color:#374151;font-weight:600;">{% if ar %}جاري الاستيراد...{% else %}Importing, please wait...{% endif %}</span>
+          </div>
+          <div class="progress" style="height:8px;border-radius:6px;">
+            <div id="impBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width:100%;background:linear-gradient(90deg,#2563eb,#0d9488);"></div>
+          </div>
+        </div>
+
+        <div id="impError" class="alert alert-danger" style="display:none;margin-top:14px;border-radius:10px;font-size:13px;"></div>
+
+        <div id="impSummary" style="display:none;margin-top:16px;">
+          <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;padding:12px 18px;font-weight:700;font-size:13.5px;">
+              <i class="fas fa-check-circle me-2"></i>{% if ar %}اكتمل استيراد الموظفين{% else %}Employee Import Completed{% endif %}
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:#e2e8f0;">
+              <div style="background:#fff;padding:14px;text-align:center;"><div id="impTotal" style="font-size:22px;font-weight:800;color:#1e3a5f;">0</div><div style="font-size:11px;color:#6b7280;font-weight:600;">{% if ar %}إجمالي الصفوف{% else %}Total Rows{% endif %}</div></div>
+              <div style="background:#fff;padding:14px;text-align:center;"><div id="impOk" style="font-size:22px;font-weight:800;color:#16a34a;">0</div><div style="font-size:11px;color:#6b7280;font-weight:600;">{% if ar %}تم الاستيراد{% else %}Imported{% endif %}</div></div>
+              <div style="background:#fff;padding:14px;text-align:center;"><div id="impFail" style="font-size:22px;font-weight:800;color:#dc2626;">0</div><div style="font-size:11px;color:#6b7280;font-weight:600;">{% if ar %}فشل{% else %}Failed{% endif %}</div></div>
+              <div style="background:#fff;padding:14px;text-align:center;"><div id="impDup" style="font-size:22px;font-weight:800;color:#d97706;">0</div><div style="font-size:11px;color:#6b7280;font-weight:600;">{% if ar %}مكرر{% else %}Duplicates{% endif %}</div></div>
+              <div style="background:#fff;padding:14px;text-align:center;"><div id="impEmpty" style="font-size:22px;font-weight:800;color:#6b7280;">0</div><div style="font-size:11px;color:#6b7280;font-weight:600;">{% if ar %}صفوف فارغة{% else %}Empty Skipped{% endif %}</div></div>
+            </div>
+          </div>
+
+          <div id="impFailedWrap" style="display:none;margin-top:14px;background:#fff;border:1.5px solid #fca5a5;border-radius:12px;overflow:hidden;">
+            <div style="background:#fef2f2;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-weight:700;font-size:12.5px;color:#b91c1c;"><i class="fas fa-exclamation-triangle me-2"></i>{% if ar %}السجلات الفاشلة{% else %}Failed Records{% endif %}</span>
+              <a href="/employees/import/failed" class="btn btn-sm btn-outline-danger" style="border-radius:7px;font-size:11.5px;font-weight:600;">
+                <i class="fas fa-download me-1"></i>{% if ar %}تحميل السجلات الفاشلة{% else %}Download Failed Records{% endif %}
+              </a>
+            </div>
+            <div style="max-height:260px;overflow:auto;">
+              <table class="table table-sm mb-0" style="font-size:12px;">
+                <thead style="position:sticky;top:0;background:#f8fafc;">
+                  <tr>
+                    <th style="width:60px;">{% if ar %}الصف{% else %}Row{% endif %}</th>
+                    <th>{% if ar %}كود الموظف{% else %}Employee Code{% endif %}</th>
+                    <th>{% if ar %}الاسم{% else %}Name{% endif %}</th>
+                    <th style="width:80px;">{% if ar %}الحالة{% else %}Status{% endif %}</th>
+                    <th>{% if ar %}سبب الخطأ{% else %}Error Reason{% endif %}</th>
+                  </tr>
+                </thead>
+                <tbody id="impFailedBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer-bar">
+        <button type="button" class="btn-footer btn-footer-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إغلاق{% else %}Close{% endif %}</button>
+        <button type="button" id="impStartBtn" class="btn-footer btn-footer-save" onclick="startImport()" disabled style="opacity:.5;">
+          <i class="fas fa-file-import me-1"></i>{% if ar %}بدء الاستيراد{% else %}Start Import{% endif %}
         </button>
       </div>
     </div>
@@ -1217,7 +1400,6 @@ function pickMCQ(grpId, btn, hidId, val) {
 }
 function setMCQ(grpId, val, hidId) {
   if (!hidId) {
-    // Called with 2 args for some cases — find the hidden input
     const grp = document.getElementById(grpId);
     if (!grp) return;
     grp.querySelectorAll('.mcq-opt').forEach(lbl => {
@@ -1405,7 +1587,7 @@ function biTrans(srcId, tgtId, srcLang) {
   const tgtLang = srcLang === 'en' ? 'ar' : 'en';
   const fieldBase = tgtId.replace(/^f_/, '').replace(/_ar$/, '');
   const spin = document.getElementById('spin_' + fieldBase);
-  if (spin) spin.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
+  if (spin) spin.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
   _biTimers[tgtId] = setTimeout(() => {
     fetch(TR, {
       method: 'POST',
@@ -1433,7 +1615,7 @@ function biRetrans(srcId, tgtId, srcLang) {
   const tgtLang = srcLang === 'en' ? 'ar' : 'en';
   const fieldBase = tgtId.replace(/^f_/, '').replace(/_ar$/, '');
   const spin = document.getElementById('spin_' + fieldBase);
-  if (spin) spin.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:11px;color:#9ca3af"></i>';
+  if (spin) spin.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
   fetch(TR, {
     method: 'POST',
     headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
@@ -1451,6 +1633,36 @@ function biRetrans(srcId, tgtId, srcLang) {
   .catch(() => { if (spin) spin.innerHTML = ''; });
 }
 
+// Generic pair translator for popup modals
+const _pairTimers = {};
+function biTransPair(srcId, tgtId, srcLang) {
+  const src = document.getElementById(srcId), tgt = document.getElementById(tgtId);
+  if (!src || !tgt) return;
+  const text = src.value.trim();
+  clearTimeout(_pairTimers[tgtId]);
+  if (!text) { tgt.value = ''; return; }
+  if (/^[\d٠-٩\s\-\+\(\)\.\/#]+$/.test(text)) { tgt.value = text; return; }
+  const tgtLang = srcLang === 'en' ? 'ar' : 'en';
+  _pairTimers[tgtId] = setTimeout(() => {
+    fetch(TR, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+                body: JSON.stringify({text, direction:`${srcLang}|${tgtLang}`}) })
+    .then(r => r.json())
+    .then(d => { if (d.translated) { tgt.value = d.translated; tgt.classList.add('translated-flash'); setTimeout(()=>tgt.classList.remove('translated-flash'),700); } })
+    .catch(() => {});
+  }, 650);
+}
+function biTransRetrans(srcId, tgtId, srcLang) {
+  const src = document.getElementById(srcId), tgt = document.getElementById(tgtId);
+  const text = src ? src.value.trim() : '';
+  if (!text || !tgt) return;
+  const tgtLang = srcLang === 'en' ? 'ar' : 'en';
+  fetch(TR, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+              body: JSON.stringify({text, direction:`${srcLang}|${tgtLang}`}) })
+  .then(r => r.json())
+  .then(d => { if (d.translated) { tgt.value = d.translated; tgt.classList.add('translated-flash'); setTimeout(()=>tgt.classList.remove('translated-flash'),700); } })
+  .catch(() => {});
+}
+
 // ════════ FORM RESET ════════
 function resetEmpForm() {
   document.querySelectorAll('#empForm input[type="text"], #empForm input[type="number"], #empForm input[type="date"], #empForm input[type="email"]').forEach(el => el.value = '');
@@ -1461,7 +1673,6 @@ function resetEmpForm() {
   document.getElementById('f_is_muslim').checked = false;
   document.getElementById('empCodeDisplay').textContent = IS_AR ? '(تلقائي)' : '(Auto)';
 
-  // Clear allowance inline table
   const inlineBody = document.getElementById('allowInlineBody');
   if (inlineBody) {
     inlineBody.innerHTML = `<tr id="allowInlineEmpty"><td colspan="4" style="text-align:center;padding:14px;color:#9ca3af;font-size:12px;">${IS_AR?'لا توجد بدلات — اضغط إدارة':'No allowances — click Manage to add'}</td></tr>`;
@@ -1479,12 +1690,10 @@ function resetEmpForm() {
   if (netHid) netHid.value = '0';
   document.getElementById('allowBadge').style.display = 'none';
 
-  // Clear doc upload rows
   const docList = document.getElementById('docFilesList');
   if (docList) docList.innerHTML = '';
   _docSerial = 0;
 
-  // Clear bank section
   _empPendingBanks = [];
   const bankList = document.getElementById('bankList_emp');
   if (bankList) bankList.innerHTML = '<div class="pf-empty"><i class="fas fa-university"></i>'+(IS_AR?'لا توجد حسابات بنكية':'No bank accounts yet')+'</div>';
@@ -1544,7 +1753,6 @@ function openEditEmp(id) {
     document.getElementById('f_is_active').checked = d.is_active;
     document.getElementById('f_is_muslim').checked = d.is_muslim;
 
-    // Bilingual text fields
     const biFields = ['name','kafeel_name','kafeel_reference','education','address','home_city',
                        'employee_reference','hostel_name','hostel_location','crn','insurance_company'];
     biFields.forEach(f => {
@@ -1554,7 +1762,6 @@ function openEditEmp(id) {
       if (arr) arr.value = d[f+'_ar'] || '';
     });
 
-    // Work info bilingual fields
     ['company','department','section'].forEach(f => {
       const en = document.getElementById('f_'+f+'_en');
       const arr = document.getElementById('f_'+f+'_ar');
@@ -1562,7 +1769,6 @@ function openEditEmp(id) {
       if (arr) arr.value = d[f+'_ar'] || '';
     });
 
-    // Single fields
     const singleFields = ['mobile','email','passport_number','entry_number','iqama_number',
                            'room_number','labour_office','po_rate','po_number','basic_salary',
                            'working_hours','overtime_ratio','overtime_rate','kafalat_number',
@@ -1573,47 +1779,38 @@ function openEditEmp(id) {
       if (el) el.value = d[f] || '';
     });
 
-    // Net salary
     document.getElementById('f_net_salary').value = d.net_salary || 0;
     const nd = document.getElementById('f_net_salary_display');
     if (nd) nd.value = d.net_salary ? Number(d.net_salary).toFixed(2) : '0.00';
     document.getElementById('f_total_allowances').value = (d.total_allowances || 0).toFixed(2);
 
-    // MCQ
     setMCQ('empTypeGrp', d.employee_type || 'skilled', 'f_employee_type');
     setMCQ('salTypeGrp', d.salary_type || 'salary', 'f_salary_type');
     setMCQ('shiftGrp', d.shift_type || 'day', 'f_shift_type');
     setMCQ('workStatusGrp', d.work_status || 'active', 'f_work_status');
     setMCQ('passLocGrp', d.passport_location || 'IN', 'f_passport_location');
 
-    // PO rate unit
     const puEl = document.getElementById('f_po_rate_unit');
     if (puEl && d.po_rate_unit) puEl.value = d.po_rate_unit;
 
-    // Dropdowns
     initNationality(d.nationality || '');
     initProfession(d.profession || '');
     initBuyer(d.buyer_id || '');
 
-    // Age + Hijri
     calcAge();
     setTimeout(wireHijriBadges, 50);
 
-    // Load allowances into inline table
     const inlineBody = document.getElementById('allowInlineBody');
-    if (inlineBody) {
-      inlineBody.innerHTML = '';
-    }
+    if (inlineBody) inlineBody.innerHTML = '';
     _renderRows(d.allowances || []);
     calcNet();
     calcOvertimeRate();
 
-    // Load banks
     loadEmpBanks(id);
   });
 }
 
-// ════════ VIEW (read-only) ════════
+// ════════ VIEW ════════
 let currentViewId = null;
 function viewDateFmt(dateStr) {
   if (!dateStr) return '';
@@ -1858,97 +2055,74 @@ function onAllowPopupClose() {
 }
 
 // ════════ EMPLOYEE BANKING ════════
-function togAccBank(btn) {
-  const body = btn.nextElementSibling;
-  body.classList.toggle('d-none');
-  const icon = btn.querySelector('.fa-chevron-down,.fa-chevron-up');
-  if (icon) {
-    icon.classList.toggle('fa-chevron-down');
-    icon.classList.toggle('fa-chevron-up');
-  }
-}
+let _bankSerial = 0;
 
-function openEmpBank(bankId) {
+function openEmpBank(key) {
   const mid = 'bankModal_emp';
-  document.getElementById(mid+'_bank_id').value = bankId || '';
-  document.getElementById(mid+'_title').innerHTML = bankId
+  document.getElementById(mid+'_bank_id').value = (key!=null) ? key : '';
+  document.getElementById(mid+'_title').innerHTML = (key!=null)
     ? '<i class="fas fa-edit me-2"></i>'+(IS_AR?'تعديل حساب بنكي':'Edit Bank Account')
     : '<i class="fas fa-university me-2"></i>'+(IS_AR?'إضافة حساب بنكي':'Add Bank Account');
-  if (!bankId) {
-    [mid+'_name', mid+'_account', mid+'_branch', mid+'_swift', mid+'_iban'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-    document.getElementById(mid+'_primary').checked = false;
-  } else {
-    // Load existing bank data
-    fetch(`/employees/banks/${bankId}`)
-    .then(r => r.json())
-    .then(b => {
-      document.getElementById(mid+'_name').value = b.bank_name || '';
-      document.getElementById(mid+'_account').value = b.account_number || '';
-      document.getElementById(mid+'_branch').value = b.branch || '';
-      document.getElementById(mid+'_swift').value = b.swift_code || '';
-      document.getElementById(mid+'_iban').value = b.iban || '';
-      document.getElementById(mid+'_primary').checked = b.is_primary || false;
-    })
-    .catch(() => {});
-  }
+  const b = (key!=null) ? _empPendingBanks.find(x=>x._key===key) : null;
+  document.getElementById(mid+'_name').value    = b ? (b.bank_name||'')      : '';
+  document.getElementById(mid+'_name_ar').value = b ? (b.bank_name_ar||'')   : '';
+  document.getElementById(mid+'_account').value = b ? (b.account_number||'') : '';
+  document.getElementById(mid+'_branch').value  = b ? (b.branch||'')         : '';
+  document.getElementById(mid+'_branch_ar').value = b ? (b.branch_ar||'')    : '';
+  document.getElementById(mid+'_swift').value   = b ? (b.swift_code||'')     : '';
+  document.getElementById(mid+'_iban').value    = b ? (b.iban||'')           : '';
+  document.getElementById(mid+'_primary').checked = b ? !!b.is_primary       : false;
   new bootstrap.Modal(document.getElementById(mid)).show();
 }
 
-async function saveEmpBank() {
+function saveEmpBank() {
   const mid = 'bankModal_emp';
-  const bankId = document.getElementById(mid+'_bank_id').value;
-  const empId = _currentEmpId;
-  if (!empId) { alert(IS_AR?'احفظ الموظف أولاً':'Save the employee first.'); return; }
+  const key = document.getElementById(mid+'_bank_id').value;
   const bname = document.getElementById(mid+'_name')?.value.trim();
   if (!bname) { alert(IS_AR?'اسم البنك مطلوب':'Bank name is required.'); return; }
-  const payload = {
-    bank_name: bname,
+  const entry = {
+    bank_name:      bname,
+    bank_name_ar:   document.getElementById(mid+'_name_ar')?.value.trim() || '',
     account_number: document.getElementById(mid+'_account')?.value.trim() || '',
-    branch: document.getElementById(mid+'_branch')?.value.trim() || '',
-    swift_code: document.getElementById(mid+'_swift')?.value.trim() || '',
-    iban: document.getElementById(mid+'_iban')?.value.trim() || '',
-    is_primary: document.getElementById(mid+'_primary')?.checked || false
+    branch:         document.getElementById(mid+'_branch')?.value.trim() || '',
+    branch_ar:      document.getElementById(mid+'_branch_ar')?.value.trim() || '',
+    swift_code:     document.getElementById(mid+'_swift')?.value.trim() || '',
+    iban:           document.getElementById(mid+'_iban')?.value.trim() || '',
+    is_primary:     document.getElementById(mid+'_primary')?.checked || false,
   };
-  const url = bankId ? `/employees/banks/${bankId}/edit` : `/employees/${empId}/banks/add`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
-    body: JSON.stringify(payload)
-  });
-  const data = await res.json();
-  if (data.ok) {
-    bootstrap.Modal.getInstance(document.getElementById(mid))?.hide();
-    loadEmpBanks(empId);
+  if (entry.is_primary) _empPendingBanks.forEach(x => x.is_primary = false);
+  if (key) {
+    const row = _empPendingBanks.find(x=>x._key===key);
+    if (row) Object.assign(row, entry);
   } else {
-    alert(data.error || (IS_AR?'فشل حفظ البنك':'Failed to save bank.'));
+    entry._key = 'b_' + (++_bankSerial);
+    _empPendingBanks.push(entry);
   }
+  bootstrap.Modal.getInstance(document.getElementById(mid))?.hide();
+  renderEmpBanks();
 }
 
-async function loadEmpBanks(empId) {
-  if (!empId) return;
-  const res = await fetch(`/employees/${empId}/banks`);
-  const banks = await res.json();
-  renderEmpBanks(banks, empId);
+function deleteEmpBank(key) {
+  if (!confirm(IS_AR?'حذف هذا الحساب البنكي؟':'Delete this bank account?')) return;
+  _empPendingBanks = _empPendingBanks.filter(x=>x._key!==key);
+  renderEmpBanks();
 }
 
-function renderEmpBanks(banks, empId) {
+function renderEmpBanks() {
   const wrap = document.getElementById('bankList_emp');
   const badge = document.getElementById('bankBadge_emp');
-  if (badge) badge.textContent = banks.length;
+  if (badge) badge.textContent = _empPendingBanks.length;
   if (!wrap) return;
-  if (!banks.length) {
+  if (!_empPendingBanks.length) {
     wrap.innerHTML = '<div class="pf-empty"><i class="fas fa-university"></i>'+(IS_AR?'لا توجد حسابات بنكية':'No bank accounts yet')+'</div>';
     return;
   }
-  wrap.innerHTML = banks.map(b => `
+  wrap.innerHTML = _empPendingBanks.map(b => `
     <div class="pf-bank-card ${b.is_primary?'primary':''}">
       <div>
         <div class="pf-bank-card-name">
           <i class="fas fa-university" style="color:#2563eb;font-size:14px;"></i>
-          ${b.bank_name||'—'}
+          ${b.bank_name||'—'}${b.bank_name_ar?` <span style="color:#9ca3af;font-weight:500;font-size:11px;">${b.bank_name_ar}</span>`:''}
           ${b.is_primary?'<span class="pf-badge-primary">'+(IS_AR?'رئيسي':'PRIMARY')+'</span>':''}
         </div>
         <div class="pf-bank-card-meta">
@@ -1959,21 +2133,46 @@ function renderEmpBanks(banks, empId) {
         </div>
       </div>
       <div class="pf-bank-actions">
-        <button onclick="openEmpBank(${b.id})" style="width:28px;height:28px;background:#fef3c7;color:#d97706;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-pencil-alt"></i></button>
-        <button onclick="deleteEmpBank(${b.id})" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-trash"></i></button>
+        <button type="button" onclick="openEmpBank('${b._key}')" style="width:28px;height:28px;background:#fef3c7;color:#d97706;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-pencil-alt"></i></button>
+        <button type="button" onclick="deleteEmpBank('${b._key}')" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-trash"></i></button>
       </div>
     </div>
   `).join('');
 }
 
-async function deleteEmpBank(bankId) {
-  if (!confirm(IS_AR?'حذف هذا الحساب البنكي؟':'Delete this bank account?')) return;
-  const res = await fetch(`/employees/banks/${bankId}/delete`, {
-    method: 'POST',
-    headers: {'X-CSRFToken': CSRF}
+function loadEmpBanks(empId) {
+  if (!empId) { _empPendingBanks = []; renderEmpBanks(); return; }
+  fetch(`/employees/${empId}/banks`).then(r=>r.json()).then(banks=>{
+    _empPendingBanks = banks.map(b=>({
+      _key: 'b_' + (++_bankSerial),
+      bank_name: b.bank_name||'', bank_name_ar: b.bank_name_ar||'',
+      account_number: b.account_number||'', branch: b.branch||'', branch_ar: b.branch_ar||'',
+      swift_code: b.swift_code||'', iban: b.iban||'', is_primary: !!b.is_primary,
+    }));
+    renderEmpBanks();
+  }).catch(()=>{ _empPendingBanks=[]; renderEmpBanks(); });
+}
+
+function injectEmpBanks() {
+  document.querySelectorAll('#empForm .emp-bank-hidden').forEach(e=>e.remove());
+  const form = document.getElementById('empForm');
+  _empPendingBanks.forEach((b,i)=>{
+    const fields = {
+      [`banks[${i}][bank_name]`]: b.bank_name||'',
+      [`banks[${i}][bank_name_ar]`]: b.bank_name_ar||'',
+      [`banks[${i}][account_number]`]: b.account_number||'',
+      [`banks[${i}][branch]`]: b.branch||'',
+      [`banks[${i}][branch_ar]`]: b.branch_ar||'',
+      [`banks[${i}][swift_code]`]: b.swift_code||'',
+      [`banks[${i}][iban]`]: b.iban||'',
+      [`banks[${i}][is_primary]`]: b.is_primary?'1':'0',
+    };
+    Object.entries(fields).forEach(([n,v])=>{
+      const inp=document.createElement('input');
+      inp.type='hidden'; inp.name=n; inp.value=v; inp.className='emp-bank-hidden';
+      form.appendChild(inp);
+    });
   });
-  const data = await res.json();
-  if (data.ok) loadEmpBanks(_currentEmpId);
 }
 
 // ════════ BI WRAP ════════
@@ -2053,7 +2252,6 @@ function saveQuickAllowType() {
     if(d.ok){
       _atCache=null;
       bootstrap.Modal.getInstance(document.getElementById('addAllowTypeModal'))?.hide();
-      // Refresh the allowance types dropdown
       fetch(AT_URL).then(r=>r.json()).then(data=>{ _atCache=data; _fillTypeDropdown(data, []); });
     } else {if(errEl){errEl.textContent=d.error||'Error';errEl.style.display='block';}}
   }).catch(()=>{if(errEl){errEl.textContent='Server error';errEl.style.display='block';}});
@@ -2203,5 +2401,146 @@ function confDel(url, name) {
 }
 
 document.getElementById('empForm').addEventListener('submit', () => setTimeout(loadData, 700));
+
+// ═══════════════════════════════════════════════════════════════
+// EMPLOYEE EXCEL IMPORT — JS
+// ═══════════════════════════════════════════════════════════════
+let _impFile = null;
+
+function openImportModal() {
+  _impFile = null;
+  var fn = document.getElementById('impFileName');
+  if (fn) { fn.style.display = 'none'; fn.querySelector('span').textContent = ''; }
+  var fi = document.getElementById('impFile');
+  if (fi) fi.value = '';
+  var pg = document.getElementById('impProgress');
+  if (pg) pg.style.display = 'none';
+  var sm = document.getElementById('impSummary');
+  if (sm) sm.style.display = 'none';
+  var er = document.getElementById('impError');
+  if (er) er.style.display = 'none';
+  var fw = document.getElementById('impFailedWrap');
+  if (fw) fw.style.display = 'none';
+  impSetBtn(false);
+  var modalEl = document.getElementById('empImportModal');
+  if (modalEl) {
+    new bootstrap.Modal(modalEl).show();
+  }
+}
+
+function impSetBtn(enabled) {
+  var b = document.getElementById('impStartBtn');
+  if (b) { b.disabled = !enabled; b.style.opacity = enabled ? '1' : '.5'; }
+}
+
+function impValidFile(f) {
+  if (!f) return false;
+  var n = f.name.toLowerCase();
+  return n.endsWith('.xlsx') || n.endsWith('.xls');
+}
+
+function impShowFile(f) {
+  var fn = document.getElementById('impFileName');
+  if (fn) { fn.style.display = 'block'; fn.querySelector('span').textContent = f.name + ' (' + Math.round(f.size/1024) + ' KB)'; }
+}
+
+function impFilePicked(inp) {
+  var f = inp.files && inp.files[0];
+  if (!impValidFile(f)) {
+    impErr(IS_AR ? 'يسمح فقط بملفات .xlsx / .xls' : 'Only .xlsx / .xls files are allowed.');
+    return;
+  }
+  var er = document.getElementById('impError');
+  if (er) er.style.display = 'none';
+  _impFile = f; impShowFile(f); impSetBtn(true);
+}
+
+function impOnDrop(ev) {
+  ev.preventDefault();
+  var dz = document.getElementById('impDrop');
+  if (dz) { dz.style.borderColor = '#cbd5e1'; dz.style.background = '#fff'; }
+  var f = ev.dataTransfer.files && ev.dataTransfer.files[0];
+  if (!impValidFile(f)) {
+    impErr(IS_AR ? 'يسمح فقط بملفات .xlsx / .xls' : 'Only .xlsx / .xls files are allowed.');
+    return;
+  }
+  var er = document.getElementById('impError');
+  if (er) er.style.display = 'none';
+  _impFile = f; impShowFile(f); impSetBtn(true);
+}
+
+function impErr(msg) {
+  var e = document.getElementById('impError');
+  if (e) { e.textContent = msg; e.style.display = 'block'; }
+}
+
+function startImport() {
+  if (!_impFile) return;
+  impSetBtn(false);
+  var er = document.getElementById('impError');
+  if (er) er.style.display = 'none';
+  var sm = document.getElementById('impSummary');
+  if (sm) sm.style.display = 'none';
+  var pg = document.getElementById('impProgress');
+  if (pg) pg.style.display = 'block';
+
+  var fd = new FormData();
+  fd.append('file', _impFile);
+
+  fetch('/employees/import', {
+    method: 'POST',
+    headers: {'X-CSRFToken': CSRF},
+    body: fd
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    var pg2 = document.getElementById('impProgress');
+    if (pg2) pg2.style.display = 'none';
+    if (!d.ok) { impErr(d.error || 'Import failed.'); impSetBtn(true); return; }
+    var s = d.summary;
+    document.getElementById('impTotal').textContent = s.total;
+    document.getElementById('impOk').textContent    = s.imported;
+    document.getElementById('impFail').textContent  = s.failed;
+    document.getElementById('impDup').textContent   = s.duplicates;
+    document.getElementById('impEmpty').textContent = s.skipped_empty;
+    var sm2 = document.getElementById('impSummary');
+    if (sm2) sm2.style.display = 'block';
+
+    var wrap = document.getElementById('impFailedWrap');
+    var body = document.getElementById('impFailedBody');
+    if (d.failed_rows && d.failed_rows.length) {
+      body.innerHTML = d.failed_rows.map(function(r) {
+        return '<tr><td>' + r.row + '</td><td>' + (r.employee_code || '—') + '</td><td>' + (r.name || '—') + '</td><td><span class="st-pill st-cancelled">' + (IS_AR?'فشل':'Failed') + '</span></td><td style="color:#b91c1c;">' + r.error + '</td></tr>';
+      }).join('');
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+    }
+    loadData();
+  })
+  .catch(function() {
+    var pg3 = document.getElementById('impProgress');
+    if (pg3) pg3.style.display = 'none';
+    impErr(IS_AR ? 'فشل الاتصال بالخادم' : 'Server connection failed.');
+    impSetBtn(true);
+  });
+}
+
+// Wire import button click event
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('btnImportExcel');
+  if (btn) {
+    btn.addEventListener('click', function() {
+      if (typeof openImportModal === 'function') {
+        openImportModal();
+      } else {
+        var modalEl = document.getElementById('empImportModal');
+        if (modalEl) {
+          new bootstrap.Modal(modalEl).show();
+        }
+      }
+    });
+  }
+});
 </script>
 {% endblock %}
