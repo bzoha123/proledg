@@ -37,14 +37,14 @@
 {% endblock %}
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
-<li class="breadcrumb-item"><a href="{{ url_for('purchase.pq_list') }}">{% if ar %}عروض أسعار الشراء{% else %}Purchase Quotations{% endif %}</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('sales.so_list') }}">{% if ar %}أوامر الشراء{% else %}Sales Orders{% endif %}</a></li>
 <li class="breadcrumb-item active">{{ doc.doc_no }}</li>
 {% endblock %}
 {% block content %}
 <div class="proledg-page" style="max-width:1100px;">
   <div class="act-bar" style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-    <a href="{{ url_for('purchase.pq_list') }}" class="btn-act" style="background:white;color:#374151;border:1.5px solid #d1d5db;"><i class="fas fa-arrow-left"></i>{% if ar %}رجوع{% else %}Back{% endif %}</a>
-    <button class="btn-act" style="background:#f59e0b;color:white;" onclick="window.location='{{ url_for('purchase.pq_list') }}?edit={{ doc.id }}'"><i class="fas fa-pencil-alt"></i>{% if ar %}تعديل{% else %}Edit{% endif %}</button>
+    <a href="{{ url_for('sales.so_list') }}" class="btn-act" style="background:white;color:#374151;border:1.5px solid #d1d5db;"><i class="fas fa-arrow-left"></i>{% if ar %}رجوع{% else %}Back{% endif %}</a>
+    <button class="btn-act" style="background:#f59e0b;color:white;" onclick="window.location='{{ url_for('sales.so_list') }}?edit={{ doc.id }}'"><i class="fas fa-pencil-alt"></i>{% if ar %}تعديل{% else %}Edit{% endif %}</button>
   </div>
 
   {# Hero #}
@@ -53,7 +53,7 @@
       <h3><i class="fas fa-file-alt me-2"></i>{{ doc.doc_no }}</h3>
       <div>
         <span class="pur-vbadge {{ doc.status }}">{{ doc.status }}</span>
-        {% if doc.vendor %}<span class="pur-vbadge"><i class="fas fa-store" style="font-size:9px;"></i>{{ doc.vendor.vendor_name_en }}</span>{% endif %}
+        {% if doc.buyer %}<span class="pur-vbadge"><i class="fas fa-store" style="font-size:9px;"></i>{{ doc.buyer.buyer_name_en }}</span>{% endif %}
       </div>
     </div>
     <div style="text-align:right;">
@@ -69,20 +69,19 @@
       <div class="d-grid">
         <div>
           <div class="d-row"><div class="d-lbl">{% if ar %}رقم المستند{% else %}Doc No{% endif %}</div><div class="d-val hi">{{ doc.doc_no }}</div></div>
-          <div class="d-row"><div class="d-lbl">{% if ar %}رقم طلب الشراء{% else %}Purchase Request No{% endif %}</div><div class="d-val">{% if doc.purchase_request %}<a href="{{ url_for('purchase.pr_view', id=doc.purchase_request.purchase_request_id) }}" style="color:#2563eb;font-weight:600;text-decoration:none;">{{ doc.purchase_request.doc_no }}</a>{% else %}—{% endif %}</div></div>
+          <div class="d-row"><div class="d-lbl">{% if ar %}عرض السعر{% else %}PQ No{% endif %}</div><div class="d-val">{{ doc.pq.doc_no if doc.pq else '—' }}</div></div>
           <div class="d-row"><div class="d-lbl">{% if ar %}المستخدم{% else %}Requester{% endif %}</div><div class="d-val">{{ doc.requester or '—' }}</div></div>
           <div class="d-row"><div class="d-lbl">{% if ar %}الاسم{% else %}Req. Name{% endif %}</div><div class="d-val">{{ doc.requester_name or '—' }}</div></div>
-          <div class="d-row"><div class="d-lbl">{% if ar %}اعتمد بواسطة{% else %}Approved By{% endif %}</div><div class="d-val">{{ doc.approved_by or '—' }}</div></div>
+          <div class="d-row"><div class="d-lbl">{% if ar %}رقم المرجع{% else %}Buyer Ref No{% endif %}</div><div class="d-val">{{ doc.buyer_ref_no or '—' }}</div></div>
         </div>
         <div>
           <div class="d-row"><div class="d-lbl">{% if ar %}تاريخ الترحيل{% else %}Posting Date{% endif %}</div><div class="d-val">{{ doc.posting_date.strftime('%d %b %Y') if doc.posting_date else '—' }}</div></div>
-          <div class="d-row"><div class="d-lbl">{% if ar %}صالح حتى{% else %}Valid Until{% endif %}</div><div class="d-val">{{ doc.valid_until.strftime('%d %b %Y') if doc.valid_until else '—' }}</div></div>
+          <div class="d-row"><div class="d-lbl">{% if ar %}تاريخ التسليم{% else %}Delivery Date{% endif %}</div><div class="d-val">{{ doc.delivery_date.strftime('%d %b %Y') if doc.delivery_date else '—' }}</div></div>
           <div class="d-row"><div class="d-lbl">{% if ar %}تاريخ المستند{% else %}Doc Date{% endif %}</div><div class="d-val">{{ doc.document_date.strftime('%d %b %Y') if doc.document_date else '—' }}</div></div>
           <div class="d-row"><div class="d-lbl">{% if ar %}التاريخ المطلوب{% else %}Required Date{% endif %}</div><div class="d-val">{{ doc.required_date.strftime('%d %b %Y') if doc.required_date else '—' }}</div></div>
         </div>
         <div>
-          <div class="d-row"><div class="d-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div><div class="d-val">{{ doc.vendor.vendor_name_en if doc.vendor else '—' }}</div></div>
-          <div class="d-row"><div class="d-lbl">{% if ar %}رقم مرجع المورد{% else %}Vendor Ref No{% endif %}</div><div class="d-val">{{ doc.vendor_ref_no or '—' }}</div></div>
+          <div class="d-row"><div class="d-lbl">{% if ar %}المشتري{% else %}Buyer{% endif %}</div><div class="d-val">{{ doc.buyer.buyer_name_en if doc.buyer else '—' }}</div></div>
           <div class="d-row"><div class="d-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div><div class="d-val">{{ doc.status }}</div></div>
           <div class="d-row"><div class="d-lbl">{% if ar %}ملاحظات{% else %}Remarks{% endif %}</div><div class="d-val">{{ doc.remarks or '—' }}</div></div>
         </div>

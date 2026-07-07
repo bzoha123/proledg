@@ -11,11 +11,9 @@
    Used across: Sellers, Employees, Buyers, Vendors
 ═══════════════════════════════════════════════════════ */
 
-/* ── Modal shell ── */
 .pf-modal .modal-dialog { max-width: 960px; }
 .pf-modal .modal-content { border: none; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,.22); }
 
-/* ── Modal header ── */
 .pf-hdr {
   background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
   padding: 16px 22px;
@@ -25,7 +23,6 @@
 .pf-hdr .btn-close { filter: brightness(0) invert(1); opacity: .85; }
 .pf-hdr .btn-close:hover { opacity: 1; }
 
-/* ── Tab nav inside modal ── */
 .pf-tabs { display: flex; background: #f1f5f9; border-bottom: 1px solid #e2e8f0; padding: 0 20px; gap: 2px; }
 .pf-tab {
   padding: 10px 18px; font-size: 12px; font-weight: 600; color: #6b7280;
@@ -36,11 +33,9 @@
 .pf-tab.active { color: #2563eb; border-bottom-color: #2563eb; background: white; border-radius: 6px 6px 0 0; }
 .pf-tab i { font-size: 11px; }
 
-/* ── Tab panes ── */
 .pf-pane { display: none; padding: 22px 24px; }
 .pf-pane.active { display: block; }
 
-/* ── Section header ── */
 .pf-section-hdr {
   font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px;
   color: #1e3a5f; margin: 0 0 14px; padding-bottom: 8px;
@@ -48,7 +43,6 @@
 }
 .pf-section-hdr i { color: #2563eb; font-size: 13px; }
 
-/* ── Field grid ── */
 .pf-row { display: grid; gap: 14px; margin-bottom: 14px; }
 .pf-row.cols-1 { grid-template-columns: 1fr; }
 .pf-row.cols-2 { grid-template-columns: 1fr 1fr; }
@@ -59,7 +53,6 @@
   .pf-row.cols-2, .pf-row.cols-3, .pf-row.cols-2-1, .pf-row.cols-1-2 { grid-template-columns: 1fr; }
 }
 
-/* ── Field ── */
 .pf-field {}
 .pf-label {
   font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 5px;
@@ -76,12 +69,10 @@
 .pf-input:disabled { background: #f9fafb; color: #9ca3af; cursor: not-allowed; }
 .pf-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; padding-right: 32px; }
 
-/* ── Bilingual input wrap ── */
 .pf-bilingual { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .pf-bilingual-lbl { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px; letter-spacing: .3px; }
 @media (max-width: 640px) { .pf-bilingual { grid-template-columns: 1fr; } }
 
-/* ── Translate button ── */
 .pf-retrans {
   position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
   width: 22px; height: 22px; background: #eff6ff; color: #2563eb;
@@ -93,7 +84,6 @@
 .pf-input-wrap { position: relative; }
 .pf-input-wrap .pf-input { padding-right: 34px; }
 
-/* ── Modal footer ── */
 .pf-footer {
   padding: 14px 22px; background: #f8fafc; border-top: 1.5px solid #e2e8f0;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -109,7 +99,6 @@
 .pf-btn.danger { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
 .pf-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
 
-/* ── Bank list inside modal ── */
 .pf-bank-card {
   background: white; border: 1.5px solid #e2e8f0; border-radius: 10px;
   padding: 13px 16px; margin-bottom: 8px;
@@ -124,15 +113,12 @@
 .pf-badge-blue { background: #eff6ff; color: #2563eb; padding: 2px 9px; border-radius: 8px; font-size: 10px; font-weight: 700; }
 .pf-bank-actions { display: flex; gap: 5px; flex-shrink: 0; }
 
-/* ── Bank popup modal ── */
 .pf-bank-modal .modal-dialog { max-width: 620px; }
 .pf-bank-modal .modal-content { border: none; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
 
-/* ── Empty state ── */
 .pf-empty { text-align: center; padding: 28px; color: #9ca3af; font-size: 13px; }
 .pf-empty i { font-size: 32px; margin-bottom: 10px; display: block; opacity: .4; }
 
-/* ── AG Grid tweaks ── */
 .ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif; --ag-font-size:13px; --ag-header-background-color:#1e3a5f; --ag-header-foreground-color:#fff; --ag-border-color:#e2e8f0; --ag-row-border-color:#f1f5f9; --ag-row-hover-color:#eff6ff; --ag-selected-row-background-color:#dbeafe; --ag-header-height:46px; --ag-row-height:46px; --ag-cell-horizontal-padding:12px; }
 .ag-theme-alpine .ag-header-cell-label { font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; }
 .ag-theme-alpine .ag-header-cell:hover { background:rgba(255,255,255,.08) !important; }
@@ -152,7 +138,6 @@
 .ag-theme-alpine .ag-row-hover { background:#eff6ff !important; }
 .ag-theme-alpine .ag-cell { border-right:1px solid #f1f5f9 !important; }
 
-/* ── Action buttons ── */
 .pl-act { display:flex; align-items:center; gap:3px; }
 .pl-btn { width:28px; height:28px; border-radius:7px; border:none; display:inline-flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; transition:all .12s; }
 .pl-btn:hover { transform:translateY(-1px); box-shadow:0 2px 6px rgba(0,0,0,.2); }
@@ -161,7 +146,6 @@
 .pl-del   { background:#ef4444; color:white; }
 .pl-print { background:#16a34a; color:white; }
 
-/* ── Status pills ── */
 .st-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:10px; font-size:11px; font-weight:700; }
 .st-active   { background:#dcfce7; color:#15803d; }
 .st-inactive { background:#f1f5f9; color:#6b7280; }
@@ -171,7 +155,6 @@
 .st-cancelled{ background:#fee2e2; color:#dc2626; }
 .code-badge  { background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:5px; font-size:11px; font-weight:700; font-family:monospace; }
 
-/* ── Page toolbar ── */
 .pl-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
 .pl-toolbar-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .pl-add-btn { padding:9px 20px; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; border:none; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:7px; transition:all .15s; }
@@ -181,7 +164,6 @@
 .pl-search:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
 .pl-search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:13px; }
 
-/* ── Employee-specific ── */
 .pl-acc-header,.pl-acc-header.pl-acc-collapsed { display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;color:#374151;margin-bottom:2px;transition:background .15s; }
 .pl-acc-header:hover { background:#eff6ff; }
 .pl-acc-body { padding:16px; }
@@ -192,7 +174,6 @@
 .field-input { width:100%;padding:8px 11px;font-size:13px;color:#1f2937;border:1.5px solid #d1d5db;border-radius:8px;background:white;outline:none;transition:border-color .15s;font-family:inherit; }
 .field-input:focus { border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1); }
 
-/* ── MCQ buttons ── */
 .mcq-wrap { display:flex; gap:6px; flex-wrap:wrap; }
 .mcq-opt {
   padding:7px 14px; border:1.5px solid #d1d5db; border-radius:7px;
@@ -203,7 +184,6 @@
 .mcq-opt.chosen { background:#eff6ff; color:#2563eb; border-color:#93c5fd; }
 .mcq-opt:hover { border-color:#93c5fd; }
 
-/* ── Accordion ── */
 .acc-header {
   width:100%; padding:10px 16px; background:#f8fafc;
   border:1.5px solid #e2e8f0; border-radius:8px;
@@ -225,7 +205,6 @@
 .acc-body.hidden { display:none; }
 .acc-arrow { font-size:11px; color:#9ca3af; transition:transform .2s; }
 
-/* ── Field row / item ── */
 .field-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
 .field-row.one-col { grid-template-columns:1fr; }
 @media (max-width:640px) { .field-row { grid-template-columns:1fr; } }
@@ -242,7 +221,6 @@
 .retrans-btn.ar-retrans { right:auto; left:6px; }
 .field-spin { position:absolute; right:34px; top:50%; transform:translateY(-50%); font-size:10px; }
 
-/* ── Employee modal header ── */
 .emp-modal-header {
   background:linear-gradient(135deg,#1e3a5f,#2563eb);
   padding:14px 22px; display:flex; align-items:center; justify-content:space-between;
@@ -260,7 +238,6 @@
 .emp-codebox .lbl { font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; }
 .emp-codebox .val { font-size:16px; font-weight:800; color:#1e3a5f; font-family:monospace; }
 
-/* ── Modal footer bar ── */
 .modal-footer-bar {
   padding:12px 22px; background:#f8fafc; border-top:1.5px solid #e2e8f0;
   display:flex; align-items:center; justify-content:flex-end; gap:8px;
@@ -274,7 +251,6 @@
 .btn-footer-cancel { background:white; color:#6b7280; border:1.5px solid #d1d5db; }
 .btn-footer-reset { background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; }
 
-/* ── Allowance delete button ── */
 .allow-del {
   width:24px; height:24px; border-radius:5px; border:none;
   background:#fee2e2; color:#dc2626; cursor:pointer;
@@ -283,18 +259,15 @@
 }
 .allow-del:hover { background:#fca5a5; color:white; }
 
-/* ── Hijri badge ── */
 .hijri-badge {
   font-size:10px; color:#059669; background:#f0fdf4; padding:2px 8px;
   border-radius:4px; margin-top:3px; display:none; font-weight:600;
   text-align:right; direction:rtl;
 }
 
-/* ── Translated flash ── */
 .translated-flash { animation:biFlash .5s ease; }
 @keyframes biFlash { 0%{background:#dbeafe} 100%{background:white} }
 
-/* ── Toolbar ── */
 .proledg-page { padding:0; }
 .page-heading { font-size:20px; font-weight:700; color:#1e3a5f; margin-bottom:16px; }
 .toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
@@ -316,7 +289,6 @@
 .search-input:focus { border-color:#2563eb; }
 .sel-badge { font-size:11px; color:#6b7280; background:#f1f5f9; padding:4px 10px; border-radius:5px; font-weight:600; }
 
-/* ── Proledg pagination ── */
 .proledg-pagination {
   display:flex; align-items:center; justify-content:space-between;
   padding:10px 16px; background:#f8fafc; border:1px solid #e2e8f0; border-top:none;
@@ -324,7 +296,6 @@
 }
 .page-count { font-size:12px; color:#6b7280; font-weight:600; }
 
-/* ── Filter popup ── */
 .pl-filter-popup {
   display:none; position:absolute; z-index:1000; background:white;
   border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.15);
@@ -349,47 +320,38 @@
 .plfp-btn-clear { padding:6px 14px; background:white; color:#6b7280; border:1.5px solid #d1d5db; border-radius:6px; font-size:11px; cursor:pointer; }
 .plfp-btn-apply { padding:6px 14px; background:#16a34a; color:white; border:none; border-radius:6px; font-size:11px; cursor:pointer; font-weight:600; }
 
-/* ── AG Grid action cell ── */
 .ag-act-cell { display:flex; align-items:center; gap:4px; height:100%; }
 
-/* ── Filter button on header ── */
 .plfilt {
   background:none; border:none; cursor:pointer; padding:0 3px;
   color:rgba(255,255,255,.6); font-size:10px;
 }
 .plfilt:hover { color:white; }
-/* ═══════════════════════════════════════════════════════
-   EMPLOYEE POLISH v4 — form, view, popups
-═══════════════════════════════════════════════════════ */
+
 .emp-modal-header, .pf-hdr {
   background: linear-gradient(135deg,#0f2447 0%,#1e3a5f 45%,#2563eb 100%) !important;
 }
 .field-input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
 .field-input:hover:not(:focus) { border-color:#cbd5e1; }
 
-/* Auto-calculated fields — clear readonly cue */
 #f_net_salary_display, #f_overtime_rate {
   background:linear-gradient(0deg,#ecfdf5,#f0fdf4) !important;
   border-color:#a7f3d0 !important; color:#047857 !important; font-weight:700 !important;
 }
 
-/* Accordion headers — subtle accent + smoother hover */
 .acc-header { transition:background .15s, box-shadow .15s; }
 .acc-header:hover { box-shadow:inset 3px 0 0 #2563eb; }
 .acc-header.open { box-shadow:inset 3px 0 0 #2563eb; }
 
-/* Bank cards — lift + primary accent */
 .pf-bank-card { transition:border-color .15s, box-shadow .15s, transform .1s; }
 .pf-bank-card:hover { box-shadow:0 4px 14px rgba(15,23,42,.08); transform:translateY(-1px); }
 .pf-bank-card.primary { box-shadow:inset 3px 0 0 #16a34a; }
 
-/* Popups — rounded, deeper shadow */
 #addProfModal .modal-content, #addAllowTypeModal .modal-content,
 #allowPopup .modal-content, .pf-bank-modal .modal-content {
   border:none; border-radius:14px; overflow:hidden; box-shadow:0 24px 70px rgba(15,23,42,.25);
 }
 
-/* View modal — professional data table */
 #viewEmpBody table tr:hover td { background:#f1f5f9 !important; }
 #viewEmpBody td:first-child { color:#475569 !important; }
 .emp-view-section {
@@ -399,11 +361,9 @@
 }
 .emp-view-section i { color:#2563eb; }
 
-/* Footer buttons — consistent lift */
 .btn-footer, .pf-btn { transition:transform .12s, box-shadow .15s, filter .15s; }
 .btn-footer:hover, .pf-btn:hover { transform:translateY(-1px); box-shadow:0 5px 14px rgba(0,0,0,.13); }
 
-/* Re-translate button inside popup inputs */
 .pf-input-wrap { position:relative; }
 .pf-input-wrap .pf-input { padding-right:36px; }
 .pf-input-wrap .pf-retrans {
@@ -416,8 +376,33 @@
 [dir="rtl"] .pf-input-wrap .pf-input { padding-right:12px; padding-left:36px; }
 [dir="rtl"] .pf-input-wrap .pf-retrans { right:auto; left:7px; }
 
-/* ── Import drop zone hover ── */
 #impDrop:hover { border-color: #2563eb !important; background: #f8faff !important; }
+/* ── Multi-select checkbox dropdown (professions) ── */
+.ms-dd { position:relative; }
+.ms-dd-toggle { display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; text-align:start; width:100%; }
+.ms-dd-panel {
+  display:none; position:absolute; z-index:1200; top:calc(100% + 4px); left:0; right:0;
+  background:#fff; border:1.5px solid #e2e8f0; border-radius:10px;
+  box-shadow:0 12px 34px rgba(15,23,42,.16); overflow:hidden;
+}
+.ms-dd.open .ms-dd-panel { display:block; }
+.ms-dd.open .ms-dd-toggle .fa-chevron-down { transform:rotate(180deg); }
+.ms-dd-search { display:flex; align-items:center; gap:7px; padding:9px 12px; border-bottom:1px solid #f1f5f9; color:#9ca3af; }
+.ms-dd-search input { border:none; outline:none; flex:1; font-size:13px; background:transparent; }
+.ms-dd-list { max-height:220px; overflow-y:auto; padding:4px 0; }
+.ms-dd-opt { display:flex; align-items:center; gap:9px; padding:8px 14px; cursor:pointer; font-size:13px; color:#374151; }
+.ms-dd-opt:hover { background:#eff6ff; }
+.ms-dd-opt input { width:16px; height:16px; accent-color:#2563eb; cursor:pointer; }
+.ms-dd-opt.checked { background:#f0f9ff; font-weight:600; }
+.ms-dd-empty { padding:14px; text-align:center; color:#9ca3af; font-size:12px; }
+.ms-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.ms-chip {
+  display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
+  background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:16px;
+  font-size:12px; font-weight:600;
+}
+.ms-chip button { border:none; background:transparent; color:#1d4ed8; cursor:pointer; font-size:11px; line-height:1; padding:0; opacity:.7; }
+.ms-chip button:hover { opacity:1; }
 </style>
 {% endblock %}
 
@@ -468,7 +453,6 @@
   </div>
 </div>
 
-<!-- Filter Popup -->
 <div class="pl-filter-popup" id="plFP">
   <div class="plfp-row"><select class="plfp-select" id="plfpMatch"><option value="AND">{% if ar %}يطابق مع الكل{% else %}Match All{% endif %}</option><option value="OR">{% if ar %}يطابق أي{% else %}Match Any{% endif %}</option></select></div>
   <div class="plfp-row"><select class="plfp-select" id="plfpCond"><option value="contains">{% if ar %}يحتوي{% else %}Contains{% endif %}</option><option value="equals">{% if ar %}يساوي{% else %}Equals{% endif %}</option><option value="startsWith">{% if ar %}يبدأ بـ{% else %}Starts With{% endif %}</option><option value="notContains">{% if ar %}لا يحتوي{% else %}Not Contains{% endif %}</option></select></div>
@@ -477,11 +461,6 @@
   <div class="plfp-footer"><button class="plfp-btn-clear" onclick="clearCF()">{% if ar %}مسح{% else %}Clear{% endif %}</button><button class="plfp-btn-apply" onclick="applyCF()">{% if ar %}تطبيق{% else %}Apply{% endif %}</button></div>
 </div>
 
-{# ════════════════════════════════════════════════════════════════
-   EMPLOYEE MODAL
-   bf() macro = bilingual text field: TWO inputs, EN left / AR right, auto-translate
-   sf() macro = single field: ONE input only, value/label in portal language
-════════════════════════════════════════════════════════════════ #}
 <div class="modal fade" id="empModal" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content" style="border:none;border-radius:8px;overflow:hidden;">
@@ -527,7 +506,6 @@
             <div class="acc-body {% if not open %}hidden{% endif %}" id="body-{{ key }}">
 {% endmacro %}
 
-{# Bilingual field: EN input (left) + AR input (right), both real, auto-translate #}
 {% macro bf(fname, len, lar, req=False) %}
               <div class="field-item">
                 <div class="field-label" dir="ltr" style="text-align:left">
@@ -569,7 +547,6 @@
               </div>
 {% endmacro %}
 
-{# Single field: ONE input only — number/date. #}
 {% macro sf(fname, ten, tar, ftype='text', req=False, span2=False) %}
               <div class="field-item{% if span2 %}" style="grid-column:1/-1;max-width:calc(50% - 8px){% endif %}">
                 <div class="field-label">{% if ar %}{{ tar }}{% else %}{{ ten }}{% endif %}{% if req %}<span class="field-req">*</span>{% endif %}</div>
@@ -580,7 +557,6 @@
               </div>
 {% endmacro %}
 
-{# Single dropdown #}
 {% macro sd(fname, ten, tar, span2=False) %}
               <div class="field-item{% if span2 %}" style="grid-column:1/-1;max-width:calc(50% - 8px){% endif %}">
                 <div class="field-label">{% if ar %}{{ tar }}{% else %}{{ ten }}{% endif %}</div>
@@ -589,7 +565,6 @@
               </div>
 {% endmacro %}
 
-          {# ══ 1. PERSONAL INFORMATION ══ #}
           {{ sec('personal','user-circle','Personal Information','المعلومات الشخصية',True) }}
               <div class="field-row">
                 {{ bf('name','Name','الاسم',True) }}
@@ -614,18 +589,21 @@
                       <i class="fas fa-plus"></i>{% if ar %}إضافة{% else %}Add{% endif %}
                     </button>
                   </div>
-                  <select name="profession" id="f_profession" class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"></select>
-                  <input type="hidden" name="profession_ar" id="f_profession_arval">
-                </div>
-              </div>
-              <div class="field-row">
-                <div class="field-item">
-                  <div class="field-label">{% if ar %}نوع الموظف{% else %}Employee Type{% endif %}</div>
-                  <div class="mcq-wrap" id="empTypeGrp">
-                    <label class="mcq-opt chosen" onclick="pickMCQ('empTypeGrp',this,'f_employee_type','skilled')"><input type="radio">{% if ar %}مزدور{% else %}Skilled{% endif %}</label>
-                    <label class="mcq-opt" onclick="pickMCQ('empTypeGrp',this,'f_employee_type','non_skilled')"><input type="radio">{% if ar %}غير مزدور{% else %}Non-Skilled{% endif %}</label>
+                  <div class="ms-dd" id="profDD">
+                    <button type="button" class="field-input ms-dd-toggle" id="profDDToggle" onclick="toggleProfDD(event)">
+                      <span id="profDDLabel">{% if ar %}اختر المهن...{% else %}Select professions...{% endif %}</span>
+                      <i class="fas fa-chevron-down" style="font-size:11px;opacity:.6;"></i>
+                    </button>
+                    <div class="ms-dd-panel" id="profDDPanel">
+                      <div class="ms-dd-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="profDDSearch" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" oninput="filterProfDD(this.value)">
+                      </div>
+                      <div class="ms-dd-list" id="profDDList"></div>
+                    </div>
                   </div>
-                  <input type="hidden" name="employee_type" id="f_employee_type" value="skilled">
+                  <div id="profChips" class="ms-chips"></div>
+                  <input type="hidden" name="profession_ar" id="f_profession_arval">
                 </div>
               </div>
               <hr style="border-color:#f1f5f9;margin:16px 0;">
@@ -655,7 +633,6 @@
             </div>
           </div>
 
-          {# ══ 2. DOCUMENT UPLOAD ══ #}
           {{ sec('docs','upload','Document Upload','تحميل المستندات') }}
               <div id="docFilesList"></div>
               <div style="margin-top:8px;">
@@ -669,7 +646,6 @@
             </div>
           </div>
 
-          {# ══ 3. CONTACT INFORMATION ══ #}
           {{ sec('contact','phone-alt','Contact Information','معلومات الاتصال') }}
               <div class="field-row">
                 {{ sf('mobile','Mobile Number','رقم الجوال') }}
@@ -687,7 +663,6 @@
             </div>
           </div>
 
-          {# ══ 4. SALARY INFORMATION ══ #}
           {{ sec('salary','money-bill-wave','Salary Information','معلومات الراتب') }}
               <div style="margin-bottom:18px;">
                 <div class="field-label" style="margin-bottom:8px;">{% if ar %}نوع الراتب{% else %}Salary Type{% endif %}</div>
@@ -706,7 +681,6 @@
                            class="field-input" dir="ltr" step="0.01" min="0" placeholder="0.00" style="flex:1;">
                     <select name="po_rate_unit" id="f_po_rate_unit" class="field-input" style="width:120px;">
                       <option value="hour">{% if ar %}/ ساعة{% else %}Per Hour{% endif %}</option>
-                      <option value="day">{% if ar %}/ يوم{% else %}Per Day{% endif %}</option>
                       <option value="month">{% if ar %}/ شهر{% else %}Per Month{% endif %}</option>
                     </select>
                   </div>
@@ -757,7 +731,7 @@
                          class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
                          style="background:#f0fdf4;color:#15803d;font-weight:600;"
                          step="0.01" min="0" placeholder="0.00" readonly
-                         title="{% if ar %}محسوب: (الأساسي ÷ 30 ÷ ساعات العمل) × نسبة الأوفرتايم{% else %}Auto: (Basic ÷ 30 ÷ Hours) × Ratio{% endif %}">
+                         title="{% if ar %}محسوب: (الأساسي ÷ 30 × 8) × نسبة الأوفرتايم{% else %}Auto: (Basic ÷ 30 × 8) × Overtime Ratio{% endif %}">
                 </div>
               </div>
 
@@ -806,7 +780,6 @@
             </div>
           </div>
 
-          {# ══ 5. WORK INFORMATION ══ #}
           {{ sec('work','info-circle','Work Information','معلومات العمل') }}
               <div class="field-row">
                 <div class="field-item">
@@ -851,7 +824,7 @@
                 </div>
               </div>
 
-              {% for fid, en_lbl, ar_lbl in [('company','Company','الشركة'),('department','Department','القسم'),('section','Section','القطاع')] %}
+              {% for fid, en_lbl, ar_lbl in [('department','Department','القسم'),('section','Section','القطاع')] %}
               <div class="field-row" style="margin-bottom:10px;">
                 <div class="field-item">
                   <div class="field-label">{{ en_lbl }}{% if ar %} (EN){% endif %}</div>
@@ -874,7 +847,6 @@
             </div>
           </div>
 
-          {# ══ 6. HOSTEL INFORMATION ══ #}
           {{ sec('hostel','home','Hostel Information','معلومات السكن') }}
               <div class="field-row">
                 {{ bf('hostel_name','Hostel Name','اسم السكن') }}
@@ -888,7 +860,6 @@
             </div>
           </div>
 
-          {# ══ 7. BANKING INFORMATION ══ #}
           {{ sec('bank','university','Banking Information','معلومات البنك') }}
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
                 <div style="font-size:13px;font-weight:700;color:#374151;display:flex;align-items:center;gap:8px;">
@@ -906,7 +877,6 @@
             </div>
           </div>
 
-          {# ══ 8. OFFICE USE ══ #}
           {{ sec('office','briefcase','Office Use','معلومات المكتب') }}
               <div class="field-row">
                 {{ bf('crn','CRN','رقم السجل التجاري') }}
@@ -937,14 +907,13 @@
       <div class="modal-footer-bar">
         <button type="button" class="btn-footer btn-footer-reset" onclick="resetEmpForm()"><i class="fas fa-redo me-1"></i>{% if ar %}إعادة تعيين{% else %}Reset{% endif %}</button>
         <button type="button" class="btn-footer btn-footer-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button type="button" class="btn-footer btn-footer-save" onclick="if(validateForm(document.getElementById('empForm'))){injectEmpBanks();document.getElementById('empForm').submit();}"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+        <button type="button" class="btn-footer btn-footer-save" onclick="if(validateForm(document.getElementById('empForm'))){injectEmpBanks();injectProfessionIds();document.getElementById('empForm').submit();}"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
       </div>
 
     </div>
   </div>
 </div>
 
-<!-- ══ EMPLOYEE ALLOWANCES POPUP ══ -->
 <div class="modal fade" id="allowPopup" tabindex="-1" style="z-index:1060;">
   <div class="modal-dialog modal-md">
     <div class="modal-content" style="border:none;border-radius:10px;overflow:hidden;">
@@ -995,7 +964,6 @@
   </div>
 </div>
 
-<!-- View Modal -->
 <div class="modal fade" id="viewEmpModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content" style="border:none;border-radius:8px;overflow:hidden;">
@@ -1014,7 +982,6 @@
   </div>
 </div>
 
-<!-- Delete Modal -->
 <div class="modal fade" id="delModal" tabindex="-1">
   <div class="modal-dialog modal-sm"><div class="modal-content">
     <div class="modal-header border-0"><h6 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>{% if ar %}تأكيد الحذف{% else %}Confirm Delete{% endif %}</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
@@ -1026,7 +993,6 @@
   </div></div>
 </div>
 
-<!-- ══ EMPLOYEE BANK POPUP MODAL ══ -->
 <div class="modal fade pf-bank-modal" id="bankModal_emp" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -1093,7 +1059,6 @@
   </div>
 </div>
 
-{# ── Quick Add Profession Modal ── #}
 <div class="modal fade" id="addProfModal" tabindex="-1" style="z-index:1080;">
   <div class="modal-dialog modal-sm">
     <div class="modal-content" style="border-radius:10px;overflow:hidden;">
@@ -1130,7 +1095,6 @@
   </div>
 </div>
 
-{# ── Quick Add Allowance Type Modal ── #}
 <div class="modal fade" id="addAllowTypeModal" tabindex="-1" style="z-index:1090;">
   <div class="modal-dialog modal-sm">
     <div class="modal-content" style="border-radius:10px;overflow:hidden;">
@@ -1171,9 +1135,6 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-  EMPLOYEE EXCEL IMPORT — MODAL
-═══════════════════════════════════════════════════════════════════ -->
 <div class="modal fade" id="empImportModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content" style="border:none;border-radius:14px;overflow:hidden;box-shadow:0 24px 70px rgba(15,23,42,.25);">
@@ -1181,9 +1142,7 @@
         <h5><i class="fas fa-file-import me-2"></i>{% if ar %}استيراد الموظفين من إكسل{% else %}Import Employees from Excel{% endif %}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-
       <div class="modal-body" style="background:#f8fafc;padding:22px;">
-
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
           <div style="font-size:12.5px;color:#6b7280;">
             <i class="fas fa-info-circle me-1" style="color:#2563eb;"></i>
@@ -1193,7 +1152,6 @@
             <i class="fas fa-file-download me-1"></i>{% if ar %}تحميل القالب{% else %}Download Sample Template{% endif %}
           </a>
         </div>
-
         <div id="impDrop"
              style="border:2px dashed #cbd5e1;border-radius:12px;background:#fff;padding:34px 20px;text-align:center;cursor:pointer;transition:border-color .15s, background .15s;"
              onclick="document.getElementById('impFile').click()"
@@ -1213,7 +1171,6 @@
           </div>
           <input type="file" id="impFile" accept=".xlsx,.xls" style="display:none;" onchange="impFilePicked(this)">
         </div>
-
         <div id="impProgress" style="display:none;margin-top:16px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
             <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
@@ -1223,9 +1180,7 @@
             <div id="impBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width:100%;background:linear-gradient(90deg,#2563eb,#0d9488);"></div>
           </div>
         </div>
-
         <div id="impError" class="alert alert-danger" style="display:none;margin-top:14px;border-radius:10px;font-size:13px;"></div>
-
         <div id="impSummary" style="display:none;margin-top:16px;">
           <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;">
             <div style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;padding:12px 18px;font-weight:700;font-size:13.5px;">
@@ -1239,7 +1194,6 @@
               <div style="background:#fff;padding:14px;text-align:center;"><div id="impEmpty" style="font-size:22px;font-weight:800;color:#6b7280;">0</div><div style="font-size:11px;color:#6b7280;font-weight:600;">{% if ar %}صفوف فارغة{% else %}Empty Skipped{% endif %}</div></div>
             </div>
           </div>
-
           <div id="impFailedWrap" style="display:none;margin-top:14px;background:#fff;border:1.5px solid #fca5a5;border-radius:12px;overflow:hidden;">
             <div style="background:#fef2f2;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;">
               <span style="font-weight:700;font-size:12.5px;color:#b91c1c;"><i class="fas fa-exclamation-triangle me-2"></i>{% if ar %}السجلات الفاشلة{% else %}Failed Records{% endif %}</span>
@@ -1264,7 +1218,6 @@
           </div>
         </div>
       </div>
-
       <div class="modal-footer-bar">
         <button type="button" class="btn-footer btn-footer-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إغلاق{% else %}Close{% endif %}</button>
         <button type="button" id="impStartBtn" class="btn-footer btn-footer-save" onclick="startImport()" disabled style="opacity:.5;">
@@ -1279,9 +1232,6 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
 <script>
-// ═══════════════════════════════════════════════════════════════
-// CONSTANTS & GLOBALS
-// ═══════════════════════════════════════════════════════════════
 const TR    = '{{ url_for("sellers.translate_text") }}';
 const CSRF  = '{{ csrf_token() }}';
 const IS_AR = {{ 'true' if ar else 'false' }};
@@ -1291,7 +1241,6 @@ const BYURL = '{{ url_for("lookups.buyers_data") }}';
 const AT_URL = '{{ url_for("lookups.allowance_types_data") }}';
 const ADM   = {{ 'true' if current_user.is_admin() else 'false' }};
 
-// Bilingual column labels for AG Grid
 const S = IS_AR ? {
   code:'الكود', name:'الاسم', prof:'المهنة', kafeel:'الكفيل', ref:'المرجع',
   nat:'الجنسية', bdate:'تاريخ الميلاد', age:'العمر', iqama:'الإقامة',
@@ -1304,7 +1253,6 @@ const S = IS_AR ? {
   basic:'Basic Salary', net:'Net Salary', status:'Status', actions:'Actions',
 };
 
-// ════════ GLOBAL STATE ════════
 let _profCache = null, _buyerCache = null, _atCache = null;
 let _currentEmpId  = null;
 let _editingRowId  = null;
@@ -1316,7 +1264,6 @@ let _empPendingBanks = [];
 let _empBankEditKey = null;
 let _ebTimer = null;
 
-// ════════ NATIONALITIES ════════
 const NATS=[
   {en:'Saudi',ar:'سعودي'},{en:'Pakistani',ar:'باكستاني'},{en:'Indian',ar:'هندي'},
   {en:'Egyptian',ar:'مصري'},{en:'Bangladeshi',ar:'بنغلاديشي'},{en:'Filipino',ar:'فلبيني'},
@@ -1327,8 +1274,6 @@ const NATS=[
   {en:'American',ar:'أمريكي'},{en:'German',ar:'ألماني'},{en:'Chinese',ar:'صيني'},
   {en:'Other',ar:'أخرى'}
 ];
-
-// ════════ UTILITY FUNCTIONS ════════
 
 function fillStaticDropdown(selectId, hiddenArId, list, placeholder, selectedEn) {
   const sel = document.getElementById(selectId);
@@ -1380,10 +1325,98 @@ function loadAsyncDropdown(url, cacheSetter, cacheGetter, selectId, hiddenArId, 
   });
 }
 
-function initProfession(selectedEn) {
-  loadAsyncDropdown(PRURL, d => _profCache = d, () => _profCache,
-    'f_profession', 'f_profession_arval',
-    IS_AR ? '-- اختر المهنة --' : '-- Select Profession --', selectedEn || '', false);
+let _selectedProfs = [];   // [{id, en, ar, label}]
+
+function initProfession(selectedIds) {
+  // selectedIds: array of profession ids (numbers/strings) to pre-check
+  const pre = (selectedIds || []).map(String);
+  const render = (items) => {
+    _profCache = items;
+    _selectedProfs = items.filter(p => pre.includes(String(p.id)))
+                          .map(p => ({id:p.id, en:p.en, ar:p.ar, label:p.label}));
+    renderProfDDList(items, '');
+    renderProfChips();
+  };
+  if (_profCache) { render(_profCache); return; }
+  fetch(PRURL).then(r => r.json()).then(render).catch(() => {
+    const list = document.getElementById('profDDList');
+    if (list) list.innerHTML = '<div class="ms-dd-empty">'+(IS_AR?'تعذر التحميل':'Failed to load')+'</div>';
+  });
+}
+
+function renderProfDDList(items, filter) {
+  const list = document.getElementById('profDDList');
+  if (!list) return;
+  const f = (filter || '').toLowerCase();
+  const shown = items.filter(p => !f || (p.label||'').toLowerCase().includes(f) || (p.en||'').toLowerCase().includes(f) || (p.ar||'').includes(f));
+  if (!shown.length) { list.innerHTML = '<div class="ms-dd-empty">'+(IS_AR?'لا توجد نتائج':'No matches')+'</div>'; return; }
+  list.innerHTML = shown.map(p => {
+    const checked = _selectedProfs.some(s => String(s.id) === String(p.id));
+    return `<label class="ms-dd-opt ${checked?'checked':''}">
+      <input type="checkbox" value="${p.id}" ${checked?'checked':''} onchange="toggleProf(${p.id}, this.checked)">
+      <span>${p.label || p.en}</span>
+    </label>`;
+  }).join('');
+}
+
+function toggleProf(id, checked) {
+  const p = (_profCache || []).find(x => String(x.id) === String(id));
+  if (!p) return;
+  if (checked) {
+    if (!_selectedProfs.some(s => String(s.id) === String(id)))
+      _selectedProfs.push({id:p.id, en:p.en, ar:p.ar, label:p.label});
+  } else {
+    _selectedProfs = _selectedProfs.filter(s => String(s.id) !== String(id));
+  }
+  renderProfChips();
+  // reflect checked style
+  renderProfDDList(_profCache || [], document.getElementById('profDDSearch')?.value || '');
+}
+
+function renderProfChips() {
+  const chips = document.getElementById('profChips');
+  const label = document.getElementById('profDDLabel');
+  if (label) {
+    label.textContent = _selectedProfs.length
+      ? (_selectedProfs.length + ' ' + (IS_AR?'مهنة مختارة':'selected'))
+      : (IS_AR ? 'اختر المهن...' : 'Select professions...');
+  }
+  if (!chips) return;
+  chips.innerHTML = _selectedProfs.map(s => `
+    <span class="ms-chip">${IS_AR ? (s.ar||s.label) : (s.en||s.label)}
+      <button type="button" onclick="toggleProf(${s.id}, false)"><i class="fas fa-times"></i></button>
+    </span>`).join('');
+  // keep the primary profession hidden field (first selected) for grid/view compat
+  const arHid = document.getElementById('f_profession_arval');
+  if (arHid) arHid.value = _selectedProfs.length ? (_selectedProfs[0].ar || '') : '';
+}
+
+function toggleProfDD(ev) {
+  ev.stopPropagation();
+  document.getElementById('profDD').classList.toggle('open');
+}
+function filterProfDD(v) { renderProfDDList(_profCache || [], v); }
+
+// close dropdown on outside click
+document.addEventListener('click', (e) => {
+  const dd = document.getElementById('profDD');
+  if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+});
+
+// inject profession_ids hidden inputs before submit
+function injectProfessionIds() {
+  document.querySelectorAll('#empForm .prof-hidden').forEach(e => e.remove());
+  const form = document.getElementById('empForm');
+  _selectedProfs.forEach(s => {
+    const h = document.createElement('input');
+    h.type = 'hidden'; h.name = 'profession_ids'; h.value = s.id; h.className = 'prof-hidden';
+    form.appendChild(h);
+  });
+  // primary single profession (first) for backward-compat columns
+  const primary = document.createElement('input');
+  primary.type = 'hidden'; primary.name = 'profession_id'; primary.className = 'prof-hidden';
+  primary.value = _selectedProfs.length ? _selectedProfs[0].id : '';
+  form.appendChild(primary);
 }
 function initBuyer(selectedId) {
   loadAsyncDropdown(BYURL, d => _buyerCache = d, () => _buyerCache,
@@ -1391,7 +1424,6 @@ function initBuyer(selectedId) {
     IS_AR ? '-- اختر مشتري --' : '-- Select a Buyer --', selectedId || '', true);
 }
 
-// ════════ MCQ ════════
 function pickMCQ(grpId, btn, hidId, val) {
   document.querySelectorAll('#'+grpId+' .mcq-opt').forEach(b => b.classList.remove('chosen'));
   btn.classList.add('chosen');
@@ -1414,8 +1446,6 @@ function setMCQ(grpId, val, hidId) {
     const matches = (val === 'day' && (txt.includes('Day')||txt.includes('نهاري'))) ||
                     (val === 'night' && (txt.includes('Night')||txt.includes('ليلي'))) ||
                     (val === 'rotating' && (txt.includes('Rotating')||txt.includes('متناوب'))) ||
-                    (val === 'skilled' && (txt.includes('Skilled')||txt.includes('مزدور')) && !txt.includes('Non') && !txt.includes('غير')) ||
-                    (val === 'non_skilled' && (txt.includes('Non-Skilled')||txt.includes('غير مزدور'))) ||
                     (val === 'salary' && (txt.includes('Salary')||txt.includes('راتب')) && !txt.includes('Kafalat')) ||
                     (val === 'azad' && (txt.includes('Azad')||txt.includes('أزاد'))) ||
                     (val === 'active' && (txt.includes('Active')||txt.includes('نشيط'))) ||
@@ -1428,7 +1458,6 @@ function setMCQ(grpId, val, hidId) {
   if (h) h.value = val;
 }
 
-// ════════ AGE ════════
 function calcAge() {
   const bd = document.getElementById('f_birth_date');
   const disp = document.getElementById('f_age_display');
@@ -1441,7 +1470,6 @@ function calcAge() {
   disp.value = IS_AR ? `${y} سنة ${m} شهر ${d} يوم` : `${y} Yrs ${m} Mo ${d} Days`;
 }
 
-// ════════ HIJRI CALENDAR ════════
 function gregToHijri(dateStr) {
   if (!dateStr) return '';
   try {
@@ -1475,7 +1503,6 @@ function wireHijriBadges() {
   });
 }
 
-// ════════ NET SALARY ════════
 function calcNet() {
   const basic      = parseFloat(document.getElementById('f_basic_salary')?.value    || 0) || 0;
   const totalAllow = parseFloat(document.getElementById('f_total_allowances')?.value || 0) || 0;
@@ -1486,22 +1513,19 @@ function calcNet() {
   if (hidEl) hidEl.value = net.toFixed(2);
 }
 
-// ════════ OVERTIME AUTO-CALCULATION ════════
 function calcOvertimeRate() {
   const basic   = parseFloat(document.getElementById('f_basic_salary')?.value  || 0) || 0;
-  const hours   = parseFloat(document.getElementById('f_working_hours')?.value  || 0) || 0;
   const ratio   = parseFloat(document.getElementById('f_overtime_ratio')?.value || 0) || 0;
   const otEl    = document.getElementById('f_overtime_rate');
   if (!otEl) return;
-  if (basic > 0 && hours > 0 && ratio > 0) {
-    const otRate = (basic / 30 / hours) * ratio;
-    otEl.value = otRate.toFixed(4);
+  if (basic > 0 && ratio > 0) {
+    const otRate = (basic / 30 * 8) * ratio;
+    otEl.value = otRate.toFixed(2);
   } else {
     otEl.value = '';
   }
 }
 
-// ════════ DOCUMENT UPLOAD ════════
 const DOC_TYPE_OPTIONS = [
   {en:'ID Card',ar:'بطاقة الهوية'},
   {en:'Passport',ar:'جواز السفر'},
@@ -1553,7 +1577,6 @@ function onDocFilePick(inp, serial) {
   }
 }
 
-// ════════ ACCORDION ════════
 function togAcc(key) {
   const body = document.getElementById('body-'+key);
   const btn = body.previousElementSibling;
@@ -1563,7 +1586,6 @@ function togAcc(key) {
   if (arr) arr.style.transform = hidden ? '' : 'rotate(180deg)';
 }
 
-// ════════ BILINGUAL TRANSLATE ════════
 const _biTimers = {}, _biLock = {};
 
 function biTrans(srcId, tgtId, srcLang) {
@@ -1633,7 +1655,6 @@ function biRetrans(srcId, tgtId, srcLang) {
   .catch(() => { if (spin) spin.innerHTML = ''; });
 }
 
-// Generic pair translator for popup modals
 const _pairTimers = {};
 function biTransPair(srcId, tgtId, srcLang) {
   const src = document.getElementById(srcId), tgt = document.getElementById(tgtId);
@@ -1663,7 +1684,6 @@ function biTransRetrans(srcId, tgtId, srcLang) {
   .catch(() => {});
 }
 
-// ════════ FORM RESET ════════
 function resetEmpForm() {
   document.querySelectorAll('#empForm input[type="text"], #empForm input[type="number"], #empForm input[type="date"], #empForm input[type="email"]').forEach(el => el.value = '');
   document.querySelectorAll('#empForm input[type="hidden"]').forEach(el => {
@@ -1694,6 +1714,10 @@ function resetEmpForm() {
   if (docList) docList.innerHTML = '';
   _docSerial = 0;
 
+  _selectedProfs = [];
+  renderProfChips();
+  if (_profCache) renderProfDDList(_profCache, '');
+
   _empPendingBanks = [];
   const bankList = document.getElementById('bankList_emp');
   if (bankList) bankList.innerHTML = '<div class="pf-empty"><i class="fas fa-university"></i>'+(IS_AR?'لا توجد حسابات بنكية':'No bank accounts yet')+'</div>';
@@ -1703,13 +1727,11 @@ function resetEmpForm() {
   document.querySelectorAll('.mcq-opt').forEach(b => b.classList.remove('chosen'));
   setMCQ('shiftGrp',   'day',     'f_shift_type');
   setMCQ('passLocGrp', 'IN',      'f_passport_location');
-  setMCQ('empTypeGrp', 'skilled', 'f_employee_type');
   setMCQ('salTypeGrp', 'salary',  'f_salary_type');
   setMCQ('workStatusGrp', 'active', 'f_work_status');
   document.querySelectorAll('.hijri-badge').forEach(b => b.style.display='none');
 }
 
-// ════════ VALIDATE FORM ════════
 function validateForm(form) {
   const reqFields = form.querySelectorAll('[required]');
   for (let el of reqFields) {
@@ -1722,14 +1744,13 @@ function validateForm(form) {
   return true;
 }
 
-// ════════ MODAL: ADD ════════
 function openAddEmp() {
   document.getElementById('empModalTitle').textContent = IS_AR ? 'تفاصيل الموظف' : 'Employee Details';
   document.getElementById('empForm').action = '{{ url_for("employees.add_employee") }}';
   document.getElementById('empFormId').value = '';
   resetEmpForm();
   initNationality('');
-  initProfession('');
+  initProfession([]);
   initBuyer('');
   setTimeout(wireHijriBadges, 50);
   _currentEmpId  = null;
@@ -1738,7 +1759,6 @@ function openAddEmp() {
   setAllowBtn(true);
 }
 
-// ════════ MODAL: EDIT ════════
 function openEditEmp(id) {
   document.getElementById('empModalTitle').textContent = IS_AR ? 'تعديل موظف' : 'Edit Employee';
   document.getElementById('empForm').action = '/employees/' + id + '/edit';
@@ -1762,7 +1782,7 @@ function openEditEmp(id) {
       if (arr) arr.value = d[f+'_ar'] || '';
     });
 
-    ['company','department','section'].forEach(f => {
+    ['department','section'].forEach(f => {
       const en = document.getElementById('f_'+f+'_en');
       const arr = document.getElementById('f_'+f+'_ar');
       if (en) en.value = d[f] || '';
@@ -1784,7 +1804,6 @@ function openEditEmp(id) {
     if (nd) nd.value = d.net_salary ? Number(d.net_salary).toFixed(2) : '0.00';
     document.getElementById('f_total_allowances').value = (d.total_allowances || 0).toFixed(2);
 
-    setMCQ('empTypeGrp', d.employee_type || 'skilled', 'f_employee_type');
     setMCQ('salTypeGrp', d.salary_type || 'salary', 'f_salary_type');
     setMCQ('shiftGrp', d.shift_type || 'day', 'f_shift_type');
     setMCQ('workStatusGrp', d.work_status || 'active', 'f_work_status');
@@ -1794,7 +1813,7 @@ function openEditEmp(id) {
     if (puEl && d.po_rate_unit) puEl.value = d.po_rate_unit;
 
     initNationality(d.nationality || '');
-    initProfession(d.profession || '');
+    initProfession(d.profession_ids || []);
     initBuyer(d.buyer_id || '');
 
     calcAge();
@@ -1810,7 +1829,6 @@ function openEditEmp(id) {
   });
 }
 
-// ════════ VIEW ════════
 let currentViewId = null;
 function viewDateFmt(dateStr) {
   if (!dateStr) return '';
@@ -1839,8 +1857,7 @@ function openViewEmp(id) {
       [IS_AR?'الجنسية':'Nationality', (IS_AR && d.nationality_ar ? d.nationality_ar : d.nationality) || na],
       [IS_AR?'تاريخ الميلاد':'Birth Date', viewDateFmt(d.birth_date) || na],
       [IS_AR?'العمر':'Age', calcAgeStr(d.birth_date)],
-      [IS_AR?'المهنة':'Profession', (IS_AR && d.profession_ar ? d.profession_ar : d.profession) || na],
-      [IS_AR?'نوع الموظف':'Employee Type', d.employee_type || na],
+      [IS_AR?'المهنة':'Profession', ((d.professions && d.professions.length) ? d.professions.map(p => IS_AR ? (p.name_ar || p.name_en) : p.name_en).join('، ') : ((IS_AR && d.profession_ar ? d.profession_ar : d.profession) || na))],
       [IS_AR?'رقم الإقامة':'Iqama Number', d.iqama_number || na],
       [IS_AR?'انتهاء الإقامة':'Iqama Expiry', viewDateFmt(d.iqama_expiry) || na],
       [IS_AR?'رقم الجواز':'Passport Number', d.passport_number || na],
@@ -1871,7 +1888,6 @@ function editFromView() {
   setTimeout(() => openEditEmp(currentViewId), 300);
 }
 
-// ════════ ALLOWANCES ════════
 function setAllowBtn(enabled) {
   const btn = document.getElementById('btnAllowances');
   if (!btn) return;
@@ -2054,7 +2070,6 @@ function onAllowPopupClose() {
   }
 }
 
-// ════════ EMPLOYEE BANKING ════════
 let _bankSerial = 0;
 
 function openEmpBank(key) {
@@ -2175,7 +2190,6 @@ function injectEmpBanks() {
   });
 }
 
-// ════════ BI WRAP ════════
 function biWrap(el, targetId, dir) {
   const src = (el instanceof Element ? el : event.target).value.trim();
   if (!src) return;
@@ -2206,7 +2220,6 @@ function biWrapRetrans(srcVal, targetId, toLang) {
   .catch(() => {});
 }
 
-// ════════ QUICK ADD PROFESSION ════════
 function openAddProfModal() {
   ['qp_name_en','qp_name_ar'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   const errEl=document.getElementById('qp_error'); if(errEl) errEl.style.display='none';
@@ -2223,16 +2236,16 @@ function saveQuickProfession() {
     body:JSON.stringify({profession_en:en,profession_ar:ar_val})
   }).then(r=>r.json()).then(d=>{
     if(d.ok){
-      _profCache=null;
       bootstrap.Modal.getInstance(document.getElementById('addProfModal'))?.hide();
-      const curVal=document.getElementById('f_profession')?.value||'';
-      initProfession(curVal);
-      if(d.id) setTimeout(()=>{const s=document.getElementById('f_profession');if(s)s.value=d.id;},500);
+      // remember current selections, refresh the master list, then re-check + add the new one
+      const keepIds = _selectedProfs.map(s => s.id);
+      if (d.id) keepIds.push(d.id);
+      _profCache = null;
+      initProfession(keepIds);
     } else {if(errEl){errEl.textContent=d.error||'Error';errEl.style.display='block';}}
   }).catch(()=>{if(errEl){errEl.textContent='Server error';errEl.style.display='block';}});
 }
 
-// ════════ QUICK ADD ALLOWANCE TYPE ════════
 function openAddAllowTypeModal() {
   ['qat_code','qat_name_en','qat_name_ar'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   const errEl=document.getElementById('qat_error'); if(errEl) errEl.style.display='none';
@@ -2257,7 +2270,6 @@ function saveQuickAllowType() {
   }).catch(()=>{if(errEl){errEl.textContent='Server error';errEl.style.display='block';}});
 }
 
-// ════════ AG GRID ════════
 function rCode(p) { return p.value ? `<span class="code-badge">${p.value}</span>` : ''; }
 function rStatus(p) { return p.value ? `<span class="st-pill st-active"><i class="fas fa-circle" style="font-size:6px;"></i>${IS_AR?'نشيط':'Active'}</span>` : `<span class="st-pill st-inactive"><i class="fas fa-circle" style="font-size:6px;"></i>${IS_AR?'غير نشيط':'Inactive'}</span>`; }
 function rNum(p) { return p.value ? Number(p.value).toLocaleString() : '—'; }
@@ -2345,7 +2357,6 @@ function upd() {
   document.getElementById('pageInfo').textContent = `${disp} ${IS_AR?'سجل':'records'}`;
 }
 
-// ════════ FILTER POPUP ════════
 let _aC = null;
 document.addEventListener('click', e => {
   if (!e.target.closest('.pl-filter-popup') && !e.target.closest('.plfilt'))
@@ -2393,7 +2404,6 @@ function injFI() {
 }
 setTimeout(injFI, 800);
 
-// ════════ DELETE ════════
 function confDel(url, name) {
   document.getElementById('delForm').action = url;
   document.getElementById('delTxt').textContent = (IS_AR?'حذف: ':'Delete: ') + name + '?';
@@ -2402,9 +2412,6 @@ function confDel(url, name) {
 
 document.getElementById('empForm').addEventListener('submit', () => setTimeout(loadData, 700));
 
-// ═══════════════════════════════════════════════════════════════
-// EMPLOYEE EXCEL IMPORT — JS
-// ═══════════════════════════════════════════════════════════════
 let _impFile = null;
 
 function openImportModal() {
@@ -2526,7 +2533,6 @@ function startImport() {
   });
 }
 
-// Wire import button click event
 document.addEventListener('DOMContentLoaded', function() {
   var btn = document.getElementById('btnImportExcel');
   if (btn) {
@@ -2535,9 +2541,7 @@ document.addEventListener('DOMContentLoaded', function() {
         openImportModal();
       } else {
         var modalEl = document.getElementById('empImportModal');
-        if (modalEl) {
-          new bootstrap.Modal(modalEl).show();
-        }
+        if (modalEl) { new bootstrap.Modal(modalEl).show(); }
       }
     });
   }

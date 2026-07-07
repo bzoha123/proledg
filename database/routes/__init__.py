@@ -5,4 +5,5 @@ from .employees import employees_bp
 from .work_allocations import wa_bp
 from .invoices import inv_bp
 from .purchase import pur_bp
+from .sales import sale_bp
 from .lookups import lookups_bp

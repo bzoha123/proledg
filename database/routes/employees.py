@@ -4,7 +4,8 @@ from flask import (Blueprint, render_template, redirect, url_for, flash,
                    request, current_app, jsonify, session)
 from flask_login import login_required, current_user
 from models import (db, Employee, EmployeeAllowance, AllowanceType,
-                    EmployeeBank, EmployeeDocument, ProfessionMaster, BuyerMaster)
+                    EmployeeBank, EmployeeDocument, ProfessionMaster, BuyerMaster,
+                    EmployeeProfession)
 from functools import wraps
 
 employees_bp = Blueprint('employees', __name__)
@@ -23,7 +24,7 @@ def admin_required(f):
 def generate_code():
     last = Employee.query.order_by(Employee.id.desc()).first()
     num = (last.id + 1) if last else 1
-    return f'EMP-{num:02d}'
+    return f'EMP-{num:04d}'
 
 def parse_date(v):
     if not v: return None
@@ -42,8 +43,6 @@ def save_upload(file, emp_id, subfolder='employees'):
 
 
 def save_documents(emp_id, req):
-    """Save each uploaded file as its own EmployeeDocument row.
-    Pairs documents[] with document_type[] by index."""
     files = req.files.getlist('documents[]')
     types = req.form.getlist('document_type[]')
     for i, f in enumerate(files):
@@ -61,7 +60,38 @@ def save_documents(emp_id, req):
         ))
 
 
-# Fields that exist as columns on Employee (employee_type intentionally removed)
+def save_professions(emp_id, req):
+    """Save multiple professions from profession_ids form field.
+    Stores each profession's name (EN + AR) in employee_professions,
+    and mirrors the first selected profession into the employee's single
+    profession_id / profession / profession_ar columns (grid & view use them)."""
+    from models import ProfessionMaster, Employee
+    EmployeeProfession.query.filter_by(employee_id=emp_id).delete()
+    prof_ids = req.form.getlist('profession_ids')
+    clean_ids = [int(p) for p in prof_ids if p and str(p).strip()]
+    for pid in clean_ids:
+        pm = ProfessionMaster.query.get(pid)
+        db.session.add(EmployeeProfession(
+            employee_id=emp_id,
+            profession_id=pid,
+            profession_name=(pm.name_en if pm else None),
+            profession_name_ar=(pm.name_ar if pm else None),
+        ))
+    # mirror primary (first) into single columns for grid/view display
+    emp = Employee.query.get(emp_id)
+    if emp is not None:
+        if clean_ids:
+            primary = ProfessionMaster.query.get(clean_ids[0])
+            if primary:
+                emp.profession_id = primary.id
+                emp.profession    = primary.name_en
+                emp.profession_ar = primary.name_ar or ''
+        else:
+            emp.profession_id = None
+            emp.profession = ''
+            emp.profession_ar = ''
+
+
 TEXT_FIELDS = [
     'name', 'name_ar', 'kafeel_name', 'kafeel_name_ar', 'kafeel_reference', 'kafeel_reference_ar',
     'nationality', 'nationality_ar', 'passport_number', 'entry_number', 'iqama_number',
@@ -99,10 +129,7 @@ def bind_employee(emp, f):
     buyer_id = f.get('buyer_id')
     emp.buyer_id = int(buyer_id) if buyer_id else None
 
-    # ── Server-side computed values (never trust the posted totals) ──
     emp.overtime_rate = _calc_overtime_rate(emp)
-    # net_salary is basic + total_allowances; total_allowances is recomputed
-    # in _recalc_totals() after allowances are saved, so set a provisional here.
     emp.net_salary = (emp.basic_salary or 0) + (emp.total_allowances or 0)
 
 def _calc_overtime_rate(emp):
@@ -110,14 +137,12 @@ def _calc_overtime_rate(emp):
     ratio = float(emp.overtime_ratio or 0)
     if basic <= 0 or ratio <= 0:
         return 0
-    # (basic / 30 * 8) * ratio — same for per hour and per month
     return round(basic / 30 * 8 * ratio, 2)
 
 def save_allowances(emp_id, f):
-    """Rebuild allowances from hidden inputs allow_type_id[] + allow_amount[]."""
+    EmployeeAllowance.query.filter_by(employee_id=emp_id).delete()
     type_ids = f.getlist('allow_type_id[]')
     amounts  = f.getlist('allow_amount[]')
-    EmployeeAllowance.query.filter_by(employee_id=emp_id).delete()
     for type_id, amt in zip(type_ids, amounts):
         if not type_id:
             continue
@@ -134,8 +159,6 @@ def save_allowances(emp_id, f):
         ))
 
 def save_banks_from_form(emp_id, f):
-    """Rebuild banks from hidden inputs banks[i][field] submitted with the form.
-    (Banks are buffered in a JS array and injected on submit — no live API.)"""
     banks = {}
     for key in f:
         if key.startswith('banks['):
@@ -154,7 +177,7 @@ def save_banks_from_form(emp_id, f):
             continue
         is_primary = str(d.get('is_primary', '')).lower() in ('1', 'true', 'on', 'yes')
         if is_primary and made_primary:
-            is_primary = False           # enforce single primary
+            is_primary = False
         if is_primary:
             made_primary = True
         db.session.add(EmployeeBank(
@@ -179,7 +202,9 @@ def _recalc_totals(emp_id):
     emp.net_salary = float(emp.basic_salary or 0) + total
 
 
-# ─── ROUTES ──────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
+# ROUTES
+# ═══════════════════════════════════════════════════════════
 
 @employees_bp.route('/employees')
 @login_required
@@ -227,6 +252,15 @@ def employee_json(id):
     def d(v): return v.strftime('%Y-%m-%d') if v else ''
     def g(f): return getattr(e, f, None) or ''
     allowance_rows = [a.to_dict() for a in e.allowance_rows.order_by(EmployeeAllowance.id).all()]
+
+    # Get multiple professions
+    profession_list = [{
+        'id': p.id,
+        'name_en': p.name_en,
+        'name_ar': p.name_ar or '',
+    } for p in e.professions.all()]
+    profession_ids = [p.id for p in e.professions.all()]
+
     return jsonify({
         'id': e.id, 'employee_code': e.employee_code, 'is_active': e.is_active, 'is_muslim': e.is_muslim,
         'name': g('name'), 'name_ar': g('name_ar'),
@@ -237,6 +271,8 @@ def employee_json(id):
         'passport_number': g('passport_number'), 'passport_expiry': d(e.passport_expiry),
         'entry_number': g('entry_number'), 'iqama_number': g('iqama_number'), 'iqama_expiry': d(e.iqama_expiry),
         'profession': g('profession'), 'profession_ar': g('profession_ar'),
+        'professions': profession_list,
+        'profession_ids': profession_ids,
         'education': g('education'), 'education_ar': g('education_ar'),
         'mobile': g('mobile'), 'address': g('address'), 'address_ar': g('address_ar'), 'email': g('email'),
         'home_city': g('home_city'), 'home_city_ar': g('home_city_ar'),
@@ -280,6 +316,7 @@ def add_employee():
     save_allowances(emp.id, request.form)
     save_banks_from_form(emp.id, request.form)
     save_documents(emp.id, request)
+    save_professions(emp.id, request)
     _recalc_totals(emp.id)
     db.session.commit()
     flash(_t(f'Employee {emp.employee_code} added.', f'تم إضافة الموظف {emp.employee_code}'), 'success')
@@ -295,6 +332,7 @@ def edit_employee(id):
     save_allowances(emp.id, request.form)
     save_banks_from_form(emp.id, request.form)
     save_documents(emp.id, request)
+    save_professions(emp.id, request)
     _recalc_totals(emp.id)
     db.session.commit()
     flash(_t('Employee updated.', 'تم تحديث الموظف'), 'success')
@@ -370,7 +408,8 @@ def delete_allowance_api(a_id):
     _recalc_totals(emp_id); db.session.commit()
     return jsonify({'ok': True})
 
-# ─── EMPLOYEE BANK API (separate employee_banks table) ────────────
+
+# ─── EMPLOYEE BANK API ────────────────────────────────────────────
 
 @employees_bp.route('/employees/<int:emp_id>/banks')
 @login_required
@@ -440,7 +479,7 @@ def delete_employee_bank(bank_id):
     return jsonify({'ok': True})
 
 
-# ─── EMPLOYEE DOCUMENT API (separate employee_documents table) ────
+# ─── EMPLOYEE DOCUMENT API ────────────────────────────────────────
 
 @employees_bp.route('/employees/<int:emp_id>/documents')
 @login_required
@@ -454,7 +493,6 @@ def employee_documents(emp_id):
 @admin_required
 def delete_employee_document(doc_id):
     d = EmployeeDocument.query.get_or_404(doc_id)
-    # best-effort remove the file from disk
     try:
         full = os.path.join(current_app.config['UPLOAD_FOLDER'], d.file_path)
         if os.path.exists(full):

@@ -14,7 +14,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
-from models import db, Employee, ProfessionMaster, BuyerMaster
+from models import db, Employee, ProfessionMaster, BuyerMaster, EmployeeProfession
 
 emp_import_bp = Blueprint('emp_import', __name__)
 log = logging.getLogger('employee_import')
@@ -91,7 +91,8 @@ COLUMNS = [
 HEADERS = [c[0] for c in COLUMNS]
 FIELD_BY_HDR = dict(COLUMNS)
 
-REQUIRED = {'employee_code', 'name', 'joining_date'}
+# Only Name and Joining Date are required — employee_code is auto-generated if blank
+REQUIRED = {'name', 'joining_date'}
 DATE_FLDS = {'passport_expiry', 'iqama_expiry', 'arrival_date', 'birth_date',
              'joining_date', 'end_date_work', 'insurance_expiry'}
 NUM_FLDS = {'basic_salary', 'total_allowances', 'net_salary', 'po_rate',
@@ -116,6 +117,13 @@ def admin_required(f):
             return jsonify({'ok': False, 'error': _t('Access denied.', 'الوصول مرفوض')}), 403
         return f(*args, **kwargs)
     return decorated
+
+
+def generate_emp_code():
+    """Auto-generate employee code: EMP-{last_id+1:04d}"""
+    last = Employee.query.order_by(Employee.id.desc()).first()
+    num = (last.id + 1) if last else 1
+    return f'EMP-{num:04d}'
 
 
 class RowError(Exception):
@@ -180,12 +188,46 @@ def validate_mobile(value):
     return v
 
 
+def lookup_profession_ids(prof_str, lookups):
+    """
+    Parse comma-separated or single profession string.
+    Returns (profession_ids_list, first_profession_name, first_profession_ar_name, error_message_or_None)
+    """
+    if not prof_str:
+        return [], '', '', None
+
+    names = [n.strip() for n in prof_str.split(',') if n.strip()]
+    if not names:
+        return [], '', '', None
+
+    ids = []
+    first_en = ''
+    first_ar = ''
+    for name in names:
+        pid = lookups['professions'].get(name.lower())
+        if pid is None:
+            return [], '', '', f'Profession not found: {name}'
+        ids.append(pid)
+        if not first_en:
+            # Get the display name from lookups
+            prof_obj = ProfessionMaster.query.get(pid)
+            if prof_obj:
+                first_en = prof_obj.name_en or ''
+                first_ar = prof_obj.name_ar or ''
+
+    return ids, first_en, first_ar, None
+
+
 def build_employee(rowvals, lookups, seen_codes):
+    """Validate one row and return (employee_data_dict, profession_ids_list)."""
     data = {}
+
+    # Auto-generate code if blank
     code = clean_str(rowvals.get('employee_code'))
-    name = clean_str(rowvals.get('name'))
     if not code:
-        raise RowError('Employee Code is required')
+        code = generate_emp_code()
+
+    name = clean_str(rowvals.get('name'))
     if not name:
         raise RowError('Employee Name is required')
     if rowvals.get('joining_date') in (None, ''):
@@ -212,19 +254,36 @@ def build_employee(rowvals, lookups, seen_codes):
     data['email'] = validate_email(rowvals.get('email'))
     data['mobile'] = validate_mobile(rowvals.get('mobile'))
 
-    handled = set(data.keys()) | {'buyer'}
+    # Handle professions (multi-select via comma-separated)
+    prof_str = clean_str(rowvals.get('profession'))
+    prof_ids, first_prof_en, first_prof_ar, prof_error = lookup_profession_ids(prof_str, lookups)
+    if prof_error:
+        raise RowError(prof_error)
+
+    # Set single profession fields for backward compatibility (first profession)
+    if prof_ids:
+        data['profession_id'] = prof_ids[0]
+        data['profession'] = first_prof_en
+        data['profession_ar'] = first_prof_ar
+
+    # Handle all other text fields
+    handled = set(data.keys()) | {'buyer', 'employee_type'}
     for _, f in COLUMNS:
         if f in handled or f in DATE_FLDS or f in NUM_FLDS or f in BOOL_FLDS:
             continue
+        if f in ('employee_type', 'profession', 'profession_ar', 'profession_id'):
+            continue
         data[f] = clean_str(rowvals.get(f))
 
-    prof_name = clean_str(rowvals.get('profession'))
-    if prof_name:
-        pid = lookups['professions'].get(prof_name.lower())
-        if pid is None:
-            raise RowError(f'Profession not found: {prof_name}')
-        data['profession_id'] = pid
+    data.pop('employee_type', None)
 
+    # Overtime calculation: (basic / 30 * 8) * ratio
+    basic = data.get('basic_salary', 0) or 0
+    ratio = data.get('overtime_ratio', 0) or 0
+    if basic > 0 and ratio > 0:
+        data['overtime_rate'] = round(basic / 30 * 8 * ratio, 2)
+
+    # Buyer lookup
     buyer_name = clean_str(rowvals.get('buyer'))
     if buyer_name:
         bid = lookups['buyers'].get(buyer_name.lower())
@@ -233,10 +292,11 @@ def build_employee(rowvals, lookups, seen_codes):
         data['buyer_id'] = bid
 
     seen_codes.add(code.lower())
-    return data
+    return data, prof_ids
 
 
 def load_lookups():
+    """Load profession and buyer lookups + existing employee codes."""
     professions = {}
     for p in ProfessionMaster.query.all():
         if p.name_en:
@@ -255,10 +315,15 @@ def load_lookups():
     return {'professions': professions, 'buyers': buyers, 'existing_codes': existing_codes}
 
 
+# ═══════════════════════════════════════════════════════════
+# ROUTES
+# ═══════════════════════════════════════════════════════════
+
 @emp_import_bp.route('/employees/import/template')
 @login_required
 @admin_required
 def download_template():
+    """Download sample Excel template with headers + example row."""
     wb = Workbook()
     ws = wb.active
     ws.title = 'Employees'
@@ -273,7 +338,7 @@ def download_template():
     ws.freeze_panes = 'A2'
 
     sample = {
-        'Employee Code': 'EMP-100', 'Auto Code': 'No', 'Active': 'Yes', 'Muslim': 'Yes',
+        'Employee Code': '', 'Auto Code': 'No', 'Active': 'Yes', 'Muslim': 'Yes',
         'Employee Name': 'Ahmed Ali', 'Employee Name Arabic': 'أحمد علي',
         'Nationality': 'Pakistani', 'Profession': 'Welder',
         'Joining Date': '2026-01-15', 'Birth Date': '1990-05-20',
@@ -297,6 +362,7 @@ def download_template():
 @login_required
 @admin_required
 def import_employees():
+    """Parse + validate + import Excel file. Returns JSON summary + failed rows."""
     f = request.files.get('file')
     if not f or not f.filename:
         return jsonify({'ok': False, 'error': _t('No file selected.', 'لم يتم اختيار ملف')}), 400
@@ -330,16 +396,12 @@ def import_employees():
         if fld:
             col_field[idx] = fld
 
-    if 'employee_code' not in col_field.values():
-        return jsonify({'ok': False,
-                        'error': _t('Invalid template: "Employee Code" column not found.',
-                                    'قالب غير صالح: عمود كود الموظف غير موجود')}), 400
-
     lookups = load_lookups()
     seen_codes = set()
     imported = failed = skipped_empty = duplicates = 0
     failed_rows = []
     batch = []
+    profession_map = {}  # employee_code -> list of profession_ids
     BATCH_SIZE = 200
 
     excel_row_no = 1
@@ -352,12 +414,23 @@ def import_employees():
         rowvals = {fld: (raw[idx] if idx < len(raw) else None)
                    for idx, fld in col_field.items()}
         try:
-            data = build_employee(rowvals, lookups, seen_codes)
+            data, prof_ids = build_employee(rowvals, lookups, seen_codes)
             emp = Employee(created_by=current_user.id, **data)
             batch.append(emp)
+            # Store profession IDs to link after commit
+            profession_map[data['employee_code']] = prof_ids
             imported += 1
             if len(batch) >= BATCH_SIZE:
                 db.session.add_all(batch)
+                db.session.flush()
+                # Save professions for this batch
+                for b_emp in batch:
+                    pids = profession_map.get(b_emp.employee_code, [])
+                    for pid in pids:
+                        db.session.add(EmployeeProfession(
+                            employee_id=b_emp.id,
+                            profession_id=pid
+                        ))
                 db.session.flush()
                 batch = []
         except RowError as e:
@@ -386,6 +459,15 @@ def import_employees():
     try:
         if batch:
             db.session.add_all(batch)
+        db.session.flush()
+        # Save professions for remaining batch
+        for b_emp in batch:
+            pids = profession_map.get(b_emp.employee_code, [])
+            for pid in pids:
+                db.session.add(EmployeeProfession(
+                    employee_id=b_emp.id,
+                    profession_id=pid
+                ))
         db.session.commit()
     except Exception as e:
         db.session.rollback()
@@ -429,6 +511,7 @@ def import_employees():
 @login_required
 @admin_required
 def download_failed():
+    """Download failed rows as Excel with Error Reason column."""
     payload = session.get('emp_import_failed')
     if not payload or not payload.get('rows'):
         return jsonify({'ok': False,

@@ -189,22 +189,29 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               <div class="f-grid3">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}المستخدم{% else %}Requester{% endif %}</div>
-                  <input type="text" id="pq_requester" class="f-inp" placeholder="{% if ar %}اسم المستخدم{% else %}Requester ID{% endif %}">
+                  <input type="text" id="pq_requester" class="f-inp" value="{{ current_user.username }}" readonly
+                         title="{% if ar %}اسم المستخدم الحالي{% else %}Current username{% endif %}">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}اسم مقدم الطلب{% else %}Requester Name{% endif %}</div>
-                  <input type="text" id="pq_req_name" class="f-inp">
+                  <input type="text" id="pq_req_name" class="f-inp" value="{{ current_user.username }}" readonly
+                         title="{% if ar %}اسم المستخدم الحالي{% else %}Current username{% endif %}">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}اعتمد بواسطة{% else %}Approved By{% endif %}</div>
                   <input type="text" id="pq_approved_by" class="f-inp">
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}رقم مرجع المورد{% else %}Vendor Reference No{% endif %}</div>
+                  <input type="text" id="pq_vendor_ref" class="f-inp"
+                         placeholder="{% if ar %}رقم مرجع المورد{% else %}Vendor's reference number{% endif %}">
                 </div>
               </div>
               <div class="f-grid4">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ الترحيل{% else %}Posting Date{% endif %}</div>
                   <input type="date" id="pq_posting_date" class="f-inp" dir="ltr" disabled
-                         title="{% if ar %}يتم تفعيله تلقائياً عند الاعتماد{% else %}Activates automatically when Approved{% endif %}">
+                         title="{% if ar %}يُفعّل عندما لا تكون الحالة مفتوحة{% else %}Enabled when status is not Open{% endif %}">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}صالح حتى{% else %}Valid Until{% endif %}</div>
@@ -387,6 +394,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
 <script>
 const IS_AR = {{ 'true' if ar else 'false' }};
+const CURRENT_USERNAME = {{ current_user.username | tojson }};
 const CSRF  = '{{ csrf_token() }}';
 let _liIdx = 0;
 let _attachments = [];
@@ -410,7 +418,7 @@ function onPqStatusChange() {
   const statusEl = document.getElementById('pq_status');
   const postEl   = document.getElementById('pq_posting_date');
   if (!statusEl || !postEl) return;
-  if (statusEl.value === 'Approved') {
+  if (statusEl.value !== 'Open') {
     postEl.disabled = false;
     if (!postEl.value) postEl.value = new Date().toISOString().split('T')[0];
   } else {
@@ -445,8 +453,7 @@ async function onPrChange() {
     const pr = await res.json();
 
     if (pr.vendor_id) document.getElementById('pq_vendor').value = pr.vendor_id;
-    document.getElementById('pq_requester').value      = pr.requester || '';
-    document.getElementById('pq_req_name').value       = pr.requester_name || '';
+    /* Requester / Requester Name always stay as the logged-in username — do not overwrite from PR */
     if (pr.valid_until)   document.getElementById('pq_valid_until').value = pr.valid_until;
     if (pr.required_date) document.getElementById('pq_req_date').value   = pr.required_date;
 
@@ -695,10 +702,12 @@ async function openAddPQ() {
   document.getElementById('pq_id').value = '';
   document.getElementById('pqTitle').innerHTML =
     '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة عرض سعر شراء' : 'Add Purchase Quotation');
-  // Clear fields
-  ['pq_requester','pq_req_name','pq_approved_by','pq_remarks'].forEach(id => {
+  // Clear fields (requester / requester name always stay as logged-in username)
+  ['pq_approved_by','pq_remarks','pq_vendor_ref'].forEach(id => {
     const e = document.getElementById(id); if (e) e.value = '';
   });
+  document.getElementById('pq_requester').value = CURRENT_USERNAME;
+  document.getElementById('pq_req_name').value  = CURRENT_USERNAME;
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('pq_posting_date').value = '';
   document.getElementById('pq_posting_date').disabled = true;
@@ -744,11 +753,12 @@ function openEditPQ(id) {
     document.getElementById('pq_status').value = d.status || 'Open';
     document.getElementById('pq_vendor').value = d.vendor_id || '';
     document.getElementById('pq_pr_id').value = d.purchase_request_id || '';
-    document.getElementById('pq_requester').value = d.requester || '';
-    document.getElementById('pq_req_name').value = d.requester_name || '';
+    document.getElementById('pq_requester').value = d.requester || CURRENT_USERNAME;
+    document.getElementById('pq_req_name').value = d.requester_name || CURRENT_USERNAME;
     document.getElementById('pq_approved_by').value = d.approved_by || '';
+    document.getElementById('pq_vendor_ref').value = d.vendor_ref_no || '';
     document.getElementById('pq_remarks').value = d.remarks || '';
-    document.getElementById('pq_posting_date').disabled = (d.status !== 'Approved');
+    document.getElementById('pq_posting_date').disabled = (d.status === 'Open');
     document.getElementById('pq_posting_date').value = d.posting_date || '';
     document.getElementById('pq_valid_until').value  = d.valid_until  || '';
     document.getElementById('pq_doc_date').value     = new Date().toISOString().split('T')[0]; // re-stamped on every save
@@ -801,6 +811,7 @@ async function savePQ() {
     fd.set('status',         document.getElementById('pq_status').value);
     fd.set('pr_id', document.getElementById('pq_pr_id')?.value || '');
     fd.set('vendor_id',      document.getElementById('pq_vendor').value);
+    fd.set('vendor_ref_no',  document.getElementById('pq_vendor_ref').value);
     fd.set('requester',      document.getElementById('pq_requester').value);
     fd.set('requester_name', document.getElementById('pq_req_name').value);
     fd.set('approved_by',    document.getElementById('pq_approved_by').value);
@@ -894,6 +905,12 @@ function rSAR(p) {
   return p.value!=null
     ? `<span style="font-weight:600;font-variant-numeric:tabular-nums;">${parseFloat(p.value).toLocaleString('en-SA',{minimumFractionDigits:2})}</span>` : '';
 }
+function rPRLink(p) {
+  const no = p.data && p.data.pr_doc_no;
+  const prId = p.data && p.data.purchase_request_id;
+  if (!no || !prId) return '<span style="color:#9ca3af;">—</span>';
+  return `<a href="/purchase/requests/${prId}/view" style="color:#2563eb;font-weight:600;text-decoration:none;" title="${IS_AR?'عرض طلب الشراء':'View Purchase Request'}">${no}</a>`;
+}
 
 class ActR {
   init(p) {
@@ -915,6 +932,7 @@ const defCol = {
 const cols = [
   {headerName:'#',field:'id',width:65,floatingFilter:false,suppressMenu:true},
   {headerName:IS_AR?'رقم المستند':'Doc No',field:'doc_no',width:125,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'رقم طلب الشراء':'PR Doc No',field:'pr_doc_no',width:130,filter:'agTextColumnFilter',cellRenderer:rPRLink},
   {headerName:IS_AR?'المستخدم':'Requester',field:'requester',width:120,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'اسم مقدم الطلب':'Requester Name',field:'requester_name',minWidth:160,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'المورد':'Vendor',field:'vendor_name',minWidth:180,filter:'agTextColumnFilter'},

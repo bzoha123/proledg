@@ -182,11 +182,13 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               <div class="f-grid3">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}المستخدم{% else %}Requester{% endif %}</div>
-                  <input type="text" id="pr_requester" class="f-inp" placeholder="{% if ar %}اسم المستخدم{% else %}Requester ID{% endif %}">
+                  <input type="text" id="pr_requester" class="f-inp" value="{{ current_user.username }}" readonly
+                         title="{% if ar %}اسم المستخدم الحالي{% else %}Current username{% endif %}">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}اسم مقدم الطلب{% else %}Requester Name{% endif %}</div>
-                  <input type="text" id="pr_req_name" class="f-inp">
+                  <input type="text" id="pr_req_name" class="f-inp" value="{{ current_user.username }}" readonly
+                         title="{% if ar %}اسم المستخدم الحالي{% else %}Current username{% endif %}">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}اعتمد بواسطة{% else %}Approved By{% endif %}</div>
@@ -197,7 +199,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ الترحيل{% else %}Posting Date{% endif %}</div>
                   <input type="date" id="pr_posting_date" class="f-inp" dir="ltr" disabled
-                         title="{% if ar %}يتم تفعيله تلقائياً عند الاعتماد{% else %}Activates automatically when Approved{% endif %}">
+                         title="{% if ar %}يُفعّل عندما لا تكون الحالة مفتوحة{% else %}Enabled when status is not Open{% endif %}">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}صالح حتى{% else %}Valid Until{% endif %}</div>
@@ -380,6 +382,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
 <script>
 const IS_AR = {{ 'true' if ar else 'false' }};
+const CURRENT_USERNAME = {{ current_user.username | tojson }};
 const CSRF  = '{{ csrf_token() }}';
 let _liIdx = 0;
 let _attachments = [];
@@ -404,7 +407,7 @@ function onPrStatusChange() {
   const statusEl = document.getElementById('pr_status');
   const postEl   = document.getElementById('pr_posting_date');
   if (!statusEl || !postEl) return;
-  if (statusEl.value === 'Approved') {
+  if (statusEl.value !== 'Open') {
     postEl.disabled = false;
     if (!postEl.value) postEl.value = new Date().toISOString().split('T')[0];
   } else {
@@ -669,10 +672,12 @@ async function openAdd() {
   document.getElementById('pr_id').value = '';
   document.getElementById('prTitle').innerHTML =
     '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة طلب شراء' : 'Add Purchase Request');
-  // Clear fields
-  ['pr_requester','pr_req_name','pr_approved_by','pr_remarks'].forEach(id => {
+  // Clear fields (requester / requester name always stay as logged-in username)
+  ['pr_approved_by','pr_remarks'].forEach(id => {
     const e = document.getElementById(id); if (e) e.value = '';
   });
+  document.getElementById('pr_requester').value = CURRENT_USERNAME;
+  document.getElementById('pr_req_name').value  = CURRENT_USERNAME;
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('pr_posting_date').value = '';
   document.getElementById('pr_posting_date').disabled = true;
@@ -732,11 +737,11 @@ function openEdit(id) {
       document.getElementById('prDocBadge').textContent = d.doc_no || '';
       document.getElementById('pr_status').value = d.status || 'Open';
       document.getElementById('pr_vendor').value = d.vendor_id || '';
-      document.getElementById('pr_requester').value = d.requester || '';
-      document.getElementById('pr_req_name').value = d.requester_name || '';
+      document.getElementById('pr_requester').value = d.requester || CURRENT_USERNAME;
+      document.getElementById('pr_req_name').value = d.requester_name || CURRENT_USERNAME;
       document.getElementById('pr_approved_by').value = d.approved_by || '';
       document.getElementById('pr_remarks').value = d.remarks || '';
-      document.getElementById('pr_posting_date').disabled = (d.status !== 'Approved');
+      document.getElementById('pr_posting_date').disabled = (d.status === 'Open');
       document.getElementById('pr_posting_date').value = d.posting_date || '';
       document.getElementById('pr_valid_until').value  = d.valid_until  || '';
       document.getElementById('pr_doc_date').value     = new Date().toISOString().split('T')[0]; // re-stamped on every save

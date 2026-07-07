@@ -201,7 +201,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ الترحيل{% else %}Posting Date{% endif %}</div>
                   <input type="date" id="grr_posting_date" class="f-inp" dir="ltr" disabled
-                         title="{% if ar %}يتم تفعيله تلقائياً عند الاعتماد{% else %}Activates automatically when Approved{% endif %}">
+                         title="{% if ar %}يُفعّل عندما لا تكون الحالة مفتوحة{% else %}Enabled when status is not Open{% endif %}">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ التسليم{% else %}Delivery Date{% endif %}</div>
@@ -440,7 +440,7 @@ function onGrrStatusChange() {
   const statusEl = document.getElementById('grr_status');
   const postEl   = document.getElementById('grr_posting_date');
   if (!statusEl || !postEl) return;
-  if (statusEl.value === 'Approved') {
+  if (statusEl.value !== 'Open') {
     postEl.disabled = false;
     if (!postEl.value) postEl.value = new Date().toISOString().split('T')[0];
   } else {
@@ -649,7 +649,7 @@ function openEditGRR(id) {
     document.getElementById('grr_contact').value = d.contact_person || '';
     document.getElementById('grr_vendor_ref').value = d.vendor_ref_no || '';
     document.getElementById('grr_remarks').value = d.remarks || '';
-    document.getElementById('grr_posting_date').disabled = (d.status !== 'Approved');
+    document.getElementById('grr_posting_date').disabled = (d.status === 'Open');
     document.getElementById('grr_posting_date').value = d.posting_date || '';
     document.getElementById('grr_delivery_date').value = d.delivery_date || '';
     document.getElementById('grr_doc_date').value = new Date().toISOString().split('T')[0]; // re-stamped on every save

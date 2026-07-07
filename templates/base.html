@@ -12,6 +12,25 @@
     {% endif %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+      /* ── Collapsible sidebar submenus ── */
+      .nav-parent {
+        display:flex; align-items:center; width:100%; cursor:pointer;
+        border:none; background:transparent; text-align:inherit;
+      }
+      .nav-parent .nav-caret {
+        margin-inline-start:auto; font-size:11px; transition:transform .22s ease;
+      }
+      .nav-parent[aria-expanded="true"] .nav-caret { transform:rotate(90deg); }
+      .nav-parent.has-active { color:#fff; font-weight:600; }
+      .nav-sub { list-style:none; padding:0; margin:0; }
+      .nav-sub .nav-link {
+        padding-inline-start:42px; font-size:.92em;
+      }
+      html[dir="rtl"] .nav-sub .nav-link { padding-inline-start:0; padding-inline-end:42px; }
+      html[dir="rtl"] .nav-parent .nav-caret { transform:scaleX(-1); }
+      html[dir="rtl"] .nav-parent[aria-expanded="true"] .nav-caret { transform:rotate(90deg); }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -49,150 +68,193 @@
             </li>
 
             {# ══ SELLER ══════════════════════════════════════ #}
-            <li class="nav-section">{% if current_locale=='ar' %}البائعون{% else %}Seller{% endif %}</li>
+            {% set seller_active = request.endpoint in ['sellers.list_sellers','sellers.view_seller','sellers.list_seller_documents_page'] or (request.endpoint == 'lookups.items_list') %}
             <li class="nav-item">
-                <a href="{{ url_for('sellers.list_sellers') }}" class="nav-link {% if request.endpoint in ['sellers.list_sellers','sellers.view_seller'] %}active{% endif %}">
+                <a class="nav-link nav-parent {% if seller_active %}has-active{% endif %}" data-bs-toggle="collapse" href="#menuSeller" role="button" aria-expanded="{{ 'true' if seller_active else 'false' }}" aria-controls="menuSeller">
                     <i class="fas fa-users"></i>
                     <span>{% if current_locale=='ar' %}البائعون{% else %}Seller{% endif %}</span>
+                    <i class="fas fa-chevron-right nav-caret"></i>
                 </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('sellers.list_seller_documents_page') }}"
-                   class="nav-link {% if request.endpoint == 'sellers.list_seller_documents_page' %}active{% endif %}">
-                    <i class="fas fa-paperclip"></i>
-                    <span>{% if current_locale=='ar' %}وثائق البائع{% else %}Seller Documents{% endif %}</span>
-                </a>
+                <div class="collapse {% if seller_active %}show{% endif %}" id="menuSeller">
+                    <ul class="nav-sub">
+                        <li class="nav-item">
+                            <a href="{{ url_for('sellers.list_sellers') }}" class="nav-link {% if request.endpoint in ['sellers.list_sellers','sellers.view_seller'] %}active{% endif %}">
+                                <i class="fas fa-users"></i>
+                                <span>{% if current_locale=='ar' %}البائعون{% else %}Seller{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('sellers.list_seller_documents_page') }}"
+                               class="nav-link {% if request.endpoint == 'sellers.list_seller_documents_page' %}active{% endif %}">
+                                <i class="fas fa-paperclip"></i>
+                                <span>{% if current_locale=='ar' %}وثائق البائع{% else %}Seller Documents{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('lookups.items_list') }}" class="nav-link {% if request.endpoint == 'lookups.items_list' %}active{% endif %}">
+                                <i class="fas fa-boxes"></i>
+                                <span>{% if current_locale=='ar' %}بنود البضاعة{% else %}Item Master{% endif %}</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </li>
 
             {# ══ PURCHASE ════════════════════════════════════ #}
-            <li class="nav-section">{% if current_locale=='ar' %}المشتريات{% else %}Purchase{% endif %}</li>
+            {% set purchase_active = request.endpoint and (('vendor' in request.endpoint) or ('pr_list' in request.endpoint) or ('pq_list' in request.endpoint) or ('po_list' in request.endpoint) or ('grn' in request.endpoint) or ('pinv' in request.endpoint) or ('grr' in request.endpoint) or ('pdm' in request.endpoint)) %}
             <li class="nav-item">
-                <a href="{{ url_for('purchase.vendor_list') }}" class="nav-link {% if request.endpoint and 'vendor' in request.endpoint %}active{% endif %}">
-                    <i class="fas fa-store"></i>
-                    <span>{% if current_locale=='ar' %}تسجيل المورد{% else %}Vendor Reg{% endif %}</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('vendor_doc.list_vendor_documents_page') }}"
-                   class="nav-link {% if request.endpoint == 'vendor_doc.list_vendor_documents_page' %}active{% endif %}">
-                    <i class="fas fa-paperclip"></i>
-                    <span>{% if current_locale=='ar' %}وثائق المورد{% else %}Vendor Documents{% endif %}</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('lookups.items_list') }}" class="nav-link {% if request.endpoint == 'lookups.items_list' %}active{% endif %}">
-                    <i class="fas fa-boxes"></i>
-                    <span>{% if current_locale=='ar' %}بنود البضاعة{% else %}Item Master{% endif %}</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('purchase.pr_list') }}" class="nav-link {% if request.endpoint and 'pr_list' in request.endpoint %}active{% endif %}">
-                    <i class="fas fa-file-alt"></i>
-                    <span>{% if current_locale=='ar' %}طلب الشراء{% else %}Purchase Request{% endif %}</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('purchase.pq_list') }}" class="nav-link {% if request.endpoint and 'pq_list' in request.endpoint %}active{% endif %}">
-                    <i class="fas fa-file-invoice"></i>
-                    <span>{% if current_locale=='ar' %}عرض سعر الشراء{% else %}Purchase Quotation{% endif %}</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('purchase.po_list') }}" class="nav-link {% if request.endpoint and 'po_list' in request.endpoint %}active{% endif %}">
+                <a class="nav-link nav-parent {% if purchase_active %}has-active{% endif %}" data-bs-toggle="collapse" href="#menuPurchase" role="button" aria-expanded="{{ 'true' if purchase_active else 'false' }}" aria-controls="menuPurchase">
                     <i class="fas fa-shopping-bag"></i>
-                    <span>{% if current_locale=='ar' %}أمر الشراء{% else %}Purchase Order{% endif %}</span>
+                    <span>{% if current_locale=='ar' %}المشتريات{% else %}Purchase{% endif %}</span>
+                    <i class="fas fa-chevron-right nav-caret"></i>
                 </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('purchase.grn_list') }}" class="nav-link {% if request.endpoint and 'grn' in request.endpoint %}active{% endif %}">
-                    <i class="fas fa-truck"></i>
-                    <span>{% if current_locale=='ar' %}إيصال الاستلام{% else %}Goods Receipt Note{% endif %}</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('purchase.pinv_list') }}" class="nav-link {% if request.endpoint and 'pinv' in request.endpoint %}active{% endif %}">
-                    <i class="fas fa-receipt"></i>
-                    <span>{% if current_locale=='ar' %}فاتورة الشراء{% else %}Purchase Invoice{% endif %}</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('purchase.grr_list') }}" class="nav-link {% if request.endpoint and 'grr' in request.endpoint %}active{% endif %}">
-                    <i class="fas fa-undo"></i>
-                    <span>{% if current_locale=='ar' %}طلب إرجاع البضاعة{% else %}Goods Return Request{% endif %}</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('purchase.pdm_list') }}" class="nav-link {% if request.endpoint and 'pdm' in request.endpoint %}active{% endif %}">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    <span>{% if current_locale=='ar' %}مذكرة الخصم{% else %}Purchase Debit Memo{% endif %}</span>
-                </a>
+                <div class="collapse {% if purchase_active %}show{% endif %}" id="menuPurchase">
+                    <ul class="nav-sub">
+                        <li class="nav-item">
+                            <a href="{{ url_for('purchase.vendor_list') }}" class="nav-link {% if request.endpoint and 'vendor' in request.endpoint %}active{% endif %}">
+                                <i class="fas fa-store"></i>
+                                <span>{% if current_locale=='ar' %}تسجيل المورد{% else %}Vendor Reg{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('vendor_doc.list_vendor_documents_page') }}"
+                               class="nav-link {% if request.endpoint == 'vendor_doc.list_vendor_documents_page' %}active{% endif %}">
+                                <i class="fas fa-paperclip"></i>
+                                <span>{% if current_locale=='ar' %}وثائق المورد{% else %}Vendor Documents{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('purchase.pr_list') }}" class="nav-link {% if request.endpoint and 'pr_list' in request.endpoint %}active{% endif %}">
+                                <i class="fas fa-file-alt"></i>
+                                <span>{% if current_locale=='ar' %}طلب الشراء{% else %}Purchase Request{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('purchase.pq_list') }}" class="nav-link {% if request.endpoint and 'pq_list' in request.endpoint %}active{% endif %}">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>{% if current_locale=='ar' %}عرض سعر الشراء{% else %}Purchase Quotation{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('purchase.po_list') }}" class="nav-link {% if request.endpoint and 'po_list' in request.endpoint %}active{% endif %}">
+                                <i class="fas fa-shopping-bag"></i>
+                                <span>{% if current_locale=='ar' %}أمر الشراء{% else %}Purchase Order{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('purchase.grn_list') }}" class="nav-link {% if request.endpoint and 'grn' in request.endpoint %}active{% endif %}">
+                                <i class="fas fa-truck"></i>
+                                <span>{% if current_locale=='ar' %}إيصال الاستلام{% else %}Goods Receipt Note{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('purchase.pinv_list') }}" class="nav-link {% if request.endpoint and 'pinv' in request.endpoint %}active{% endif %}">
+                                <i class="fas fa-receipt"></i>
+                                <span>{% if current_locale=='ar' %}فاتورة الشراء{% else %}Purchase Invoice{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('purchase.grr_list') }}" class="nav-link {% if request.endpoint and 'grr' in request.endpoint %}active{% endif %}">
+                                <i class="fas fa-undo"></i>
+                                <span>{% if current_locale=='ar' %}طلب إرجاع البضاعة{% else %}Goods Return Request{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('purchase.pdm_list') }}" class="nav-link {% if request.endpoint and 'pdm' in request.endpoint %}active{% endif %}">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                <span>{% if current_locale=='ar' %}مذكرة الخصم{% else %}Purchase Debit Memo{% endif %}</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </li>
 
             {# ══ SALE ════════════════════════════════════════ #}
-            <li class="nav-section">{% if current_locale=='ar' %}المبيعات{% else %}Sale{% endif %}</li>
+            {% set sale_active = request.endpoint and ((request.endpoint == 'lookups.list_buyers') or (request.endpoint == 'buyer_doc.list_buyer_documents_page') or ('invoice' in request.endpoint) or (request.endpoint.startswith('sales.'))) %}
             <li class="nav-item">
-                <a href="{{ url_for('lookups.list_buyers') }}" class="nav-link {% if request.endpoint == 'lookups.list_buyers' %}active{% endif %}">
-                    <i class="fas fa-user-tag"></i>
-                    <span>{% if current_locale=='ar' %}تسجيل المشتري{% else %}Buyer Reg{% endif %}</span>
+                <a class="nav-link nav-parent {% if sale_active %}has-active{% endif %}" data-bs-toggle="collapse" href="#menuSale" role="button" aria-expanded="{{ 'true' if sale_active else 'false' }}" aria-controls="menuSale">
+                    <i class="fas fa-tags"></i>
+                    <span>{% if current_locale=='ar' %}المبيعات{% else %}Sale{% endif %}</span>
+                    <i class="fas fa-chevron-right nav-caret"></i>
                 </a>
+                <div class="collapse {% if sale_active %}show{% endif %}" id="menuSale">
+                    <ul class="nav-sub">
+                        <li class="nav-item">
+                            <a href="{{ url_for('lookups.list_buyers') }}" class="nav-link {% if request.endpoint == 'lookups.list_buyers' %}active{% endif %}">
+                                <i class="fas fa-user-tag"></i>
+                                <span>{% if current_locale=='ar' %}تسجيل المشتري{% else %}Buyer Reg{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('buyer_doc.list_buyer_documents_page') }}"
+                               class="nav-link {% if request.endpoint == 'buyer_doc.list_buyer_documents_page' %}active{% endif %}">
+                                <i class="fas fa-file-alt"></i>
+                                <span>{% if current_locale=='ar' %}وثائق المشتري{% else %}Buyer Documents{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('invoices.list_invoices') }}" class="nav-link {% if request.endpoint and 'invoice' in request.endpoint %}active{% endif %}">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                <span>{% if current_locale=='ar' %}الفواتير{% else %}Invoices{% endif %}</span>
+                            </a>
+                        </li>
+                        {% for endpoint, icon, en, ar in [
+                            ('sales.sr_list','file-signature','Sales Request','طلب بيع'),
+                            ('sales.sq_list','file-invoice','Sales Quotation','عرض سعر بيع'),
+                            ('sales.so_list','shopping-cart','Sales Order','أمر بيع'),
+                            ('sales.dn_list','boxes','Delivery Note','إشعار تسليم'),
+                            ('sales.sinv_list','receipt','Sales Invoice','فاتورة البيع'),
+                            ('sales.srr_list','undo','Sales Return Request','طلب إرجاع بيع'),
+                            ('sales.scm_list','credit-card','Sales Credit Memo','مذكرة إضافة'),
+                        ] %}
+                        <li class="nav-item">
+                            <a href="{{ url_for(endpoint) }}" class="nav-link {% if request.endpoint == endpoint %}active{% endif %}">
+                                <i class="fas fa-{{ icon }}"></i>
+                                <span>{% if current_locale=='ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </li>
-            <li class="nav-item">
-                <a href="{{ url_for('buyer_doc.list_buyer_documents_page') }}"
-                   class="nav-link {% if request.endpoint == 'buyer_doc.list_buyer_documents_page' %}active{% endif %}">
-                    <i class="fas fa-file-alt"></i>
-                    <span>{% if current_locale=='ar' %}وثائق المشتري{% else %}Buyer Documents{% endif %}</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ url_for('invoices.list_invoices') }}" class="nav-link {% if request.endpoint and 'invoice' in request.endpoint %}active{% endif %}">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    <span>{% if current_locale=='ar' %}الفواتير{% else %}Invoices{% endif %}</span>
-                </a>
-            </li>
-            {% for icon, en, ar in [
-                ('file-signature','Sale Request','طلب بيع'),
-                ('file-invoice','Sale Quotation','عرض سعر بيع'),
-                ('shopping-cart','Sale Order','أمر بيع'),
-                ('boxes','Goods Receipt Note','إشعار استلام بضاعة'),
-                ('undo','Goods Return Request','طلب إرجاع بضاعة'),
-                ('dolly-flatbed','Goods Return Note','إشعار إرجاع بضاعة'),
-                ('credit-card','Invoice Credit Memo','مذكرة الإضافة'),
-            ] %}
-            <li class="nav-item nav-item-coming">
-                <span class="nav-link nav-link-disabled">
-                    <i class="fas fa-{{ icon }}"></i>
-                    <span>{% if current_locale=='ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</span>
-                    <span class="nav-soon">{% if current_locale=='ar' %}قريباً{% else %}Soon{% endif %}</span>
-                </span>
-            </li>
-            {% endfor %}
 
             {# ══ EMPLOYEE ════════════════════════════════════ #}
-            <li class="nav-section">{% if current_locale=='ar' %}الموظفون{% else %}Employee{% endif %}</li>
+            {% set employee_active = request.endpoint and (('employees.' in request.endpoint) or ('work_allocations.' in request.endpoint)) %}
             <li class="nav-item">
-                <a href="{{ url_for('employees.list_employees') }}" class="nav-link {% if request.endpoint and 'employees.' in request.endpoint %}active{% endif %}">
+                <a class="nav-link nav-parent {% if employee_active %}has-active{% endif %}" data-bs-toggle="collapse" href="#menuEmployee" role="button" aria-expanded="{{ 'true' if employee_active else 'false' }}" aria-controls="menuEmployee">
                     <i class="fas fa-user-tie"></i>
                     <span>{% if current_locale=='ar' %}الموظفون{% else %}Employee{% endif %}</span>
+                    <i class="fas fa-chevron-right nav-caret"></i>
                 </a>
+                <div class="collapse {% if employee_active %}show{% endif %}" id="menuEmployee">
+                    <ul class="nav-sub">
+                        <li class="nav-item">
+                            <a href="{{ url_for('employees.list_employees') }}" class="nav-link {% if request.endpoint and 'employees.' in request.endpoint %}active{% endif %}">
+                                <i class="fas fa-user-tie"></i>
+                                <span>{% if current_locale=='ar' %}الموظفون{% else %}Employee{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('work_allocations.list_wa') }}" class="nav-link {% if request.endpoint and 'work_allocations.' in request.endpoint %}active{% endif %}">
+                                <i class="fas fa-tasks"></i>
+                                <span>{% if current_locale=='ar' %}توزيع العمل{% else %}Work Allocation{% endif %}</span>
+                            </a>
+                        </li>
+                        {% for icon, en, ar in [
+                            ('hand-holding-usd','Advances','السلف'),
+                            ('money-check-alt','Pay Roll','كشف الرواتب'),
+                        ] %}
+                        <li class="nav-item nav-item-coming">
+                            <span class="nav-link nav-link-disabled">
+                                <i class="fas fa-{{ icon }}"></i>
+                                <span>{% if current_locale=='ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</span>
+                                <span class="nav-soon">{% if current_locale=='ar' %}قريباً{% else %}Soon{% endif %}</span>
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </li>
-            <li class="nav-item">
-                <a href="{{ url_for('work_allocations.list_wa') }}" class="nav-link {% if request.endpoint and 'work_allocations.' in request.endpoint %}active{% endif %}">
-                    <i class="fas fa-tasks"></i>
-                    <span>{% if current_locale=='ar' %}توزيع العمل{% else %}Work Allocation{% endif %}</span>
-                </a>
-            </li>
-            {% for icon, en, ar in [
-                ('hand-holding-usd','Advances','السلف'),
-                ('money-check-alt','Pay Roll','كشف الرواتب'),
-            ] %}
-            <li class="nav-item nav-item-coming">
-                <span class="nav-link nav-link-disabled">
-                    <i class="fas fa-{{ icon }}"></i>
-                    <span>{% if current_locale=='ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</span>
-                    <span class="nav-soon">{% if current_locale=='ar' %}قريباً{% else %}Soon{% endif %}</span>
-                </span>
-            </li>
-            {% endfor %}
 
         </ul>
 

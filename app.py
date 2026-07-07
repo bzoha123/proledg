@@ -69,6 +69,7 @@ def create_app(config_name='default'):
     from database.routes.work_allocations import wa_bp
     from database.routes.invoices import inv_bp
     from database.routes.purchase import pur_bp
+    from database.routes.sales import sale_bp
     from database.routes.lookups import lookups_bp
     from database.routes.employee_import import emp_import_bp
     app.register_blueprint(emp_import_bp)
@@ -79,6 +80,7 @@ def create_app(config_name='default'):
     app.register_blueprint(wa_bp)
     app.register_blueprint(inv_bp)
     app.register_blueprint(pur_bp)
+    app.register_blueprint(sale_bp)
     app.register_blueprint(lookups_bp)
     app.register_blueprint(vendor_doc_bp)
     app.register_blueprint(buyer_doc_bp)
@@ -108,8 +110,17 @@ def create_app(config_name='default'):
 
 def init_db(app):
     """Initialize database and create default admin user."""
+    from sqlalchemy.exc import OperationalError
+
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+        except OperationalError as exc:
+            if 'already exists' in str(exc).lower():
+                print('Database already initialized, skipping create_all.')
+            else:
+                raise
+
         if not User.query.filter_by(username='admin').first():
             admin = User(username='admin', email='admin@sellerms.com', role='admin')
             admin.set_password('Admin@123')

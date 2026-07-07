@@ -297,6 +297,19 @@ class ProfessionMaster(db.Model):
 #    still works.
 # ═══════════════════════════════════════════════════════════════════
 
+# EMPLOYEE ↔ PROFESSION JUNCTION TABLE (multi-select support)
+# ═══════════════════════════════════════════════════════════════
+class EmployeeProfession(db.Model):
+    __tablename__ = 'employee_professions'
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id', ondelete='CASCADE'), nullable=False)
+    profession_id = db.Column(db.Integer, db.ForeignKey('profession_master.id', ondelete='CASCADE'), nullable=False)
+    profession_name    = db.Column(db.String(150))
+    profession_name_ar = db.Column(db.String(150))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (db.UniqueConstraint('employee_id', 'profession_id', name='uq_emp_prof'),)
+
+
 class Employee(db.Model):
     __tablename__ = 'employees'
     id               = db.Column(db.Integer, primary_key=True)
@@ -306,7 +319,7 @@ class Employee(db.Model):
     is_muslim        = db.Column(db.Boolean, default=False)
 
     # ── Identity (bilingual) ──
-    name             = db.Column(db.String(200), nullable=False)   # English name
+    name             = db.Column(db.String(200), nullable=False)
     name_ar          = db.Column(db.String(200))
     nationality      = db.Column(db.String(100))
     nationality_ar   = db.Column(db.String(100))
@@ -380,9 +393,6 @@ class Employee(db.Model):
     hostel_location    = db.Column(db.String(200))
     hostel_location_ar = db.Column(db.String(200))
 
-    # ── Bank details live in the SEPARATE employee_banks table ──
-    # (managed via /employees/<id>/banks API, one employee → many banks)
-
     # ── Compliance ──
     crn                   = db.Column(db.String(60))
     crn_ar                = db.Column(db.String(60))
@@ -398,34 +408,31 @@ class Employee(db.Model):
     updated_at       = db.Column(db.DateTime, default=datetime.utcnow)
     created_by       = db.Column(db.Integer, db.ForeignKey('users.id'))
 
+    # ── Relationships ──
     profession_rel = db.relationship('ProfessionMaster', backref=db.backref('employees', lazy=True))
-    buyer          = db.relationship('BuyerMaster', backref=db.backref('employees', lazy=True))
+    buyer          = db.relationship('BuyerMaster', backref=db.backref('emp_employees', lazy=True))
 
-    # routes call emp.allowance_rows.order_by(...).all() and .all()
+    # Multi-select professions (junction table)
+    professions = db.relationship('ProfessionMaster',
+                    secondary='employee_professions',
+                    lazy='dynamic',
+                    backref=db.backref('employee_list', lazy='dynamic'))
+
     allowance_rows = db.relationship('EmployeeAllowance',
                         backref='employee_ref',
                         lazy='dynamic',
                         cascade='all, delete-orphan')
 
-    # one employee → many bank accounts (separate employee_banks table)
     banks = db.relationship('EmployeeBank',
                         backref='employee_ref',
                         lazy='dynamic',
                         cascade='all, delete-orphan')
 
-    # one employee → many documents (separate employee_documents table)
     documents = db.relationship('EmployeeDocument',
                         backref='employee_ref',
                         lazy='dynamic',
                         cascade='all, delete-orphan')
 
-    # one employee → many documents (separate employee_documents table)
-    documents = db.relationship('EmployeeDocument',
-                        backref='employee_ref',
-                        lazy='dynamic',
-                        cascade='all, delete-orphan')
-
-    # Back-compat: some code may still reference name_en
     @property
     def name_en(self):
         return self.name
@@ -531,9 +538,7 @@ class EmployeeDocument(db.Model):
             'uploaded_at': self.uploaded_at.strftime('%Y-%m-%d %H:%M') if self.uploaded_at else '',
         }
 
-# ─────────────────────────────────────────────────────────────────
-# WORK ALLOCATION
-# ─────────────────────────────────────────────────────────────────
+
 class WorkAllocation(db.Model):
     __tablename__ = 'work_allocations'
     id          = db.Column(db.Integer, primary_key=True)
@@ -560,7 +565,6 @@ class WorkAllocation(db.Model):
             'end_date':   str(self.end_date)   if self.end_date   else '',
             'notes': self.notes or '',
         }
-
 
 # ─────────────────────────────────────────────────────────────────
 # INVOICE
@@ -955,6 +959,7 @@ class PurchaseQuotation(db.Model):
     requester             = db.Column(db.String(150))
     requester_name        = db.Column(db.String(200))
     vendor_id             = db.Column(db.Integer, db.ForeignKey('vendors.id'))
+    vendor_ref_no         = db.Column(db.String(100))
     status                = db.Column(db.String(20), default='Open')
     posting_date          = db.Column(db.Date)
     valid_until           = db.Column(db.Date)
@@ -972,6 +977,7 @@ class PurchaseQuotation(db.Model):
     created_by            = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     vendor = db.relationship('VendorMaster', backref=db.backref('purchase_quotations', lazy=True))
+    purchase_request = db.relationship('PurchaseRequest', backref=db.backref('purchase_quotations', lazy=True))
 
     def to_dict(self):
         return {
@@ -979,10 +985,12 @@ class PurchaseQuotation(db.Model):
             'purchase_quotation_id': self.purchase_quotation_id,
             'doc_no': self.doc_no or '',
             'purchase_request_id': self.purchase_request_id,
+            'pr_doc_no': self.purchase_request.doc_no if self.purchase_request else '',
             'requester': self.requester or '',
             'requester_name': self.requester_name or '',
             'vendor_id': self.vendor_id,
             'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
+            'vendor_ref_no': self.vendor_ref_no or '',
             'status': self.status,
             'posting_date':  str(self.posting_date)  if self.posting_date  else '',
             'valid_until':   str(self.valid_until)   if self.valid_until   else '',
@@ -1676,4 +1684,699 @@ class ItemUOM(db.Model):
             'unit_name': self.uom.unit_name if self.uom else '',
             'unit_name_ar': (self.uom.unit_name_ar or '') if self.uom else '',
             'is_default': bool(self.is_default),
+        }
+
+# ═════════════════════════════════════════════════════════════════
+#  SALES DOCUMENTS  (mirror of the purchase chain)
+#  SR → SQ → SO → DN → SINV → SRR → SCM   —  all reference buyers
+#  Auto-generated to match the purchase module structure.
+# ═════════════════════════════════════════════════════════════════
+
+
+class SalesRequest(db.Model):
+    __tablename__ = 'sales_requests'
+    sales_request_id   = db.Column(db.Integer, primary_key=True)
+    doc_no                = db.Column(db.String(20), unique=True)
+    requester             = db.Column(db.String(150))
+    requester_name        = db.Column(db.String(200))
+    buyer_id             = db.Column(db.Integer, db.ForeignKey('buyers.id'))
+    status                = db.Column(db.String(20), default='Open')
+    posting_date          = db.Column(db.Date)
+    valid_until           = db.Column(db.Date)
+    document_date         = db.Column(db.Date)
+    required_date         = db.Column(db.Date)
+    remarks               = db.Column(db.Text)
+    approved_by           = db.Column(db.String(150))
+    total_before_discount = db.Column(db.Numeric(14, 2), default=0)
+    total_discount        = db.Column(db.Numeric(14, 2), default=0)
+    total_freight         = db.Column(db.Numeric(14, 2), default=0)
+    total_excl_vat        = db.Column(db.Numeric(14, 2), default=0)
+    vat_amount            = db.Column(db.Numeric(14, 2), default=0)
+    total_incl_vat        = db.Column(db.Numeric(14, 2), default=0)
+    created_at            = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by            = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    buyer = db.relationship('BuyerMaster', backref=db.backref('sales_requests', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.sales_request_id,
+            'sales_request_id': self.sales_request_id,
+            'doc_no': self.doc_no or '', 'requester': self.requester or '',
+            'requester_name': self.requester_name or '', 'buyer_id': self.buyer_id,
+            'buyer_name': self.buyer.buyer_name_en if self.buyer else '',
+            'status': self.status,
+            'posting_date':  str(self.posting_date)  if self.posting_date  else '',
+            'valid_until':   str(self.valid_until)   if self.valid_until   else '',
+            'document_date': str(self.document_date) if self.document_date else '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'remarks': self.remarks or '', 'approved_by': self.approved_by or '',
+            'total_before_discount': float(self.total_before_discount or 0),
+            'total_discount': float(self.total_discount or 0),
+            'total_freight':  float(self.total_freight  or 0),
+            'total_excl_vat': float(self.total_excl_vat or 0),
+            'vat_amount':     float(self.vat_amount     or 0),
+            'total_incl_vat': float(self.total_incl_vat or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# 1L. PURCHASE REQUEST LINE ITEMS
+#      PK: sales_request_line_item_id
+#      FK: sales_request_id → sales_requests
+# ─────────────────────────────────────────────────────────────────
+class SalesRequestLineItem(db.Model):
+    __tablename__ = 'sales_request_line_items'
+    sales_request_line_item_id = db.Column(db.Integer, primary_key=True)
+    sales_request_id = db.Column(db.Integer, db.ForeignKey('sales_requests.sales_request_id', ondelete='CASCADE'), nullable=False)
+    line_number   = db.Column(db.Integer, nullable=False, default=1)
+    item_code     = db.Column(db.String(50))
+    description   = db.Column(db.String(500))
+    required_date = db.Column(db.Date)
+    warehouse     = db.Column(db.String(150))
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity      = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    rate          = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    discount      = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    freight       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    taxable       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    tax_code      = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount    = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    total         = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+
+    sales_request = db.relationship('SalesRequest', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.sales_request_line_item_id,
+            'sales_request_line_item_id': self.sales_request_line_item_id,
+            'sales_request_id': self.sales_request_id,
+            'line_number': self.line_number,
+            'item_code': self.item_code or '', 'item_desc': self.description or '',
+            'description': self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse': self.warehouse or '', 'uom': self.uom,
+            'quantity': float(self.quantity or 0), 'rate': float(self.rate or 0),
+            'discount': float(self.discount or 0), 'freight': float(self.freight or 0),
+            'taxable': float(self.taxable or 0), 'tax_code': self.tax_code,
+            'tax_amount': float(self.tax_amount or 0), 'total': float(self.total or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# 2. PURCHASE QUOTATION
+#      FK: sales_request_id → sales_requests
+# ─────────────────────────────────────────────────────────────────
+class SalesQuotation(db.Model):
+    __tablename__ = 'sales_quotations'
+    sales_quotation_id = db.Column(db.Integer, primary_key=True)
+    doc_no                = db.Column(db.String(20), unique=True)
+    sales_request_id   = db.Column(db.Integer, db.ForeignKey('sales_requests.sales_request_id'))
+    requester             = db.Column(db.String(150))
+    requester_name        = db.Column(db.String(200))
+    buyer_id             = db.Column(db.Integer, db.ForeignKey('buyers.id'))
+    buyer_ref_no         = db.Column(db.String(100))
+    status                = db.Column(db.String(20), default='Open')
+    posting_date          = db.Column(db.Date)
+    valid_until           = db.Column(db.Date)
+    document_date         = db.Column(db.Date)
+    required_date         = db.Column(db.Date)
+    remarks               = db.Column(db.Text)
+    approved_by           = db.Column(db.String(150))
+    total_before_discount = db.Column(db.Numeric(14, 2), default=0)
+    total_discount        = db.Column(db.Numeric(14, 2), default=0)
+    total_freight         = db.Column(db.Numeric(14, 2), default=0)
+    total_excl_vat        = db.Column(db.Numeric(14, 2), default=0)
+    vat_amount            = db.Column(db.Numeric(14, 2), default=0)
+    total_incl_vat        = db.Column(db.Numeric(14, 2), default=0)
+    created_at            = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by            = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    buyer = db.relationship('BuyerMaster', backref=db.backref('sales_quotations', lazy=True))
+    sales_request = db.relationship('SalesRequest', backref=db.backref('sales_quotations', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.sales_quotation_id,
+            'sales_quotation_id': self.sales_quotation_id,
+            'doc_no': self.doc_no or '',
+            'sales_request_id': self.sales_request_id,
+            'pr_doc_no': self.sales_request.doc_no if self.sales_request else '',
+            'requester': self.requester or '',
+            'requester_name': self.requester_name or '',
+            'buyer_id': self.buyer_id,
+            'buyer_name': self.buyer.buyer_name_en if self.buyer else '',
+            'buyer_ref_no': self.buyer_ref_no or '',
+            'status': self.status,
+            'posting_date':  str(self.posting_date)  if self.posting_date  else '',
+            'valid_until':   str(self.valid_until)   if self.valid_until   else '',
+            'document_date': str(self.document_date) if self.document_date else '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'remarks': self.remarks or '', 'approved_by': self.approved_by or '',
+            'total_before_discount': float(self.total_before_discount or 0),
+            'total_discount': float(self.total_discount or 0),
+            'total_freight':  float(self.total_freight  or 0),
+            'total_excl_vat': float(self.total_excl_vat or 0),
+            'vat_amount':     float(self.vat_amount     or 0),
+            'total_incl_vat': float(self.total_incl_vat or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# 2L. PURCHASE QUOTATION LINE ITEMS
+#      PK: sales_quotation_line_item_id
+#      FK: sales_quotation_id → sales_quotations
+# ─────────────────────────────────────────────────────────────────
+class SalesQuotationLineItem(db.Model):
+    __tablename__ = 'sales_quotation_line_items'
+    sales_quotation_line_item_id = db.Column(db.Integer, primary_key=True)
+    sales_quotation_id = db.Column(db.Integer, db.ForeignKey('sales_quotations.sales_quotation_id', ondelete='CASCADE'), nullable=False)
+    line_number   = db.Column(db.Integer, nullable=False, default=1)
+    item_code     = db.Column(db.String(50))
+    description   = db.Column(db.String(500))
+    required_date = db.Column(db.Date)
+    warehouse     = db.Column(db.String(150))
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity      = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    rate          = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    discount      = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    freight       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    taxable       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    tax_code      = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount    = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    total         = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+
+    sales_quotation = db.relationship('SalesQuotation', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.sales_quotation_line_item_id,
+            'sales_quotation_line_item_id': self.sales_quotation_line_item_id,
+            'sales_quotation_id': self.sales_quotation_id,
+            'line_number': self.line_number,
+            'item_code': self.item_code or '', 'item_desc': self.description or '',
+            'description': self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse': self.warehouse or '', 'uom': self.uom,
+            'quantity': float(self.quantity or 0), 'rate': float(self.rate or 0),
+            'discount': float(self.discount or 0), 'freight': float(self.freight or 0),
+            'taxable': float(self.taxable or 0), 'tax_code': self.tax_code,
+            'tax_amount': float(self.tax_amount or 0), 'total': float(self.total or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────
+# PURCHASE ORDER HEADER
+# ─────────────────────────────────────────────────────────────────
+class SalesOrder(db.Model):
+    __tablename__ = 'sales_orders'
+    sales_order_id     = db.Column(db.Integer, primary_key=True)
+    doc_no                = db.Column(db.String(20), unique=True)
+    sales_quotation_id = db.Column(db.Integer, db.ForeignKey('sales_quotations.sales_quotation_id'))
+    buyer_id             = db.Column(db.Integer, db.ForeignKey('buyers.id'))
+    buyer_ref_no         = db.Column(db.String(100))
+    remarks               = db.Column(db.Text)
+    status                = db.Column(db.String(20), default='Open')
+    posting_date          = db.Column(db.Date)
+    delivery_date         = db.Column(db.Date)
+    document_date         = db.Column(db.Date)
+    total_before_discount = db.Column(db.Numeric(14, 2), default=0)
+    total_discount        = db.Column(db.Numeric(14, 2), default=0)
+    total_freight         = db.Column(db.Numeric(14, 2), default=0)
+    total_excl_vat        = db.Column(db.Numeric(14, 2), default=0)
+    vat_amount            = db.Column(db.Numeric(14, 2), default=0)
+    total_incl_vat        = db.Column(db.Numeric(14, 2), default=0)
+    created_at            = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by            = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    buyer = db.relationship('BuyerMaster', backref=db.backref('sales_orders', lazy=True))
+    pq = db.relationship('SalesQuotation', backref=db.backref('sales_orders', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.sales_order_id,
+            'sales_order_id': self.sales_order_id,
+            'doc_no': self.doc_no or '',
+            'sales_quotation_id': self.sales_quotation_id,
+            'pq_id': self.sales_quotation_id,
+            'buyer_id': self.buyer_id,
+            'buyer_name': self.buyer.buyer_name_en if self.buyer else '',
+            'buyer_ref_no': self.buyer_ref_no or '',
+            'remarks': self.remarks or '',
+            'status': self.status,
+            'posting_date':  str(self.posting_date)  if self.posting_date  else '',
+            'delivery_date': str(self.delivery_date) if self.delivery_date else '',
+            'document_date': str(self.document_date) if self.document_date else '',
+            'total_before_discount': float(self.total_before_discount or 0),
+            'total_discount': float(self.total_discount or 0),
+            'total_freight':  float(self.total_freight  or 0),
+            'total_excl_vat': float(self.total_excl_vat or 0),
+            'vat_amount':     float(self.vat_amount     or 0),
+            'total_incl_vat': float(self.total_incl_vat or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# PURCHASE ORDER LINE ITEMS
+# ─────────────────────────────────────────────────────────────────
+class SalesOrderLineItem(db.Model):
+    __tablename__ = 'sales_order_line_items'
+    sales_order_line_item_id = db.Column(db.Integer, primary_key=True)
+    sales_order_id = db.Column(db.Integer, db.ForeignKey('sales_orders.sales_order_id', ondelete='CASCADE'), nullable=False)
+    line_number   = db.Column(db.Integer, nullable=False, default=1)
+    item_code     = db.Column(db.String(50))
+    description   = db.Column(db.String(500))
+    required_date = db.Column(db.Date)
+    warehouse     = db.Column(db.String(150))
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity      = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    rate          = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    discount      = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    freight       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    taxable       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    tax_code      = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount    = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    total         = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+
+    sales_order = db.relationship('SalesOrder', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.sales_order_line_item_id,
+            'sales_order_line_item_id': self.sales_order_line_item_id,
+            'sales_order_id': self.sales_order_id,
+            'line_number': self.line_number,
+            'item_code': self.item_code or '',
+            'item_desc': self.description or '',
+            'description': self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse': self.warehouse or '',
+            'uom': self.uom,
+            'quantity': float(self.quantity or 0),
+            'rate': float(self.rate or 0),
+            'discount': float(self.discount or 0),
+            'freight': float(self.freight or 0),
+            'taxable': float(self.taxable or 0),
+            'tax_code': self.tax_code,
+            'tax_amount': float(self.tax_amount or 0),
+            'total': float(self.total or 0),
+        }
+# 4. GOODS RECEIPT NOTE
+#      FK: sales_order_id → sales_orders
+# ─────────────────────────────────────────────────────────────────
+class DeliveryNote(db.Model):
+    __tablename__ = 'delivery_notes'
+    delivery_note_id = db.Column(db.Integer, primary_key=True)
+    doc_no                = db.Column(db.String(20), unique=True)
+    sales_order_id     = db.Column(db.Integer, db.ForeignKey('sales_orders.sales_order_id'))
+    buyer_id             = db.Column(db.Integer, db.ForeignKey('buyers.id'))
+    contact_person        = db.Column(db.String(150))
+    buyer_ref_no         = db.Column(db.String(100))
+    status                = db.Column(db.String(20), default='Open')
+    posting_date          = db.Column(db.Date)
+    delivery_date         = db.Column(db.Date)
+    document_date         = db.Column(db.Date)
+    total_before_discount = db.Column(db.Numeric(14, 2), default=0)
+    total_discount        = db.Column(db.Numeric(14, 2), default=0)
+    total_freight         = db.Column(db.Numeric(14, 2), default=0)
+    total_excl_vat        = db.Column(db.Numeric(14, 2), default=0)
+    vat_amount            = db.Column(db.Numeric(14, 2), default=0)
+    total_incl_vat        = db.Column(db.Numeric(14, 2), default=0)
+    created_at            = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by            = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    buyer = db.relationship('BuyerMaster', backref=db.backref('delivery_notes', lazy=True))
+    sales_order = db.relationship('SalesOrder', backref=db.backref('dn_docs', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.delivery_note_id,
+            'delivery_note_id': self.delivery_note_id,
+            'doc_no': self.doc_no or '',
+            'sales_order_id': self.sales_order_id,
+            'so_no': self.sales_order.doc_no if self.sales_order else '',
+            'buyer_id': self.buyer_id,
+            'buyer_name': self.buyer.buyer_name_en if self.buyer else '',
+            'buyer_ref_no': self.buyer_ref_no or '',
+            'contact_person': self.contact_person or '', 'status': self.status,
+            'posting_date':  str(self.posting_date)  if self.posting_date  else '',
+            'delivery_date': str(self.delivery_date) if self.delivery_date else '',
+            'document_date': str(self.document_date) if self.document_date else '',
+            'total_before_discount': float(self.total_before_discount or 0),
+            'total_discount': float(self.total_discount or 0),
+            'total_freight':  float(self.total_freight  or 0),
+            'total_excl_vat': float(self.total_excl_vat or 0),
+            'vat_amount':     float(self.vat_amount     or 0),
+            'total_incl_vat': float(self.total_incl_vat or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# 4L. GOODS RECEIPT LINE ITEMS
+#      PK: delivery_line_item_id
+#      FK: delivery_note_id → delivery_notes
+# ─────────────────────────────────────────────────────────────────
+class DeliveryLineItem(db.Model):
+    __tablename__ = 'delivery_line_items'
+    delivery_line_item_id = db.Column(db.Integer, primary_key=True)
+    delivery_note_id = db.Column(db.Integer, db.ForeignKey('delivery_notes.delivery_note_id', ondelete='CASCADE'), nullable=False)
+    line_number   = db.Column(db.Integer, nullable=False, default=1)
+    item_code     = db.Column(db.String(50))
+    description   = db.Column(db.String(500))
+    required_date = db.Column(db.Date)
+    warehouse     = db.Column(db.String(150))
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity      = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    rate          = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    discount      = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    freight       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    taxable       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    tax_code      = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount    = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    total         = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+
+    delivery_note = db.relationship('DeliveryNote', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.delivery_line_item_id,
+            'delivery_line_item_id': self.delivery_line_item_id,
+            'delivery_note_id': self.delivery_note_id,
+            'line_number': self.line_number,
+            'item_code': self.item_code or '', 'item_desc': self.description or '',
+            'description': self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse': self.warehouse or '', 'uom': self.uom,
+            'quantity': float(self.quantity or 0), 'rate': float(self.rate or 0),
+            'discount': float(self.discount or 0), 'freight': float(self.freight or 0),
+            'taxable': float(self.taxable or 0), 'tax_code': self.tax_code,
+            'tax_amount': float(self.tax_amount or 0), 'total': float(self.total or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# 5. PURCHASE INVOICE
+#      FK: sales_order_id → sales_orders
+#      FK: delivery_note_id → delivery_notes
+# ─────────────────────────────────────────────────────────────────
+class SalesInvoice(db.Model):
+    __tablename__ = 'sales_invoices'
+    sales_invoice_id   = db.Column(db.Integer, primary_key=True)
+    doc_no                = db.Column(db.String(20), unique=True)
+    sales_order_id     = db.Column(db.Integer, db.ForeignKey('sales_orders.sales_order_id'))
+    delivery_note_id = db.Column(db.Integer, db.ForeignKey('delivery_notes.delivery_note_id'))
+    buyer_id             = db.Column(db.Integer, db.ForeignKey('buyers.id'))
+    buyer_ref_no         = db.Column(db.String(100))
+    status                = db.Column(db.String(20), default='Open')
+    posting_date          = db.Column(db.Date)
+    delivery_date         = db.Column(db.Date)
+    document_date         = db.Column(db.Date)
+    total_before_discount = db.Column(db.Numeric(14, 2), default=0)
+    total_discount        = db.Column(db.Numeric(14, 2), default=0)
+    total_freight         = db.Column(db.Numeric(14, 2), default=0)
+    total_excl_vat        = db.Column(db.Numeric(14, 2), default=0)
+    vat_amount            = db.Column(db.Numeric(14, 2), default=0)
+    total_incl_vat        = db.Column(db.Numeric(14, 2), default=0)
+    created_at            = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by            = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    buyer = db.relationship('BuyerMaster', backref=db.backref('sales_invoices', lazy=True))
+    sales_order = db.relationship('SalesOrder', backref=db.backref('sales_invoices_link', lazy=True))
+    delivery_note = db.relationship('DeliveryNote', backref=db.backref('sales_invoices_link', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.sales_invoice_id,
+            'sales_invoice_id': self.sales_invoice_id,
+            'doc_no': self.doc_no or '',
+            'sales_order_id': self.sales_order_id,
+            'so_no': self.sales_order.doc_no if self.sales_order else '',
+            'delivery_note_id': self.delivery_note_id,
+            'dn_no': self.delivery_note.doc_no if self.delivery_note else '',
+            'buyer_id': self.buyer_id,
+            'buyer_name': self.buyer.buyer_name_en if self.buyer else '',
+            'buyer_ref_no': self.buyer_ref_no or '', 'status': self.status,
+            'posting_date':  str(self.posting_date)  if self.posting_date  else '',
+            'delivery_date': str(self.delivery_date) if self.delivery_date else '',
+            'document_date': str(self.document_date) if self.document_date else '',
+            'total_before_discount': float(self.total_before_discount or 0),
+            'total_discount': float(self.total_discount or 0),
+            'total_freight':  float(self.total_freight  or 0),
+            'total_excl_vat': float(self.total_excl_vat or 0),
+            'vat_amount':     float(self.vat_amount     or 0),
+            'total_incl_vat': float(self.total_incl_vat or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# 5L. PURCHASE INVOICE LINE ITEMS
+#      PK: sales_invoice_line_item_id
+#      FK: sales_invoice_id → sales_invoices
+# ─────────────────────────────────────────────────────────────────
+class SalesInvoiceLineItem(db.Model):
+    __tablename__ = 'sales_invoice_line_items'
+    sales_invoice_line_item_id = db.Column(db.Integer, primary_key=True)
+    sales_invoice_id = db.Column(db.Integer, db.ForeignKey('sales_invoices.sales_invoice_id', ondelete='CASCADE'), nullable=False)
+    line_number   = db.Column(db.Integer, nullable=False, default=1)
+    item_code     = db.Column(db.String(50))
+    description   = db.Column(db.String(500))
+    required_date = db.Column(db.Date)
+    warehouse     = db.Column(db.String(150))
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity      = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    rate          = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    discount      = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    freight       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    taxable       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    tax_code      = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount    = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    total         = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+
+    sales_invoice = db.relationship('SalesInvoice', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.sales_invoice_line_item_id,
+            'sales_invoice_line_item_id': self.sales_invoice_line_item_id,
+            'sales_invoice_id': self.sales_invoice_id,
+            'line_number': self.line_number,
+            'item_code': self.item_code or '', 'item_desc': self.description or '',
+            'description': self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse': self.warehouse or '', 'uom': self.uom,
+            'quantity': float(self.quantity or 0), 'rate': float(self.rate or 0),
+            'discount': float(self.discount or 0), 'freight': float(self.freight or 0),
+            'taxable': float(self.taxable or 0), 'tax_code': self.tax_code,
+            'tax_amount': float(self.tax_amount or 0), 'total': float(self.total or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# 6. GOODS RETURN REQUEST
+#      FK: sales_invoice_id → sales_invoices
+# ─────────────────────────────────────────────────────────────────
+class SalesReturnRequest(db.Model):
+    __tablename__ = 'sales_return_requests'
+    sales_return_request_id = db.Column(db.Integer, primary_key=True)
+    doc_no                  = db.Column(db.String(20), unique=True)
+    sales_invoice_id     = db.Column(db.Integer, db.ForeignKey('sales_invoices.sales_invoice_id'))
+    buyer_id               = db.Column(db.Integer, db.ForeignKey('buyers.id'))
+    contact_person          = db.Column(db.String(150))
+    buyer_ref_no           = db.Column(db.String(100))
+    status                  = db.Column(db.String(20), default='Open')
+    posting_date            = db.Column(db.Date)
+    delivery_date           = db.Column(db.Date)
+    document_date           = db.Column(db.Date)
+    total_before_discount   = db.Column(db.Numeric(14, 2), default=0)
+    total_discount          = db.Column(db.Numeric(14, 2), default=0)
+    total_freight           = db.Column(db.Numeric(14, 2), default=0)
+    total_excl_vat          = db.Column(db.Numeric(14, 2), default=0)
+    vat_amount              = db.Column(db.Numeric(14, 2), default=0)
+    total_incl_vat          = db.Column(db.Numeric(14, 2), default=0)
+    created_at              = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by              = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    buyer = db.relationship('BuyerMaster', backref=db.backref('sales_return_requests', lazy=True))
+    sales_invoice = db.relationship('SalesInvoice', backref=db.backref('sales_return_requests_link', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.sales_return_request_id,
+            'sales_return_request_id': self.sales_return_request_id,
+            'doc_no': self.doc_no or '',
+            'sales_invoice_id': self.sales_invoice_id,
+            'si_no': self.sales_invoice.doc_no if self.sales_invoice else '',
+            'buyer_id': self.buyer_id,
+            'buyer_name': self.buyer.buyer_name_en if self.buyer else '',
+            'buyer_ref_no': self.buyer_ref_no or '',
+            'contact_person': self.contact_person or '', 'status': self.status,
+            'posting_date':  str(self.posting_date)  if self.posting_date  else '',
+            'delivery_date': str(self.delivery_date) if self.delivery_date else '',
+            'document_date': str(self.document_date) if self.document_date else '',
+            'total_before_discount': float(self.total_before_discount or 0),
+            'total_discount': float(self.total_discount or 0),
+            'total_freight':  float(self.total_freight  or 0),
+            'total_excl_vat': float(self.total_excl_vat or 0),
+            'vat_amount':     float(self.vat_amount     or 0),
+            'total_incl_vat': float(self.total_incl_vat or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# 6L. GOODS RETURN LINE ITEMS
+#      PK: sales_return_line_item_id
+#      FK: sales_return_request_id → sales_return_requests
+# ─────────────────────────────────────────────────────────────────
+class SalesReturnLineItem(db.Model):
+    __tablename__ = 'sales_return_line_items'
+    sales_return_line_item_id = db.Column(db.Integer, primary_key=True)
+    sales_return_request_id = db.Column(db.Integer, db.ForeignKey('sales_return_requests.sales_return_request_id', ondelete='CASCADE'), nullable=False)
+    line_number   = db.Column(db.Integer, nullable=False, default=1)
+    item_code     = db.Column(db.String(50))
+    description   = db.Column(db.String(500))
+    required_date = db.Column(db.Date)
+    warehouse     = db.Column(db.String(150))
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity      = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    rate          = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    discount      = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    freight       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    taxable       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    tax_code      = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount    = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    total         = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+
+    sales_return_request = db.relationship('SalesReturnRequest', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.sales_return_line_item_id,
+            'sales_return_line_item_id': self.sales_return_line_item_id,
+            'sales_return_request_id': self.sales_return_request_id,
+            'line_number': self.line_number,
+            'item_code': self.item_code or '', 'item_desc': self.description or '',
+            'description': self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse': self.warehouse or '', 'uom': self.uom,
+            'quantity': float(self.quantity or 0), 'rate': float(self.rate or 0),
+            'discount': float(self.discount or 0), 'freight': float(self.freight or 0),
+            'taxable': float(self.taxable or 0), 'tax_code': self.tax_code,
+            'tax_amount': float(self.tax_amount or 0), 'total': float(self.total or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# 7. PURCHASE DEBIT MEMO
+#      FK: sales_return_request_id → sales_return_requests
+#      FK: sales_invoice_id     → sales_invoices
+# ─────────────────────────────────────────────────────────────────
+class SalesCreditMemo(db.Model):
+    __tablename__ = 'sales_credit_memos'
+    sales_credit_memo_id  = db.Column(db.Integer, primary_key=True)
+    doc_no                  = db.Column(db.String(20), unique=True)
+    sales_return_request_id = db.Column(db.Integer, db.ForeignKey('sales_return_requests.sales_return_request_id'))
+    sales_invoice_id     = db.Column(db.Integer, db.ForeignKey('sales_invoices.sales_invoice_id'))
+    buyer_id               = db.Column(db.Integer, db.ForeignKey('buyers.id'))
+    contact_person          = db.Column(db.String(150))
+    buyer_ref_no           = db.Column(db.String(100))
+    status                  = db.Column(db.String(20), default='Open')
+    posting_date            = db.Column(db.Date)
+    delivery_date           = db.Column(db.Date)
+    document_date           = db.Column(db.Date)
+    total_before_discount   = db.Column(db.Numeric(14, 2), default=0)
+    total_discount          = db.Column(db.Numeric(14, 2), default=0)
+    total_freight           = db.Column(db.Numeric(14, 2), default=0)
+    total_excl_vat          = db.Column(db.Numeric(14, 2), default=0)
+    vat_amount              = db.Column(db.Numeric(14, 2), default=0)
+    total_incl_vat          = db.Column(db.Numeric(14, 2), default=0)
+    created_at              = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by              = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    buyer = db.relationship('BuyerMaster', backref=db.backref('sales_credit_memos', lazy=True))
+    sales_return_request = db.relationship('SalesReturnRequest', backref=db.backref('sales_credit_memos_link', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.sales_credit_memo_id,
+            'sales_credit_memo_id': self.sales_credit_memo_id,
+            'doc_no': self.doc_no or '',
+            'sales_return_request_id': self.sales_return_request_id,
+            'srr_no': self.sales_return_request.doc_no if self.sales_return_request else '',
+            'sales_invoice_id': self.sales_invoice_id,
+            'buyer_id': self.buyer_id,
+            'buyer_name': self.buyer.buyer_name_en if self.buyer else '',
+            'buyer_ref_no': self.buyer_ref_no or '',
+            'contact_person': self.contact_person or '', 'status': self.status,
+            'posting_date':  str(self.posting_date)  if self.posting_date  else '',
+            'delivery_date': str(self.delivery_date) if self.delivery_date else '',
+            'document_date': str(self.document_date) if self.document_date else '',
+            'total_before_discount': float(self.total_before_discount or 0),
+            'total_discount': float(self.total_discount or 0),
+            'total_freight':  float(self.total_freight  or 0),
+            'total_excl_vat': float(self.total_excl_vat or 0),
+            'vat_amount':     float(self.vat_amount     or 0),
+            'total_incl_vat': float(self.total_incl_vat or 0),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────
+# 7L. PURCHASE DEBIT MEMO LINE ITEMS
+#      PK: sales_credit_memo_line_item_id
+#      FK: sales_credit_memo_id → sales_credit_memos
+# ─────────────────────────────────────────────────────────────────
+class SalesCreditMemoLineItem(db.Model):
+    __tablename__ = 'sales_credit_memo_line_items'
+    sales_credit_memo_line_item_id = db.Column(db.Integer, primary_key=True)
+    sales_credit_memo_id = db.Column(db.Integer, db.ForeignKey('sales_credit_memos.sales_credit_memo_id', ondelete='CASCADE'), nullable=False)
+    line_number   = db.Column(db.Integer, nullable=False, default=1)
+    item_code     = db.Column(db.String(50))
+    description   = db.Column(db.String(500))
+    required_date = db.Column(db.Date)
+    warehouse     = db.Column(db.String(150))
+    uom           = db.Column(db.String(20),    nullable=False, default='unit')
+    quantity      = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    rate          = db.Column(db.Numeric(14, 4), nullable=False, default=0)
+    discount      = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    freight       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    taxable       = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    tax_code      = db.Column(db.String(20),    nullable=False, default='VAT15')
+    tax_amount    = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+    total         = db.Column(db.Numeric(14, 2), nullable=False, default=0)
+
+    sales_credit_memo = db.relationship('SalesCreditMemo', backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.sales_credit_memo_line_item_id,
+            'sales_credit_memo_line_item_id': self.sales_credit_memo_line_item_id,
+            'sales_credit_memo_id': self.sales_credit_memo_id,
+            'line_number': self.line_number,
+            'item_code': self.item_code or '', 'item_desc': self.description or '',
+            'description': self.description or '',
+            'required_date': str(self.required_date) if self.required_date else '',
+            'warehouse': self.warehouse or '', 'uom': self.uom,
+            'quantity': float(self.quantity or 0), 'rate': float(self.rate or 0),
+            'discount': float(self.discount or 0), 'freight': float(self.freight or 0),
+            'taxable': float(self.taxable or 0), 'tax_code': self.tax_code,
+            'tax_amount': float(self.tax_amount or 0), 'total': float(self.total or 0),
+        }
+
+
+class SalesAttachment(db.Model):
+    __tablename__ = 'sales_attachments'
+    id          = db.Column(db.Integer, primary_key=True)
+    doc_type    = db.Column(db.String(10), nullable=False)
+    doc_id      = db.Column(db.Integer,    nullable=False)
+    filename    = db.Column(db.String(255), nullable=False)
+    filepath    = db.Column(db.String(500), nullable=False)
+    file_size   = db.Column(db.Integer)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'doc_type': self.doc_type, 'doc_id': self.doc_id,
+            'filename': self.filename, 'filepath': self.filepath,
+            'file_size': self.file_size or 0,
         }

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% set ar = current_locale == 'ar' %}
-{% block title %}{% if ar %}إيصالات استلام البضاعة{% else %}Goods Receipt Notes{% endif %}{% endblock %}
+{% block title %}{% if ar %}عروض أسعار الشراء{% else %}Sales Quotations{% endif %}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
@@ -86,15 +86,15 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
-<li class="breadcrumb-item active">{% if ar %}إيصالات استلام البضاعة{% else %}Goods Receipt Notes{% endif %}</li>
+<li class="breadcrumb-item active">{% if ar %}عروض أسعار الشراء{% else %}Sales Quotations{% endif %}</li>
 {% endblock %}
 
 {% block content %}
 <div class="proledg-page">
-  <h2 class="page-heading">{% if ar %}إيصالات استلام البضاعة{% else %}Goods Receipt Notes{% endif %}</h2>
+  <h2 class="page-heading">{% if ar %}عروض أسعار الشراء{% else %}Sales Quotations{% endif %}</h2>
   <div class="toolbar">
     <div class="toolbar-left">
-      <button class="tool-btn tool-btn-green" onclick="openAddGRN()"><i class="fas fa-plus"></i></button>
+      <button class="tool-btn tool-btn-green" onclick="openAddPQ()"><i class="fas fa-plus"></i></button>
       <button class="tool-btn tool-btn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
       <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null);document.getElementById('qs').value='';gridApi.setGridOption('quickFilterText','')"><i class="fas fa-times-circle"></i></button>
     </div>
@@ -108,20 +108,20 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
     </div>
   </div>
   <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;overflow:hidden;">
-    <div id="grnGrid" class="ag-theme-alpine" style="height:480px;width:100%;"></div>
+    <div id="sqGrid" class="ag-theme-alpine" style="height:480px;width:100%;"></div>
   </div>
   <div class="proledg-pagination"><span class="page-count" id="pageInfo">–</span></div>
 </div>
 
 {# ══ ADD / EDIT MODAL ══ #}
-<div class="modal fade" id="grnModal" tabindex="-1">
+<div class="modal fade" id="sqModal" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width:1060px;">
     <div class="modal-content" style="border:none;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);">
 
       <div class="pur-hdr">
         <div style="display:flex;align-items:center;">
-          <h5 id="grnTitle"><i class="fas fa-file-alt me-2"></i>{% if ar %}إضافة إيصال استلام بضاعة{% else %}Add Goods Receipt Note{% endif %}</h5>
-          <span class="pur-badge" id="grnDocBadge">NEW</span>
+          <h5 id="sqTitle"><i class="fas fa-file-alt me-2"></i>{% if ar %}إضافة عرض سعر شراء{% else %}Add Sales Quotation{% endif %}</h5>
+          <span class="pur-badge" id="sqDocBadge">NEW</span>
         </div>
         <button class="btn-close" style="filter:brightness(0) invert(1);" data-bs-dismiss="modal"></button>
       </div>
@@ -138,8 +138,8 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
       </div>
 
       <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;min-height:420px;">
-        <form id="grnForm">
-        <input type="hidden" id="grn_id">
+        <form id="prForm">
+        <input type="hidden" id="sq_id">
 
         {# ══ TAB 1: CONTENT ══ #}
         <div class="pur-tab-pane active" id="tab_content">
@@ -149,44 +149,29 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             <button type="button" class="pur-section-hdr open" onclick="togSec(this)">
               <div style="display:flex;align-items:center;">
                 <i class="pur-sec-icon fas fa-info-circle"></i>
-                {% if ar %}معلومات إيصال الاستلام{% else %}Goods Receipt Note Info{% endif %}
+                {% if ar %}معلومات الطلب / Request Information{% else %}Request Information / معلومات الطلب{% endif %}
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
             <div class="pur-section-body open">
-
-              <div class="f-grid4" style="margin-bottom:12px;">
+              <div class="f-grid4">
                 <div class="f-item">
-                  <div class="f-lbl">{% if ar %}رقم أمر الشراء{% else %}Purchase Order No{% endif %} <span class="f-lbl-req" style="color:#ef4444;">*</span></div>
-                  <select id="grn_po_id" class="f-inp" onchange="onPOChange()">
-                    <option value="">-- {% if ar %}اختر أمر شراء معتمد{% else %}Select an Approved PO{% endif %} --</option>
-                    {% for po in pos %}<option value="{{ po.id }}">{{ po.doc_no }}</option>{% endfor %}
+                  <div class="f-lbl">{% if ar %}رقم المستند{% else %}Document No{% endif %}</div>
+                  <input type="text" id="sq_doc_no" class="f-inp" readonly
+                         style="background:#f0fdf4;color:#15803d;font-weight:700;font-size:14px;letter-spacing:.5px;"
+                         placeholder="{% if ar %}يتم توليده تلقائياً{% else %}Auto-generated{% endif %}">
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}رقم طلب البيع{% else %}Sales Request No{% endif %} <span class="f-lbl-req" style="color:#ef4444;">*</span></div>
+                  <select id="sq_sr_id" class="f-inp" onchange="onPrChange()">
+                    <option value="">-- {% if ar %}اختر طلب بيع معتمد{% else %}Select an Approved PR{% endif %} --</option>
+                    {% for pr in srs %}<option value="{{ pr.id }}">{{ pr.doc_no }}</option>{% endfor %}
                   </select>
                 </div>
                 <div class="f-item">
-                  <div class="f-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div>
-                  <input type="text" id="grn_vendor_name" class="f-inp" readonly style="background:#f8fafc;" placeholder="{% if ar %}يتم تحديده من أمر الشراء{% else %}Derived from the Purchase Order{% endif %}">
-                  <input type="hidden" id="grn_vendor">
-                </div>
-                <div class="f-item">
-                  <div class="f-lbl">{% if ar %}شخص الاتصال{% else %}Contact Person{% endif %}</div>
-                  <input type="text" id="grn_contact" class="f-inp" name="contact_person">
-                </div>
-                <div class="f-item">
-                  <div class="f-lbl">{% if ar %}رقم مرجع المورد{% else %}Vendor Ref No{% endif %}</div>
-                  <input type="text" id="grn_vendor_ref" class="f-inp" name="vendor_ref_no">
-                </div>
-              </div>
-
-              <div class="f-grid4" style="margin-bottom:12px;">
-                <div class="f-item">
-                  <div class="f-lbl">{% if ar %}رقم المستند{% else %}Doc No{% endif %}</div>
-                  <input type="text" id="grn_doc_no" class="f-inp" readonly style="background:#f0fdf4;color:#15803d;font-weight:700;" placeholder="{% if ar %}تلقائي{% else %}Auto{% endif %}">
-                </div>
-                <div class="f-item">
                   <div class="f-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div>
-                  <select id="grn_status" class="f-inp" name="status" onchange="onGrnStatusChange()">
-                    <option value="Open" selected>Open</option>
+                  <select id="sq_status" class="f-inp" onchange="onPqStatusChange()">
+                    <option value="Open">Open</option>
                     <option value="Pending">Pending</option>
                     <option value="Approved">Approved</option>
                     <option value="Closed">Closed</option>
@@ -194,26 +179,59 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                   </select>
                 </div>
                 <div class="f-item">
+                  <div class="f-lbl">{% if ar %}المشتري{% else %}Buyer Name{% endif %}</div>
+                  <select id="sq_buyer" class="f-inp">
+                    <option value="">-- {% if ar %}اختر المشتري{% else %}Select Buyer{% endif %} --</option>
+                    {% for v in buyers %}<option value="{{ v.id }}">{{ v.name }}</option>{% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="f-grid3">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}المستخدم{% else %}Requester{% endif %}</div>
+                  <input type="text" id="sq_requester" class="f-inp" value="{{ current_user.username }}" readonly
+                         title="{% if ar %}اسم المستخدم الحالي{% else %}Current username{% endif %}">
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}اسم مقدم الطلب{% else %}Requester Name{% endif %}</div>
+                  <input type="text" id="sq_req_name" class="f-inp" value="{{ current_user.username }}" readonly
+                         title="{% if ar %}اسم المستخدم الحالي{% else %}Current username{% endif %}">
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}اعتمد بواسطة{% else %}Approved By{% endif %}</div>
+                  <input type="text" id="sq_approved_by" class="f-inp">
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}رقم مرجع المشتري{% else %}Buyer Reference No{% endif %}</div>
+                  <input type="text" id="sq_buyer_ref" class="f-inp"
+                         placeholder="{% if ar %}رقم مرجع المشتري{% else %}Buyer's reference number{% endif %}">
+                </div>
+              </div>
+              <div class="f-grid4">
+                <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ الترحيل{% else %}Posting Date{% endif %}</div>
-                  <input type="date" id="grn_posting_date" class="f-inp" dir="ltr" name="posting_date" disabled
+                  <input type="date" id="sq_posting_date" class="f-inp" dir="ltr" disabled
                          title="{% if ar %}يُفعّل عندما لا تكون الحالة مفتوحة{% else %}Enabled when status is not Open{% endif %}">
                 </div>
                 <div class="f-item">
-                  <div class="f-lbl">{% if ar %}تاريخ التسليم{% else %}Delivery Date{% endif %}</div>
-                  <input type="date" id="grn_delivery_date" class="f-inp" dir="ltr" name="delivery_date">
+                  <div class="f-lbl">{% if ar %}صالح حتى{% else %}Valid Until{% endif %}</div>
+                  <input type="date" id="sq_valid_until" class="f-inp" dir="ltr" onchange="validatePqDates()">
                 </div>
-              </div>
-
-              <div class="f-grid3" style="margin-bottom:12px;">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ المستند{% else %}Document Date{% endif %}</div>
-                  <input type="date" id="grn_doc_date" class="f-inp" dir="ltr" name="document_date"
-                         title="{% if ar %}سيتم حفظه دائماً بتاريخ اليوم{% else %}Always saved as today's date{% endif %}">
+                  <input type="date" id="sq_doc_date" class="f-inp" dir="ltr" readonly
+                         style="background:#f8fafc;color:#374151;"
+                         title="{% if ar %}دائماً تاريخ اليوم{% else %}Always today's date{% endif %}">
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}التاريخ المطلوب{% else %}Required Date{% endif %}</div>
+                  <input type="date" id="sq_req_date" class="f-inp" dir="ltr" onchange="validatePqDates()">
                 </div>
               </div>
-              <div class="f-item" style="margin-bottom:12px;">
+              <div id="pqDateErr" style="display:none;background:#fee2e2;color:#dc2626;font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:12px;"></div>
+              <div class="f-item">
                 <div class="f-lbl">{% if ar %}ملاحظات{% else %}Remarks{% endif %}</div>
-                <textarea id="grn_remarks" class="f-inp" rows="2" style="resize:vertical;" name="remarks"></textarea>
+                <textarea id="sq_remarks" class="f-inp" rows="2" style="resize:vertical;"></textarea>
               </div>
             </div>
           </div>
@@ -223,17 +241,17 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             <button type="button" class="pur-section-hdr open" onclick="togSec(this)">
               <div style="display:flex;align-items:center;">
                 <i class="pur-sec-icon fas fa-list-ul"></i>
-                {% if ar %}بنود الإيصال{% else %}Receipt Items{% endif %}
+                {% if ar %}بنود الطلب / Line Items{% else %}Line Items / بنود الطلب{% endif %}
                 <span id="liCount" style="background:#eff6ff;color:#2563eb;padding:1px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:8px;">0</span>
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
             <div class="pur-section-body open">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                <span style="font-size:11px;color:#6b7280;">
-                  <i class="fas fa-lock me-1"></i>
-                  {% if ar %}البنود موروثة من أمر الشراء وغير قابلة للتعديل{% else %}Items are inherited from the Purchase Order and locked{% endif %}
-                </span>
+                <button type="button" onclick="addLiRow()"
+                        style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:#2563eb;color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">
+                  <i class="fas fa-plus"></i>{% if ar %}إضافة صنف{% else %}Add Item{% endif %}
+                </button>
                 <span style="font-size:11px;color:#6b7280;">
                   <i class="fas fa-info-circle me-1"></i>
                   {% if ar %}المبلغ الخاضع = الكمية × السعر — الخصم{% else %}Taxable = Qty × Rate − Discount{% endif %}
@@ -256,6 +274,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                     <th style="width:80px;">{% if ar %}كود الضريبة{% else %}Tax Code{% endif %}</th>
                     <th style="width:65px;">{% if ar %}الضريبة{% else %}Tax Amt{% endif %}</th>
                     <th style="width:80px;">{% if ar %}الإجمالي{% else %}Total{% endif %}</th>
+                    <th style="width:28px;"></th>
                   </tr></thead>
                   <tbody id="liBody"></tbody>
                   <tfoot>
@@ -277,7 +296,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             <button type="button" class="pur-section-hdr open" onclick="togSec(this)">
               <div style="display:flex;align-items:center;">
                 <i class="pur-sec-icon fas fa-calculator"></i>
-                {% if ar %}ملخص إيصال الاستلام{% else %}Goods Receipt Note Summary{% endif %}
+                {% if ar %}ملخص عرض السعر / Sales Quotation Summary{% else %}Sales Quotation Summary / ملخص عرض السعر{% endif %}
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
@@ -321,7 +340,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
         {# ══ TAB 2: ATTACHMENTS ══ #}
         <div class="pur-tab-pane" id="tab_attach">
           <div style="padding:16px 18px;">
-            <div class="att-drop" onclick="document.getElementById('attInput').click()"
+            <div class="att-drop" id="attDrop" onclick="document.getElementById('attInput').click()"
                  ondragover="event.preventDefault();this.style.borderColor='#2563eb'"
                  ondragleave="this.style.borderColor='#bfdbfe'"
                  ondrop="event.preventDefault();this.style.borderColor='#bfdbfe';handleFiles(event.dataTransfer.files)">
@@ -335,6 +354,8 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                      style="display:none;" onchange="handleFiles(this.files)">
             </div>
             <div class="att-list" id="attList"></div>
+
+            {# Existing attachments (edit mode) #}
             <div id="existAttList" style="margin-top:10px;"></div>
           </div>
         </div>
@@ -344,10 +365,10 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 
       <div class="pur-footer">
         <button class="btn-f btn-cancel" data-bs-dismiss="modal">
-          <i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}
+          <i class="fas fa-times me-1"></i>{% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}
         </button>
-        <button class="btn-f btn-save" onclick="saveGRN()">
-          <i class="fas fa-save me-1"></i>{% if ar %}حفظ إيصال الاستلام{% else %}Save Goods Receipt Note{% endif %}
+        <button class="btn-f btn-save" onclick="savePQ()">
+          <i class="fas fa-save me-1"></i>{% if ar %}حفظ عرض السعر / Save{% else %}Save Sales Quotation / حفظ{% endif %}
         </button>
       </div>
 
@@ -373,9 +394,85 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
 <script>
 const IS_AR = {{ 'true' if ar else 'false' }};
+const CURRENT_USERNAME = {{ current_user.username | tojson }};
 const CSRF  = '{{ csrf_token() }}';
 let _liIdx = 0;
 let _attachments = [];
+let _itemMaster = [];
+let _itemMasterLoaded = false;
+
+async function loadItemMaster() {
+  try {
+    const res = await fetch('/items/data');
+    const all = await res.json();
+    _itemMaster = (all || []).filter(it => it.is_active === undefined || it.is_active);
+    _itemMasterLoaded = true;
+  } catch (e) {
+    console.error('Failed to load Item Master:', e);
+    _itemMaster = [];
+  }
+}
+
+/* ══ Posting Date: empty + disabled until status = Approved ══ */
+function onPqStatusChange() {
+  const statusEl = document.getElementById('sq_status');
+  const postEl   = document.getElementById('sq_posting_date');
+  if (!statusEl || !postEl) return;
+  if (statusEl.value !== 'Open') {
+    postEl.disabled = false;
+    if (!postEl.value) postEl.value = new Date().toISOString().split('T')[0];
+  } else {
+    postEl.disabled = true;
+    postEl.value = '';
+  }
+}
+
+function validatePqDates() {
+  const errEl = document.getElementById('pqDateErr');
+  const vu = document.getElementById('sq_valid_until').value;
+  const rd = document.getElementById('sq_req_date').value;
+  const today = new Date().toISOString().split('T')[0];
+  let msg = '';
+  if (vu && vu < today) msg = IS_AR ? 'يجب أن يكون "صالح حتى" بتاريخ اليوم أو بعده' : 'Valid Until must be today or later';
+  else if (rd && vu && rd > vu) msg = IS_AR ? 'يجب أن يكون "التاريخ المطلوب" قبل أو يساوي "صالح حتى"' : 'Required Date must be on/before Valid Until';
+  errEl.style.display = msg ? 'block' : 'none';
+  errEl.textContent = msg;
+  return !msg;
+}
+
+/* ══ Pull header + line items from the selected Approved PR ══ */
+let _prPullInProgress = false;
+
+async function onPrChange() {
+  const prId = document.getElementById('sq_sr_id').value;
+  if (!prId) return;
+  _prPullInProgress = true;
+  try {
+    const res = await fetch('/sales/requests/' + prId + '/summary');
+    if (!res.ok) throw new Error('Failed to fetch PR');
+    const pr = await res.json();
+
+    if (pr.buyer_id) document.getElementById('sq_buyer').value = pr.buyer_id;
+    /* Requester / Requester Name always stay as the logged-in username — do not overwrite from PR */
+    if (pr.valid_until)   document.getElementById('sq_valid_until').value = pr.valid_until;
+    if (pr.required_date) document.getElementById('sq_req_date').value   = pr.required_date;
+
+    document.getElementById('liBody').innerHTML = '';
+    _liIdx = 0;
+    if (pr.items && pr.items.length) {
+      pr.items.forEach(li => addLiRow(li));
+    } else {
+      addLiRow();
+    }
+    recalcSummary(); updLiCount();
+    validatePqDates();
+  } catch (e) {
+    console.error('Failed to load PR:', e);
+    alert(IS_AR ? 'فشل تحميل طلب البيع' : 'Failed to load Sales Request');
+  } finally {
+    _prPullInProgress = false;
+  }
+}
 
 /* ══ Section toggle ══ */
 function togSec(btn) {
@@ -396,84 +493,111 @@ function switchTab(tabId, btn) {
   btn.classList.add('active');
 }
 
-/* ══ PO selection → auto-fill vendor + LOCKED line items ══ */
-let _poPullInProgress = false;
-
-async function onPOChange() {
-  const poId = document.getElementById('grn_po_id').value;
-  if (!poId) {
-    document.getElementById('grn_vendor').value = '';
-    document.getElementById('grn_vendor_name').value = '';
-    return;
-  }
-  _poPullInProgress = true;
-  try {
-    const res = await fetch('/purchase/orders/' + poId + '/summary');
-    if (!res.ok) throw new Error('Failed to fetch PO');
-    const po = await res.json();
-
-    document.getElementById('grn_vendor').value = po.vendor_id || '';
-    document.getElementById('grn_vendor_name').value = po.vendor_name || '';
-    if (po.vendor_ref_no) document.getElementById('grn_vendor_ref').value = po.vendor_ref_no;
-
-    document.getElementById('liBody').innerHTML = '';
-    _liIdx = 0;
-    if (po.items && po.items.length) {
-      po.items.forEach(li => addLiRow(li));
-    } else {
-      addLiRow();
-    }
-    recalcSummary(); updLiCount();
-  } catch (e) {
-    console.error('Failed to load PO:', e);
-    alert(IS_AR ? 'فشل تحميل أمر الشراء' : 'Failed to load Purchase Order');
-  } finally {
-    _poPullInProgress = false;
-  }
-}
-
-/* ══ Posting Date: empty + disabled until status = Approved ══ */
-function onGrnStatusChange() {
-  const statusEl = document.getElementById('grn_status');
-  const postEl   = document.getElementById('grn_posting_date');
-  if (!statusEl || !postEl) return;
-  if (statusEl.value !== 'Open') {
-    postEl.disabled = false;
-    if (!postEl.value) postEl.value = new Date().toISOString().split('T')[0];
-  } else {
-    postEl.disabled = true;
-    postEl.value = '';
-  }
-}
-
 /* ══ Doc No fetch ══ */
 async function fetchDocNo() {
-  const res = await fetch('/purchase/next-doc-no?type=GRN');
-  const d   = await res.json();
-  document.getElementById('grn_doc_no').value = d.doc_no;
-  document.getElementById('grnDocBadge').textContent = d.doc_no;
+  try {
+    const res = await fetch('/sales/next-doc-no?type=SQ');
+    const d   = await res.json();
+    document.getElementById('sq_doc_no').value = d.doc_no;
+    document.getElementById('sqDocBadge').textContent = d.doc_no;
+  } catch(e) {
+    console.error('Error fetching doc no:', e);
+  }
 }
 
-/* ══ Line Items — locked/inherited from PO, read-only ══ */
+/* ══ Item Master dropdown helpers ══ */
+function _itemCodeOptionsHtml(selectedCode) {
+  let html = '<option value="">' + (IS_AR ? '-- الكود --' : '-- Code --') + '</option>';
+  html += _itemMaster.map(it => {
+    const sel = it.item_code === selectedCode ? ' selected' : '';
+    return `<option value="${it.item_code}"${sel}>${it.item_code}</option>`;
+  }).join('');
+  if (selectedCode && !_itemMaster.some(it => it.item_code === selectedCode)) {
+    html += `<option value="${selectedCode}" selected>${selectedCode}</option>`;
+  }
+  return html;
+}
+
+function _itemNameOptionsHtml(selectedCode) {
+  let html = '<option value="">' + (IS_AR ? '-- الاسم --' : '-- Name --') + '</option>';
+  html += _itemMaster.map(it => {
+    const sel = it.item_code === selectedCode ? ' selected' : '';
+    const label = it.name_en + (it.name_ar ? ' / ' + it.name_ar : '');
+    return `<option value="${it.item_code}"${sel}>${label}</option>`;
+  }).join('');
+  if (selectedCode && !_itemMaster.some(it => it.item_code === selectedCode)) {
+    html += `<option value="${selectedCode}" selected>(${IS_AR ? 'غير معروف' : 'unknown item'})</option>`;
+  }
+  return html;
+}
+
+function _uomOptionsHtml(item, selectedUom) {
+  const list = (item && item.uoms && item.uoms.length) ? item.uoms : null;
+  if (!list) {
+    const fallback = selectedUom || 'unit';
+    return `<option value="${fallback}" selected>${fallback}</option>`;
+  }
+  return list.map(u => {
+    const val = u.unit_name;
+    const sel = (selectedUom ? selectedUom === val : u.is_default) ? ' selected' : '';
+    return `<option value="${val}"${sel}>${val}</option>`;
+  }).join('');
+}
+
+function onLiItemChange(idx, source) {
+  const codeSel = document.getElementById('plic_' + idx);
+  const nameSel = document.getElementById('plname_' + idx);
+  const code = source === 'name' ? (nameSel ? nameSel.value : '') : (codeSel ? codeSel.value : '');
+  const item = _itemMaster.find(it => it.item_code === code);
+
+  if (codeSel && codeSel.value !== code) codeSel.value = code;
+  if (nameSel && nameSel.value !== code) nameSel.value = code;
+
+  const descEl = document.getElementById('plid_' + idx); // hidden field, holds the name text actually submitted
+  const uomEl  = document.getElementById('pluom_' + idx);
+  const rateEl = document.getElementById('plrt_' + idx);
+  if (item) {
+    if (descEl) descEl.value = item.name_en + (item.name_ar ? ' / ' + item.name_ar : '');
+    if (uomEl)  uomEl.innerHTML = _uomOptionsHtml(item, null);
+    if (rateEl) rateEl.value = (item.main_rate || 0).toFixed(2);
+  } else {
+    if (descEl) descEl.value = '';
+    if (uomEl)  uomEl.innerHTML = _uomOptionsHtml(null, 'unit');
+  }
+  recalcLi(idx);
+}
+
+/* ══ Line Items ══ */
 function addLiRow(d) {
   const idx = _liIdx++;
   d = d || {};
+  const item = d.item_code ? _itemMaster.find(it => it.item_code === d.item_code) : null;
   const row = `<tr id="plr_${idx}">
     <td style="text-align:center;color:#9ca3af;font-size:11px;padding:4px;">${_liIdx}</td>
-    <td><input type="text"   class="li-inp" name="li_item_code[]" value="${d.item_code||''}" readonly style="width:80px;background:#f3f4f6;"></td>
-    <td><input type="text"   class="li-inp" name="li_item_desc[]" value="${d.item_desc||''}" readonly style="min-width:130px;background:#f3f4f6;"></td>
-    <td><input type="date"   class="li-inp" name="li_required_date[]" value="${d.required_date||''}" dir="ltr" readonly style="width:105px;background:#f3f4f6;"></td>
-    <td><input type="text"   class="li-inp" name="li_warehouse[]" value="${d.warehouse||''}" readonly style="min-width:90px;background:#f3f4f6;"></td>
-    <td><input type="text"   class="li-inp" name="li_uom[]" value="${d.uom||'unit'}" readonly style="width:90px;background:#f3f4f6;"></td>
-    <td><input type="number" class="li-inp" name="li_qty[]"      id="plq_${idx}"  value="${d.quantity||0}"  readonly style="width:62px;background:#f3f4f6;"></td>
-    <td><input type="number" class="li-inp" name="li_rate[]"     id="plrt_${idx}" value="${d.rate||0}"      readonly style="width:62px;background:#f3f4f6;"></td>
-    <td><input type="number" class="li-inp" name="li_discount[]" id="pld_${idx}"  value="${d.discount||0}"  readonly style="width:58px;background:#f3f4f6;"></td>
-    <td><input type="number" class="li-inp" name="li_freight[]"  id="plf_${idx}"  value="${d.freight||0}"   readonly style="width:58px;background:#f3f4f6;"></td>
+    <td><select class="li-inp" name="li_item_code[]" id="plic_${idx}" onchange="onLiItemChange(${idx},'code')" style="width:110px;">${_itemCodeOptionsHtml(d.item_code||'')}</select></td>
+    <td>
+      <select class="li-inp" id="plname_${idx}" onchange="onLiItemChange(${idx},'name')" style="min-width:160px;">${_itemNameOptionsHtml(d.item_code||'')}</select>
+      <input type="hidden" name="li_item_desc[]" id="plid_${idx}" value="${d.item_desc||d.description||(item?(item.name_en+(item.name_ar?' / '+item.name_ar:'')):'')}">
+    </td>
+    <td><input type="date"   class="li-inp" name="li_required_date[]" value="${d.required_date||''}" dir="ltr" style="width:105px;"></td>
+    <td><input type="text"   class="li-inp" name="li_warehouse[]" value="${d.warehouse||''}" style="min-width:90px;"></td>
+    <td><select class="li-inp" name="li_uom[]" id="pluom_${idx}" style="width:90px;">${_uomOptionsHtml(item, d.uom)}</select></td>
+    <td><input type="number" class="li-inp" name="li_qty[]"      id="plq_${idx}"  value="${d.quantity||0}"  min="0" step="0.01" oninput="recalcLi(${idx})" style="width:62px;"></td>
+    <td><input type="number" class="li-inp" name="li_rate[]"     id="plrt_${idx}" value="${d.rate||(item?item.main_rate:0)||0}" min="0" step="0.01" oninput="recalcLi(${idx})" style="width:62px;"></td>
+    <td><input type="number" class="li-inp" name="li_discount[]" id="pld_${idx}"  value="${d.discount||0}"  min="0" step="0.01" oninput="recalcLi(${idx})" style="width:58px;"></td>
+    <td><input type="number" class="li-inp" name="li_freight[]"  id="plf_${idx}"  value="${d.freight||0}"   min="0" step="0.01" oninput="recalcLi(${idx})" style="width:58px;"></td>
     <td><input type="number" class="li-inp" id="plt_${idx}"  name="li_taxable_disp[]" value="${d.taxable||0}" readonly
          style="width:76px;background:#fffbeb;color:#92400e;font-weight:600;" title="Qty × Rate − Discount"></td>
-    <td><input type="text" class="li-inp" name="li_tax_code[]" id="pltc_${idx}" value="${d.tax_code||'VAT15'}" readonly style="width:78px;background:#f3f4f6;"></td>
+    <td><select class="li-inp" name="li_tax_code[]" id="pltc_${idx}" onchange="recalcLi(${idx})" style="width:78px;">
+      <option value="VAT15"${(d.tax_code||'VAT15')==='VAT15'?' selected':''}>VAT 15%</option>
+      <option value="VAT0"${d.tax_code==='VAT0'?' selected':''}>VAT 0%</option>
+      <option value="EXEMPT"${d.tax_code==='EXEMPT'?' selected':''}>Exempt</option>
+    </select></td>
     <td><input type="number" class="li-inp" id="plta_${idx}" name="li_tax_amount_disp[]" value="${d.tax_amount||0}" readonly style="width:62px;background:#f3f4f6;"></td>
     <td><input type="number" class="li-inp" id="pltot_${idx}" name="li_total_disp[]" value="${d.total||0}" readonly style="width:76px;background:#f0fdf4;font-weight:700;color:#166534;"></td>
+    <td><button type="button" onclick="removeLi(${idx})"
+                style="width:22px;height:22px;border-radius:5px;border:none;background:#fee2e2;color:#b91c1c;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">
+      <i class="fas fa-times" style="font-size:9px;"></i></button></td>
   </tr>`;
   document.getElementById('liBody').insertAdjacentHTML('beforeend', row);
   recalcLi(idx);
@@ -495,8 +619,11 @@ function recalcLi(idx) {
   const fr   = g('plf_'+idx);
   const tcEl = document.getElementById('pltc_'+idx);
   const taxRate = tcEl && tcEl.value === 'VAT15' ? 15 : 0;
+  // Taxable = (Qty × Rate − Discount) + Freight
   const taxable = Math.max(0, (qty * rate - disc) + fr);
+  // Tax = Taxable × Tax%
   const taxAmt  = Math.round(taxable * taxRate / 100 * 100) / 100;
+  // Total = Taxable + Tax
   const total   = taxable + taxAmt;
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v.toFixed(2); };
   set('plt_'+idx,   taxable);
@@ -514,6 +641,10 @@ function recalcSummary() {
     fr   += g('li_freight');
     vat  += parseFloat(row.querySelector('[name="li_tax_amount_disp[]"]')?.value || 0) || 0;
   });
+  // Total before discount = Σ(Qty × Rate)
+  // Total discount = Σ(Discount)
+  // Freight = Σ(Freight)
+  // Excl. VAT = (Total before discount - Discount) + Freight  = (bd - disc) + fr
   const excl = (bd - disc) + fr;
   const incl = excl + vat;
   const fmt  = n => 'SAR ' + n.toLocaleString('en-SA', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -557,7 +688,8 @@ function removeAtt(name) {
 }
 
 function updDocCount() {
-  const total = _attachments.length + document.querySelectorAll('#existAttList .att-item').length;
+  const total = _attachments.length +
+    document.querySelectorAll('#existAttList .att-item').length;
   const el = document.getElementById('s_doc_count');
   const badge = document.getElementById('attBadge');
   if (el) el.textContent = total;
@@ -565,70 +697,79 @@ function updDocCount() {
 }
 
 /* ══ Open Add ══ */
-function openAddGRN() {
+async function openAddPQ() {
   _liIdx = 0; _attachments = [];
-  document.getElementById('grn_id').value = '';
-  document.getElementById('grnTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة إيصال استلام بضاعة' : 'Add Goods Receipt Note');
-  
-  ['grn_contact','grn_vendor_ref','grn_remarks'].forEach(id => {
+  document.getElementById('sq_id').value = '';
+  document.getElementById('sqTitle').innerHTML =
+    '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة عرض سعر شراء' : 'Add Sales Quotation');
+  // Clear fields (requester / requester name always stay as logged-in username)
+  ['sq_approved_by','sq_remarks','sq_buyer_ref'].forEach(id => {
     const e = document.getElementById(id); if (e) e.value = '';
   });
-  
+  document.getElementById('sq_requester').value = CURRENT_USERNAME;
+  document.getElementById('sq_req_name').value  = CURRENT_USERNAME;
   const today = new Date().toISOString().split('T')[0];
-  document.getElementById('grn_posting_date').value = '';
-  document.getElementById('grn_posting_date').disabled = true;
-  document.getElementById('grn_delivery_date').value = today;
-  document.getElementById('grn_doc_date').value = today; // editable per spec, but server re-stamps to today on save
-  
-  document.getElementById('grn_status').value = 'Open';
-  document.getElementById('grn_vendor').value = '';
-  document.getElementById('grn_vendor_name').value = '';
-  document.getElementById('grn_po_id').value = '';
-  document.getElementById('grn_doc_no').value = '';
-  document.getElementById('grnDocBadge').textContent = 'NEW';
+  document.getElementById('sq_posting_date').value = '';
+  document.getElementById('sq_posting_date').disabled = true;
+  document.getElementById('sq_valid_until').value = today;
+  document.getElementById('sq_doc_date').value = today;
+  document.getElementById('sq_req_date').value = today;
+  document.getElementById('pqDateErr').style.display = 'none';
+  document.getElementById('sq_status').value = 'Open';
+  document.getElementById('sq_buyer').value = '';
+  document.getElementById('sq_sr_id').value = '';
+  document.getElementById('sq_doc_no').value = '';
+  document.getElementById('sqDocBadge').textContent = 'NEW';
   document.getElementById('liBody').innerHTML = '';
   document.getElementById('attList').innerHTML = '';
   document.getElementById('existAttList').innerHTML = '';
-  
   recalcSummary(); updLiCount(); updDocCount();
+  // Switch to content tab, open all sections
   switchTab('tab_content', document.querySelector('.pur-tab'));
-  
+  // Auto-open sections
   document.querySelectorAll('.pur-section-hdr').forEach(btn => {
     btn.classList.add('open');
     btn.nextElementSibling.classList.add('open');
     const ch = btn.querySelector('.fa-chevron-up,.fa-chevron-down');
     if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
   });
-  
+  // Fetch doc no from server
   fetchDocNo();
+  // Load Item Master, then add first empty line item
+  await loadItemMaster();
   addLiRow();
-  new bootstrap.Modal(document.getElementById('grnModal')).show();
+  new bootstrap.Modal(document.getElementById('sqModal')).show();
 }
 
 /* ══ Open Edit ══ */
-function openEditGRN(id) {
-  fetch('/purchase/grn/' + id + '/json').then(r => r.json()).then(d => {
+function openEditPQ(id) {
+  fetch('/sales/quotations/' + id + '/json').then(r => r.json()).then(async d => {
     _liIdx = 0; _attachments = [];
-    document.getElementById('grn_id').value = id;
-    document.getElementById('grnTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل إيصال الاستلام' : 'Edit Goods Receipt Note');
-    document.getElementById('grn_doc_no').value = d.doc_no || '';
-    document.getElementById('grnDocBadge').textContent = d.doc_no || '';
-    document.getElementById('grn_status').value = d.status || 'Open';
-    document.getElementById('grn_vendor').value = d.vendor_id || '';
-    document.getElementById('grn_vendor_name').value = d.vendor_name || '';
-    document.getElementById('grn_contact').value = d.contact_person || '';
-    document.getElementById('grn_vendor_ref').value = d.vendor_ref_no || '';
-    document.getElementById('grn_remarks').value = d.remarks || '';
-    document.getElementById('grn_posting_date').disabled = (d.status === 'Open');
-    document.getElementById('grn_posting_date').value = d.posting_date || '';
-    document.getElementById('grn_delivery_date').value = d.delivery_date || '';
-    document.getElementById('grn_doc_date').value = new Date().toISOString().split('T')[0]; // re-stamped on every save
-    document.getElementById('grn_po_id').value = d.purchase_order_id || '';
-    
+    document.getElementById('sq_id').value = id;
+    document.getElementById('sqTitle').innerHTML =
+      '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل عرض السعر' : 'Edit Sales Quotation');
+    document.getElementById('sq_doc_no').value = d.doc_no || '';
+    document.getElementById('sqDocBadge').textContent = d.doc_no || '';
+    document.getElementById('sq_status').value = d.status || 'Open';
+    document.getElementById('sq_buyer').value = d.buyer_id || '';
+    document.getElementById('sq_sr_id').value = d.sales_request_id || '';
+    document.getElementById('sq_requester').value = d.requester || CURRENT_USERNAME;
+    document.getElementById('sq_req_name').value = d.requester_name || CURRENT_USERNAME;
+    document.getElementById('sq_approved_by').value = d.approved_by || '';
+    document.getElementById('sq_buyer_ref').value = d.buyer_ref_no || '';
+    document.getElementById('sq_remarks').value = d.remarks || '';
+    document.getElementById('sq_posting_date').disabled = (d.status === 'Open');
+    document.getElementById('sq_posting_date').value = d.posting_date || '';
+    document.getElementById('sq_valid_until').value  = d.valid_until  || '';
+    document.getElementById('sq_doc_date').value     = new Date().toISOString().split('T')[0]; // re-stamped on every save
+    document.getElementById('sq_req_date').value     = d.required_date || '';
+    document.getElementById('pqDateErr').style.display = 'none';
+    // Line items
+    await loadItemMaster();
     document.getElementById('liBody').innerHTML = '';
     (d.items || []).forEach(li => addLiRow(li));
     if (!d.items?.length) addLiRow();
-    
+    // Existing attachments
     document.getElementById('attList').innerHTML = '';
     document.getElementById('existAttList').innerHTML = '';
     (d.attachments || []).forEach(a => {
@@ -637,7 +778,6 @@ function openEditGRN(id) {
         <span style="color:#9ca3af;margin-left:8px;font-size:11px;">existing</span></span>`;
       document.getElementById('existAttList').appendChild(div);
     });
-    
     recalcSummary(); updLiCount(); updDocCount();
     switchTab('tab_content', document.querySelector('.pur-tab'));
     document.querySelectorAll('.pur-section-hdr').forEach(btn => {
@@ -645,72 +785,78 @@ function openEditGRN(id) {
       const ch = btn.querySelector('.fa-chevron-up,.fa-chevron-down');
       if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
     });
-    new bootstrap.Modal(document.getElementById('grnModal')).show();
+    new bootstrap.Modal(document.getElementById('sqModal')).show();
+  }).catch(err => {
+    console.error('Error loading quotation:', err);
+    alert(IS_AR ? 'حدث خطأ في تحميل البيانات' : 'Error loading data');
   });
 }
 
 /* ══ Save ══ */
-async function saveGRN() {
-  if (!document.getElementById('grn_po_id').value) {
-    alert(IS_AR ? 'يجب اختيار أمر شراء معتمد' : 'An Approved Purchase Order must be selected');
+async function savePQ() {
+  if (!document.getElementById('sq_sr_id').value) {
+    alert(IS_AR ? 'يجب اختيار طلب بيع معتمد' : 'An Approved Sales Request must be selected');
     return;
   }
-  if (_poPullInProgress) {
-    alert(IS_AR ? 'يرجى الانتظار حتى يتم تحميل بيانات أمر الشراء' : 'Please wait — still loading data from the Purchase Order');
+  if (_prPullInProgress) {
+    alert(IS_AR ? 'يرجى الانتظار حتى يتم تحميل بيانات طلب البيع' : 'Please wait — still loading data from the Sales Request');
     return;
   }
-  const id = document.getElementById('grn_id').value;
-  const url = id ? `/purchase/grn/${id}/edit` : '/purchase/grn/add';
-  const fd = new FormData();
-  
-  // Add CSRF token
-  fd.set('csrf_token', CSRF);
-  
-  // Get form data
-  fd.set('status', document.getElementById('grn_status').value);
-  fd.set('vendor_id', document.getElementById('grn_vendor').value);
-  fd.set('po_id', document.getElementById('grn_po_id')?.value || '');
-  fd.set('contact_person', document.getElementById('grn_contact')?.value || '');
-  fd.set('vendor_ref_no', document.getElementById('grn_vendor_ref')?.value || '');
-  fd.set('remarks', document.getElementById('grn_remarks')?.value || '');
-  fd.set('posting_date', document.getElementById('grn_posting_date').value);
-  fd.set('delivery_date', document.getElementById('grn_delivery_date').value);
-  fd.set('document_date', document.getElementById('grn_doc_date').value);
-  
-  // Add line items
-  document.querySelectorAll('#liBody tr').forEach(row => {
-    const g = n => row.querySelector(`[name="${n}[]"]`)?.value || '';
-    fd.append('li_item_code[]', g('li_item_code'));
-    fd.append('li_item_desc[]', g('li_item_desc'));
-    fd.append('li_required_date[]', g('li_required_date'));
-    fd.append('li_warehouse[]', g('li_warehouse'));
-    fd.append('li_uom[]', g('li_uom'));
-    fd.append('li_qty[]', g('li_qty'));
-    fd.append('li_rate[]', g('li_rate'));
-    fd.append('li_discount[]', g('li_discount'));
-    fd.append('li_freight[]', g('li_freight'));
-    fd.append('li_tax_code[]', g('li_tax_code'));
-  });
-  
-  // Add attachments
-  _attachments.forEach(f => fd.append('attachments', f));
-  
+  if (!validatePqDates()) { return; }
   try {
-    const res = await fetch(url, { 
-      method: 'POST', 
-      headers: { 'X-CSRFToken': CSRF },
-      body: fd 
+    const id  = document.getElementById('sq_id').value;
+    const url = id ? `/sales/quotations/${id}/edit` : '/sales/quotations/add';
+    const fd  = new FormData();
+    fd.set('csrf_token', CSRF);
+    fd.set('status',         document.getElementById('sq_status').value);
+    fd.set('sr_id', document.getElementById('sq_sr_id')?.value || '');
+    fd.set('buyer_id',      document.getElementById('sq_buyer').value);
+    fd.set('buyer_ref_no',  document.getElementById('sq_buyer_ref').value);
+    fd.set('requester',      document.getElementById('sq_requester').value);
+    fd.set('requester_name', document.getElementById('sq_req_name').value);
+    fd.set('approved_by',    document.getElementById('sq_approved_by').value);
+    fd.set('remarks',        document.getElementById('sq_remarks').value);
+    fd.set('posting_date',   document.getElementById('sq_posting_date').value);
+    fd.set('valid_until',    document.getElementById('sq_valid_until').value);
+    fd.set('document_date',  document.getElementById('sq_doc_date').value);
+    fd.set('required_date',  document.getElementById('sq_req_date').value);
+    
+    // Line items
+    document.querySelectorAll('#liBody tr').forEach(row => {
+      const g = n => row.querySelector(`[name="${n}[]"]`)?.value || '';
+      fd.append('li_item_code[]',      g('li_item_code'));
+      fd.append('li_item_desc[]',      g('li_item_desc'));
+      fd.append('li_required_date[]',  g('li_required_date'));
+      fd.append('li_warehouse[]',      g('li_warehouse'));
+      fd.append('li_uom[]',            g('li_uom'));
+      fd.append('li_qty[]',            g('li_qty'));
+      fd.append('li_rate[]',           g('li_rate'));
+      fd.append('li_discount[]',       g('li_discount'));
+      fd.append('li_freight[]',        g('li_freight'));
+      fd.append('li_tax_code[]',       g('li_tax_code'));
     });
+    
+    _attachments.forEach(f => fd.append('attachments', f));
+    
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {'X-CSRFToken': CSRF},
+      body: fd
+    });
+    
     const data = await res.json();
+    
     if (data.ok) {
-      bootstrap.Modal.getInstance(document.getElementById('grnModal'))?.hide();
+      bootstrap.Modal.getInstance(document.getElementById('sqModal'))?.hide();
       loadData();
+      // Optional: Show success message
+      // alert(IS_AR ? 'تم الحفظ بنجاح' : 'Saved successfully');
     } else {
       alert(data.error || (IS_AR ? 'حدث خطأ' : 'An error occurred'));
     }
-  } catch (err) {
-    console.error('Error saving:', err);
-    alert(IS_AR ? 'حدث خطأ في الاتصال' : 'Connection error');
+  } catch(err) {
+    console.error('Save error:', err);
+    alert(IS_AR ? 'حدث خطأ في الحفظ' : 'Save failed');
   }
 }
 
@@ -718,15 +864,21 @@ async function saveGRN() {
 function confDel(id, docNo) {
   document.getElementById('delTxt').textContent = (IS_AR ? 'حذف: ' : 'Delete: ') + docNo + '?';
   document.getElementById('delBtn').onclick = () => {
-    fetch('/purchase/grn/' + id + '/delete', {
-      method: 'POST',
-      headers: { 'X-CSRFToken': CSRF },
-      body: new URLSearchParams({ csrf_token: CSRF })
+    fetch('/sales/quotations/' + id + '/delete', {
+      method:'POST', 
+      headers:{
+        'X-CSRFToken': CSRF,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }, 
+      body: new URLSearchParams({csrf_token: CSRF})
     }).then(r => r.json()).then(d => {
-      if (d.ok) {
-        bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide();
-        loadData();
+      if (d.ok) { 
+        bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide(); 
+        loadData(); 
       }
+    }).catch(err => {
+      console.error('Delete error:', err);
+      alert(IS_AR ? 'حدث خطأ في الحذف' : 'Delete failed');
     });
   };
   new bootstrap.Modal(document.getElementById('delModal')).show();
@@ -734,33 +886,30 @@ function confDel(id, docNo) {
 
 /* ══ AG-Grid ══ */
 const AG_LOCALE = IS_AR ? {
-  addFilterCondition: '+ إضافة قاعدة / Add Rule',
-  matchAll: 'يطابق الكل / Match All',
-  applyFilter: 'تطبيق / Apply',
-  clearFilter: 'مسح / Clear',
-  resetFilter: 'إعادة تعيين',
-  noRowsToShow: 'لا توجد بيانات',
-  filterOoo: 'تصفية...',
+  addFilterCondition:'+ إضافة قاعدة / Add Rule', matchAll:'يطابق الكل / Match All',
+  applyFilter:'تطبيق / Apply', clearFilter:'مسح / Clear', resetFilter:'إعادة تعيين',
+  noRowsToShow:'لا توجد بيانات', filterOoo:'تصفية...',
 } : {
-  addFilterCondition: '+ Add Rule / إضافة قاعدة',
-  matchAll: 'Match All / بتطابق مع الكل',
-  applyFilter: 'Apply / تطبيق',
-  clearFilter: 'Clear / مسح',
-  resetFilter: 'Reset',
-  noRowsToShow: 'No records found',
+  addFilterCondition:'+ Add Rule / إضافة قاعدة', matchAll:'Match All / بتطابق مع الكل',
+  applyFilter:'Apply / تطبيق', clearFilter:'Clear / مسح', resetFilter:'Reset',
+  noRowsToShow:'No records found',
 };
 
 function rStatus(p) {
-  const cfg = { Open: '#dbeafe:#2563eb', Pending: '#fef3c7:#d97706',
-    Approved: '#dcfce7:#15803d', Closed: '#f1f5f9:#6b7280', Cancelled: '#fee2e2:#dc2626' };
-  const [bg, fg] = (cfg[p.value] || cfg.Open).split(':');
-  return `<span style="background:${bg};color:${fg};padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;">${p.value || 'Open'}</span>`;
+  const cfg = { Open:'#dbeafe:#2563eb', Pending:'#fef3c7:#d97706',
+    Approved:'#dcfce7:#15803d', Closed:'#f1f5f9:#6b7280', Cancelled:'#fee2e2:#dc2626' };
+  const [bg,fg] = (cfg[p.value] || cfg.Open).split(':');
+  return `<span style="background:${bg};color:${fg};padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;">${p.value||'Open'}</span>`;
 }
-
 function rSAR(p) {
-  return p.value != null
-    ? `<span style="font-weight:600;font-variant-numeric:tabular-nums;">${parseFloat(p.value).toLocaleString('en-SA', { minimumFractionDigits: 2 })}</span>`
-    : '';
+  return p.value!=null
+    ? `<span style="font-weight:600;font-variant-numeric:tabular-nums;">${parseFloat(p.value).toLocaleString('en-SA',{minimumFractionDigits:2})}</span>` : '';
+}
+function rPRLink(p) {
+  const no = p.data && p.data.sr_doc_no;
+  const prId = p.data && p.data.sales_request_id;
+  if (!no || !prId) return '<span style="color:#9ca3af;">—</span>';
+  return `<a href="/sales/requests/${prId}/view" style="color:#2563eb;font-weight:600;text-decoration:none;" title="${IS_AR?'عرض طلب البيع':'View Sales Request'}">${no}</a>`;
 }
 
 class ActR {
@@ -769,70 +918,61 @@ class ActR {
     this.g.style.cssText = 'display:flex;align-items:center;gap:3px;';
     const d = p.data;
     this.g.innerHTML = `
-      <button class="ag-ab ag-ab-view" onclick="window.location='/purchase/grn/${d.id}/view'" title="${IS_AR ? 'عرض' : 'View'}"><i class="fas fa-eye"></i></button>
-      <button class="ag-ab ag-ab-edit" onclick="openEditGRN(${d.id})" title="${IS_AR ? 'تعديل' : 'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-      <button class="ag-ab ag-ab-del"  onclick="confDel(${d.id},'${(d.doc_no || '').replace(/'/g, "\\'")}')" title="${IS_AR ? 'حذف' : 'Delete'}"><i class="fas fa-trash"></i></button>`;
+      <button class="ag-ab ag-ab-view" onclick="window.location='/sales/quotations/${d.id}/view'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
+      <button class="ag-ab ag-ab-edit" onclick="openEditPQ(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+      <button class="ag-ab ag-ab-del"  onclick="confDel(${d.id},'${(d.doc_no||'').replace(/'/g,"\\'")}') " title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
   }
   getGui() { return this.g; }
 }
 
 const defCol = {
-  sortable: true,
-  resizable: true,
-  filter: true,
-  floatingFilter: true,
-  filterParams: { buttons: ['apply', 'reset', 'clear'], closeOnApply: true, maxNumConditions: 10 }
+  sortable:true, resizable:true, filter:true, floatingFilter:true,
+  filterParams:{buttons:['apply','reset','clear'], closeOnApply:true, maxNumConditions:10}
 };
 const cols = [
-  { headerName: '#', field: 'id', width: 65, floatingFilter: false, suppressMenu: true },
-  { headerName: IS_AR ? 'رقم المستند' : 'Doc No', field: 'doc_no', width: 130, filter: 'agTextColumnFilter' },
-  { headerName: IS_AR ? 'رقم أمر الشراء' : 'PO No', field: 'po_no', width: 130, filter: 'agTextColumnFilter' },
-  { headerName: IS_AR ? 'المورد' : 'Vendor', field: 'vendor_name', minWidth: 180, filter: 'agTextColumnFilter' },
-  { headerName: IS_AR ? 'شخص الاتصال' : 'Contact Person', field: 'contact_person', width: 140, filter: 'agTextColumnFilter' },
-  { headerName: IS_AR ? 'الحالة' : 'Status', field: 'status', width: 100, cellRenderer: rStatus, floatingFilter: false },
-  { headerName: IS_AR ? 'تاريخ الترحيل' : 'Posting Date', field: 'posting_date', width: 125, filter: 'agTextColumnFilter' },
-  { headerName: IS_AR ? 'الإجمالي' : 'Total Incl. VAT', field: 'total_incl_vat', width: 145, cellRenderer: rSAR, floatingFilter: false },
-  {
-    headerName: IS_AR ? 'إجراءات' : 'Actions',
-    field: '_a',
-    width: 110,
-    pinned: IS_AR ? 'left' : 'right',
-    sortable: false,
-    suppressMenu: true,
-    floatingFilter: false,
-    resizable: false,
-    cellRenderer: ActR,
-    cellStyle: { overflow: 'visible', padding: '0 6px' }
-  },
+  {headerName:'#',field:'id',width:65,floatingFilter:false,suppressMenu:true},
+  {headerName:IS_AR?'رقم المستند':'Doc No',field:'doc_no',width:125,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'رقم طلب البيع':'PR Doc No',field:'pr_doc_no',width:130,filter:'agTextColumnFilter',cellRenderer:rPRLink},
+  {headerName:IS_AR?'المستخدم':'Requester',field:'requester',width:120,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'اسم مقدم الطلب':'Requester Name',field:'requester_name',minWidth:160,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'المشتري':'Buyer',field:'buyer_name',minWidth:180,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'الحالة':'Status',field:'status',width:105,cellRenderer:rStatus,floatingFilter:false},
+  {headerName:IS_AR?'تاريخ الترحيل':'Posting Date',field:'posting_date',width:125,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'صالح حتى':'Valid Until',field:'valid_until',width:115,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'الإجمالي شامل الضريبة':'Total Incl. VAT',field:'total_incl_vat',width:145,cellRenderer:rSAR,floatingFilter:false},
+  {headerName:IS_AR?'اعتمد بواسطة':'Approved By',field:'approved_by',width:130,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'إجراءات':'Actions الإجراءات',field:'_a',width:110,pinned:IS_AR?'left':'right',
+   sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,
+   cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 6px'}},
 ];
 
 let gridApi;
-agGrid.createGrid(document.getElementById('grnGrid'), {
-  columnDefs: cols,
-  rowData: [],
-  pagination: true,
-  paginationPageSize: 10,
-  animateRows: true,
-  enableRtl: IS_AR,
-  defaultColDef: defCol,
-  localeText: AG_LOCALE,
-  onGridReady(p) { gridApi = p.api;
-    loadData(); },
-  onPaginationChanged() { upd(); },
-  getRowStyle(p) { return p.node.rowIndex % 2 === 0 ? { background: '#fff' } : { background: '#fafbfc' }; }
+document.addEventListener('DOMContentLoaded', function() {
+  agGrid.createGrid(document.getElementById('sqGrid'), {
+    columnDefs:cols, rowData:[], pagination:true, paginationPageSize:10,
+    animateRows:true, enableRtl:IS_AR, defaultColDef:defCol, localeText:AG_LOCALE,
+    onGridReady(p) { gridApi=p.api; loadData(); },
+    onPaginationChanged() { upd(); },
+    getRowStyle(p) { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
+  });
 });
 
 function loadData() {
-  fetch('/purchase/grn/data').then(r => r.json())
-    .then(d => { gridApi.setGridOption('rowData', d);
-      upd(); })
+  fetch('/sales/quotations/data')
+    .then(r=>r.json())
+    .then(d => { 
+      if (gridApi) {
+        gridApi.setGridOption('rowData',d); 
+        upd(); 
+      }
+    })
     .catch(console.error);
 }
 
 function upd() {
   if (!gridApi) return;
   const c = gridApi.getDisplayedRowCount();
-  document.getElementById('selText').textContent = c + ' ' + (IS_AR ? 'إيصال' : 'notes');
+  document.getElementById('selText').textContent = c + ' ' + (IS_AR ? 'طلب' : 'quotations');
   document.getElementById('pageInfo').textContent = `${c} entries`;
 }
 </script>

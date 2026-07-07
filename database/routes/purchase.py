@@ -668,8 +668,8 @@ def pr_add():
 
     pr = PurchaseRequest(
         doc_no=_next_doc_no('PR', PurchaseRequest),
-        requester=f.get('requester','').strip(),
-        requester_name=f.get('requester_name','').strip(),
+        requester=current_user.username,
+        requester_name=current_user.username,
         vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
         status=f.get('status','Open'),
         posting_date=pd(f.get('posting_date')),
@@ -698,8 +698,12 @@ def pr_edit(id):
     if err:
         return jsonify({'ok': False, 'error': err}), 400
 
-    for fld in ['requester','requester_name','status','remarks','approved_by']:
+    for fld in ['status','remarks','approved_by']:
         setattr(pr, fld, f.get(fld,'').strip())
+    if not pr.requester:
+        pr.requester = current_user.username
+    if not pr.requester_name:
+        pr.requester_name = current_user.username
     pr.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
     pr.posting_date  = pd(f.get('posting_date'))
     pr.valid_until    = valid_until
@@ -781,9 +785,10 @@ def pq_add():
     pq = PurchaseQuotation(
         doc_no=_next_doc_no('PQ', PurchaseQuotation),
         purchase_request_id=pr_id,
-        requester=f.get('requester','').strip(),
-        requester_name=f.get('requester_name','').strip(),
+        requester=current_user.username,
+        requester_name=current_user.username,
         vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
+        vendor_ref_no=f.get('vendor_ref_no','').strip(),
         status=f.get('status','Open'),
         posting_date=pd(f.get('posting_date')),
         valid_until=valid_until,
@@ -821,11 +826,16 @@ def pq_edit(id):
     if err:
         return jsonify({'ok': False, 'error': err}), 400
 
-    for fld in ['requester','requester_name','status','remarks','approved_by']:
+    for fld in ['status','remarks','approved_by']:
         setattr(pq, fld, f.get(fld,'').strip())
+    if not pq.requester:
+        pq.requester = current_user.username
+    if not pq.requester_name:
+        pq.requester_name = current_user.username
 
     pq.purchase_request_id = int(f.get('pr_id')) if f.get('pr_id') else None
     pq.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
+    pq.vendor_ref_no = f.get('vendor_ref_no','').strip()
     pq.posting_date  = pd(f.get('posting_date'))
     pq.valid_until    = valid_until
     pq.document_date  = date.today()

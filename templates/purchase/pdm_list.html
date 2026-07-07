@@ -195,7 +195,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ الترحيل{% else %}Posting Date{% endif %}</div>
                   <input type="date" id="pdm_posting_date" class="f-inp" dir="ltr" disabled
-                         title="{% if ar %}يتم تفعيله تلقائياً عند الاعتماد{% else %}Activates automatically when Approved{% endif %}">
+                         title="{% if ar %}يُفعّل عندما لا تكون الحالة مفتوحة{% else %}Enabled when status is not Open{% endif %}">
                 </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}تاريخ التسليم{% else %}Delivery Date{% endif %}</div>
@@ -437,7 +437,7 @@ function onPdmStatusChange() {
   const statusEl = document.getElementById('pdm_status');
   const postEl   = document.getElementById('pdm_posting_date');
   if (!statusEl || !postEl) return;
-  if (statusEl.value === 'Approved') {
+  if (statusEl.value !== 'Open') {
     postEl.disabled = false;
     if (!postEl.value) postEl.value = new Date().toISOString().split('T')[0];
   } else {
@@ -702,7 +702,7 @@ function openEditPDM(id) {
     const vn = document.getElementById('pdm_vendor_name'); if(vn) vn.value = d.vendor_name||'';
     const vr = document.getElementById('pdm_vendor_ref'); if(vr) vr.value = d.vendor_ref_no||'';
     const rm = document.getElementById('pdm_remarks'); if(rm) rm.value = d.remarks||'';
-    document.getElementById('pdm_posting_date').disabled = (d.status !== 'Approved');
+    document.getElementById('pdm_posting_date').disabled = (d.status === 'Open');
     document.getElementById('pdm_posting_date').value  = d.posting_date  || '';
     document.getElementById('pdm_delivery_date').value = d.delivery_date || '';
     document.getElementById('pdm_doc_date').value      = new Date().toISOString().split('T')[0]; // re-stamped on every save
