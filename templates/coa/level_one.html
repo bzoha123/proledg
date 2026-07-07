@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% set ar = current_locale == 'ar' %}
+{% block title %}{% if ar %}دليل الحسابات — المستوى الأول{% else %}Chart of Accounts — Level 1{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
+<li class="breadcrumb-item">{% if ar %}دليل الحسابات{% else %}Chart of Accounts{% endif %}</li>
+<li class="breadcrumb-item active">{% if ar %}المستوى الأول{% else %}Level 1{% endif %}</li>
+{% endblock %}
+
+{% block content %}
+<div class="proledg-page">
+  <h2 class="page-heading">{% if ar %}دليل الحسابات — المستوى الأول{% else %}Chart of Accounts — Level 1{% endif %}</h2>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      {% if current_user.is_admin() %}
+      <button class="tool-btn tool-btn-green" data-bs-toggle="modal" data-bs-target="#l1Modal" onclick="openAdd()"><i class="fas fa-plus"></i></button>
+      {% endif %}
+      <a href="{{ url_for('coa.level_two_list') }}" class="tool-btn" title="{% if ar %}المستوى الثاني{% else %}Level 2{% endif %}"><i class="fas fa-layer-group"></i></a>
+    </div>
+    <div class="toolbar-right">
+      <div class="search-form">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" class="search-input" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" oninput="filterRows(this.value)">
+      </div>
+    </div>
+  </div>
+
+  <div class="proledg-table-wrap">
+    <table class="proledg-table">
+      <thead>
+        <tr>
+          <th style="width:40px">#</th>
+          <th style="width:90px">{% if ar %}الطول{% else %}Length{% endif %}</th>
+          <th style="width:90px">{% if ar %}الكود{% else %}Code{% endif %}</th>
+          <th>{% if ar %}المجموعة{% else %}Drawers{% endif %}</th>
+          <th>{% if ar %}الوصف{% else %}Description{% endif %}</th>
+          <th style="width:150px">{% if ar %}أنشئ في{% else %}Created{% endif %}</th>
+          {% if current_user.is_admin() %}
+          <th style="width:100px" class="text-center">{% if ar %}إجراءات{% else %}Actions{% endif %}</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr class="data-row">
+          <td>{{ loop.index }}</td>
+          <td>{{ r.code_length }}</td>
+          <td><span class="code-badge">{{ r.code }}</span></td>
+          <td class="fw-semibold">{{ r.drawers }}</td>
+          <td style="color:#6b7280;font-size:12px">{{ r.description }}</td>
+          <td style="color:#6b7280;font-size:12px">{{ r.created_at.strftime('%Y-%m-%d') if r.created_at else '—' }}</td>
+          {% if current_user.is_admin() %}
+          <td class="text-center">
+            <button class="action-btn action-btn-edit"
+                    onclick="openEdit({{ r.id }},'{{ r.code|e }}','{{ r.drawers|e }}','{{ r.description|e }}')">
+              <i class="fas fa-pencil-alt"></i>
+            </button>
+            <form method="POST" action="{{ url_for('coa.level_one_delete', id=r.id) }}" class="d-inline"
+                  onsubmit="return confirm('{% if ar %}حذف هذا الحساب؟{% else %}Delete this account?{% endif %}')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="action-btn action-btn-delete"><i class="fas fa-trash"></i></button>
+            </form>
+          </td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="empty-row"><i class="fas fa-sitemap fa-2x mb-2 d-block"></i>{% if ar %}لا توجد حسابات{% else %}No accounts yet{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="proledg-pagination">
+    <span class="page-count">{{ rows|length }} {% if ar %}حساب{% else %}account(s){% endif %}</span>
+  </div>
+</div>
+
+<!-- Add / Edit Modal -->
+<div class="modal fade" id="l1Modal" tabindex="-1">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content proledg-modal">
+      <div class="modal-header proledg-modal-header">
+        <h5 class="modal-title" id="l1ModalTitle">{% if ar %}إضافة حساب المستوى الأول{% else %}Add Level 1 Account{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="l1Form" method="POST" action="{{ url_for('coa.level_one_add') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="row">
+            <div class="col-4 mb-3">
+              <label class="form-label fw-semibold">{% if ar %}طول الكود{% else %}Code Length{% endif %}</label>
+              <input type="text" class="form-control" value="1" readonly style="background:#f1f5f9;">
+              <small class="text-muted">{% if ar %}ثابت{% else %}Fixed{% endif %}</small>
+            </div>
+            <div class="col-8 mb-3">
+              <label class="form-label fw-semibold">{% if ar %}الكود{% else %}Code{% endif %} <span style="color:#ef4444">*</span></label>
+              <input type="text" name="code" id="l1_code" class="form-control" required maxlength="1"
+                     placeholder="{% if ar %}حرف واحد، مثال: A{% else %}Single letter, e.g. A{% endif %}"
+                     style="text-transform:uppercase" pattern="[A-Za-z]">
+              <small class="text-muted" id="l1_code_hint">{% if ar %}لا يمكن تعديله بعد الإنشاء{% else %}Cannot be edited after creation{% endif %}</small>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{% if ar %}المجموعة{% else %}Drawers{% endif %} <span style="color:#ef4444">*</span></label>
+            <input type="text" name="drawers" id="l1_drawers" class="form-control" required maxlength="100"
+                   placeholder="{% if ar %}مثال: الأصول{% else %}e.g. Asset{% endif %}">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{% if ar %}الوصف{% else %}Description{% endif %} <span style="color:#ef4444">*</span></label>
+            <input type="text" name="description" id="l1_desc" class="form-control" required maxlength="255"
+                   value="Elements of Financial Statements">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer proledg-modal-footer">
+        <button type="button" class="pl-footer-btn pl-btn-cancel" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}
+        </button>
+        <button type="button" class="pl-footer-btn pl-btn-save" onclick="submitL1()">
+          <i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const IS_AR = {{ 'true' if ar else 'false' }};
+const ADD_URL  = '{{ url_for("coa.level_one_add") }}';
+const EDIT_URL = '{{ url_for("coa.level_one_list") }}';  // base; replaced per-id below
+
+function openAdd() {
+  document.getElementById('l1ModalTitle').textContent = IS_AR ? 'إضافة حساب المستوى الأول' : 'Add Level 1 Account';
+  const f = document.getElementById('l1Form');
+  f.action = ADD_URL;
+  f.reset();
+  const code = document.getElementById('l1_code');
+  code.readOnly = false;
+  code.style.background = '';
+  document.getElementById('l1_desc').value = 'Elements of Financial Statements';
+  document.getElementById('l1_code_hint').textContent = IS_AR ? 'لا يمكن تعديله بعد الإنشاء' : 'Cannot be edited after creation';
+}
+
+function openEdit(id, code, drawers, description) {
+  document.getElementById('l1ModalTitle').textContent = IS_AR ? 'تعديل حساب المستوى الأول' : 'Edit Level 1 Account';
+  const f = document.getElementById('l1Form');
+  f.action = `/coa/level-one/${id}/edit`;
+  // Code is fixed → show but lock it.
+  const code_el = document.getElementById('l1_code');
+  code_el.value = code;
+  code_el.readOnly = true;
+  code_el.style.background = '#f1f5f9';
+  document.getElementById('l1_code_hint').textContent = IS_AR ? 'الكود ثابت ولا يمكن تعديله' : 'Code is fixed and cannot be changed';
+  document.getElementById('l1_drawers').value = drawers;
+  document.getElementById('l1_desc').value = description;
+  new bootstrap.Modal(document.getElementById('l1Modal')).show();
+}
+
+function submitL1() {
+  const f = document.getElementById('l1Form');
+  const code = document.getElementById('l1_code').value.trim();
+  const drawers = document.getElementById('l1_drawers').value.trim();
+  const desc = document.getElementById('l1_desc').value.trim();
+  if (!code || !drawers || !desc) {
+    alert(IS_AR ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields');
+    return;
+  }
+  if (!/^[A-Za-z]$/.test(code)) {
+    alert(IS_AR ? 'يجب أن يكون الكود حرفاً واحداً' : 'Code must be a single letter');
+    return;
+  }
+  f.submit();
+}
+
+function filterRows(q) {
+  q = (q || '').toLowerCase();
+  document.querySelectorAll('.proledg-table tbody tr.data-row').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

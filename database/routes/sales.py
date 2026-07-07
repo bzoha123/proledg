@@ -688,6 +688,30 @@ def sinv_list():
 def sinv_data():
     return jsonify([r.to_dict() for r in SalesInvoice.query.order_by(SalesInvoice.sales_invoice_id.desc()).all()])
 
+@sale_bp.route('/sales/invoices/reference-list')
+@login_required
+def sinv_reference_list():
+    """Previously-saved invoices for the reference-invoice picker.
+    Filtered by category (standard | simplified). ``exclude`` omits the
+    invoice currently being edited so it can't reference itself."""
+    category = (request.args.get('category') or '').strip().lower()
+    exclude  = request.args.get('exclude', type=int)
+    q = SalesInvoice.query
+    if category in ('standard', 'simplified'):
+        q = q.filter(SalesInvoice.invoice_category == category)
+    if exclude:
+        q = q.filter(SalesInvoice.sales_invoice_id != exclude)
+    rows = q.order_by(SalesInvoice.sales_invoice_id.desc()).all()
+    return jsonify([{
+        'id': r.sales_invoice_id,
+        'doc_no': r.doc_no or '',
+        'buyer_name': r.buyer.buyer_name_en if r.buyer else '',
+        'invoice_category': r.invoice_category or '',
+        'transaction_type': r.transaction_type or '',
+        'document_date': str(r.document_date) if r.document_date else '',
+        'total_incl_vat': float(r.total_incl_vat or 0),
+    } for r in rows])
+
 @sale_bp.route('/sales/invoices/<int:id>/json')
 @login_required
 def sinv_json(id):
@@ -734,6 +758,9 @@ def sinv_add():
             delivery_note_id=int(f.get('dn_id')) if f.get('dn_id') else None,
             buyer_id=int(f.get('buyer_id')) if f.get('buyer_id') else (so.buyer_id if so else None),
             buyer_ref_no=f.get('buyer_ref_no','').strip(),
+            transaction_type=f.get('transaction_type','').strip() or None,
+            invoice_category=f.get('invoice_category','').strip() or None,
+            reference_invoices=f.get('reference_invoices','').strip() or None,
             status=status,
             posting_date=posting_date,
             delivery_date=pd(f.get('delivery_date')),
@@ -776,6 +803,9 @@ def sinv_edit(id):
         doc.delivery_note_id = int(f.get('dn_id')) if f.get('dn_id') else None
         doc.buyer_id = int(f.get('buyer_id')) if f.get('buyer_id') else None
         doc.buyer_ref_no = f.get('buyer_ref_no','').strip()
+        doc.transaction_type = f.get('transaction_type','').strip() or None
+        doc.invoice_category = f.get('invoice_category','').strip() or None
+        doc.reference_invoices = f.get('reference_invoices','').strip() or None
         doc.status = status
         doc.posting_date  = posting_date
         doc.delivery_date = pd(f.get('delivery_date'))

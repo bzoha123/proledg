@@ -566,6 +566,23 @@
 {% endmacro %}
 
           {{ sec('personal','user-circle','Personal Information','المعلومات الشخصية',True) }}
+              <div class="field-row" style="align-items:center;">
+                <div class="field-item" style="max-width:170px;">
+                  <div class="field-label">{% if ar %}صورة الموظف{% else %}Employee Photo{% endif %}</div>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                    <img id="empPhotoPreview" src="" alt=""
+                         style="width:110px;height:110px;border-radius:12px;object-fit:cover;border:2px solid #e2e8f0;background:#f8fafc;display:none;">
+                    <div id="empPhotoPlaceholder"
+                         style="width:110px;height:110px;border-radius:12px;border:2px dashed #cbd5e1;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;">
+                      <i class="fas fa-user" style="font-size:38px;"></i>
+                    </div>
+                    <label style="cursor:pointer;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;">
+                      <i class="fas fa-camera me-1"></i>{% if ar %}اختر صورة{% else %}Choose Photo{% endif %}
+                      <input type="file" name="photo" id="f_photo" accept="image/*" style="display:none;" onchange="previewEmpPhoto(this)">
+                    </label>
+                  </div>
+                </div>
+              </div>
               <div class="field-row">
                 {{ bf('name','Name','الاسم',True) }}
               </div>
@@ -731,7 +748,7 @@
                          class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
                          style="background:#f0fdf4;color:#15803d;font-weight:600;"
                          step="0.01" min="0" placeholder="0.00" readonly
-                         title="{% if ar %}محسوب: (الأساسي ÷ 30 × 8) × نسبة الأوفرتايم{% else %}Auto: (Basic ÷ 30 × 8) × Overtime Ratio{% endif %}">
+                         title="{% if ar %}محسوب: (الأساسي ÷ 30 ÷ 8) × نسبة الأوفرتايم{% else %}Auto: (Basic ÷ 30 ÷ 8) × Overtime Ratio{% endif %}">
                 </div>
               </div>
 
@@ -1104,8 +1121,10 @@
       </div>
       <div class="modal-body">
         <div style="margin-bottom:10px;">
-          <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;">{% if ar %}الكود{% else %}Code{% endif %} *</div>
-          <input type="text" id="qat_code" class="field-input" placeholder="e.g. HOU" style="text-transform:uppercase;">
+          <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;">{% if ar %}الكود (تلقائي){% else %}Code (auto){% endif %}</div>
+          <input type="text" id="qat_code" class="field-input" readonly placeholder="ALW-0001"
+                 style="text-transform:uppercase;background:#f1f5f9;cursor:not-allowed;"
+                 title="{% if ar %}يتم توليده تلقائياً{% else %}Auto-generated{% endif %}">
         </div>
         <div style="margin-bottom:10px;">
           <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;">{% if ar %}الاسم (EN){% else %}Name (EN){% endif %} *</div>
@@ -1519,7 +1538,7 @@ function calcOvertimeRate() {
   const otEl    = document.getElementById('f_overtime_rate');
   if (!otEl) return;
   if (basic > 0 && ratio > 0) {
-    const otRate = (basic / 30 * 8) * ratio;
+    const otRate = (basic / 30 / 8) * ratio;
     otEl.value = otRate.toFixed(2);
   } else {
     otEl.value = '';
@@ -1730,6 +1749,26 @@ function resetEmpForm() {
   setMCQ('salTypeGrp', 'salary',  'f_salary_type');
   setMCQ('workStatusGrp', 'active', 'f_work_status');
   document.querySelectorAll('.hijri-badge').forEach(b => b.style.display='none');
+
+  // reset photo
+  const pf = document.getElementById('f_photo'); if (pf) pf.value = '';
+  setEmpPhoto('');
+}
+
+function setEmpPhoto(url) {
+  const img = document.getElementById('empPhotoPreview');
+  const ph  = document.getElementById('empPhotoPlaceholder');
+  if (!img || !ph) return;
+  if (url) { img.src = url; img.style.display = 'block'; ph.style.display = 'none'; }
+  else     { img.src = ''; img.style.display = 'none'; ph.style.display = 'flex'; }
+}
+
+function previewEmpPhoto(input) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = e => setEmpPhoto(e.target.result);
+  reader.readAsDataURL(f);
 }
 
 function validateForm(form) {
@@ -1825,6 +1864,8 @@ function openEditEmp(id) {
     calcNet();
     calcOvertimeRate();
 
+    setEmpPhoto(d.photo_url || '');
+
     loadEmpBanks(id);
   });
 }
@@ -1870,7 +1911,13 @@ function openViewEmp(id) {
       [IS_AR?'تاريخ الانضمام':'Joining Date', viewDateFmt(d.joining_date) || na],
       [IS_AR?'نشيط':'Active', yn(d.is_active)],
     ];
-    let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+    let html = '';
+    if (d.photo_url) {
+      html += `<div style="text-align:center;margin-bottom:16px;">
+        <img src="${d.photo_url}" alt="" style="width:130px;height:130px;border-radius:14px;object-fit:cover;border:3px solid #e2e8f0;box-shadow:0 4px 14px rgba(15,23,42,.12);">
+      </div>`;
+    }
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
     rows.forEach((r,i) => {
       const bg = i%2===0 ? '#f9fafb' : 'white';
       const dir = IS_AR ? 'text-align:right;direction:rtl;' : '';
@@ -2249,14 +2296,22 @@ function saveQuickProfession() {
 function openAddAllowTypeModal() {
   ['qat_code','qat_name_en','qat_name_ar'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   const errEl=document.getElementById('qat_error'); if(errEl) errEl.style.display='none';
+  // Auto-generate the allowance code (read-only, filled from server).
+  const codeEl=document.getElementById('qat_code');
+  if(codeEl){ codeEl.value=IS_AR?'... جارٍ التوليد':'generating...'; }
+  fetch('/allowance-types/next-code')
+    .then(r=>r.json())
+    .then(d=>{ if(codeEl) codeEl.value=d.allowance_code||''; })
+    .catch(()=>{ if(codeEl) codeEl.value=''; });
   new bootstrap.Modal(document.getElementById('addAllowTypeModal')).show();
 }
 function saveQuickAllowType() {
-  const code=(document.getElementById('qat_code')?.value||'').trim().toUpperCase();
+  let code=(document.getElementById('qat_code')?.value||'').trim().toUpperCase();
+  if(code==='GENERATING...'||code==='... جارٍ التوليد') code='';
   const en=(document.getElementById('qat_name_en')?.value||'').trim();
   const ar_val=(document.getElementById('qat_name_ar')?.value||'').trim();
   const errEl=document.getElementById('qat_error');
-  if(!code||!en){if(errEl){errEl.textContent='Code and Name (EN) required';errEl.style.display='block';}return;}
+  if(!en){if(errEl){errEl.textContent=IS_AR?'الاسم (EN) مطلوب':'Name (EN) required';errEl.style.display='block';}return;}
   fetch('/allowance-types/add-quick',{
     method:'POST',
     headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},

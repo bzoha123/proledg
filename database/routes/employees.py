@@ -42,6 +42,23 @@ def save_upload(file, emp_id, subfolder='employees'):
     return os.path.join(subfolder, str(emp_id), fname)
 
 
+def save_photo(emp_id, req):
+    """Save the employee photo (single image). Updates employees.photo_path."""
+    f = req.files.get('photo')
+    if not f or not f.filename:
+        return
+    ext = f.filename.rsplit('.', 1)[-1].lower() if '.' in f.filename else ''
+    if ext not in {'jpg', 'jpeg', 'png', 'webp'}:
+        return
+    folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'employees', str(emp_id))
+    os.makedirs(folder, exist_ok=True)
+    fname = f'photo_{uuid.uuid4().hex}.{ext}'
+    f.save(os.path.join(folder, fname))
+    emp = Employee.query.get(emp_id)
+    if emp:
+        emp.photo_path = os.path.join('employees', str(emp_id), fname)
+
+
 def save_documents(emp_id, req):
     files = req.files.getlist('documents[]')
     types = req.form.getlist('document_type[]')
@@ -299,6 +316,8 @@ def employee_json(id):
         'insurance_expiry': d(e.insurance_expiry), 'labour_office': g('labour_office'),
         'passport_location': g('passport_location') or 'IN',
         'document_type': g('document_type'), 'buyer_id': e.buyer_id or '',
+        'photo_path': e.photo_path or '',
+        'photo_url': (url_for('employees.employee_photo', emp_id=e.id) if e.photo_path else ''),
         'allowances': allowance_rows,
         'banks': [b.to_dict() for b in e.banks.order_by(EmployeeBank.id).all()],
         'documents': [d.to_dict() for d in e.documents.order_by(EmployeeDocument.id).all()],
@@ -316,6 +335,7 @@ def add_employee():
     save_allowances(emp.id, request.form)
     save_banks_from_form(emp.id, request.form)
     save_documents(emp.id, request)
+    save_photo(emp.id, request)
     save_professions(emp.id, request)
     _recalc_totals(emp.id)
     db.session.commit()
@@ -332,6 +352,7 @@ def edit_employee(id):
     save_allowances(emp.id, request.form)
     save_banks_from_form(emp.id, request.form)
     save_documents(emp.id, request)
+    save_photo(emp.id, request)
     save_professions(emp.id, request)
     _recalc_totals(emp.id)
     db.session.commit()
@@ -477,6 +498,21 @@ def delete_employee_bank(bank_id):
     b = EmployeeBank.query.get_or_404(bank_id)
     db.session.delete(b); db.session.commit()
     return jsonify({'ok': True})
+
+
+# ─── EMPLOYEE PHOTO ───────────────────────────────────────────────
+
+@employees_bp.route('/employees/<int:emp_id>/photo')
+@login_required
+def employee_photo(emp_id):
+    from flask import send_file, abort
+    e = Employee.query.get_or_404(emp_id)
+    if not e.photo_path:
+        abort(404)
+    full = os.path.join(current_app.config['UPLOAD_FOLDER'], e.photo_path)
+    if not os.path.exists(full):
+        abort(404)
+    return send_file(full)
 
 
 # ─── EMPLOYEE DOCUMENT API ────────────────────────────────────────

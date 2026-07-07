@@ -80,6 +80,32 @@ def add_profession_quick():
     return jsonify({'ok': True, 'id': p.id})
  
  
+def _next_allowance_code():
+    """Generate the next sequential allowance code. Format: ALW-0001, ALW-0002, ..."""
+    prefix = 'ALW'
+    like = f'{prefix}-%'
+    last = db.session.query(AllowanceType).filter(
+        AllowanceType.allowance_code.like(like)
+    ).order_by(AllowanceType.id.desc()).first()
+    n = 1
+    if last and last.allowance_code:
+        try:
+            n = int(last.allowance_code.split('-')[-1]) + 1
+        except (ValueError, IndexError):
+            n = AllowanceType.query.count() + 1
+    code = f'{prefix}-{n:04d}'
+    while AllowanceType.query.filter_by(allowance_code=code).first():
+        n += 1
+        code = f'{prefix}-{n:04d}'
+    return code
+
+
+@lookups_bp.route('/allowance-types/next-code')
+@login_required
+def allowance_type_next_code():
+    return jsonify({'allowance_code': _next_allowance_code()})
+
+
 @lookups_bp.route('/allowance-types/add-quick', methods=['POST'])
 @login_required
 def add_allowance_type_quick():
@@ -95,7 +121,7 @@ def add_allowance_type_quick():
     if existing:
         return jsonify({'ok': True, 'id': existing.id, 'duplicate': True})
     a = AllowanceType(
-        allowance_code=code or None,
+        allowance_code=code or _next_allowance_code(),
         allowance_name_en=name_en,
         allowance_name_ar=name_ar,
         is_active=True,
@@ -685,6 +711,7 @@ def item_add():
         tax_category_id = int(f['tax_category_id']) if f.get('tax_category_id') else None,
         vendor_id       = int(f['vendor_id'])        if f.get('vendor_id')       else None,
         main_rate       = float(f.get('main_rate','0') or 0),
+        po_rate         = float(f.get('po_rate','0') or 0),
         last_purchase_rate = float(f.get('last_purchase_rate','0') or 0),
         retail_rate     = float(f.get('retail_rate','0') or 0),
         wholesale_rate  = float(f.get('wholesale_rate','0') or 0),
@@ -714,6 +741,7 @@ def item_edit(id):
     item.tax_category_id = int(f['tax_category_id']) if f.get('tax_category_id') else None
     item.vendor_id       = int(f['vendor_id'])        if f.get('vendor_id')       else None
     item.main_rate       = float(f.get('main_rate','0') or 0)
+    item.po_rate         = float(f.get('po_rate','0') or 0)
     item.last_purchase_rate = float(f.get('last_purchase_rate','0') or 0)
     item.retail_rate     = float(f.get('retail_rate','0') or 0)
     item.wholesale_rate  = float(f.get('wholesale_rate','0') or 0)

@@ -6,7 +6,7 @@ from models import (
     db, VendorMaster, VendorBank, VendorDocument,
     PurchaseRequest, PurchaseQuotation, PurchaseOrder, GoodsReceiptNote,
     PurchaseInvoice, GoodsReturnRequest, PurchaseDebitMemo,
-    PurchaseAttachment, Invoice,
+    PurchaseAttachment,
     PurchaseRequestLineItem, PurchaseQuotationLineItem, PurchaseOrderLineItem,
     GoodsReceiptLineItem, PurchaseInvoiceLineItem, GoodsReturnLineItem, PurchaseDebitMemoLineItem,
     ItemMaster, UnitOfMeasurement, ItemUOM,
@@ -36,9 +36,6 @@ def _vendor_list():
     """Return list of vendors for dropdowns."""
     return [{'id':v.id,'name':v.vendor_name_en,'name_ar':v.vendor_name_ar or ''} 
             for v in VendorMaster.query.filter_by(is_active=True).order_by(VendorMaster.vendor_name_en).all()]
-
-def _invoice_list():
-    return [{'id':i.id,'invoice_no':i.invoice_no} for i in Invoice.query.order_by(Invoice.id.desc()).all()]
 
 def _next_doc_no(doc_type, model):
     """Generate unique doc number per type. Format: PR-2026-0001, PQ-2026-0001, PO-2026-0001."""
@@ -199,8 +196,7 @@ def purchase_next_no():
 @pur_bp.route('/purchase/vendors')
 @login_required
 def vendor_list():
-    invoices = Invoice.query.order_by(Invoice.id.desc()).all()
-    return render_template('purchase/vendor_list.html', invoices=invoices)
+    return render_template('purchase/vendor_list.html')
 
 @pur_bp.route('/purchase/vendors/<int:id>')
 @login_required

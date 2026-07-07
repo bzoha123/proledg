@@ -206,6 +206,43 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                 </div>
               </div>
 
+              {# ── Reference Invoice + Transaction Type (items 5,6,7) ── #}
+              <div class="f-grid2" style="margin-bottom:12px;">
+                <div class="f-item" id="sinv_ref_wrap">
+                  <div class="f-lbl">{% if ar %}الفاتورة المرجعية{% else %}Reference Invoice{% endif %}</div>
+                  <div style="display:flex;gap:8px;align-items:flex-start;">
+                    <button type="button" id="sinv_ref_btn" class="f-inp" onclick="openRefInvoicePicker()"
+                            disabled
+                            style="text-align:left;cursor:pointer;background:#f8fafc;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                      <span id="sinv_ref_btn_label" style="color:#9ca3af;">{% if ar %}اختر نوع المعاملة أولاً{% else %}Select a transaction type first{% endif %}</span>
+                      <i class="fas fa-list-check" style="opacity:.6;"></i>
+                    </button>
+                  </div>
+                  <input type="hidden" id="sinv_reference_invoices">
+                  <div id="sinv_ref_chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;"></div>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}نوع المعاملة{% else %}Transaction Type{% endif %}</div>
+                  <select id="sinv_transaction_type" class="f-inp" onchange="onTxnTypeChange()">
+                    <option value="">-- {% if ar %}اختر{% else %}Select{% endif %} --</option>
+                    <optgroup label="{% if ar %}قياسي{% else %}Standard{% endif %}">
+                      <option value="STD_INV">{% if ar %}فاتورة قياسية (I){% else %}Standard Invoice (I){% endif %}</option>
+                      <option value="STD_CR">{% if ar %}دائن قياسي (CR){% else %}Standard Credit (CR){% endif %}</option>
+                      <option value="STD_DR">{% if ar %}مدين قياسي (DR){% else %}Standard Debit (DR){% endif %}</option>
+                    </optgroup>
+                    <optgroup label="{% if ar %}مبسط{% else %}Simplified{% endif %}">
+                      <option value="SMP_INV">{% if ar %}فاتورة مبسطة (I){% else %}Simplified Invoice (I){% endif %}</option>
+                      <option value="SMP_CR">{% if ar %}دائن مبسط (CR){% else %}Simplified Credit (CR){% endif %}</option>
+                      <option value="SMP_DR">{% if ar %}مدين مبسط (DR){% else %}Simplified Debit (DR){% endif %}</option>
+                    </optgroup>
+                  </select>
+                  <input type="hidden" id="sinv_invoice_category">
+                  <div style="font-size:11px;color:#9ca3af;margin-top:4px;">
+                    {% if ar %}يحدد قائمة الفواتير المرجعية (قياسي / مبسط){% else %}Determines which saved invoices you can reference (standard / simplified){% endif %}
+                  </div>
+                </div>
+              </div>
+
               {# ── Status + Dates ── #}
               <div class="f-grid4" style="margin-bottom:12px;">
                 <div class="f-item">
@@ -255,10 +292,10 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             </button>
             <div class="pur-section-body open">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                <span style="font-size:11px;color:#6b7280;">
-                  <i class="fas fa-lock me-1"></i>
-                  {% if ar %}البنود موروثة من أمر البيع وغير قابلة للتعديل{% else %}Items are inherited from the Sales Order and locked{% endif %}
-                </span>
+                <button type="button" onclick="addLiRow()"
+                        style="background:#2563eb;color:white;border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">
+                  <i class="fas fa-plus me-1"></i>{% if ar %}إضافة بند{% else %}Add Line{% endif %}
+                </button>
                 <span style="font-size:11px;color:#6b7280;">
                   <i class="fas fa-info-circle me-1"></i>
                   Taxable = (Qty × Rate − Discount) + Freight
@@ -268,19 +305,20 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                 <table class="li-table">
                   <thead><tr>
                     <th style="width:30px;">#</th>
-                    <th style="min-width:85px;">{% if ar %}الكود{% else %}Item Code{% endif %}</th>
-                    <th style="min-width:150px;">{% if ar %}الاسم{% else %}Name{% endif %}</th>
+                    <th style="min-width:170px;">{% if ar %}الصنف{% else %}Item{% endif %}</th>
+                    <th style="min-width:150px;">{% if ar %}الوصف{% else %}Description{% endif %}</th>
                     <th style="width:105px;">{% if ar %}تاريخ الحاجة{% else %}Req. Date{% endif %}</th>
                     <th style="min-width:100px;">{% if ar %}المستودع{% else %}Warehouse{% endif %}</th>
-                    <th style="width:95px;">UoM</th>
+                    <th style="width:110px;">UoM</th>
                     <th style="width:65px;">{% if ar %}الكمية{% else %}QTY{% endif %}</th>
-                    <th style="width:65px;">{% if ar %}السعر{% else %}Rate{% endif %}</th>
+                    <th style="width:75px;">{% if ar %}سعر أمر الشراء{% else %}PO Rate{% endif %}</th>
                     <th style="width:60px;">{% if ar %}الخصم{% else %}Disc.{% endif %}</th>
                     <th style="width:60px;">{% if ar %}الشحن{% else %}Freight{% endif %}</th>
                     <th style="width:80px;">{% if ar %}الخاضع{% else %}Taxable{% endif %}</th>
                     <th style="width:80px;">{% if ar %}كود الضريبة{% else %}Tax Code{% endif %}</th>
                     <th style="width:65px;">{% if ar %}الضريبة{% else %}Tax Amt{% endif %}</th>
                     <th style="width:80px;">{% if ar %}الإجمالي{% else %}Total{% endif %}</th>
+                    <th style="width:34px;"></th>
                   </tr></thead>
                   <tbody id="liBody"></tbody>
                   <tfoot>
@@ -381,6 +419,53 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
     </div>
   </div></div>
 </div>
+
+<!-- Reference Invoice picker (items 5,6,7) -->
+<div class="modal fade" id="refInvModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:700;font-size:15px;"><i class="fas fa-list-check me-2"></i>{% if ar %}اختر الفواتير المرجعية{% else %}Select Reference Invoices{% endif %}</div>
+          <div id="refInvSubtitle" style="font-size:12px;opacity:.85;margin-top:3px;"></div>
+        </div>
+        <button type="button" class="btn-close" style="filter:brightness(0) invert(1);opacity:.8;" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:16px 20px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <input type="text" id="refInvSearch" class="f-inp" style="flex:1;" oninput="renderRefInvRows()"
+                 placeholder="{% if ar %}بحث برقم المستند أو المشتري...{% else %}Search by doc no or buyer...{% endif %}">
+          <span id="refInvCount" style="font-size:12px;color:#6b7280;white-space:nowrap;"></span>
+        </div>
+        <div style="max-height:420px;overflow:auto;border:1px solid #e5e7eb;border-radius:8px;">
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+            <thead>
+              <tr style="background:#f8fafc;position:sticky;top:0;">
+                <th style="padding:8px 10px;width:36px;text-align:center;"><input type="checkbox" id="refInvSelectAll" onclick="toggleRefInvAll(this)"></th>
+                <th style="padding:8px 10px;text-align:left;">{% if ar %}رقم المستند{% else %}Doc No{% endif %}</th>
+                <th style="padding:8px 10px;text-align:left;">{% if ar %}المشتري{% else %}Buyer{% endif %}</th>
+                <th style="padding:8px 10px;text-align:left;">{% if ar %}التاريخ{% else %}Date{% endif %}</th>
+                <th style="padding:8px 10px;text-align:right;">{% if ar %}الإجمالي{% else %}Total{% endif %}</th>
+              </tr>
+            </thead>
+            <tbody id="refInvBody">
+              <tr><td colspan="5" style="text-align:center;padding:24px;color:#9ca3af;">{% if ar %}جارٍ التحميل...{% else %}Loading...{% endif %}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style="padding:12px 20px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <span id="refInvSelCount" style="font-size:12px;color:#6b7280;"></span>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+          <button type="button" class="btn btn-sm btn-primary fw-bold" onclick="applyRefInvSelection()">
+            <i class="fas fa-check me-1"></i>{% if ar %}تأكيد الاختيار{% else %}Apply Selection{% endif %}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -393,15 +478,160 @@ let _attachments = [];
 
 /* ══ GRN list (for cascading PO → GRN dropdown) ══ */
 const _grnList = [
-  {% for g in dns %}{ id: {{ g.id }}, doc_no: '{{ g.doc_no }}', purchase_order_id: {{ g.purchase_order_id or 'null' }} },{% endfor %}
+  {% for g in dns %}{ id: {{ g.id }}, doc_no: '{{ g.doc_no }}', sales_order_id: {{ g.sales_order_id or 'null' }} },{% endfor %}
 ];
 
 function refreshGrnOptions(poId) {
   const sel = document.getElementById('sinv_dn_id');
   if (!sel) return;
-  const matching = _grnList.filter(g => String(g.purchase_order_id) === String(poId));
+  const matching = _grnList.filter(g => String(g.sales_order_id) === String(poId));
   sel.innerHTML = '<option value="">-- ' + (IS_AR ? 'اختياري' : 'Optional') + ' --</option>'
     + matching.map(g => `<option value="${g.id}">${g.doc_no}</option>`).join('');
+}
+
+/* ══ Transaction type + Reference invoice picker (items 5,6,7) ══ */
+let _refInvData = [];          // invoices returned for the current category
+let _refInvSelected = [];      // selected ids (numbers)
+
+function txnCategory(txn) {
+  if (txn === 'STD_CR' || txn === 'STD_DR' || txn === 'STD_INV') return 'standard';
+  if (txn === 'SMP_CR' || txn === 'SMP_DR' || txn === 'SMP_INV') return 'simplified';
+  return '';
+}
+
+/* Only credit/debit notes reference other invoices; plain invoices (I) do not. */
+function txnNeedsReference(txn) {
+  return txn === 'STD_CR' || txn === 'STD_DR' || txn === 'SMP_CR' || txn === 'SMP_DR';
+}
+
+function onTxnTypeChange() {
+  const txn = document.getElementById('sinv_transaction_type').value;
+  const cat = txnCategory(txn);
+  document.getElementById('sinv_invoice_category').value = cat;
+  const btn = document.getElementById('sinv_ref_btn');
+  const lbl = document.getElementById('sinv_ref_btn_label');
+  const wrap = document.getElementById('sinv_ref_wrap');
+  // Changing type invalidates previous selection.
+  _refInvSelected = [];
+  document.getElementById('sinv_reference_invoices').value = '';
+  renderRefChips();
+  if (txnNeedsReference(txn)) {
+    // Credit/Debit note → reference picker enabled and visible.
+    if (wrap) wrap.style.display = '';
+    btn.disabled = false;
+    btn.style.cursor = 'pointer';
+    lbl.textContent = IS_AR ? 'اختر الفواتير المرجعية...' : 'Select reference invoices...';
+    lbl.style.color = '#374151';
+  } else {
+    // Plain invoice (I) or nothing selected → no reference needed; hide the field.
+    if (wrap) wrap.style.display = (txn ? 'none' : '');
+    btn.disabled = true;
+    btn.style.cursor = 'not-allowed';
+    lbl.textContent = IS_AR ? 'اختر نوع المعاملة أولاً' : 'Select a transaction type first';
+    lbl.style.color = '#9ca3af';
+  }
+}
+
+function openRefInvoicePicker() {
+  const cat = document.getElementById('sinv_invoice_category').value;
+  if (!cat) return;
+  const editId = document.getElementById('sinv_id').value;
+  const sub = document.getElementById('refInvSubtitle');
+  if (sub) sub.textContent = (IS_AR ? 'الفئة: ' : 'Category: ')
+      + (cat === 'standard' ? (IS_AR?'قياسي':'Standard') : (IS_AR?'مبسط':'Simplified'));
+  document.getElementById('refInvSearch').value = '';
+  document.getElementById('refInvBody').innerHTML =
+    `<tr><td colspan="5" style="text-align:center;padding:24px;color:#9ca3af;">${IS_AR?'جارٍ التحميل...':'Loading...'}</td></tr>`;
+  new bootstrap.Modal(document.getElementById('refInvModal')).show();
+  let url = '/sales/invoices/reference-list?category=' + encodeURIComponent(cat);
+  if (editId) url += '&exclude=' + encodeURIComponent(editId);
+  fetch(url).then(r => r.json()).then(data => {
+    _refInvData = data || [];
+    renderRefInvRows();
+  }).catch(() => {
+    document.getElementById('refInvBody').innerHTML =
+      `<tr><td colspan="5" style="text-align:center;padding:24px;color:#dc2626;">${IS_AR?'فشل التحميل':'Failed to load'}</td></tr>`;
+  });
+}
+
+function renderRefInvRows() {
+  const q = (document.getElementById('refInvSearch').value || '').toLowerCase();
+  const body = document.getElementById('refInvBody');
+  const rows = _refInvData.filter(r =>
+    !q || (r.doc_no || '').toLowerCase().includes(q) || (r.buyer_name || '').toLowerCase().includes(q));
+  document.getElementById('refInvCount').textContent =
+    rows.length + ' ' + (IS_AR ? 'فاتورة' : 'invoices');
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:#9ca3af;">${IS_AR?'لا توجد فواتير محفوظة لهذه الفئة':'No saved invoices for this category'}</td></tr>`;
+    updateRefSelCount();
+    return;
+  }
+  body.innerHTML = rows.map(r => {
+    const checked = _refInvSelected.includes(r.id) ? 'checked' : '';
+    const total = Number(r.total_incl_vat || 0).toLocaleString('en-SA', {minimumFractionDigits:2});
+    return `<tr style="border-top:1px solid #f1f5f9;">
+      <td style="padding:7px 10px;text-align:center;"><input type="checkbox" value="${r.id}" ${checked} onchange="onRefInvToggle(${r.id},this.checked)"></td>
+      <td style="padding:7px 10px;font-weight:600;color:#2563eb;">${r.doc_no||''}</td>
+      <td style="padding:7px 10px;">${r.buyer_name||'—'}</td>
+      <td style="padding:7px 10px;">${r.document_date||'—'}</td>
+      <td style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">${total}</td>
+    </tr>`;
+  }).join('');
+  updateRefSelCount();
+}
+
+function onRefInvToggle(id, checked) {
+  id = Number(id);
+  if (checked) { if (!_refInvSelected.includes(id)) _refInvSelected.push(id); }
+  else { _refInvSelected = _refInvSelected.filter(x => x !== id); }
+  updateRefSelCount();
+}
+
+function toggleRefInvAll(cb) {
+  const q = (document.getElementById('refInvSearch').value || '').toLowerCase();
+  const rows = _refInvData.filter(r =>
+    !q || (r.doc_no || '').toLowerCase().includes(q) || (r.buyer_name || '').toLowerCase().includes(q));
+  if (cb.checked) rows.forEach(r => { if (!_refInvSelected.includes(r.id)) _refInvSelected.push(r.id); });
+  else { const ids = rows.map(r => r.id); _refInvSelected = _refInvSelected.filter(x => !ids.includes(x)); }
+  renderRefInvRows();
+}
+
+function updateRefSelCount() {
+  const el = document.getElementById('refInvSelCount');
+  if (el) el.textContent = _refInvSelected.length + ' ' + (IS_AR ? 'محدد' : 'selected');
+}
+
+function applyRefInvSelection() {
+  document.getElementById('sinv_reference_invoices').value = _refInvSelected.join(',');
+  renderRefChips();
+  bootstrap.Modal.getInstance(document.getElementById('refInvModal'))?.hide();
+}
+
+function renderRefChips() {
+  const wrap = document.getElementById('sinv_ref_chips');
+  const lbl  = document.getElementById('sinv_ref_btn_label');
+  if (!wrap) return;
+  if (!_refInvSelected.length) {
+    wrap.innerHTML = '';
+    if (lbl && !document.getElementById('sinv_ref_btn').disabled)
+      lbl.textContent = IS_AR ? 'اختر الفواتير المرجعية...' : 'Select reference invoices...';
+    return;
+  }
+  // Map ids -> doc_no where we know it (from last loaded data), else show id.
+  const byId = {};
+  _refInvData.forEach(r => byId[r.id] = r.doc_no);
+  wrap.innerHTML = _refInvSelected.map(id =>
+    `<span style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:5px;">
+       ${byId[id] || ('#'+id)}
+       <i class="fas fa-times" style="cursor:pointer;" onclick="removeRefChip(${id})"></i>
+     </span>`).join('');
+  if (lbl) lbl.textContent = _refInvSelected.length + ' ' + (IS_AR ? 'محدد' : 'selected');
+}
+
+function removeRefChip(id) {
+  _refInvSelected = _refInvSelected.filter(x => x !== Number(id));
+  document.getElementById('sinv_reference_invoices').value = _refInvSelected.join(',');
+  renderRefChips();
 }
 
 /* ══ Posting Date: empty + disabled while status = Open ══ */
@@ -461,11 +691,18 @@ async function onPOChange() {
   const vref = document.getElementById('sinv_buyer_ref');
   if (vref && po.buyer_ref_no) vref.value = po.buyer_ref_no;
 
-  // Line items — copy from PO, locked
+  // Line items — copy from PO; items become editable & item-master-driven.
   document.getElementById('liBody').innerHTML = '';
   _liIdx = 0;
+  await loadItemsCache();
   if (po.items && po.items.length > 0) {
-    po.items.forEach(li => addLiRow(li));
+    po.items.forEach(li => {
+      if (!li.item_id && li.item_code) {
+        const m = (_itemsCache || []).find(i => i.item_code === li.item_code);
+        if (m) li.item_id = m.id;
+      }
+      addLiRow(li);
+    });
   } else {
     addLiRow();
   }
@@ -536,29 +773,82 @@ async function fetchDocNo() {
 }
 
 /* ══ Line Items — locked/inherited from PO, read-only ══ */
+/* ══ Item master cache for line-item dropdowns (item 9) ══ */
+let _itemsCache = null;
+let _itemsLoading = null;
+function loadItemsCache() {
+  if (_itemsCache) return Promise.resolve(_itemsCache);
+  if (_itemsLoading) return _itemsLoading;
+  _itemsLoading = fetch('/items/data').then(r => r.json()).then(data => {
+    _itemsCache = data || []; return _itemsCache;
+  }).catch(() => { _itemsCache = []; return _itemsCache; });
+  return _itemsLoading;
+}
+function _itemById(id) {
+  id = String(id);
+  return (_itemsCache || []).find(i => String(i.id) === id);
+}
+function _itemOptionsHtml(selId) {
+  const opts = (_itemsCache || []).map(i =>
+    `<option value="${i.id}" ${String(i.id)===String(selId)?'selected':''}>${(i.name_en||i.item_code||'')}</option>`).join('');
+  return `<option value="">-- ${IS_AR?'اختر صنف':'Select item'} --</option>` + opts;
+}
+function _uomOptionsHtml(item, selUom) {
+  let uoms = [];
+  if (item && item.uoms && item.uoms.length) uoms = item.uoms.map(u => u.uom_name || u.unit_name || u.name || u.uom).filter(Boolean);
+  if (item && item.uom && !uoms.includes(item.uom)) uoms.unshift(item.uom);
+  if (!uoms.length) uoms = [selUom || 'unit'];
+  if (selUom && !uoms.includes(selUom)) uoms.unshift(selUom);
+  return uoms.map(u => `<option value="${u}" ${u===selUom?'selected':''}>${u}</option>`).join('');
+}
+
 function addLiRow(d) {
   const idx = _liIdx++;
   d = d || {};
+  const itemId = d.item_id || '';
   const row = `<tr id="plr_${idx}">
     <td style="text-align:center;color:#9ca3af;font-size:11px;padding:4px;">${_liIdx}</td>
-    <td><input type="text"   class="li-inp" name="li_item_code[]" value="${d.item_code||''}" readonly style="width:80px;background:#f3f4f6;"></td>
-    <td><input type="text"   class="li-inp" name="li_item_desc[]" value="${d.item_desc||''}" readonly style="min-width:130px;background:#f3f4f6;"></td>
-    <td><input type="date"   class="li-inp" name="li_required_date[]" value="${d.required_date||''}" dir="ltr" readonly style="width:105px;background:#f3f4f6;"></td>
-    <td><input type="text"   class="li-inp" name="li_warehouse[]" value="${d.warehouse||''}" readonly style="min-width:90px;background:#f3f4f6;"></td>
-    <td><input type="text"   class="li-inp" name="li_uom[]" value="${d.uom||'unit'}" readonly style="width:90px;background:#f3f4f6;"></td>
-    <td><input type="number" class="li-inp" name="li_qty[]"      id="plq_${idx}"  value="${d.quantity||0}"  readonly style="width:62px;background:#f3f4f6;"></td>
-    <td><input type="number" class="li-inp" name="li_rate[]"     id="plrt_${idx}" value="${d.rate||0}"      readonly style="width:62px;background:#f3f4f6;"></td>
-    <td><input type="number" class="li-inp" name="li_discount[]" id="pld_${idx}"  value="${d.discount||0}"  readonly style="width:58px;background:#f3f4f6;"></td>
-    <td><input type="number" class="li-inp" name="li_freight[]"  id="plf_${idx}"  value="${d.freight||0}"   readonly style="width:58px;background:#f3f4f6;"></td>
+    <td>
+      <select class="li-inp" id="plitem_${idx}" onchange="onLiItemChange(${idx})" style="min-width:160px;">${_itemOptionsHtml(itemId)}</select>
+      <input type="hidden" name="li_item_code[]" id="plcode_${idx}" value="${d.item_code||''}">
+      <input type="hidden" name="li_item_id[]" id="pliid_${idx}" value="${itemId}">
+    </td>
+    <td><input type="text" class="li-inp" name="li_item_desc[]" id="pldesc_${idx}" value="${d.item_desc||d.description||''}" style="min-width:140px;"></td>
+    <td><input type="date"   class="li-inp" name="li_required_date[]" value="${d.required_date||''}" dir="ltr" style="width:105px;"></td>
+    <td><input type="text"   class="li-inp" name="li_warehouse[]" value="${d.warehouse||''}" style="min-width:90px;"></td>
+    <td><select class="li-inp" name="li_uom[]" id="pluom_${idx}" style="width:105px;">${_uomOptionsHtml(_itemById(itemId), d.uom||'unit')}</select></td>
+    <td><input type="number" class="li-inp" name="li_qty[]"      id="plq_${idx}"  value="${d.quantity||0}"  oninput="recalcLi(${idx})" style="width:62px;"></td>
+    <td><input type="number" class="li-inp" name="li_rate[]"     id="plrt_${idx}" value="${d.rate||0}"      oninput="recalcLi(${idx})" style="width:70px;background:#fffbeb;" title="${IS_AR?'يملأ تلقائياً من الصنف':'Auto-filled from item PO rate'}"></td>
+    <td><input type="number" class="li-inp" name="li_discount[]" id="pld_${idx}"  value="${d.discount||0}"  oninput="recalcLi(${idx})" style="width:58px;"></td>
+    <td><input type="number" class="li-inp" name="li_freight[]"  id="plf_${idx}"  value="${d.freight||0}"   oninput="recalcLi(${idx})" style="width:58px;"></td>
     <td><input type="number" class="li-inp" id="plt_${idx}"  name="li_taxable_disp[]" value="${d.taxable||0}" readonly
          style="width:76px;background:#fffbeb;color:#92400e;font-weight:600;"></td>
     <td><input type="text" class="li-inp" name="li_tax_code[]" id="pltc_${idx}" value="${d.tax_code||'VAT15'}" readonly style="width:78px;background:#f3f4f6;"></td>
     <td><input type="number" class="li-inp" id="plta_${idx}" name="li_tax_amount_disp[]" value="${d.tax_amount||0}" readonly style="width:62px;background:#f3f4f6;"></td>
     <td><input type="number" class="li-inp" id="pltot_${idx}" name="li_total_disp[]" value="${d.total||0}" readonly style="width:76px;background:#f0fdf4;font-weight:700;color:#166534;"></td>
+    <td style="text-align:center;"><button type="button" onclick="removeLi(${idx})" title="${IS_AR?'حذف':'Remove'}" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;"><i class="fas fa-trash"></i></button></td>
   </tr>`;
   document.getElementById('liBody').insertAdjacentHTML('beforeend', row);
   recalcLi(idx);
   updLiCount();
+}
+
+/* When an item is picked: auto-fill description, PO rate, and UOM options (item 9). */
+function onLiItemChange(idx) {
+  const sel = document.getElementById('plitem_'+idx);
+  const item = _itemById(sel.value);
+  document.getElementById('pliid_'+idx).value  = item ? item.id : '';
+  document.getElementById('plcode_'+idx).value = item ? (item.item_code||'') : '';
+  const desc = document.getElementById('pldesc_'+idx);
+  if (item && !desc.value) desc.value = item.item_desc || item.name_en || '';
+  // PO rate auto-fill
+  const rt = document.getElementById('plrt_'+idx);
+  if (item) rt.value = Number(item.po_rate || 0).toFixed(2);
+  // UOM dropdown from item's UOMs
+  const uomSel = document.getElementById('pluom_'+idx);
+  if (uomSel) uomSel.innerHTML = _uomOptionsHtml(item, item ? item.uom : 'unit');
+  // Tax code from item's tax category (default VAT15)
+  recalcLi(idx);
 }
 
 function removeLi(idx) {
@@ -651,6 +941,10 @@ function openAddPINV() {
   });
   document.getElementById('sinv_buyer').value = '';
   document.getElementById('sinv_doc_no').value = '';
+  // Reset transaction type + reference invoices
+  document.getElementById('sinv_transaction_type').value = '';
+  _refInvSelected = [];
+  onTxnTypeChange();
   document.getElementById('pinvDocBadge').textContent = 'NEW';
   document.getElementById('sinv_status').value = 'Open';
   const today = new Date().toISOString().split('T')[0];
@@ -669,7 +963,7 @@ function openAddPINV() {
     if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
   });
   fetchDocNo();
-  addLiRow();
+  loadItemsCache().then(() => addLiRow());
   new bootstrap.Modal(document.getElementById('pinvModal')).show();
 }
 
@@ -706,17 +1000,36 @@ function openEditPINV(id) {
       document.getElementById('sinv_buyer_name').value = d.buyer_name || '';
       const vr = document.getElementById('sinv_buyer_ref');  if(vr) vr.value = d.buyer_ref_no||'';
       const rm = document.getElementById('sinv_remarks');     if(rm) rm.value = d.remarks||'';
+
+      // Transaction type + reference invoices
+      document.getElementById('sinv_transaction_type').value = d.transaction_type || '';
+      onTxnTypeChange();  // sets category + button state (also clears selection)
+      _refInvSelected = (d.reference_invoices || '')
+        .split(',').map(s => parseInt(s,10)).filter(n => !isNaN(n));
+      document.getElementById('sinv_reference_invoices').value = _refInvSelected.join(',');
+      renderRefChips();
       document.getElementById('sinv_posting_date').disabled = (d.status === 'Open');
       document.getElementById('sinv_posting_date').value  = d.posting_date  || '';
       document.getElementById('sinv_delivery_date').value = d.delivery_date || '';
       document.getElementById('sinv_doc_date').value      = new Date().toISOString().split('T')[0]; // re-stamped on every save
       
       document.getElementById('liBody').innerHTML = '';
-      if (d.items && d.items.length > 0) {
-        d.items.forEach(li => addLiRow(li));
-      } else {
-        addLiRow();
-      }
+      loadItemsCache().then(() => {
+        document.getElementById('liBody').innerHTML = '';
+        if (d.items && d.items.length > 0) {
+          d.items.forEach(li => {
+            // Resolve item_id from item_code so the dropdown pre-selects.
+            if (!li.item_id && li.item_code) {
+              const m = (_itemsCache || []).find(i => i.item_code === li.item_code);
+              if (m) li.item_id = m.id;
+            }
+            addLiRow(li);
+          });
+        } else {
+          addLiRow();
+        }
+        recalcSummary(); updLiCount();
+      });
       
       document.getElementById('attList').innerHTML = '';
       document.getElementById('existAttList').innerHTML = '';
@@ -772,6 +1085,9 @@ async function savePINV() {
   fd.append('status', document.getElementById('sinv_status').value);
   fd.append('buyer_id', document.getElementById('sinv_buyer').value || '');
   fd.append('buyer_ref_no', document.getElementById('sinv_buyer_ref')?.value || '');
+  fd.append('transaction_type', document.getElementById('sinv_transaction_type')?.value || '');
+  fd.append('invoice_category', document.getElementById('sinv_invoice_category')?.value || '');
+  fd.append('reference_invoices', document.getElementById('sinv_reference_invoices')?.value || '');
   fd.append('remarks', document.getElementById('sinv_remarks')?.value || '');
   fd.append('posting_date', document.getElementById('sinv_posting_date').value || '');
   fd.append('delivery_date', document.getElementById('sinv_delivery_date').value || '');

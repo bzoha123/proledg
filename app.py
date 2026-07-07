@@ -67,9 +67,9 @@ def create_app(config_name='default'):
     from database.routes.sellers import sellers_bp
     from database.routes.employees import employees_bp
     from database.routes.work_allocations import wa_bp
-    from database.routes.invoices import inv_bp
     from database.routes.purchase import pur_bp
     from database.routes.sales import sale_bp
+    from database.routes.coa import coa_bp
     from database.routes.lookups import lookups_bp
     from database.routes.employee_import import emp_import_bp
     app.register_blueprint(emp_import_bp)
@@ -78,9 +78,9 @@ def create_app(config_name='default'):
     app.register_blueprint(sellers_bp)
     app.register_blueprint(employees_bp)
     app.register_blueprint(wa_bp)
-    app.register_blueprint(inv_bp)
     app.register_blueprint(pur_bp)
     app.register_blueprint(sale_bp)
+    app.register_blueprint(coa_bp)
     app.register_blueprint(lookups_bp)
     app.register_blueprint(vendor_doc_bp)
     app.register_blueprint(buyer_doc_bp)
@@ -131,6 +131,17 @@ def init_db(app):
             db.session.add(staff)
             db.session.commit()
             print('Default users created: admin / Admin@123 | staff / Staff@123')
+
+        # Seed the Chart of Accounts (idempotent — safe on every startup).
+        try:
+            from models import seed_chart_of_accounts
+            result = seed_chart_of_accounts()
+            if result['level_one_inserted'] or result['level_two_inserted']:
+                print(f"Chart of Accounts seeded: "
+                      f"{result['level_one_inserted']} Level 1, "
+                      f"{result['level_two_inserted']} Level 2 records inserted.")
+        except Exception as exc:
+            print(f'Chart of Accounts seed skipped: {exc}')
 
 if __name__ == '__main__':
     os.makedirs('database', exist_ok=True)

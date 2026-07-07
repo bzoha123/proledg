@@ -404,6 +404,7 @@ class Employee(db.Model):
     # ── Misc / relations ──
     buyer_id         = db.Column(db.Integer, db.ForeignKey('buyers.id'))
     document_path    = db.Column(db.String(300))
+    photo_path       = db.Column(db.String(300))
     created_at       = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at       = db.Column(db.DateTime, default=datetime.utcnow)
     created_by       = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -565,138 +566,6 @@ class WorkAllocation(db.Model):
             'end_date':   str(self.end_date)   if self.end_date   else '',
             'notes': self.notes or '',
         }
-
-# ─────────────────────────────────────────────────────────────────
-# INVOICE
-# ─────────────────────────────────────────────────────────────────
-class Invoice(db.Model):
-    __tablename__ = 'invoices'
-    id                 = db.Column(db.Integer, primary_key=True)
-    invoice_no         = db.Column(db.String(30), unique=True)
-    custom_invoice_no  = db.Column(db.String(30))
-    dr_cr_type         = db.Column(db.String(10))
-    payment_type       = db.Column(db.String(20))
-    invoice_date       = db.Column(db.Date)
-    month              = db.Column(db.String(20))
-    po_number          = db.Column(db.String(50))
-    project_reference  = db.Column(db.String(100))
-    due_date           = db.Column(db.Date)
-    period_start       = db.Column(db.Date)
-    period_end         = db.Column(db.Date)
-    invoice_type       = db.Column(db.String(30))
-    invoice_department = db.Column(db.String(100))
-    seller_id          = db.Column(db.Integer, db.ForeignKey('sellers.id'))
-    buyer_id           = db.Column(db.Integer, db.ForeignKey('buyers.id'))
-    gross_total        = db.Column(db.Numeric(14, 2), default=0)
-    total_discount     = db.Column(db.Numeric(14, 2), default=0)
-    vat_amount         = db.Column(db.Numeric(14, 2), default=0)
-    total_amount       = db.Column(db.Numeric(14, 2), default=0)
-    retention_pct      = db.Column(db.Numeric(5,  2), default=0)
-    retention_amount   = db.Column(db.Numeric(14, 2), default=0)
-    balance_due        = db.Column(db.Numeric(14, 2), default=0)
-    status             = db.Column(db.String(20), default='draft')
-    created_at         = db.Column(db.DateTime, default=datetime.utcnow)
-    created_by         = db.Column(db.Integer, db.ForeignKey('users.id'))
-
-    seller = db.relationship('Seller',      backref=db.backref('invoices', lazy=True))
-    buyer  = db.relationship('BuyerMaster', backref=db.backref('invoices', lazy=True))
-
-    def to_dict(self):
-        return {
-            'id': self.id, 'invoice_no': self.invoice_no or '',
-            'seller_id': self.seller_id, 'buyer_id': self.buyer_id,
-            'invoice_date': str(self.invoice_date) if self.invoice_date else '',
-            'due_date': str(self.due_date) if self.due_date else '',
-            'status': self.status,
-            'gross_total':  float(self.gross_total  or 0),
-            'vat_amount':   float(self.vat_amount   or 0),
-            'total_amount': float(self.total_amount or 0),
-            'balance_due':  float(self.balance_due  or 0),
-        }
-
-
-
-# ─────────────────────────────────────────────────────────────────
-# INVOICE BANK   (stored in invoice_banks)
-# ─────────────────────────────────────────────────────────────────
-class InvoiceBank(db.Model):
-    __tablename__ = 'invoice_banks'
-    id             = db.Column(db.Integer, primary_key=True)
-    invoice_id     = db.Column(db.Integer, db.ForeignKey('invoices.id', ondelete='CASCADE'), nullable=False)
-    bank_name      = db.Column(db.String(150), nullable=False)
-    account_number = db.Column(db.String(50))
-    branch         = db.Column(db.String(100))
-    swift_code     = db.Column(db.String(20))
-    iban           = db.Column(db.String(50))
-    is_primary     = db.Column(db.Boolean, default=False)
-    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
-
-    invoice = db.relationship('Invoice', backref=db.backref('banks', lazy=True, cascade='all,delete-orphan'))
-
-    def to_dict(self):
-        return {
-            'id': self.id, 'invoice_id': self.invoice_id,
-            'bank_name': self.bank_name, 'account_number': self.account_number or '',
-            'branch': self.branch or '', 'swift_code': self.swift_code or '',
-            'iban': self.iban or '', 'is_primary': self.is_primary,
-        }
-
-# ─────────────────────────────────────────────────────────────────
-# INVOICE LINE ITEM
-# ─────────────────────────────────────────────────────────────────
-class InvoiceLineItem(db.Model):
-    __tablename__ = 'invoice_line_items'
-    id          = db.Column(db.Integer, primary_key=True)
-    invoice_id  = db.Column(db.Integer, db.ForeignKey('invoices.id', ondelete='CASCADE'), nullable=False)
-    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=True)
-    uom         = db.Column(db.String(20), default='unit')
-    quantity    = db.Column(db.Numeric(12, 4), default=0)
-    rate        = db.Column(db.Numeric(12, 4), default=0)
-    discount    = db.Column(db.Numeric(12, 2), default=0)
-    taxable     = db.Column(db.Numeric(14, 2), default=0)
-    tax_rate    = db.Column(db.Numeric(5,  2), default=15)
-    tax_amount  = db.Column(db.Numeric(14, 2), default=0)
-    total       = db.Column(db.Numeric(14, 2), default=0)
-
-    invoice  = db.relationship('Invoice',  backref=db.backref('line_items', lazy=True, cascade='all,delete-orphan'))
-    employee = db.relationship('Employee', backref=db.backref('invoice_lines', lazy=True))
-
-    def to_dict(self):
-        return {
-            'id': self.id, 'invoice_id': self.invoice_id,
-            'employee_id': self.employee_id,
-            'uom': self.uom or 'unit',
-            'quantity': float(self.quantity or 0), 'rate': float(self.rate or 0),
-            'discount': float(self.discount or 0), 'taxable': float(self.taxable or 0),
-            'tax_rate': float(self.tax_rate or 15), 'tax_amount': float(self.tax_amount or 0),
-            'total': float(self.total or 0),
-        }
-
-
-# ─────────────────────────────────────────────────────────────────
-# INVOICE PAYMENT
-# ─────────────────────────────────────────────────────────────────
-class InvoicePayment(db.Model):
-    __tablename__ = 'invoice_payments'
-    id           = db.Column(db.Integer, primary_key=True)
-    invoice_id   = db.Column(db.Integer, db.ForeignKey('invoices.id', ondelete='CASCADE'), nullable=False)
-    payment_date = db.Column(db.Date)
-    amount       = db.Column(db.Numeric(14, 2), default=0)
-    method       = db.Column(db.String(50))
-    reference    = db.Column(db.String(100))
-    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
-    created_by   = db.Column(db.Integer, db.ForeignKey('users.id'))
-
-    invoice = db.relationship('Invoice', backref=db.backref('payments', lazy=True))
-
-    def to_dict(self):
-        return {
-            'id': self.id, 'invoice_id': self.invoice_id,
-            'payment_date': str(self.payment_date) if self.payment_date else '',
-            'amount': float(self.amount or 0),
-            'method': self.method or '', 'reference': self.reference or '',
-        }
-
 
 # ─────────────────────────────────────────────────────────────────
 # VENDOR REGISTRATION
@@ -1605,6 +1474,7 @@ class ItemMaster(db.Model):
     tax_category_id    = db.Column(db.Integer, db.ForeignKey('tax_categories.id'))
     vendor_id          = db.Column(db.Integer, db.ForeignKey('vendors.id'))
     main_rate          = db.Column(db.Numeric(14, 2), default=0)
+    po_rate            = db.Column(db.Numeric(14, 2), default=0)
     last_purchase_rate = db.Column(db.Numeric(14, 2), default=0)
     retail_rate        = db.Column(db.Numeric(14, 2), default=0)
     wholesale_rate     = db.Column(db.Numeric(14, 2), default=0)
@@ -1636,6 +1506,7 @@ class ItemMaster(db.Model):
             'vendor_id': self.vendor_id,
             'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'main_rate':          float(self.main_rate          or 0),
+            'po_rate':            float(self.po_rate            or 0),
             'last_purchase_rate': float(self.last_purchase_rate or 0),
             'retail_rate':        float(self.retail_rate        or 0),
             'wholesale_rate':     float(self.wholesale_rate     or 0),
@@ -2088,6 +1959,9 @@ class SalesInvoice(db.Model):
     delivery_note_id = db.Column(db.Integer, db.ForeignKey('delivery_notes.delivery_note_id'))
     buyer_id             = db.Column(db.Integer, db.ForeignKey('buyers.id'))
     buyer_ref_no         = db.Column(db.String(100))
+    transaction_type     = db.Column(db.String(20))   # STD_CR, STD_DR, SMP_CR, SMP_DR
+    invoice_category     = db.Column(db.String(20))   # standard | simplified
+    reference_invoices   = db.Column(db.String(300))  # comma-separated sales_invoice_id list
     status                = db.Column(db.String(20), default='Open')
     posting_date          = db.Column(db.Date)
     delivery_date         = db.Column(db.Date)
@@ -2117,6 +1991,9 @@ class SalesInvoice(db.Model):
             'buyer_id': self.buyer_id,
             'buyer_name': self.buyer.buyer_name_en if self.buyer else '',
             'buyer_ref_no': self.buyer_ref_no or '', 'status': self.status,
+            'transaction_type': self.transaction_type or '',
+            'invoice_category': self.invoice_category or '',
+            'reference_invoices': self.reference_invoices or '',
             'posting_date':  str(self.posting_date)  if self.posting_date  else '',
             'delivery_date': str(self.delivery_date) if self.delivery_date else '',
             'document_date': str(self.document_date) if self.document_date else '',
@@ -2380,3 +2257,149 @@ class SalesAttachment(db.Model):
             'filename': self.filename, 'filepath': self.filepath,
             'file_size': self.file_size or 0,
         }
+
+
+
+# ═════════════════════════════════════════════════════════════════
+#  CHART OF ACCOUNTS  —  Level 1 (level_one) & Level 2 (level_two)
+#  Level 1 = the fixed financial-statement elements (A, L, E, R, ...)
+#  Level 2 = heading accounts under each Level 1, auto-coded A1, A2, ...
+# ═════════════════════════════════════════════════════════════════
+
+class LevelOne(db.Model):
+    """Chart of Accounts — Level 1 (top-level financial statement elements).
+
+    ``code`` is a single, fixed letter (A, L, E, ...) and cannot be edited
+    once created. ``code_length`` is always 1.
+    """
+    __tablename__ = 'level_one'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    code_length = db.Column(db.Integer, nullable=False, default=1)          # fixed = 1
+    code        = db.Column(db.String(1), nullable=False, unique=True)      # A, L, E, ...
+    drawers     = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # One Level 1 has many Level 2 rows.
+    level_twos  = db.relationship(
+        'LevelTwo',
+        backref=db.backref('level_one', lazy=True),
+        lazy=True,
+        cascade='all, delete-orphan',
+        order_by='LevelTwo.id',
+    )
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'code_length': self.code_length,
+            'code': self.code,
+            'drawers': self.drawers,
+            'description': self.description,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'level_two_count': len(self.level_twos) if self.level_twos is not None else 0,
+        }
+
+
+class LevelTwo(db.Model):
+    """Chart of Accounts — Level 2 (heading accounts under a Level 1).
+
+    ``code`` is generated automatically as ``<LevelOneCode><n>`` (A1, A2, ...)
+    with an independent sequence per Level 1. ``code_length`` is always 2 and
+    ``description`` is always 'Heading Account'.
+    """
+    __tablename__ = 'level_two'
+
+    id             = db.Column(db.Integer, primary_key=True)
+    code_length    = db.Column(db.Integer, nullable=False, default=2)       # fixed = 2
+    level_one_id   = db.Column(db.Integer, db.ForeignKey('level_one.id', ondelete='CASCADE'), nullable=False)
+    level_one_code = db.Column(db.String(1), nullable=False)                # denormalised for fast search
+    code           = db.Column(db.String(10), nullable=False, unique=True)  # A1, A2, ...
+    drawers        = db.Column(db.String(150), nullable=False)
+    description    = db.Column(db.String(255), nullable=False, default='Heading Account')
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'code_length': self.code_length,
+            'level_one_id': self.level_one_id,
+            'level_one_code': self.level_one_code,
+            'code': self.code,
+            'drawers': self.drawers,
+            'description': self.description,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+        }
+
+
+# ── Default data for the two tables ──────────────────────────────
+# (code_length, code, drawers, description)
+LEVEL_ONE_DEFAULTS = [
+    (1, 'A', 'Asset',             'Elements of Financial Statements'),
+    (1, 'L', 'Liabilities',       'Elements of Financial Statements'),
+    (1, 'E', 'Equity & Reserve',  'Elements of Financial Statements'),
+    (1, 'R', 'Revenue',           'Elements of Financial Statements'),
+    (1, 'C', 'Cost of Revenue',   'Elements of Financial Statements'),
+    (1, 'O', 'Operating Cost',    'Elements of Financial Statements'),
+    (1, 'F', 'Finance Cost',      'Elements of Financial Statements'),
+    (1, 'I', 'OCI',               'Elements of Financial Statements'),
+]
+
+# (level_one_code, code, drawers)  — description is always 'Heading Account'
+LEVEL_TWO_DEFAULTS = [
+    ('A', 'A1', 'Non-current Assets'),
+    ('A', 'A2', 'Current Assets'),
+    ('L', 'L1', 'Non-current Liabilities'),
+    ('L', 'L2', 'Current Liabilities'),
+    ('E', 'E1', 'Equity'),
+    ('E', 'E2', 'Reserves'),
+    ('R', 'R1', 'Operating Revenue'),
+    ('R', 'R2', 'Non-operative Revenue'),
+    ('C', 'C1', 'Cost of Revenue'),
+    ('O', 'O1', 'Operating Cost'),
+    ('F', 'F1', 'Finance Cost'),
+]
+
+
+def seed_chart_of_accounts():
+    """Idempotently insert the default Level 1 and Level 2 records.
+
+    Safe to call on every startup — existing rows (matched by ``code``) are
+    never duplicated. Must be called inside an application context.
+    """
+    inserted_l1 = 0
+    for code_length, code, drawers, description in LEVEL_ONE_DEFAULTS:
+        if not LevelOne.query.filter_by(code=code).first():
+            db.session.add(LevelOne(
+                code_length=1,               # always 1
+                code=code,
+                drawers=drawers,
+                description=description,
+            ))
+            inserted_l1 += 1
+    if inserted_l1:
+        db.session.commit()
+
+    # Map Level 1 code -> id for the Level 2 foreign keys.
+    l1_by_code = {l1.code: l1 for l1 in LevelOne.query.all()}
+
+    inserted_l2 = 0
+    for l1_code, code, drawers in LEVEL_TWO_DEFAULTS:
+        parent = l1_by_code.get(l1_code)
+        if not parent:
+            continue
+        if not LevelTwo.query.filter_by(code=code).first():
+            db.session.add(LevelTwo(
+                code_length=2,               # always 2
+                level_one_id=parent.id,
+                level_one_code=parent.code,
+                code=code,
+                drawers=drawers,
+                description='Heading Account',
+            ))
+            inserted_l2 += 1
+    if inserted_l2:
+        db.session.commit()
+
+    return {'level_one_inserted': inserted_l1, 'level_two_inserted': inserted_l2}

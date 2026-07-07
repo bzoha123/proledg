@@ -321,12 +321,14 @@ textarea.f-inp{resize:vertical;min-height:80px;}
             <div class="isec-body">
               <div class="f-grid2">
                 <div class="f-item"><div class="f-lbl">{% if ar %}السعر الرئيسي{% else %}Main Rate{% endif %}</div><input type="number" id="i_main_rate" class="f-inp" value="0.00" min="0" step="0.01"></div>
-                <div class="f-item"><div class="f-lbl">{% if ar %}آخر سعر شراء{% else %}Last Purchase Rate{% endif %}</div><input type="number" id="i_last_purchase_rate" class="f-inp" value="0.00" min="0" step="0.01"></div>
+                <div class="f-item"><div class="f-lbl">{% if ar %}سعر أمر الشراء{% else %}PO Rate{% endif %}</div><input type="number" id="i_po_rate" class="f-inp" value="0.00" min="0" step="0.01"></div>
               </div>
               <div class="f-grid2">
+                <div class="f-item"><div class="f-lbl">{% if ar %}آخر سعر شراء{% else %}Last Purchase Rate{% endif %}</div><input type="number" id="i_last_purchase_rate" class="f-inp" value="0.00" min="0" step="0.01"></div>
                 <div class="f-item"><div class="f-lbl">{% if ar %}سعر التجزئة{% else %}Retail Rate{% endif %}</div><input type="number" id="i_retail_rate" class="f-inp" value="0.00" min="0" step="0.01"></div>
-                <div class="f-item"><div class="f-lbl">{% if ar %}سعر الجملة{% else %}Wholesale Rate{% endif %}</div><input type="number" id="i_wholesale_rate" class="f-inp" value="0.00" min="0" step="0.01"></div>
               </div>
+              <div class="f-grid2">
+                <div class="f-item"><div class="f-lbl">{% if ar %}سعر الجملة{% else %}Wholesale Rate{% endif %}</div><input type="number" id="i_wholesale_rate" class="f-inp" value="0.00" min="0" step="0.01"></div>
               <div class="f-grid2">
                 <div class="f-item"><div class="f-lbl">{% if ar %}السعر الخاص{% else %}Special Rate{% endif %}</div><input type="number" id="i_special_rate" class="f-inp" value="0.00" min="0" step="0.01"></div>
                 <div class="f-item"><div class="f-lbl">MRP</div><input type="number" id="i_mrp" class="f-inp" value="0.00" min="0" step="0.01"></div>
@@ -377,8 +379,9 @@ textarea.f-inp{resize:vertical;min-height:80px;}
         <div class="isec" style="margin:0;">
           <div class="isec-hdr"><div class="isec-hdr-icon"><i class="fas fa-dollar-sign"></i></div><div class="isec-hdr-title">{% if ar %}الأسعار{% else %}Pricing{% endif %}</div></div>
           <div class="isec-body">
-            <div class="v-row"><div><div class="v-lbl">{% if ar %}السعر الرئيسي{% else %}Main Rate{% endif %}</div><div class="v-val" id="v_main_rate"></div></div><div><div class="v-lbl">{% if ar %}آخر سعر شراء{% else %}Last Purchase Rate{% endif %}</div><div class="v-val" id="v_last_purchase_rate"></div></div></div>
-            <div class="v-row"><div><div class="v-lbl">{% if ar %}سعر التجزئة{% else %}Retail Rate{% endif %}</div><div class="v-val" id="v_retail_rate"></div></div><div><div class="v-lbl">{% if ar %}سعر الجملة{% else %}Wholesale Rate{% endif %}</div><div class="v-val" id="v_wholesale_rate"></div></div></div>
+            <div class="v-row"><div><div class="v-lbl">{% if ar %}السعر الرئيسي{% else %}Main Rate{% endif %}</div><div class="v-val" id="v_main_rate"></div></div><div><div class="v-lbl">{% if ar %}سعر أمر الشراء{% else %}PO Rate{% endif %}</div><div class="v-val" id="v_po_rate"></div></div></div>
+            <div class="v-row"><div><div class="v-lbl">{% if ar %}آخر سعر شراء{% else %}Last Purchase Rate{% endif %}</div><div class="v-val" id="v_last_purchase_rate"></div></div><div><div class="v-lbl">{% if ar %}سعر التجزئة{% else %}Retail Rate{% endif %}</div><div class="v-val" id="v_retail_rate"></div></div></div>
+            <div class="v-row"><div><div class="v-lbl">{% if ar %}سعر الجملة{% else %}Wholesale Rate{% endif %}</div><div class="v-val" id="v_wholesale_rate"></div></div>
             <div class="v-row"><div><div class="v-lbl">{% if ar %}السعر الخاص{% else %}Special Rate{% endif %}</div><div class="v-val" id="v_special_rate"></div></div><div><div class="v-lbl">MRP</div><div class="v-val" id="v_mrp"></div></div></div>
             <div class="v-row"><div><div class="v-lbl">{% if ar %}الحد الأدنى لسعر البيع{% else %}Minimum SP{% endif %}</div><div class="v-val" id="v_minimum_sp"></div></div></div>
           </div>
@@ -670,7 +673,7 @@ function openAddItem() {
   document.getElementById('itemForm').reset();
   document.getElementById('i_item_code').value = '';
   fetchItemCode();
-  ['i_main_rate','i_last_purchase_rate','i_retail_rate','i_wholesale_rate','i_special_rate','i_mrp','i_minimum_sp'].forEach(id => {
+  ['i_main_rate','i_po_rate','i_last_purchase_rate','i_retail_rate','i_wholesale_rate','i_special_rate','i_mrp','i_minimum_sp'].forEach(id => {
     const e = document.getElementById(id); if(e) e.value = '0.00';
   });
   document.getElementById('i_sub_category').disabled = true;
@@ -704,6 +707,7 @@ async function fillEditForm(d) {
   document.getElementById('i_vendor').value        = d.vendor_id || '';
   document.getElementById('i_is_active').value     = d.is_active ? '1' : '0';
   document.getElementById('i_main_rate').value          = (d.main_rate || 0).toFixed(2);
+  document.getElementById('i_po_rate').value            = (d.po_rate || 0).toFixed(2);
   document.getElementById('i_last_purchase_rate').value = (d.last_purchase_rate || 0).toFixed(2);
   document.getElementById('i_retail_rate').value        = (d.retail_rate || 0).toFixed(2);
   document.getElementById('i_wholesale_rate').value     = (d.wholesale_rate || 0).toFixed(2);
@@ -750,6 +754,7 @@ async function openViewItem(id) {
     document.getElementById('v_vendor').textContent       = d.vendor_name || '-';
     document.getElementById('v_is_active').textContent    = d.is_active ? (IS_AR ? 'نشط' : 'Active') : (IS_AR ? 'غير نشط' : 'Inactive');
     document.getElementById('v_main_rate').textContent          = (d.main_rate || 0).toFixed(2);
+    document.getElementById('v_po_rate').textContent            = (d.po_rate || 0).toFixed(2);
     document.getElementById('v_last_purchase_rate').textContent = (d.last_purchase_rate || 0).toFixed(2);
     document.getElementById('v_retail_rate').textContent        = (d.retail_rate || 0).toFixed(2);
     document.getElementById('v_wholesale_rate').textContent     = (d.wholesale_rate || 0).toFixed(2);
@@ -783,6 +788,7 @@ async function saveItem() {
   fd.set('vendor_id',          document.getElementById('i_vendor').value);
   fd.set('is_active',          document.getElementById('i_is_active').value);
   fd.set('main_rate',          document.getElementById('i_main_rate').value);
+  fd.set('po_rate',            document.getElementById('i_po_rate').value);
   fd.set('last_purchase_rate', document.getElementById('i_last_purchase_rate').value);
   fd.set('retail_rate',        document.getElementById('i_retail_rate').value);
   fd.set('wholesale_rate',     document.getElementById('i_wholesale_rate').value);
