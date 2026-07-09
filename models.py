@@ -201,6 +201,8 @@ class BuyerMaster(db.Model):
     buyer_name_ar        = db.Column(db.String(200))
     vat_number           = db.Column(db.String(50))
     crn                  = db.Column(db.String(50))
+    department           = db.Column(db.String(150))
+    department_ar        = db.Column(db.String(150))
     phone                = db.Column(db.String(30))
     fax                  = db.Column(db.String(30))
     email                = db.Column(db.String(120))
@@ -231,6 +233,7 @@ class BuyerMaster(db.Model):
             'id': self.id, 'buyer_code': self.buyer_code or '',
             'buyer_name_en': self.buyer_name_en, 'buyer_name_ar': self.buyer_name_ar or '',
             'vat_number': self.vat_number or '', 'crn': self.crn or '',
+            'department': self.department or '', 'department_ar': self.department_ar or '',
             'phone': self.phone or '', 'email': self.email or '',
             'city': self.city or '', 'is_active': self.is_active,
         }
@@ -403,6 +406,10 @@ class Employee(db.Model):
 
     # ── Misc / relations ──
     buyer_id         = db.Column(db.Integer, db.ForeignKey('buyers.id'))
+    # Department the employee belongs to, scoped to `buyer_id`.
+    # The free-text `department` / `department_ar` columns above are kept in
+    # sync for reporting and for records created before this FK existed.
+    department_id    = db.Column(db.Integer, db.ForeignKey('buyer_departments.id'))
     document_path    = db.Column(db.String(300))
     photo_path       = db.Column(db.String(300))
     created_at       = db.Column(db.DateTime, default=datetime.utcnow)
@@ -2279,6 +2286,7 @@ class LevelOne(db.Model):
     code        = db.Column(db.String(1), nullable=False, unique=True)      # A, L, E, ...
     drawers     = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(255), nullable=False)
+    status      = db.Column(db.String(10), nullable=False, default='active')  # active | inactive
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
     # One Level 1 has many Level 2 rows.
@@ -2297,6 +2305,7 @@ class LevelOne(db.Model):
             'code': self.code,
             'drawers': self.drawers,
             'description': self.description,
+            'status': self.status or 'active',
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
             'level_two_count': len(self.level_twos) if self.level_twos is not None else 0,
         }
@@ -2318,6 +2327,7 @@ class LevelTwo(db.Model):
     code           = db.Column(db.String(10), nullable=False, unique=True)  # A1, A2, ...
     drawers        = db.Column(db.String(150), nullable=False)
     description    = db.Column(db.String(255), nullable=False, default='Heading Account')
+    status         = db.Column(db.String(10), nullable=False, default='active')  # active | inactive
     created_at     = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -2329,6 +2339,7 @@ class LevelTwo(db.Model):
             'code': self.code,
             'drawers': self.drawers,
             'description': self.description,
+            'status': self.status or 'active',
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
         }
 
@@ -2423,6 +2434,7 @@ class LevelThree(db.Model):
     code           = db.Column(db.String(20), nullable=False, unique=True)
     drawers        = db.Column(db.String(200), nullable=False)
     description    = db.Column(db.String(255), nullable=False, default='Heading Account')
+    status         = db.Column(db.String(10), nullable=False, default='active')  # active | inactive
     created_at     = db.Column(db.DateTime, default=datetime.utcnow)
 
     level_two   = db.relationship('LevelTwo', backref=db.backref('level_threes', lazy=True))
@@ -2433,6 +2445,7 @@ class LevelThree(db.Model):
             'id': self.id, 'code_length': self.code_length,
             'level_two_id': self.level_two_id, 'level_two_code': self.level_two_code,
             'code': self.code, 'drawers': self.drawers, 'description': self.description,
+            'status': self.status or 'active',
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
             'child_count': len(self.level_fours) if self.level_fours is not None else 0,
         }
@@ -2449,6 +2462,7 @@ class LevelFour(db.Model):
     code             = db.Column(db.String(30), nullable=False, unique=True)
     drawers          = db.Column(db.String(200), nullable=False)
     description      = db.Column(db.String(255), nullable=False, default='Heading Account')
+    status           = db.Column(db.String(10), nullable=False, default='active')  # active | inactive
     created_at       = db.Column(db.DateTime, default=datetime.utcnow)
 
     level_fives = db.relationship('LevelFive', backref=db.backref('level_four', lazy=True), lazy=True)
@@ -2458,6 +2472,7 @@ class LevelFour(db.Model):
             'id': self.id, 'code_length': self.code_length,
             'level_three_id': self.level_three_id, 'level_three_code': self.level_three_code,
             'code': self.code, 'drawers': self.drawers, 'description': self.description,
+            'status': self.status or 'active',
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
             'child_count': len(self.level_fives) if self.level_fives is not None else 0,
         }
@@ -2474,6 +2489,7 @@ class LevelFive(db.Model):
     code            = db.Column(db.String(40), nullable=False, unique=True)
     drawers         = db.Column(db.String(250), nullable=False)
     description     = db.Column(db.String(255), nullable=False, default='Transactional Account')
+    status          = db.Column(db.String(10), nullable=False, default='active')  # active | inactive
     created_at      = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -2481,6 +2497,7 @@ class LevelFive(db.Model):
             'id': self.id, 'code_length': self.code_length,
             'level_four_id': self.level_four_id, 'level_four_code': self.level_four_code,
             'code': self.code, 'drawers': self.drawers, 'description': self.description,
+            'status': self.status or 'active',
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
         }
 
@@ -2591,3 +2608,87 @@ def seed_coa_levels_3_4_5():
         db.session.commit()
 
     return counts
+
+
+# ═════════════════════════════════════════════════════════════════
+#  DEPARTMENT LOCATION  +  BUYER DEPARTMENT
+#  A buyer (company / HR) has many departments; each department sits
+#  at one location. Locations are a shared lookup with quick-add.
+# ═════════════════════════════════════════════════════════════════
+
+class DepartmentLocation(db.Model):
+    """Shared lookup of physical locations a department can belong to."""
+    __tablename__ = 'department_locations'
+
+    id               = db.Column(db.Integer, primary_key=True)
+    location_name    = db.Column(db.String(150), nullable=False, unique=True)
+    location_name_ar = db.Column(db.String(150))
+    is_active        = db.Column(db.Boolean, default=True)
+    created_at       = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'location_name': self.location_name,
+            'location_name_ar': self.location_name_ar or '',
+            'label': self.location_name,
+            'en': self.location_name,
+            'ar': self.location_name_ar or '',
+            'is_active': self.is_active,
+        }
+
+
+class BuyerDepartment(db.Model):
+    """A department belonging to a buyer, optionally tied to a location."""
+    __tablename__ = 'buyer_departments'
+
+    id                 = db.Column(db.Integer, primary_key=True)
+    buyer_id           = db.Column(db.Integer, db.ForeignKey('buyers.id', ondelete='CASCADE'),
+                                   nullable=False)
+    department_name    = db.Column(db.String(150), nullable=False)
+    department_name_ar = db.Column(db.String(150))
+    location_id        = db.Column(db.Integer, db.ForeignKey('department_locations.id'))
+    created_at         = db.Column(db.DateTime, default=datetime.utcnow)
+
+    buyer    = db.relationship('BuyerMaster',
+                               backref=db.backref('departments', lazy=True,
+                                                  cascade='all, delete-orphan'))
+    employees = db.relationship('Employee',
+                                backref=db.backref('department_ref', lazy=True),
+                                lazy=True)
+    location = db.relationship('DepartmentLocation',
+                               backref=db.backref('buyer_departments', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'buyer_id': self.buyer_id,
+            'department_name': self.department_name or '',
+            'department_name_ar': self.department_name_ar or '',
+            'location_id': self.location_id or '',
+            'location_name': self.location.location_name if self.location else '',
+            'location_name_ar': (self.location.location_name_ar or '') if self.location else '',
+        }
+
+
+DEFAULT_DEPARTMENT_LOCATIONS = [
+    ('Head Office',   'المكتب الرئيسي'),
+    ('Branch Office', 'مكتب الفرع'),
+    ('Warehouse',     'المستودع'),
+    ('Site Office',   'مكتب الموقع'),
+    ('Factory',       'المصنع'),
+]
+
+
+def seed_department_locations():
+    """Idempotently insert a few sensible default locations."""
+    added = 0
+    for en, ar in DEFAULT_DEPARTMENT_LOCATIONS:
+        if not DepartmentLocation.query.filter(
+                db.func.lower(DepartmentLocation.location_name) == en.lower()).first():
+            db.session.add(DepartmentLocation(location_name=en, location_name_ar=ar,
+                                              is_active=True))
+            added += 1
+    if added:
+        db.session.commit()
+    return added

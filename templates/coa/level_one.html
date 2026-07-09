@@ -36,7 +36,7 @@
           <th style="width:90px">{% if ar %}الكود{% else %}Code{% endif %}</th>
           <th>{% if ar %}المجموعة{% else %}Drawers{% endif %}</th>
           <th>{% if ar %}الوصف{% else %}Description{% endif %}</th>
-          <th style="width:150px">{% if ar %}أنشئ في{% else %}Created{% endif %}</th>
+          <th style="width:90px">{% if ar %}الحالة{% else %}Status{% endif %}</th>
           {% if current_user.is_admin() %}
           <th style="width:100px" class="text-center">{% if ar %}إجراءات{% else %}Actions{% endif %}</th>
           {% endif %}
@@ -50,7 +50,7 @@
           <td><span class="code-badge">{{ r.code }}</span></td>
           <td class="fw-semibold">{{ r.drawers }}</td>
           <td style="color:#6b7280;font-size:12px">{{ r.description }}</td>
-          <td style="color:#6b7280;font-size:12px">{{ r.created_at.strftime('%Y-%m-%d') if r.created_at else '—' }}</td>
+          <td>{% if (r.status or 'active') == 'active' %}<span style="background:#dcfce7;color:#15803d;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">{% if ar %}نشط{% else %}Active{% endif %}</span>{% else %}<span style="background:#fee2e2;color:#b91c1c;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">{% if ar %}غير نشط{% else %}Inactive{% endif %}</span>{% endif %}</td>
           {% if current_user.is_admin() %}
           <td class="text-center">
             <button class="action-btn action-btn-edit"
@@ -72,7 +72,7 @@
     </table>
   </div>
   <div class="proledg-pagination">
-    <span class="page-count">{{ rows|length }} {% if ar %}حساب{% else %}account(s){% endif %}</span>
+    <span class="page-count">{{ pg.total }} {% if ar %}حساب{% else %}account(s){% endif %} · {% if ar %}صفحة{% else %}page{% endif %} {{ pg.page }}/{{ pg.pages or 1 }}</span>
   </div>
 </div>
 
@@ -85,7 +85,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <form id="l1Form" method="POST" action="{{ url_for('coa.level_one_add') }}">
+        <form id="l1Form" method="POST" action="{{ url_for('coa.level_one_add') }}" onsubmit="return validateL1();">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
           <div class="row">
@@ -96,17 +96,27 @@
             </div>
             <div class="col-8 mb-3">
               <label class="form-label fw-semibold">{% if ar %}الكود{% else %}Code{% endif %} <span style="color:#ef4444">*</span></label>
-              <input type="text" name="code" id="l1_code" class="form-control" required maxlength="1"
-                     placeholder="{% if ar %}حرف واحد، مثال: A{% else %}Single letter, e.g. A{% endif %}"
-                     style="text-transform:uppercase" pattern="[A-Za-z]">
+              <div style="position:relative;">
+                <input type="text" name="code" id="l1_code" class="form-control" required maxlength="1"
+                       autocomplete="off" oninput="onCodeInput()"
+                       placeholder="{% if ar %}حرف واحد، مثال: A{% else %}Single letter, e.g. A{% endif %}"
+                       style="text-transform:uppercase;padding-right:36px;" pattern="[A-Za-z]">
+                <span id="l1_code_icon" style="position:absolute;top:50%;right:12px;transform:translateY(-50%);font-size:15px;display:none;"></span>
+              </div>
               <small class="text-muted" id="l1_code_hint">{% if ar %}لا يمكن تعديله بعد الإنشاء{% else %}Cannot be edited after creation{% endif %}</small>
+              <small id="l1_code_msg" style="display:none;font-size:11.5px;margin-top:3px;"></small>
             </div>
           </div>
 
           <div class="mb-3">
             <label class="form-label fw-semibold">{% if ar %}المجموعة{% else %}Drawers{% endif %} <span style="color:#ef4444">*</span></label>
-            <input type="text" name="drawers" id="l1_drawers" class="form-control" required maxlength="100"
-                   placeholder="{% if ar %}مثال: الأصول{% else %}e.g. Asset{% endif %}">
+            <div style="position:relative;">
+              <input type="text" name="drawers" id="l1_drawers" class="form-control" required maxlength="100"
+                     autocomplete="off" oninput="onDrawersInput()" style="padding-right:36px;"
+                     placeholder="{% if ar %}مثال: الأصول{% else %}e.g. Asset{% endif %}">
+              <span id="l1_dr_icon" style="position:absolute;top:50%;right:12px;transform:translateY(-50%);font-size:15px;display:none;"></span>
+            </div>
+            <small id="l1_dr_msg" style="display:none;font-size:11.5px;margin-top:3px;"></small>
           </div>
 
           <div class="mb-3">
@@ -114,16 +124,24 @@
             <input type="text" name="description" id="l1_desc" class="form-control" required maxlength="255"
                    value="Elements of Financial Statements">
           </div>
-        </form>
+
+          <div class="mb-1">
+            <label class="form-label fw-semibold">{% if ar %}الحالة{% else %}Status{% endif %}</label>
+            <div style="display:flex;gap:16px;">
+              <label style="cursor:pointer;"><input type="radio" name="status" value="active" id="l1_st_active" checked> {% if ar %}نشط{% else %}Active{% endif %}</label>
+              <label style="cursor:pointer;"><input type="radio" name="status" value="inactive" id="l1_st_inactive"> {% if ar %}غير نشط{% else %}Inactive{% endif %}</label>
+            </div>
+          </div>
       </div>
       <div class="modal-footer proledg-modal-footer">
         <button type="button" class="pl-footer-btn pl-btn-cancel" data-bs-dismiss="modal">
           <i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}
         </button>
-        <button type="button" class="pl-footer-btn pl-btn-save" onclick="submitL1()">
+        <button type="submit" class="pl-footer-btn pl-btn-save">
           <i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}
         </button>
       </div>
+        </form>
     </div>
   </div>
 </div>
@@ -135,7 +153,75 @@ const IS_AR = {{ 'true' if ar else 'false' }};
 const ADD_URL  = '{{ url_for("coa.level_one_add") }}';
 const EDIT_URL = '{{ url_for("coa.level_one_list") }}';  // base; replaced per-id below
 
+
+/* ── Live validation: red ✗ / green ✓ ─────────────────────────── */
+let _l1EditId = null;
+let _codeOk = false, _drOk = false;
+let _codeTimer = null, _drTimer = null;
+
+function _mark(inpId, iconId, msgId, state, msg) {
+  const inp = document.getElementById(inpId);
+  const icon = document.getElementById(iconId);
+  const hint = document.getElementById(msgId);
+  inp.style.borderColor = '';
+  icon.style.display = 'none';
+  hint.style.display = 'none';
+  if (state === 'ok') {
+    inp.style.borderColor = '#16a34a';
+    icon.innerHTML = '<i class="fas fa-check-circle" style="color:#16a34a;"></i>';
+    icon.style.display = 'inline';
+    if (msg) { hint.textContent = msg; hint.style.color = '#16a34a'; hint.style.display = 'block'; }
+  } else if (state === 'bad') {
+    inp.style.borderColor = '#dc2626';
+    icon.innerHTML = '<i class="fas fa-times-circle" style="color:#dc2626;"></i>';
+    icon.style.display = 'inline';
+    if (msg) { hint.textContent = msg; hint.style.color = '#dc2626'; hint.style.display = 'block'; }
+  }
+}
+
+function checkCode() {
+  const v = document.getElementById('l1_code').value.trim();
+  let url = '/coa/validate/level-one-code?code=' + encodeURIComponent(v);
+  if (_l1EditId) url += '&exclude=' + encodeURIComponent(_l1EditId);
+  fetch(url).then(r => r.json()).then(d => {
+    _codeOk = !!d.ok;
+    _mark('l1_code', 'l1_code_icon', 'l1_code_msg', d.ok ? 'ok' : 'bad', d.msg);
+  }).catch(() => { _codeOk = false; });
+}
+
+function onCodeInput() {
+  const v = document.getElementById('l1_code').value.trim();
+  if (!v) { _codeOk = false; _mark('l1_code','l1_code_icon','l1_code_msg','bad', IS_AR ? 'الكود مطلوب' : 'Code is required'); return; }
+  clearTimeout(_codeTimer);
+  _codeTimer = setTimeout(checkCode, 300);
+}
+
+function checkDrawers() {
+  const v = document.getElementById('l1_drawers').value.trim();
+  let url = '/coa/validate/level-one/drawers?drawers=' + encodeURIComponent(v);
+  if (_l1EditId) url += '&exclude=' + encodeURIComponent(_l1EditId);
+  fetch(url).then(r => r.json()).then(d => {
+    _drOk = !!d.ok;
+    _mark('l1_drawers', 'l1_dr_icon', 'l1_dr_msg', d.ok ? 'ok' : 'bad', d.msg);
+  }).catch(() => { _drOk = false; });
+}
+
+function onDrawersInput() {
+  const v = document.getElementById('l1_drawers').value.trim();
+  if (!v) { _drOk = false; _mark('l1_drawers','l1_dr_icon','l1_dr_msg','bad', IS_AR ? 'المجموعة مطلوبة' : 'Drawers is required'); return; }
+  clearTimeout(_drTimer);
+  _drTimer = setTimeout(checkDrawers, 300);
+}
+
+function _clearMarks() {
+  _codeOk = false; _drOk = false;
+  ['l1_code_icon','l1_dr_icon'].forEach(i => { const e=document.getElementById(i); if(e) e.style.display='none'; });
+  ['l1_code_msg','l1_dr_msg'].forEach(i => { const e=document.getElementById(i); if(e) e.style.display='none'; });
+  ['l1_code','l1_drawers'].forEach(i => { const e=document.getElementById(i); if(e) e.style.borderColor=''; });
+}
+
 function openAdd() {
+  _l1EditId = null; _clearMarks();
   document.getElementById('l1ModalTitle').textContent = IS_AR ? 'إضافة حساب المستوى الأول' : 'Add Level 1 Account';
   const f = document.getElementById('l1Form');
   f.action = ADD_URL;
@@ -144,10 +230,12 @@ function openAdd() {
   code.readOnly = false;
   code.style.background = '';
   document.getElementById('l1_desc').value = 'Elements of Financial Statements';
+  document.getElementById('l1_st_active').checked = true;
   document.getElementById('l1_code_hint').textContent = IS_AR ? 'لا يمكن تعديله بعد الإنشاء' : 'Cannot be edited after creation';
 }
 
-function openEdit(id, code, drawers, description) {
+function openEdit(id, code, drawers, description, status) {
+  _l1EditId = id; _clearMarks(); _codeOk = true; _drOk = true;
   document.getElementById('l1ModalTitle').textContent = IS_AR ? 'تعديل حساب المستوى الأول' : 'Edit Level 1 Account';
   const f = document.getElementById('l1Form');
   f.action = `/coa/level-one/${id}/edit`;
@@ -159,23 +247,33 @@ function openEdit(id, code, drawers, description) {
   document.getElementById('l1_code_hint').textContent = IS_AR ? 'الكود ثابت ولا يمكن تعديله' : 'Code is fixed and cannot be changed';
   document.getElementById('l1_drawers').value = drawers;
   document.getElementById('l1_desc').value = description;
+  document.getElementById(status === 'inactive' ? 'l1_st_inactive' : 'l1_st_active').checked = true;
   new bootstrap.Modal(document.getElementById('l1Modal')).show();
 }
 
-function submitL1() {
-  const f = document.getElementById('l1Form');
+function validateL1() {
+  const isEdit = _l1EditId !== null;
   const code = document.getElementById('l1_code').value.trim();
   const drawers = document.getElementById('l1_drawers').value.trim();
   const desc = document.getElementById('l1_desc').value.trim();
   if (!code || !drawers || !desc) {
     alert(IS_AR ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields');
-    return;
+    return false;
   }
   if (!/^[A-Za-z]$/.test(code)) {
     alert(IS_AR ? 'يجب أن يكون الكود حرفاً واحداً' : 'Code must be a single letter');
-    return;
+    return false;
   }
-  f.submit();
+  // On add, the code must have passed the live uniqueness check.
+  if (!isEdit && !_codeOk) {
+    alert(IS_AR ? 'الكود مستخدم بالفعل' : 'That code is already taken');
+    return false;
+  }
+  if (!_drOk) {
+    alert(IS_AR ? 'الرجاء تصحيح حقل المجموعة' : 'Please fix the Drawers field');
+    return false;
+  }
+  return true;
 }
 
 function filterRows(q) {

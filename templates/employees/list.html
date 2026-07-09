@@ -334,6 +334,25 @@
 .field-input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
 .field-input:hover:not(:focus) { border-color:#cbd5e1; }
 
+
+/* ── Grouped field-set blocks inside a form section ── */
+.fs-group {
+  border: 1px solid #e8eef5;
+  border-radius: 10px;
+  padding: 14px 16px 6px;
+  margin-bottom: 16px;
+  background: #fcfdfe;
+}
+.fs-group-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .4px;
+  text-transform: uppercase; color: #64748b;
+  margin: -24px 0 14px; padding: 0 8px;
+  background: #fff; width: fit-content;
+}
+.fs-group-title i { color: #2563eb; font-size: 12px; }
+.fs-group .field-row:last-child { margin-bottom: 8px; }
+
 #f_net_salary_display, #f_overtime_rate {
   background:linear-gradient(0deg,#ecfdf5,#f0fdf4) !important;
   border-color:#a7f3d0 !important; color:#047857 !important; font-weight:700 !important;
@@ -570,7 +589,7 @@
                 <div class="field-item" style="max-width:170px;">
                   <div class="field-label">{% if ar %}صورة الموظف{% else %}Employee Photo{% endif %}</div>
                   <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-                    <img id="empPhotoPreview" src="" alt=""
+                    <img id="empPhotoPreview" src="" alt="" onerror="setEmpPhoto('')"
                          style="width:110px;height:110px;border-radius:12px;object-fit:cover;border:2px solid #e2e8f0;background:#f8fafc;display:none;">
                     <div id="empPhotoPlaceholder"
                          style="width:110px;height:110px;border-radius:12px;border:2px dashed #cbd5e1;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;">
@@ -578,7 +597,7 @@
                     </div>
                     <label style="cursor:pointer;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;">
                       <i class="fas fa-camera me-1"></i>{% if ar %}اختر صورة{% else %}Choose Photo{% endif %}
-                      <input type="file" name="photo" id="f_photo" accept="image/*" style="display:none;" onchange="previewEmpPhoto(this)">
+                      <input type="file" name="photo" id="f_photo" accept="image/*,.jfif,.avif,.heic,.heif" style="display:none;" onchange="previewEmpPhoto(this)">
                     </label>
                   </div>
                 </div>
@@ -797,70 +816,126 @@
             </div>
           </div>
 
-          {{ sec('work','info-circle','Work Information','معلومات العمل') }}
-              <div class="field-row">
-                <div class="field-item">
-                  <div class="field-label">{% if ar %}الشهر{% else %}Month{% endif %}</div>
-                  <input type="text" name="work_month" id="f_work_month" class="field-input"
-                         placeholder="{% if ar %}مثال: يناير/26{% else %}e.g. Jan/26{% endif %}">
+          {{ sec('work','briefcase','Work Information','معلومات العمل') }}
+
+              {# ── Group 1: Employment / Assignment ─────────────── #}
+              <div class="fs-group">
+                <div class="fs-group-title">
+                  <i class="fas fa-building"></i>
+                  <span>{% if ar %}جهة العمل{% else %}Employer &amp; Assignment{% endif %}</span>
                 </div>
-                <div class="field-item">
-                  <div class="field-label">{% if ar %}تاريخ الانضمام{% else %}Joining Date{% endif %}</div>
-                  <input type="date" name="joining_date" id="f_joining_date" class="field-input" dir="ltr">
+
+                <div class="field-row">
+                  <div class="field-item" style="flex:2;">
+                    <div class="field-label">{% if ar %}الشركة / الموارد البشرية{% else %}Company / HR{% endif %}</div>
+                    <select name="buyer_id" id="f_buyer_id" class="field-input"
+                            dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                            onchange="onCompanyChange()"></select>
+                    <small id="f_company_hint" style="display:none;font-size:11px;color:#16a34a;margin-top:3px;">
+                      <i class="fas fa-magic me-1"></i>{% if ar %}تم ملء القسم تلقائياً{% else %}Department auto-filled{% endif %}
+                    </small>
+                  </div>
+                  <div class="field-item">
+                    <div class="field-label">{% if ar %}الشهر{% else %}Work Month{% endif %}</div>
+                    <input type="text" name="work_month" id="f_work_month" class="field-input"
+                           placeholder="{% if ar %}مثال: يناير/26{% else %}e.g. Jan/26{% endif %}">
+                  </div>
                 </div>
-                <div class="field-item">
-                  <div class="field-label">{% if ar %}تاريخ الانتهاء{% else %}End Date{% endif %}</div>
-                  <input type="date" name="end_date_work" id="f_end_date_work" class="field-input" dir="ltr">
+
+                {# Department — cascades from the selected Company / HR.
+                   Disabled until a company is chosen; only that company's
+                   departments are ever offered. #}
+                <div class="field-row" style="margin-bottom:10px;">
+                  <div class="field-item">
+                    <div class="field-label">
+                      {% if ar %}القسم{% else %}Department{% endif %}
+                    </div>
+                    <select name="department_id" id="f_department_id" class="field-input"
+                            dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                            onchange="onDepartmentChange()" disabled>
+                      <option value="">-- {% if ar %}اختر الشركة أولاً{% else %}Select a company first{% endif %} --</option>
+                    </select>
+                    <small id="f_dept_hint" style="display:none;font-size:11px;color:#94a3b8;margin-top:3px;"></small>
+                  </div>
+                  <div class="field-item">
+                    <div class="field-label" dir="rtl" style="text-align:right;">
+                      {% if ar %}القسم (AR){% else %}Department (AR){% endif %}
+                    </div>
+                    <input type="text" name="department_ar" id="f_department_ar" class="field-input"
+                           dir="rtl" readonly style="background:#f8fafc;"
+                           title="{% if ar %}يُملأ تلقائياً من القسم المختار{% else %}Filled from the selected department{% endif %}">
+                  </div>
+                </div>
+                {# Keep the legacy free-text name in sync for reporting. #}
+                <input type="hidden" name="department" id="f_department_en">
+
+                {# Section — free text, bilingual #}
+                {% for fid, en_lbl, ar_lbl in [('section','Section','القطاع')] %}
+                <div class="field-row" style="margin-bottom:10px;">
+                  <div class="field-item">
+                    <div class="field-label">{{ en_lbl }}{% if ar %} (EN){% endif %}</div>
+                    <div style="display:flex;gap:6px;">
+                      <input type="text" name="{{ fid }}" id="f_{{ fid }}_en" class="field-input" dir="ltr" style="flex:1"
+                             oninput="biWrap(this,'f_{{ fid }}_ar','en')">
+                      {% if not ar %}<button type="button" class="bi-btn" title="Translate" onclick="biWrapRetrans(document.getElementById('f_{{ fid }}_ar').value,'f_{{ fid }}_en','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                    </div>
+                  </div>
+                  <div class="field-item">
+                    <div class="field-label" dir="rtl" style="text-align:right;">{{ ar_lbl }}{% if not ar %} (AR){% endif %}</div>
+                    <div style="display:flex;gap:6px;" dir="rtl">
+                      <input type="text" name="{{ fid }}_ar" id="f_{{ fid }}_ar" class="field-input" dir="rtl" style="flex:1"
+                             oninput="biWrap(this,'f_{{ fid }}_en','ar')">
+                      {% if ar %}<button type="button" class="bi-btn" title="ترجم" onclick="biWrapRetrans(document.getElementById('f_{{ fid }}_en').value,'f_{{ fid }}_ar','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+
+              {# ── Group 2: Contract Period ─────────────────────── #}
+              <div class="fs-group">
+                <div class="fs-group-title">
+                  <i class="fas fa-calendar-alt"></i>
+                  <span>{% if ar %}فترة العقد{% else %}Contract Period{% endif %}</span>
+                </div>
+                <div class="field-row">
+                  <div class="field-item">
+                    <div class="field-label">{% if ar %}تاريخ الانضمام{% else %}Joining Date{% endif %}</div>
+                    <input type="date" name="joining_date" id="f_joining_date" class="field-input" dir="ltr">
+                  </div>
+                  <div class="field-item">
+                    <div class="field-label">{% if ar %}تاريخ الانتهاء{% else %}End Date{% endif %}</div>
+                    <input type="date" name="end_date_work" id="f_end_date_work" class="field-input" dir="ltr">
+                  </div>
                 </div>
               </div>
 
-              <div class="field-row">
-                <div class="field-item">
-                  <div class="field-label">{% if ar %}الحالة{% else %}Status{% endif %}</div>
-                  <div class="mcq-wrap" id="workStatusGrp">
-                    <label class="mcq-opt chosen" onclick="pickMCQ('workStatusGrp',this,'f_work_status','active')"><input type="radio">{% if ar %}نشيط{% else %}Active{% endif %}</label>
-                    <label class="mcq-opt" onclick="pickMCQ('workStatusGrp',this,'f_work_status','inactive')"><input type="radio">{% if ar %}غير نشيط{% else %}Inactive{% endif %}</label>
+              {# ── Group 3: Status & Shift ──────────────────────── #}
+              <div class="fs-group" style="margin-bottom:0;">
+                <div class="fs-group-title">
+                  <i class="fas fa-user-clock"></i>
+                  <span>{% if ar %}الحالة والوردية{% else %}Status &amp; Shift{% endif %}</span>
+                </div>
+                <div class="field-row">
+                  <div class="field-item">
+                    <div class="field-label">{% if ar %}حالة العمل{% else %}Work Status{% endif %}</div>
+                    <div class="mcq-wrap" id="workStatusGrp">
+                      <label class="mcq-opt chosen" onclick="pickMCQ('workStatusGrp',this,'f_work_status','active')"><input type="radio">{% if ar %}نشيط{% else %}Active{% endif %}</label>
+                      <label class="mcq-opt" onclick="pickMCQ('workStatusGrp',this,'f_work_status','inactive')"><input type="radio">{% if ar %}غير نشيط{% else %}Inactive{% endif %}</label>
+                    </div>
+                    <input type="hidden" name="work_status" id="f_work_status" value="active">
                   </div>
-                  <input type="hidden" name="work_status" id="f_work_status" value="active">
-                </div>
-                <div class="field-item">
-                  <div class="field-label">{% if ar %}نوع الوردية{% else %}Shift Type{% endif %}</div>
-                  <div class="mcq-wrap" id="shiftGrp">
-                    <label class="mcq-opt chosen" onclick="pickMCQ('shiftGrp',this,'f_shift_type','day')"><input type="radio">{% if ar %}نهاري{% else %}Day{% endif %}</label>
-                    <label class="mcq-opt" onclick="pickMCQ('shiftGrp',this,'f_shift_type','night')"><input type="radio">{% if ar %}ليلي{% else %}Night{% endif %}</label>
-                    <label class="mcq-opt" onclick="pickMCQ('shiftGrp',this,'f_shift_type','rotating')"><input type="radio">{% if ar %}متناوب{% else %}Rotating{% endif %}</label>
-                  </div>
-                  <input type="hidden" name="shift_type" id="f_shift_type" value="day">
-                </div>
-              </div>
-
-              <div class="field-row">
-                <div class="field-item">
-                  <div class="field-label">{% if ar %}الشركة / HR{% else %}Company / HR{% endif %}</div>
-                  <select name="buyer_id" id="f_buyer_id" class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"></select>
-                </div>
-              </div>
-
-              {% for fid, en_lbl, ar_lbl in [('department','Department','القسم'),('section','Section','القطاع')] %}
-              <div class="field-row" style="margin-bottom:10px;">
-                <div class="field-item">
-                  <div class="field-label">{{ en_lbl }}{% if ar %} (EN){% endif %}</div>
-                  <div style="display:flex;gap:6px;">
-                    <input type="text" name="{{ fid }}" id="f_{{ fid }}_en" class="field-input" dir="ltr" style="flex:1"
-                           oninput="biWrap(this,'f_{{ fid }}_ar','en')">
-                    {% if not ar %}<button type="button" class="bi-btn" title="Translate" onclick="biWrapRetrans(document.getElementById('f_{{ fid }}_ar').value,'f_{{ fid }}_en','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
-                  </div>
-                </div>
-                <div class="field-item">
-                  <div class="field-label" dir="rtl" style="text-align:right;">{{ ar_lbl }}{% if not ar %} (AR){% endif %}</div>
-                  <div style="display:flex;gap:6px;" dir="rtl">
-                    <input type="text" name="{{ fid }}_ar" id="f_{{ fid }}_ar" class="field-input" dir="rtl" style="flex:1"
-                           oninput="biWrap(this,'f_{{ fid }}_en','ar')">
-                    {% if ar %}<button type="button" class="bi-btn" title="ترجم" onclick="biWrapRetrans(document.getElementById('f_{{ fid }}_en').value,'f_{{ fid }}_ar','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                  <div class="field-item">
+                    <div class="field-label">{% if ar %}نوع الوردية{% else %}Shift Type{% endif %}</div>
+                    <div class="mcq-wrap" id="shiftGrp">
+                      <label class="mcq-opt chosen" onclick="pickMCQ('shiftGrp',this,'f_shift_type','day')"><input type="radio">{% if ar %}نهاري{% else %}Day{% endif %}</label>
+                      <label class="mcq-opt" onclick="pickMCQ('shiftGrp',this,'f_shift_type','night')"><input type="radio">{% if ar %}ليلي{% else %}Night{% endif %}</label>
+                      <label class="mcq-opt" onclick="pickMCQ('shiftGrp',this,'f_shift_type','rotating')"><input type="radio">{% if ar %}متناوب{% else %}Rotating{% endif %}</label>
+                    </div>
+                    <input type="hidden" name="shift_type" id="f_shift_type" value="day">
                   </div>
                 </div>
               </div>
-              {% endfor %}
             </div>
           </div>
 
@@ -1441,6 +1516,109 @@ function initBuyer(selectedId) {
   loadAsyncDropdown(BYURL, d => _buyerCache = d, () => _buyerCache,
     'f_buyer_id', null,
     IS_AR ? '-- اختر مشتري --' : '-- Select a Buyer --', selectedId || '', true);
+
+  // loadAsyncDropdown assigns `sel.onchange` itself, which wipes the inline
+  // onchange="onCompanyChange()" attribute. Re-attach ours as a listener so
+  // both run: theirs syncs the hidden AR field, ours auto-fills Department.
+  const sel = document.getElementById('f_buyer_id');
+  if (sel && !sel._companyHooked) {
+    sel.addEventListener('change', onCompanyChange);
+    sel._companyHooked = true;
+  }
+}
+
+/* Edit mode: load the buyer list, then its departments, preselecting both. */
+function initBuyerAndDept(buyerId, departmentId) {
+  initBuyer(buyerId || '');
+  loadDepartments(buyerId || '', departmentId || '');
+}
+
+
+/* ══ Company / HR  ->  Department  (cascading dropdowns) ══════════
+   Department stays disabled until a Company is chosen, then loads ONLY
+   that company's departments. Changing the Company clears and reloads
+   the Department. Edit mode preselects the saved value. ─────────── */
+
+let _deptLoadToken = 0;   // guards against out-of-order fetch responses
+
+function _setDeptPlaceholder(text, disabled) {
+  const sel = document.getElementById('f_department_id');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">' + text + '</option>';
+  sel.disabled = !!disabled;
+}
+
+function _clearDeptSelection() {
+  const ar = document.getElementById('f_department_ar');
+  const en = document.getElementById('f_department_en');
+  if (ar) ar.value = '';
+  if (en) en.value = '';
+}
+
+/* Load departments for a buyer; optionally preselect one (edit mode). */
+function loadDepartments(buyerId, preselectId) {
+  const sel  = document.getElementById('f_department_id');
+  const hint = document.getElementById('f_dept_hint');
+  if (!sel) return Promise.resolve();
+
+  if (!buyerId) {
+    _setDeptPlaceholder(IS_AR ? '-- اختر الشركة أولاً --' : '-- Select a company first --', true);
+    _clearDeptSelection();
+    if (hint) hint.style.display = 'none';
+    return Promise.resolve();
+  }
+
+  const token = ++_deptLoadToken;
+  _setDeptPlaceholder(IS_AR ? '... جارٍ التحميل' : 'Loading...', true);
+
+  return fetch('/employees/departments-by-buyer?buyer_id=' + encodeURIComponent(buyerId))
+    .then(r => r.json())
+    .then(list => {
+      if (token !== _deptLoadToken) return;         // a newer request won
+      if (!list.length) {
+        _setDeptPlaceholder(IS_AR ? '-- لا توجد أقسام لهذه الشركة --' : '-- No departments for this company --', true);
+        _clearDeptSelection();
+        if (hint) {
+          hint.textContent = IS_AR
+            ? 'أضف الأقسام في صفحة تسجيل المشتري.'
+            : 'Add departments on the Buyer registration page.';
+          hint.style.display = 'block';
+        }
+        return;
+      }
+      let html = '<option value="">' + (IS_AR ? '-- اختر القسم --' : '-- Select a department --') + '</option>';
+      list.forEach(d => {
+        const selAttr = (String(d.id) === String(preselectId || '')) ? ' selected' : '';
+        html += `<option value="${d.id}" data-ar="${d.name_ar || ''}" data-en="${d.name}"${selAttr}>${d.label}</option>`;
+      });
+      sel.innerHTML = html;
+      sel.disabled = false;
+      if (hint) hint.style.display = 'none';
+      onDepartmentChange();                          // sync the AR / hidden fields
+    })
+    .catch(() => {
+      if (token !== _deptLoadToken) return;
+      _setDeptPlaceholder(IS_AR ? '-- تعذر التحميل --' : '-- Could not load --', true);
+    });
+}
+
+/* Mirror the chosen department into the read-only AR box and hidden EN name. */
+function onDepartmentChange() {
+  const sel = document.getElementById('f_department_id');
+  const ar  = document.getElementById('f_department_ar');
+  const en  = document.getElementById('f_department_en');
+  if (!sel) return;
+  const opt = sel.options[sel.selectedIndex];
+  const isReal = opt && opt.value;
+  if (ar) ar.value = isReal ? (opt.dataset.ar || '') : '';
+  if (en) en.value = isReal ? (opt.dataset.en || opt.textContent.trim()) : '';
+}
+
+/* Company changed -> clear + reload Department. */
+function onCompanyChange() {
+  const sel = document.getElementById('f_buyer_id');
+  _clearDeptSelection();
+  loadDepartments(sel ? sel.value : '', null);
 }
 
 function pickMCQ(grpId, btn, hidId, val) {
@@ -1753,6 +1931,19 @@ function resetEmpForm() {
   // reset photo
   const pf = document.getElementById('f_photo'); if (pf) pf.value = '';
   setEmpPhoto('');
+
+  // reset the Company -> Department cascade
+  _clearDeptSelection();
+  _setDeptPlaceholder(IS_AR ? '-- اختر الشركة أولاً --' : '-- Select a company first --', true);
+}
+
+
+/* Fetch just the photo URL and paint it. Independent of the big edit fetch. */
+function loadEmpPhoto(id) {
+  fetch('/employees/' + id + '/json')
+    .then(r => r.json())
+    .then(d => setEmpPhoto(d.photo_url || ''))
+    .catch(() => setEmpPhoto(''));
 }
 
 function setEmpPhoto(url) {
@@ -1802,10 +1993,15 @@ function openEditEmp(id) {
   document.getElementById('empModalTitle').textContent = IS_AR ? 'تعديل موظف' : 'Edit Employee';
   document.getElementById('empForm').action = '/employees/' + id + '/edit';
   document.getElementById('empFormId').value = id;
+  resetEmpForm();                       // clear the previous employee's values
   new bootstrap.Modal(document.getElementById('empModal')).show();
   _currentEmpId  = id;
   _pendingAllows = [];
   setAllowBtn(true);
+
+  // Load the photo on its own so an error further down this callback
+  // can never leave the avatar blank.
+  loadEmpPhoto(id);
 
   fetch('/employees/' + id + '/json').then(r => r.json()).then(d => {
     document.getElementById('empCodeDisplay').textContent = d.employee_code;
@@ -1821,7 +2017,9 @@ function openEditEmp(id) {
       if (arr) arr.value = d[f+'_ar'] || '';
     });
 
-    ['department','section'].forEach(f => {
+    // Department is driven by the Company -> Department cascade below
+    // (initBuyerAndDept), so only Section is populated as free text here.
+    ['section'].forEach(f => {
       const en = document.getElementById('f_'+f+'_en');
       const arr = document.getElementById('f_'+f+'_ar');
       if (en) en.value = d[f] || '';
@@ -1853,7 +2051,7 @@ function openEditEmp(id) {
 
     initNationality(d.nationality || '');
     initProfession(d.profession_ids || []);
-    initBuyer(d.buyer_id || '');
+    initBuyerAndDept(d.buyer_id || '', d.department_id || '');
 
     calcAge();
     setTimeout(wireHijriBadges, 50);
@@ -1912,9 +2110,22 @@ function openViewEmp(id) {
       [IS_AR?'نشيط':'Active', yn(d.is_active)],
     ];
     let html = '';
+    if (!d.photo_url) {
+      // No photo on file -> default placeholder avatar.
+      html += `<div style="text-align:center;margin-bottom:16px;">
+        <div style="display:flex;width:130px;height:130px;margin:0 auto;border-radius:14px;border:2px dashed #cbd5e1;background:#f8fafc;align-items:center;justify-content:center;color:#94a3b8;">
+          <i class="fas fa-user" style="font-size:46px;"></i>
+        </div>
+      </div>`;
+    }
     if (d.photo_url) {
       html += `<div style="text-align:center;margin-bottom:16px;">
-        <img src="${d.photo_url}" alt="" style="width:130px;height:130px;border-radius:14px;object-fit:cover;border:3px solid #e2e8f0;box-shadow:0 4px 14px rgba(15,23,42,.12);">
+        <img src="${d.photo_url}" alt=""
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+             style="width:130px;height:130px;border-radius:14px;object-fit:cover;border:3px solid #e2e8f0;box-shadow:0 4px 14px rgba(15,23,42,.12);">
+        <div style="display:none;width:130px;height:130px;margin:0 auto;border-radius:14px;border:2px dashed #cbd5e1;background:#f8fafc;align-items:center;justify-content:center;color:#94a3b8;">
+          <i class="fas fa-user" style="font-size:46px;"></i>
+        </div>
       </div>`;
     }
     html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';

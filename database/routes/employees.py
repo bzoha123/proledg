@@ -1,5 +1,6 @@
 import os, uuid
 from datetime import datetime, date
+from decimal import Decimal
 from flask import (Blueprint, render_template, redirect, url_for, flash,
                    request, current_app, jsonify, session)
 from flask_login import login_required, current_user
@@ -42,21 +43,183 @@ def save_upload(file, emp_id, subfolder='employees'):
     return os.path.join(subfolder, str(emp_id), fname)
 
 
+def _photo_abs_path(emp):
+    """Absolute path of an employee's photo, tolerating either slash style."""
+    if not emp or not emp.photo_path:
+        return None
+    parts = emp.photo_path.replace('\\', '/').split('/')
+    return os.path.join(current_app.config['UPLOAD_FOLDER'], *parts)
+
+
+def _photo_url(emp):
+    """Return a cache-busted photo URL, or '' when there is no usable file.
+
+    Returning '' for a missing/broken path lets the UI fall back to the
+    placeholder instead of rendering a broken <img>.
+    """
+    full = _photo_abs_path(emp)
+    if not full or not os.path.exists(full):
+        return ''
+    try:
+        stamp = int(os.path.getmtime(full))
+    except OSError:
+        stamp = 0
+    return url_for('employees.employee_photo', emp_id=emp.id) + f'?v={stamp}'
+
+
+# Extensions we refuse outright, regardless of content. Everything else is
+# decided by *reading* the bytes: if Pillow can open it as an image, we take
+# it. That way new formats (.jfif, .avif, .heic, ...) never need a code change.
+BLOCKED_PHOTO_EXT = {
+    'exe', 'dll', 'bat', 'cmd', 'com', 'scr', 'msi', 'ps1', 'sh',
+    'js', 'jar', 'vbs', 'php', 'py', 'html', 'htm', 'svg',
+}
+
+# Formats every browser renders natively — anything else gets converted to JPEG.
+BROWSER_SAFE_FORMATS = {'JPEG', 'PNG', 'GIF', 'WEBP'}
+
+# Pillow format -> file extension to store on disk.
+FORMAT_EXT = {'JPEG': 'jpg', 'PNG': 'png', 'GIF': 'gif', 'WEBP': 'webp'}
+
+MAX_PHOTO_BYTES = 10 * 1024 * 1024   # 10 MB
+
+
 def save_photo(emp_id, req):
-    """Save the employee photo (single image). Updates employees.photo_path."""
+    """Save the employee photo. Updates employees.photo_path.
+
+    The file is accepted or rejected by *content*, not by filename: whatever
+    Pillow can decode as an image is allowed. Formats browsers cannot render
+    reliably (AVIF, HEIC, TIFF, BMP, ...) are converted to JPEG, so `.jfif`,
+    `.avif` and friends all just work.
+
+    The stored path always uses forward slashes so it is portable between
+    Windows and POSIX hosts. Every skip path is logged.
+    """
+    log = current_app.logger
+
     f = req.files.get('photo')
-    if not f or not f.filename:
+    if f is None:
+        log.info('[photo] emp=%s: no "photo" key in request.files (keys=%s). '
+                 'Is the form enctype="multipart/form-data" and the input name="photo"?',
+                 emp_id, list(req.files.keys()))
         return
+    if not f.filename:
+        log.info('[photo] emp=%s: "photo" field present but empty (no file chosen).', emp_id)
+        return
+
     ext = f.filename.rsplit('.', 1)[-1].lower() if '.' in f.filename else ''
-    if ext not in {'jpg', 'jpeg', 'png', 'webp'}:
+    if ext in BLOCKED_PHOTO_EXT:
+        log.warning('[photo] emp=%s: rejected "%s" (blocked extension %r).',
+                    emp_id, f.filename, ext)
+        flash(_t(f'"{f.filename}" is not an image file.',
+                 f'"{f.filename}" ليس ملف صورة.'), 'warning')
         return
-    folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'employees', str(emp_id))
-    os.makedirs(folder, exist_ok=True)
-    fname = f'photo_{uuid.uuid4().hex}.{ext}'
-    f.save(os.path.join(folder, fname))
+
+    try:
+        raw = f.read()
+        if not raw:
+            log.warning('[photo] emp=%s: "%s" is empty (0 bytes).', emp_id, f.filename)
+            flash(_t('The selected image is empty.', 'الصورة المختارة فارغة.'), 'warning')
+            return
+        if len(raw) > MAX_PHOTO_BYTES:
+            log.warning('[photo] emp=%s: "%s" too large (%d bytes).',
+                        emp_id, f.filename, len(raw))
+            flash(_t('The image is larger than 10 MB.',
+                     'حجم الصورة أكبر من 10 ميغابايت.'), 'warning')
+            return
+
+        final_ext, data = _normalise_image(raw, emp_id, f.filename)
+        if data is None:
+            return  # _normalise_image already logged + flashed
+
+        folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'employees', str(emp_id))
+        os.makedirs(folder, exist_ok=True)
+        fname = f'photo_{uuid.uuid4().hex}.{final_ext}'
+        dest = os.path.join(folder, fname)
+        with open(dest, 'wb') as out:
+            out.write(data)
+
+        if not os.path.exists(dest) or os.path.getsize(dest) == 0:
+            log.error('[photo] emp=%s: file did not land at %s', emp_id, dest)
+            flash(_t('The photo could not be written to disk.',
+                     'تعذر حفظ الصورة على القرص.'), 'danger')
+            return
+    except Exception as exc:  # noqa: BLE001
+        log.exception('[photo] emp=%s: save failed: %s', emp_id, exc)
+        flash(_t('The photo could not be saved.', 'تعذر حفظ الصورة.'), 'danger')
+        return
+
     emp = Employee.query.get(emp_id)
-    if emp:
-        emp.photo_path = os.path.join('employees', str(emp_id), fname)
+    if not emp:
+        log.error('[photo] emp=%s: employee row not found after upload.', emp_id)
+        return
+
+    # Remove the previous photo file so old images don't pile up.
+    if emp.photo_path:
+        old = os.path.join(current_app.config['UPLOAD_FOLDER'],
+                           *emp.photo_path.replace('\\', '/').split('/'))
+        if os.path.exists(old):
+            try:
+                os.remove(old)
+            except OSError:
+                pass
+
+    emp.photo_path = f'employees/{emp_id}/{fname}'   # always forward slashes
+    log.info('[photo] emp=%s: saved -> %s (%d bytes)',
+             emp_id, emp.photo_path, os.path.getsize(dest))
+
+
+def _normalise_image(raw, emp_id, filename):
+    """Validate image bytes and return ``(extension, bytes)`` ready to write.
+
+    Decides purely on content. Browser-safe formats pass through untouched;
+    everything else Pillow can decode is re-encoded as JPEG. Returns
+    ``(None, None)`` when the bytes are not a readable image.
+    """
+    import io
+    log = current_app.logger
+
+    try:
+        from PIL import Image
+    except ImportError:
+        log.error('[photo] emp=%s: Pillow is not installed; cannot validate images.', emp_id)
+        flash(_t('Image support is not installed on the server.',
+                 'دعم الصور غير مثبت على الخادم.'), 'danger')
+        return None, None
+
+    try:
+        probe = Image.open(io.BytesIO(raw))
+        probe.verify()                       # cheap integrity check
+        img = Image.open(io.BytesIO(raw))    # re-open: verify() exhausts it
+        fmt = (img.format or '').upper()
+    except Exception as exc:  # noqa: BLE001
+        log.warning('[photo] emp=%s: "%s" is not a readable image (%s).',
+                    emp_id, filename, exc)
+        flash(_t(f'"{filename}" is not a readable image file.',
+                 f'"{filename}" ليس ملف صورة صالح.'), 'warning')
+        return None, None
+
+    # Already displayable in every browser -> store the original bytes.
+    if fmt in BROWSER_SAFE_FORMATS:
+        log.info('[photo] emp=%s: accepted %s (%s).', emp_id, filename, fmt)
+        return FORMAT_EXT[fmt], raw
+
+    # Anything else (AVIF, HEIC, TIFF, BMP, ICO, ...) -> convert to JPEG.
+    try:
+        if img.mode in ('RGBA', 'LA', 'P'):
+            img = img.convert('RGB')
+        elif img.mode != 'RGB':
+            img = img.convert('RGB')
+        buf = io.BytesIO()
+        img.save(buf, format='JPEG', quality=90, optimize=True)
+        log.info('[photo] emp=%s: converted %s (%s) -> jpg', emp_id, filename, fmt or '?')
+        return 'jpg', buf.getvalue()
+    except Exception as exc:  # noqa: BLE001
+        log.warning('[photo] emp=%s: could not convert %s (%s) to JPEG: %s.',
+                    emp_id, filename, fmt or '?', exc)
+        flash(_t('This image could not be converted. Try a JPG or PNG.',
+                 'تعذر تحويل الصورة. جرّب JPG أو PNG.'), 'warning')
+        return None, None
 
 
 def save_documents(emp_id, req):
@@ -146,15 +309,50 @@ def bind_employee(emp, f):
     buyer_id = f.get('buyer_id')
     emp.buyer_id = int(buyer_id) if buyer_id else None
 
+    # Department must belong to the selected buyer, otherwise it is rejected.
+    # This mirrors the cascading dropdown so a crafted POST cannot save an
+    # unrelated department.
+    from models import BuyerDepartment
+    dept_id = f.get('department_id')
+    emp.department_id = None
+    if dept_id and str(dept_id).isdigit() and emp.buyer_id:
+        dep = BuyerDepartment.query.filter_by(id=int(dept_id),
+                                              buyer_id=emp.buyer_id).first()
+        if dep:
+            emp.department_id = dep.id
+            # Keep the legacy free-text columns in sync for reporting.
+            emp.department = dep.department_name
+            emp.department_ar = dep.department_name_ar or ''
+
     emp.overtime_rate = _calc_overtime_rate(emp)
-    emp.net_salary = (emp.basic_salary or 0) + (emp.total_allowances or 0)
+    emp.net_salary = _to_decimal(emp.basic_salary) + _to_decimal(emp.total_allowances)
+
+
+def _to_decimal(value):
+    """Coerce a form float / DB Decimal / None into a Decimal.
+
+    Form fields arrive as floats while columns already loaded from the DB are
+    Decimals, and Python refuses to add the two. Normalising here keeps every
+    money calculation on a single numeric type.
+    """
+    if value is None or value == '':
+        return Decimal('0')
+    if isinstance(value, Decimal):
+        return value
+    return Decimal(str(value))
+
 
 def _calc_overtime_rate(emp):
+    """Overtime rate = (basic / 30 / 8) * overtime ratio.
+
+    i.e. the hourly rate (monthly basic over 30 days, 8 hours a day)
+    multiplied by the overtime ratio.
+    """
     basic = float(emp.basic_salary or 0)
     ratio = float(emp.overtime_ratio or 0)
     if basic <= 0 or ratio <= 0:
         return 0
-    return round(basic / 30 * 8 * ratio, 2)
+    return round(basic / 30 / 8 * ratio, 2)
 
 def save_allowances(emp_id, f):
     EmployeeAllowance.query.filter_by(employee_id=emp_id).delete()
@@ -214,9 +412,9 @@ def _recalc_totals(emp_id):
     emp = Employee.query.get(emp_id)
     if not emp:
         return
-    total = sum(float(a.amount or 0) for a in emp.allowance_rows.all())
+    total = sum((_to_decimal(a.amount) for a in emp.allowance_rows.all()), Decimal('0'))
     emp.total_allowances = total
-    emp.net_salary = float(emp.basic_salary or 0) + total
+    emp.net_salary = _to_decimal(emp.basic_salary) + total
 
 
 # ═══════════════════════════════════════════════════════════
@@ -316,8 +514,9 @@ def employee_json(id):
         'insurance_expiry': d(e.insurance_expiry), 'labour_office': g('labour_office'),
         'passport_location': g('passport_location') or 'IN',
         'document_type': g('document_type'), 'buyer_id': e.buyer_id or '',
+        'department_id': e.department_id or '',
         'photo_path': e.photo_path or '',
-        'photo_url': (url_for('employees.employee_photo', emp_id=e.id) if e.photo_path else ''),
+        'photo_url': _photo_url(e),
         'allowances': allowance_rows,
         'banks': [b.to_dict() for b in e.banks.order_by(EmployeeBank.id).all()],
         'documents': [d.to_dict() for d in e.documents.order_by(EmployeeDocument.id).all()],
@@ -500,19 +699,48 @@ def delete_employee_bank(bank_id):
     return jsonify({'ok': True})
 
 
+# ─── COMPANY (BUYER) -> DEPARTMENT CASCADE ────────────────────────
+
+@employees_bp.route('/employees/departments-by-buyer')
+@login_required
+def departments_by_buyer():
+    """Departments belonging to the selected Company/HR (buyer).
+
+    Returns [] when no buyer is supplied, so the Department dropdown can
+    never offer a record from an unrelated company.
+    """
+    from models import BuyerDepartment
+    buyer_id = request.args.get('buyer_id', type=int)
+    if not buyer_id:
+        return jsonify([])
+    rows = (BuyerDepartment.query
+            .filter_by(buyer_id=buyer_id)
+            .order_by(BuyerDepartment.department_name).all())
+    return jsonify([{
+        'id': r.id,
+        'name': r.department_name,
+        'name_ar': r.department_name_ar or '',
+        'label': r.department_name,
+        'location_name': r.location.location_name if r.location else '',
+    } for r in rows])
+
+
 # ─── EMPLOYEE PHOTO ───────────────────────────────────────────────
 
 @employees_bp.route('/employees/<int:emp_id>/photo')
 @login_required
 def employee_photo(emp_id):
+    """Serve the employee's photo. Missing/broken paths return 404 so the
+    front-end can show its placeholder instead of a broken image."""
     from flask import send_file, abort
     e = Employee.query.get_or_404(emp_id)
-    if not e.photo_path:
+    full = _photo_abs_path(e)
+    if not full or not os.path.exists(full):
         abort(404)
-    full = os.path.join(current_app.config['UPLOAD_FOLDER'], e.photo_path)
-    if not os.path.exists(full):
-        abort(404)
-    return send_file(full)
+    resp = send_file(full)
+    # The URL is cache-busted by mtime, but never let a stale copy linger.
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return resp
 
 
 # ─── EMPLOYEE DOCUMENT API ────────────────────────────────────────

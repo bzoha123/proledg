@@ -436,6 +436,20 @@
                 </div>
               </div>
 
+              <div class="field-row">
+                <div class="field-item">
+                  <div class="field-label">{% if ar %}القسم (EN){% else %}Department (EN){% endif %}</div>
+                  <input type="text" name="department" id="b_department" class="field-input" dir="ltr"
+                         placeholder="{% if ar %}مثال: العمليات{% else %}e.g. Operations{% endif %}">
+                  <small style="font-size:11px;color:#94a3b8;">{% if ar %}يُملأ تلقائياً في نموذج الموظف{% else %}Auto-fills on the employee form{% endif %}</small>
+                </div>
+                <div class="field-item">
+                  <div class="field-label" dir="rtl" style="text-align:right;">{% if ar %}القسم{% else %}Department (AR){% endif %}</div>
+                  <input type="text" name="department_ar" id="b_department_ar" class="field-input" dir="rtl"
+                         placeholder="مثال: العمليات">
+                </div>
+              </div>
+
               <div class="section-label"><i class="fas fa-phone-alt"></i> {% if ar %}معلومات الاتصال{% else %}Contact{% endif %}</div>
               <div class="field-row">
                 <div class="field-item">
@@ -905,7 +919,7 @@ let _deptPendingIdx = null;   // index of dept row awaiting quick-add location
 
 /* ══ RESET FORM ══ */
 function resetBuyerForm() {
-  ['b_name_en','b_name_ar','b_vat','b_crn','b_phone','b_fax','b_email','b_website','b_postal',
+  ['b_name_en','b_name_ar','b_vat','b_crn','b_department','b_department_ar','b_phone','b_fax','b_email','b_website','b_postal',
    'b_street_en','b_street_ar','b_building','b_additional'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
@@ -942,6 +956,8 @@ function openEditBuyer(id) {
     document.getElementById('b_name_ar').value=d.buyer_name_ar||'';
     document.getElementById('b_vat').value=d.vat_number||'';
     document.getElementById('b_crn').value=d.crn||'';
+    document.getElementById('b_department').value=d.department||'';
+    document.getElementById('b_department_ar').value=d.department_ar||'';
     document.getElementById('b_phone').value=d.phone||'';
     document.getElementById('b_fax').value=d.fax||'';
     document.getElementById('b_email').value=d.email||'';

@@ -39,3 +39,70 @@ class BankForm(FlaskForm):
 
 class SearchForm(FlaskForm):
     q = StringField('Search', validators=[Optional()])
+
+
+# ─────────────────────────────────────────────────────────────────
+# CHART OF ACCOUNTS forms (Level 1 & Level 2)
+# ─────────────────────────────────────────────────────────────────
+from wtforms import IntegerField
+from wtforms.validators import Regexp
+
+
+class LevelOneForm(FlaskForm):
+    """Create a Level 1 account. code_length is forced to 1 server-side."""
+    code = StringField(
+        'Code',
+        validators=[DataRequired(), Length(min=1, max=1),
+                    Regexp(r'^[A-Za-z]$', message='Code must be a single letter.')],
+    )
+    drawers     = StringField('Drawers', validators=[DataRequired(), Length(max=100)])
+    description = StringField('Description', validators=[DataRequired(), Length(max=255)])
+
+
+class LevelOneEditForm(FlaskForm):
+    """Edit a Level 1 account — code is fixed, so it is NOT part of this form."""
+    drawers     = StringField('Drawers', validators=[DataRequired(), Length(max=100)])
+    description = StringField('Description', validators=[DataRequired(), Length(max=255)])
+
+
+class LevelTwoForm(FlaskForm):
+    """Create a Level 2 account. code is auto-generated; description is fixed."""
+    level_one_id = SelectField('Level One', coerce=int, validators=[DataRequired()])
+    drawers      = StringField('Drawers', validators=[DataRequired(), Length(max=150)])
+
+
+class LevelTwoEditForm(FlaskForm):
+    """Edit a Level 2 account — only drawers is editable."""
+    drawers = StringField('Drawers', validators=[DataRequired(), Length(max=150)])
+
+
+# ─────────────────────────────────────────────────────────────────
+# CHART OF ACCOUNTS forms — Levels 3, 4, 5
+# code / code_length / description are all system-generated and are
+# deliberately absent from these forms.
+# ─────────────────────────────────────────────────────────────────
+class LevelThreeForm(FlaskForm):
+    level_two_id = SelectField('Level Two', coerce=int, validators=[DataRequired()])
+    drawers      = StringField('Drawers', validators=[DataRequired(), Length(max=200)])
+
+
+class LevelThreeEditForm(FlaskForm):
+    drawers = StringField('Drawers', validators=[DataRequired(), Length(max=200)])
+
+
+class LevelFourForm(FlaskForm):
+    level_three_id = SelectField('Level Three', coerce=int, validators=[DataRequired()])
+    drawers        = StringField('Drawers', validators=[DataRequired(), Length(max=200)])
+
+
+class LevelFourEditForm(FlaskForm):
+    drawers = StringField('Drawers', validators=[DataRequired(), Length(max=200)])
+
+
+class LevelFiveForm(FlaskForm):
+    level_four_id = SelectField('Level Four', coerce=int, validators=[DataRequired()])
+    drawers       = StringField('Drawers', validators=[DataRequired(), Length(max=250)])
+
+
+class LevelFiveEditForm(FlaskForm):
+    drawers = StringField('Drawers', validators=[DataRequired(), Length(max=250)])

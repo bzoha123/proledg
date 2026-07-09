@@ -147,14 +147,7 @@ def professions_data():
 @lookups_bp.route('/department-locations/data')
 @login_required
 def department_locations_data():
-    try:
-        from models import DepartmentLocation
-    except Exception:
-        DepartmentLocation = None
-
-    if DepartmentLocation is None:
-        return jsonify([])
-
+    from models import DepartmentLocation
     rows = DepartmentLocation.query.filter_by(is_active=True).order_by(DepartmentLocation.location_name).all()
     return jsonify([
         {'id': r.id, 'label': r.location_name, 'en': r.location_name, 'ar': r.location_name_ar or ''}
@@ -164,11 +157,7 @@ def department_locations_data():
 @lookups_bp.route('/department-locations/add-quick', methods=['POST'])
 @login_required
 def add_department_location_quick():
-    try:
-        from models import DepartmentLocation
-    except Exception:
-        return jsonify({'ok': False, 'error': 'Department location model unavailable'}), 500
-
+    from models import DepartmentLocation
     data = request.get_json(silent=True) or {}
     en = (data.get('location_name') or data.get('name_en') or '').strip()
     ar = (data.get('location_name_ar') or data.get('name_ar') or '').strip()
@@ -185,6 +174,70 @@ def add_department_location_quick():
     db.session.add(loc)
     db.session.commit()
     return jsonify({'ok': True, 'id': loc.id})
+
+@lookups_bp.route('/buyers/<int:buyer_id>/departments')
+@login_required
+def buyer_departments(buyer_id):
+    """Departments belonging to a buyer (used to populate the edit form)."""
+    from models import BuyerDepartment
+    rows = (BuyerDepartment.query
+            .filter_by(buyer_id=buyer_id)
+            .order_by(BuyerDepartment.id).all())
+    return jsonify([r.to_dict() for r in rows])
+
+
+def _save_departments_from_form(buyer_id):
+    """Replace a buyer's departments from `departments[i][field]` form fields.
+
+    Rows the form no longer contains are deleted, so the DB always mirrors
+    what the user sees in the table.
+    """
+    from models import BuyerDepartment
+    import re as _re
+
+    # Group the flat `departments[0][department_name]` keys by index.
+    grouped = {}
+    pattern = _re.compile(r'^departments\[(\d+)\]\[([a-zA-Z_]+)\]$')
+    for key, val in request.form.items():
+        m = pattern.match(key)
+        if m:
+            grouped.setdefault(int(m.group(1)), {})[m.group(2)] = (val or '').strip()
+
+    submitted_ids = set()
+    for _, row in sorted(grouped.items()):
+        name = (row.get('department_name') or '').strip()
+        if not name:
+            continue                      # ignore blank rows
+        loc_id = row.get('location_id') or None
+        loc_id = int(loc_id) if str(loc_id).isdigit() else None
+        db_id = row.get('_dbId') or ''
+
+        if db_id.isdigit():
+            dep = BuyerDepartment.query.filter_by(id=int(db_id), buyer_id=buyer_id).first()
+            if dep:
+                dep.department_name = name
+                dep.department_name_ar = (row.get('department_name_ar') or '').strip()
+                dep.location_id = loc_id
+                submitted_ids.add(dep.id)
+                continue
+
+        dep = BuyerDepartment(
+            buyer_id=buyer_id,
+            department_name=name,
+            department_name_ar=(row.get('department_name_ar') or '').strip(),
+            location_id=loc_id,
+        )
+        db.session.add(dep)
+        db.session.flush()
+        submitted_ids.add(dep.id)
+
+    # Delete rows the user removed from the table.
+    for dep in BuyerDepartment.query.filter_by(buyer_id=buyer_id).all():
+        if dep.id not in submitted_ids:
+            db.session.delete(dep)
+
+    db.session.commit()
+
 
 @lookups_bp.route('/allowance-types/data')
 @login_required
@@ -207,14 +260,7 @@ def list_buyers():
 @admin_required
 def add_buyer():
     from datetime import datetime as dt
-    
-    # Debug: print all form data
-    print("=" * 50)
-    print("ADD BUYER - Form Data Received:")
-    for key in request.form:
-        print(f"  {key} = {request.form[key]}")
-    print("=" * 50)
-    
+
     en = request.form.get('buyer_name_en','').strip()
     if not en:
         flash(_t('Buyer name is required.','اسم المشتري مطلوب.'),'danger')
@@ -231,6 +277,8 @@ def add_buyer():
         buyer_name_ar=request.form.get('buyer_name_ar','').strip(),
         vat_number=request.form.get('vat_number','').strip(),
         crn=request.form.get('crn','').strip(),
+        department=request.form.get('department','').strip(),
+        department_ar=request.form.get('department_ar','').strip(),
         phone=request.form.get('phone','').strip(),
         fax=request.form.get('fax','').strip(),
         email=request.form.get('email','').strip(),
@@ -258,8 +306,8 @@ def add_buyer():
     db.session.flush()  # Get b.id without committing
     
     # ── Save banks from form ──
-    print(f"Calling _save_banks_from_form for buyer_id={b.id}")
     _save_banks_from_form(b.id)
+    _save_departments_from_form(b.id)
     
     db.session.commit()
     flash(_t(f'Buyer {code} added.', f'تم إضافة المشتري {code}.'),'success')
@@ -270,18 +318,13 @@ def add_buyer():
 @admin_required
 def edit_buyer(id):
     b = BuyerMaster.query.get_or_404(id)
-    
-    # Debug: print all form data
-    print("=" * 50)
-    print(f"EDIT BUYER {id} - Form Data Received:")
-    for key in request.form:
-        print(f"  {key} = {request.form[key]}")
-    print("=" * 50)
-    
+
     b.buyer_name_en  = request.form.get('buyer_name_en', b.buyer_name_en).strip()
     b.buyer_name_ar  = request.form.get('buyer_name_ar', b.buyer_name_ar or '').strip()
     b.vat_number     = request.form.get('vat_number','').strip()
     b.crn            = request.form.get('crn','').strip()
+    b.department     = request.form.get('department','').strip()
+    b.department_ar  = request.form.get('department_ar','').strip()
     b.phone          = request.form.get('phone','').strip()
     b.fax            = request.form.get('fax','').strip()
     b.email          = request.form.get('email','').strip()
@@ -305,8 +348,8 @@ def edit_buyer(id):
     b.is_active      = b.status == 'active'
     
     # ── Save banks from form ──
-    print(f"Calling _save_banks_from_form for buyer_id={id}")
     _save_banks_from_form(id)
+    _save_departments_from_form(id)
     
     db.session.commit()
     flash(_t('Buyer updated.','تم تحديث المشتري.'),'success')
@@ -342,9 +385,6 @@ def _save_banks_from_form(buyer_id):
             if idx not in banks_data:
                 banks_data[idx] = {}
             banks_data[idx][field] = request.form[key]
-    
-    print(f"\n=== _save_banks_from_form (buyer_id={buyer_id}) ===")
-    print(f"Parsed banks_data: {banks_data}")
     
     # Process each bank entry
     for idx, data in banks_data.items():
@@ -406,9 +446,6 @@ def _save_banks_from_form(buyer_id):
         print(f"  Fixing {len(primary_banks)} primary banks - keeping only last one")
         for b in primary_banks[:-1]:
             b.is_primary = False
-    
-    print(f"  submitted_ids: {submitted_ids}")
-    print(f"=== _save_banks_from_form complete ===\n")
 
 
 @lookups_bp.route('/buyers/<int:id>/delete', methods=['POST'])
@@ -430,6 +467,7 @@ def buyer_json(id):
         'id':b.id,'buyer_code':b.buyer_code or '',
         'buyer_name_en':g('buyer_name_en'),'buyer_name_ar':g('buyer_name_ar'),
         'vat_number':g('vat_number'),'crn':g('crn'),
+        'department':g('department'),'department_ar':g('department_ar'),
         'phone':g('phone'),'fax':g('fax'),'email':g('email'),'website':g('website'),
         'report_color':g('report_color') or '#2563eb',
         'street_name':g('street_name'),'street_name_ar':g('street_name_ar'),
@@ -455,6 +493,8 @@ def buyers_data():
         'label':    b.buyer_name_ar if lang=='ar' and b.buyer_name_ar else b.buyer_name_en,
         'vat_number': b.vat_number or '',
         'crn':      b.crn or '',
+        'department':    b.department or '',
+        'department_ar': b.department_ar or '',
         'phone':    b.phone or '',
         'email':    b.email or '',
         'status':   b.status or 'active',

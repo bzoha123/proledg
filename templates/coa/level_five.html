@@ -13,10 +13,8 @@
 {{ coa_level_page(
      5,
      'Chart of Accounts — Level 5', 'دليل الحسابات — المستوى الخامس',
-     'Level Four', 'المستوى الرابع',
-     'level_four_id',
-     {'list':'coa.level_five_list','add':'coa.level_five_add',
-      'delete':'coa.level_five_delete','next_code':'coa.level_five_next_code'},
+     {'list':'coa.level_five_list','add':'coa.level_five_add','delete':'coa.level_five_delete','next_code':'coa.level_five_next_code'},
      12, 'Transactional Account',
-     rows, pg, parents, q, parent, sort, ar, current_user) }}
+     rows, pg, parents, level_ones,
+     q, parent, sort, status, ar, current_user) }}
 {% endblock %}

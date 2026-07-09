@@ -148,6 +148,15 @@ def init_db(app):
         except Exception as exc:
             print(f'Chart of Accounts seed skipped: {exc}')
 
+        # Seed department locations (idempotent).
+        try:
+            from models import seed_department_locations
+            n = seed_department_locations()
+            if n:
+                print(f'Department locations seeded: {n} records inserted.')
+        except Exception as exc:
+            print(f'Department location seed skipped: {exc}')
+
 if __name__ == '__main__':
     os.makedirs('database', exist_ok=True)
     os.makedirs('uploads', exist_ok=True)

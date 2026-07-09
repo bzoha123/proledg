@@ -1,89 +1,139 @@
-{# ══════════════════════════════════════════════════════════════
-   Shared CRUD page for Chart of Accounts levels 3, 4 and 5.
-   All three levels are structurally identical, so a single macro
-   renders the table, search/filter bar, pagination and modal.
+{# ══════════════════════════════════════════════════════════════════════
+   Chart of Accounts — shared CRUD page for Levels 2, 3, 4 and 5.
 
-   Callers supply:
-     level_no      3 | 4 | 5
-     title_en/ar   page heading
-     parent_label  'Level Two' / 'Level Three' / 'Level Four'
-     parent_field  form field name (level_two_id / ...)
-     endpoints     dict of url endpoints for this level
-     fixed_len     5 | 8 | 12
-     fixed_desc    'Heading Account' | 'Transactional Account'
-   ══════════════════════════════════════════════════════════════ #}
+   Renders: toolbar (add / search / parent filter / status filter / sort),
+            table, pagination, and an Add/Edit modal whose parent selects
+            CASCADE:  Level 1 -> Level 2 -> Level 3 -> Level 4.
 
-{% macro coa_level_page(level_no, title_en, title_ar, parent_label_en, parent_label_ar,
-                        parent_field, endpoints, fixed_len, fixed_desc,
-                        rows, pg, parents, q, parent, sort, ar, current_user) %}
+   A child dropdown stays disabled until its parent is chosen, is reloaded
+   from the server whenever the parent changes, and clears every dropdown
+   below it. The record's own `code` is auto-generated and read-only, and
+   `code_length` / `description` are fixed server-side.
 
+   Caller supplies:
+     level_no     2 | 3 | 4 | 5
+     titles       page heading (en / ar)
+     endpoints    {list, add, delete, next_code}
+     fixed_len    2 | 5 | 8 | 12
+     fixed_desc   'Heading Account' | 'Transactional Account'
+     level_ones   all Level 1 rows (root of the cascade)
+     rows/pg/q/parent/sort/status  from the list route
+   ══════════════════════════════════════════════════════════════════════ #}
+
+{% macro coa_level_page(level_no, title_en, title_ar, endpoints,
+                        fixed_len, fixed_desc,
+                        rows, pg, parents, level_ones,
+                        q, parent, sort, status, ar, current_user) %}
+
+{# The immediate-parent field name this level posts back to the server. #}
+{% set parent_field = {2:'level_one_id', 3:'level_two_id',
+                       4:'level_three_id', 5:'level_four_id'}[level_no] %}
 
 <div class="proledg-page">
   <h2 class="page-heading">{% if ar %}{{ title_ar }}{% else %}{{ title_en }}{% endif %}</h2>
 
-  {# ── Toolbar: add, search, parent filter ── #}
+  {# ── Toolbar ───────────────────────────────────────────────── #}
   <div class="toolbar" style="gap:8px;flex-wrap:wrap;">
     <div class="toolbar-left" style="gap:6px;">
       {% if current_user.is_admin() %}
-      <button type="button" class="tool-btn tool-btn-green" data-bs-toggle="modal" data-bs-target="#lvlModal" onclick="openAdd()">
+      <button type="button" class="tool-btn tool-btn-green"
+              data-bs-toggle="modal" data-bs-target="#lvlModal" onclick="openAdd()">
         <i class="fas fa-plus"></i>
       </button>
       {% endif %}
     </div>
-    <form method="GET" class="toolbar-right" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-      <select name="parent" class="form-select form-select-sm" style="width:auto;min-width:190px;" onchange="this.form.submit()">
+
+    <form method="GET" class="toolbar-right"
+          style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+      {% if parents %}
+      <select name="parent" class="form-select form-select-sm"
+              style="width:auto;min-width:180px;" onchange="this.form.submit()">
         <option value="">{% if ar %}كل الحسابات الأب{% else %}All parents{% endif %}</option>
         {% for p in parents %}
-        <option value="{{ p.code }}" {% if parent == p.code %}selected{% endif %}>{{ p.code }} — {{ p.drawers[:34] }}</option>
+        <option value="{{ p.code }}" {% if parent == p.code %}selected{% endif %}>
+          {{ p.code }} - {{ p.drawers[:32] }}
+        </option>
         {% endfor %}
       </select>
-      <select name="sort" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+      {% endif %}
+
+      <select name="status" class="form-select form-select-sm" style="width:auto;"
+              onchange="this.form.submit()">
+        <option value="">{% if ar %}كل الحالات{% else %}All statuses{% endif %}</option>
+        <option value="active"   {% if status=='active' %}selected{% endif %}>{% if ar %}نشط{% else %}Active{% endif %}</option>
+        <option value="inactive" {% if status=='inactive' %}selected{% endif %}>{% if ar %}غير نشط{% else %}Inactive{% endif %}</option>
+      </select>
+
+      <select name="sort" class="form-select form-select-sm" style="width:auto;"
+              onchange="this.form.submit()">
         <option value="code"        {% if sort=='code' %}selected{% endif %}>{% if ar %}الكود ↑{% else %}Code ↑{% endif %}</option>
         <option value="-code"       {% if sort=='-code' %}selected{% endif %}>{% if ar %}الكود ↓{% else %}Code ↓{% endif %}</option>
         <option value="drawers"     {% if sort=='drawers' %}selected{% endif %}>{% if ar %}الاسم ↑{% else %}Drawers ↑{% endif %}</option>
         <option value="-created_at" {% if sort=='-created_at' %}selected{% endif %}>{% if ar %}الأحدث{% else %}Newest{% endif %}</option>
       </select>
+
       <div class="search-form" style="margin:0;">
         <i class="fas fa-search search-icon"></i>
         <input type="text" name="q" value="{{ q }}" class="search-input"
                placeholder="{% if ar %}بحث بالكود أو الاسم...{% else %}Search code or drawers...{% endif %}">
       </div>
       <button type="submit" class="tool-btn"><i class="fas fa-filter"></i></button>
-      {% if q or parent %}
-      <a href="{{ url_for(endpoints.list) }}" class="tool-btn" title="{% if ar %}مسح{% else %}Clear{% endif %}"><i class="fas fa-times"></i></a>
+      {% if q or parent or status %}
+      <a href="{{ url_for(endpoints.list) }}" class="tool-btn"
+         title="{% if ar %}مسح{% else %}Clear{% endif %}"><i class="fas fa-times"></i></a>
       {% endif %}
     </form>
   </div>
 
-  {# ── Table ── #}
+  {# ── Table ─────────────────────────────────────────────────── #}
   <div class="proledg-table-wrap">
     <table class="proledg-table">
       <thead>
         <tr>
           <th style="width:40px">#</th>
-          <th style="width:80px">{% if ar %}الطول{% else %}Length{% endif %}</th>
-          <th style="width:130px">{% if ar %}{{ parent_label_ar }}{% else %}{{ parent_label_en }}{% endif %}</th>
+          <th style="width:70px">{% if ar %}الطول{% else %}Len{% endif %}</th>
+          <th style="width:130px">{% if ar %}الأب{% else %}Parent{% endif %}</th>
           <th style="width:150px">{% if ar %}الكود{% else %}Code{% endif %}</th>
           <th>{% if ar %}المجموعة{% else %}Drawers{% endif %}</th>
-          <th style="width:160px">{% if ar %}الوصف{% else %}Description{% endif %}</th>
+          <th style="width:150px">{% if ar %}الوصف{% else %}Description{% endif %}</th>
+          <th style="width:90px">{% if ar %}الحالة{% else %}Status{% endif %}</th>
           {% if current_user.is_admin() %}
-          <th style="width:100px" class="text-center">{% if ar %}إجراءات{% else %}Actions{% endif %}</th>
+          <th style="width:120px" class="text-center">{% if ar %}إجراءات{% else %}Actions{% endif %}</th>
           {% endif %}
         </tr>
       </thead>
       <tbody>
         {% for r in rows %}
-        {% set parent_code = r.level_two_code if level_no == 3 else (r.level_three_code if level_no == 4 else r.level_four_code) %}
+        {% set pcode = r.level_one_code if level_no == 2 else
+                      (r.level_two_code if level_no == 3 else
+                      (r.level_three_code if level_no == 4 else r.level_four_code)) %}
+        {% set pid = r.level_one_id if level_no == 2 else
+                    (r.level_two_id if level_no == 3 else
+                    (r.level_three_id if level_no == 4 else r.level_four_id)) %}
         <tr>
           <td>{{ pg.per_page * (pg.page - 1) + loop.index }}</td>
           <td>{{ r.code_length }}</td>
-          <td><span class="code-badge">{{ parent_code }}</span></td>
+          <td><span class="code-badge">{{ pcode }}</span></td>
           <td><span class="code-badge" style="background:#eff6ff;color:#2563eb;">{{ r.code }}</span></td>
           <td class="fw-semibold">{{ r.drawers }}</td>
           <td style="color:#6b7280;font-size:12px">{{ r.description }}</td>
+          <td>
+            {% if (r.status or 'active') == 'active' %}
+            <span style="background:#dcfce7;color:#15803d;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">
+              {% if ar %}نشط{% else %}Active{% endif %}</span>
+            {% else %}
+            <span style="background:#fee2e2;color:#b91c1c;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">
+              {% if ar %}غير نشط{% else %}Inactive{% endif %}</span>
+            {% endif %}
+          </td>
           {% if current_user.is_admin() %}
           <td class="text-center">
-            <button class="action-btn action-btn-edit" onclick="openEdit({{ r.id }}, {{ r.code|tojson }}, {{ r.drawers|tojson }})">
+            <button type="button" class="action-btn action-btn-edit"
+                    onclick="openView({{ pcode|tojson }}, {{ r.code|tojson }}, {{ r.drawers|tojson }}, {{ r.description|tojson }}, {{ (r.status or 'active')|tojson }}, {{ r.code_length }})">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button type="button" class="action-btn action-btn-edit"
+                    onclick="openEdit({{ r.id }}, {{ r.code|tojson }}, {{ r.drawers|tojson }}, {{ (r.status or 'active')|tojson }}, {{ pid }})">
               <i class="fas fa-pencil-alt"></i>
             </button>
             <form method="POST" action="{{ url_for(endpoints.delete, id=r.id) }}" class="d-inline"
@@ -95,14 +145,15 @@
           {% endif %}
         </tr>
         {% else %}
-        <tr><td colspan="7" class="empty-row"><i class="fas fa-folder-open fa-2x mb-2 d-block"></i>
+        <tr><td colspan="8" class="empty-row">
+          <i class="fas fa-folder-open fa-2x mb-2 d-block"></i>
           {% if ar %}لا توجد حسابات{% else %}No accounts found{% endif %}</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
-  {# ── Pagination ── #}
+  {# ── Pagination ────────────────────────────────────────────── #}
   <div class="proledg-pagination" style="display:flex;justify-content:space-between;align-items:center;">
     <span class="page-count">
       {{ pg.total }} {% if ar %}حساب{% else %}account(s){% endif %} ·
@@ -112,19 +163,19 @@
     <nav>
       <ul class="pagination pagination-sm mb-0">
         <li class="page-item {% if not pg.has_prev %}disabled{% endif %}">
-          <a class="page-link" href="{{ url_for(endpoints.list, page=pg.prev_num, q=q or none, parent=parent or none, sort=sort) }}">&laquo;</a>
+          <a class="page-link" href="{{ url_for(endpoints.list, page=pg.prev_num, q=q or none, parent=parent or none, status=status or none, sort=sort) }}">&laquo;</a>
         </li>
         {% for p in pg.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
           {% if p %}
           <li class="page-item {% if p == pg.page %}active{% endif %}">
-            <a class="page-link" href="{{ url_for(endpoints.list, page=p, q=q or none, parent=parent or none, sort=sort) }}">{{ p }}</a>
+            <a class="page-link" href="{{ url_for(endpoints.list, page=p, q=q or none, parent=parent or none, status=status or none, sort=sort) }}">{{ p }}</a>
           </li>
           {% else %}
           <li class="page-item disabled"><span class="page-link">…</span></li>
           {% endif %}
         {% endfor %}
         <li class="page-item {% if not pg.has_next %}disabled{% endif %}">
-          <a class="page-link" href="{{ url_for(endpoints.list, page=pg.next_num, q=q or none, parent=parent or none, sort=sort) }}">&raquo;</a>
+          <a class="page-link" href="{{ url_for(endpoints.list, page=pg.next_num, q=q or none, parent=parent or none, status=status or none, sort=sort) }}">&raquo;</a>
         </li>
       </ul>
     </nav>
@@ -132,7 +183,7 @@
   </div>
 </div>
 
-{# ── Add / Edit modal ── #}
+{# ── Add / Edit modal with CASCADING parent selects ──────────── #}
 <div class="modal fade" id="lvlModal" tabindex="-1">
   <div class="modal-dialog modal-md">
     <div class="modal-content proledg-modal">
@@ -140,20 +191,62 @@
         <h5 class="modal-title" id="lvlModalTitle"></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
-        <form id="lvlForm" method="POST" action="{{ url_for(endpoints.add) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-          <div class="mb-3" id="parentWrap">
-            <label class="form-label fw-semibold">
-              {% if ar %}{{ parent_label_ar }}{% else %}{{ parent_label_en }}{% endif %} <span style="color:#ef4444">*</span>
-            </label>
-            <select name="{{ parent_field }}" id="parentSel" class="form-select" onchange="refreshNextCode()" required>
-              <option value="">-- {% if ar %}اختر{% else %}Select{% endif %} --</option>
-              {% for p in parents %}
-              <option value="{{ p.id }}">{{ p.code }} — {{ p.drawers }}</option>
-              {% endfor %}
-            </select>
+      <form id="lvlForm" method="POST" action="{{ url_for(endpoints.add) }}"
+            onsubmit="return validateLvl();">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+
+          <div id="cascadeWrap">
+            {# Level 1 is always the root of the cascade. #}
+            <div class="mb-3">
+              <label class="form-label fw-semibold">
+                {% if ar %}المستوى الأول{% else %}Level 1{% endif %} <span style="color:#ef4444">*</span>
+              </label>
+              <select id="selL1" class="form-select" onchange="onL1Change()"
+                      {% if level_no == 2 %}name="level_one_id"{% endif %}>
+                <option value="">-- {% if ar %}اختر{% else %}Select{% endif %} --</option>
+                {% for l1 in level_ones %}
+                <option value="{{ l1.id }}">{{ l1.code }} - {{ l1.drawers }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            {% if level_no >= 3 %}
+            <div class="mb-3">
+              <label class="form-label fw-semibold">
+                {% if ar %}المستوى الثاني{% else %}Level 2{% endif %} <span style="color:#ef4444">*</span>
+              </label>
+              <select id="selL2" class="form-select" onchange="onL2Change()" disabled
+                      {% if level_no == 3 %}name="level_two_id"{% endif %}>
+                <option value="">-- {% if ar %}اختر المستوى الأول أولاً{% else %}Select Level 1 first{% endif %} --</option>
+              </select>
+            </div>
+            {% endif %}
+
+            {% if level_no >= 4 %}
+            <div class="mb-3">
+              <label class="form-label fw-semibold">
+                {% if ar %}المستوى الثالث{% else %}Level 3{% endif %} <span style="color:#ef4444">*</span>
+              </label>
+              <select id="selL3" class="form-select" onchange="onL3Change()" disabled
+                      {% if level_no == 4 %}name="level_three_id"{% endif %}>
+                <option value="">-- {% if ar %}اختر المستوى الثاني أولاً{% else %}Select Level 2 first{% endif %} --</option>
+              </select>
+            </div>
+            {% endif %}
+
+            {% if level_no >= 5 %}
+            <div class="mb-3">
+              <label class="form-label fw-semibold">
+                {% if ar %}المستوى الرابع{% else %}Level 4{% endif %} <span style="color:#ef4444">*</span>
+              </label>
+              <select id="selL4" class="form-select" onchange="onL4Change()" disabled
+                      name="level_four_id">
+                <option value="">-- {% if ar %}اختر المستوى الثالث أولاً{% else %}Select Level 3 first{% endif %} --</option>
+              </select>
+            </div>
+            {% endif %}
           </div>
 
           <div class="row">
@@ -173,7 +266,14 @@
 
           <div class="mb-3">
             <label class="form-label fw-semibold">{% if ar %}المجموعة{% else %}Drawers{% endif %} <span style="color:#ef4444">*</span></label>
-            <input type="text" name="drawers" id="drawersInp" class="form-control" required maxlength="250">
+            <div style="position:relative;">
+              <input type="text" name="drawers" id="drawersInp" class="form-control"
+                     maxlength="250" autocomplete="off" style="padding-right:36px;"
+                     oninput="onDrawersInput()">
+              <span id="drawersIcon"
+                    style="position:absolute;top:50%;right:12px;transform:translateY(-50%);font-size:15px;display:none;"></span>
+            </div>
+            <small id="drawersMsg" style="display:none;font-size:11.5px;margin-top:3px;"></small>
           </div>
 
           <div class="mb-3">
@@ -181,14 +281,43 @@
             <input type="text" class="form-control" value="{{ fixed_desc }}" readonly style="background:#f1f5f9;">
             <small class="text-muted">{% if ar %}ثابت{% else %}Fixed{% endif %}</small>
           </div>
-        </form>
+
+          <div class="mb-1">
+            <label class="form-label fw-semibold">{% if ar %}الحالة{% else %}Status{% endif %}</label>
+            <div style="display:flex;gap:16px;">
+              <label style="cursor:pointer;"><input type="radio" name="status" value="active" id="stActive" checked>
+                {% if ar %}نشط{% else %}Active{% endif %}</label>
+              <label style="cursor:pointer;"><input type="radio" name="status" value="inactive" id="stInactive">
+                {% if ar %}غير نشط{% else %}Inactive{% endif %}</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer proledg-modal-footer">
+          <button type="button" class="pl-footer-btn pl-btn-cancel" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}
+          </button>
+          <button type="submit" class="pl-footer-btn pl-btn-save">
+            <i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# ── View modal ─────────────────────────────────────────────── #}
+<div class="modal fade" id="viewModal" tabindex="-1">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content proledg-modal">
+      <div class="modal-header proledg-modal-header">
+        <h5 class="modal-title">{% if ar %}تفاصيل الحساب{% else %}Account Details{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
+      <div class="modal-body" id="viewBody"></div>
       <div class="modal-footer proledg-modal-footer">
         <button type="button" class="pl-footer-btn pl-btn-cancel" data-bs-dismiss="modal">
-          <i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}
-        </button>
-        <button type="button" class="pl-footer-btn pl-btn-save" onclick="submitLvl()">
-          <i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}
+          {% if ar %}إغلاق{% else %}Close{% endif %}
         </button>
       </div>
     </div>
@@ -196,72 +325,254 @@
 </div>
 
 <script>
-/* This markup renders inside the page content block, which base.html emits
-   BEFORE it loads bootstrap.bundle.min.js. Everything below only *defines*
-   functions (safe at this point); the single call that needs the Bootstrap
-   global -- new bootstrap.Modal(...) in openEdit -- runs on click, long after
-   load. We still guard it so a mis-ordered include can never throw. */
 (function () {
-const IS_AR       = {{ 'true' if ar else 'false' }};
-const ADD_URL     = '{{ url_for(endpoints.add) }}';
-const NEXTCODE_URL= '{{ url_for(endpoints.next_code) }}';
-const EDIT_BASE   = '{{ url_for(endpoints.list) }}';
-const PARENT_PARAM= '{{ parent_field }}';
-const T_ADD       = {{ (('إضافة حساب المستوى ' ~ level_no) if ar else ('Add Level ' ~ level_no ~ ' Account'))|tojson }};
-const T_EDIT      = {{ (('تعديل حساب المستوى ' ~ level_no) if ar else ('Edit Level ' ~ level_no ~ ' Account'))|tojson }};
+  const IS_AR      = {{ 'true' if ar else 'false' }};
+  const LEVEL_NO   = {{ level_no }};
+  const ADD_URL    = {{ url_for(endpoints.add)|tojson }};
+  const LIST_URL   = {{ url_for(endpoints.list)|tojson }};
+  const NEXTCODE   = {{ url_for(endpoints.next_code)|tojson }};
+  const PARENT_KEY = {{ parent_field|tojson }};
 
-function refreshNextCode() {
-  const id = document.getElementById('parentSel').value;
-  const prev = document.getElementById('codePreview');
-  if (!id) { prev.value = ''; return; }
-  prev.value = '...';
-  fetch(NEXTCODE_URL + '?' + PARENT_PARAM + '=' + encodeURIComponent(id))
-    .then(r => r.json()).then(d => { prev.value = d.code || ''; })
-    .catch(() => { prev.value = ''; });
-}
+  const T = {
+    add:  IS_AR ? 'اضافة حساب'  : 'Add Level ' + LEVEL_NO + ' Account',
+    edit: IS_AR ? 'تعديل حساب'  : 'Edit Level ' + LEVEL_NO + ' Account',
+    pick: IS_AR ? '-- اختر --'  : '-- Select --',
+    active: IS_AR ? 'نشط' : 'Active',
+    inactive: IS_AR ? 'غير نشط' : 'Inactive'
+  };
 
-function openAdd() {
-  document.getElementById('lvlModalTitle').textContent = T_ADD;
-  const f = document.getElementById('lvlForm');
-  f.action = ADD_URL; f.reset();
-  document.getElementById('codePreview').value = '';
-  document.getElementById('parentWrap').style.display = '';
-  document.getElementById('parentSel').disabled = false;
-}
+  const $ = function (id) { return document.getElementById(id); };
 
-function openEdit(id, code, drawers) {
-  document.getElementById('lvlModalTitle').textContent = T_EDIT;
-  const f = document.getElementById('lvlForm');
-  f.action = EDIT_BASE + '/' + id + '/edit';
-  // Code and parent are fixed on edit.
-  document.getElementById('codePreview').value = code;
-  document.getElementById('parentWrap').style.display = 'none';
-  document.getElementById('parentSel').disabled = true;
-  document.getElementById('drawersInp').value = drawers;
-  if (typeof bootstrap === 'undefined') {
-    console.error('Bootstrap JS not loaded yet'); return;
+  /* ── Live validation for `drawers` ────────────────────────────
+     Red ✗ when empty or duplicate under the selected parent,
+     green ✓ when the value is valid. Debounced so we don't hammer
+     the server on every keystroke. ───────────────────────────── */
+  const LEVEL_SLUG = {2:'level-two',3:'level-three',4:'level-four',5:'level-five'}[LEVEL_NO];
+  var _drawersTimer = null;
+  var _drawersOk = false;      // gate the submit on this
+
+  function setDrawersState(state, msg) {
+    // state: 'ok' | 'bad' | 'none'
+    var inp  = $('drawersInp');
+    var icon = $('drawersIcon');
+    var hint = $('drawersMsg');
+    if (!inp || !icon || !hint) return;
+
+    inp.style.borderColor = '';
+    icon.style.display = 'none';
+    hint.style.display = 'none';
+
+    if (state === 'ok') {
+      _drawersOk = true;
+      inp.style.borderColor = '#16a34a';
+      icon.innerHTML = '<i class="fas fa-check-circle" style="color:#16a34a;"></i>';
+      icon.style.display = 'inline';
+      if (msg) { hint.textContent = msg; hint.style.color = '#16a34a'; hint.style.display = 'block'; }
+    } else if (state === 'bad') {
+      _drawersOk = false;
+      inp.style.borderColor = '#dc2626';
+      icon.innerHTML = '<i class="fas fa-times-circle" style="color:#dc2626;"></i>';
+      icon.style.display = 'inline';
+      if (msg) { hint.textContent = msg; hint.style.color = '#dc2626'; hint.style.display = 'block'; }
+    } else {
+      _drawersOk = false;
+    }
   }
-  new bootstrap.Modal(document.getElementById('lvlModal')).show();
-}
 
-function submitLvl() {
-  const f = document.getElementById('lvlForm');
-  const isEdit = f.action.indexOf('/edit') !== -1;
-  if (!isEdit && !document.getElementById('parentSel').value) {
-    alert(IS_AR ? 'يرجى اختيار الحساب الأب' : 'Please select a parent account'); return;
-  }
-  if (!document.getElementById('drawersInp').value.trim()) {
-    alert(IS_AR ? 'المجموعة مطلوبة' : 'Drawers is required'); return;
-  }
-  f.submit();
-}
+  /* The parent id to scope the duplicate check against. On edit the parent
+     is fixed, so we send the value stashed by openEdit(). */
+  var _editParentId = null;
+  var _editRowId    = null;
 
-  // Expose the handlers used by inline onclick/onchange attributes.
-  window.refreshNextCode = refreshNextCode;
-  window.openAdd         = openAdd;
-  window.openEdit        = openEdit;
-  window.submitLvl       = submitLvl;
+  function checkDrawers() {
+    var val = ($('drawersInp').value || '').trim();
+    if (!val) { setDrawersState('bad', IS_AR ? 'المجموعة مطلوبة' : 'Drawers is required'); return; }
+
+    var parentId = _editParentId !== null ? _editParentId : currentParentId();
+    var url = '/coa/validate/' + LEVEL_SLUG + '/drawers?drawers=' + encodeURIComponent(val);
+    if (parentId) url += '&parent_id=' + encodeURIComponent(parentId);
+    if (_editRowId) url += '&exclude=' + encodeURIComponent(_editRowId);
+
+    fetch(url).then(function (r) { return r.json(); }).then(function (d) {
+      setDrawersState(d.ok ? 'ok' : 'bad', d.msg || '');
+    }).catch(function () { setDrawersState('none'); });
+  }
+
+  function onDrawersInput() {
+    var val = ($('drawersInp').value || '').trim();
+    // Instant red for the empty case — no round-trip needed.
+    if (!val) { setDrawersState('bad', IS_AR ? 'المجموعة مطلوبة' : 'Drawers is required'); return; }
+    clearTimeout(_drawersTimer);
+    _drawersTimer = setTimeout(checkDrawers, 300);
+  }
+  window.onDrawersInput = onDrawersInput;
+
+  /* Fill a <select> with `code - Drawers` options and enable it. */
+  function fill(sel, items, selected) {
+    if (!sel) return;
+    var html = '<option value="">' + T.pick + '</option>';
+    items.forEach(function (i) {
+      var sel_attr = (String(i.id) === String(selected)) ? ' selected' : '';
+      html += '<option value="' + i.id + '"' + sel_attr + '>' + i.label + '</option>';
+    });
+    sel.innerHTML = html;
+    sel.disabled = false;
+  }
+
+  /* Reset a select to empty + disabled. */
+  function clearSel(sel) {
+    if (!sel) return;
+    sel.innerHTML = '<option value="">' + T.pick + '</option>';
+    sel.disabled = true;
+  }
+
+  function load(url, sel, selected) {
+    return fetch(url).then(function (r) { return r.json(); })
+      .then(function (d) { fill(sel, d, selected); return d; });
+  }
+
+  /* ── Cascade: changing a parent reloads the next level and
+        clears every dropdown below it. ────────────────────────── */
+  function onL1Change(selected) {
+    if ($('drawersInp') && $('drawersInp').value.trim()) setTimeout(checkDrawers, 350);
+    var id = $('selL1').value;
+    clearSel($('selL2')); clearSel($('selL3')); clearSel($('selL4'));
+    $('codePreview').value = '';
+    if (!id) return Promise.resolve();
+    if (LEVEL_NO === 2) return refreshCode();
+    return load('/coa/children/level-two?level_one_id=' + encodeURIComponent(id), $('selL2'), selected);
+  }
+
+  function onL2Change(selected) {
+    if ($('drawersInp') && $('drawersInp').value.trim()) setTimeout(checkDrawers, 350);
+    var el = $('selL2');
+    var id = el ? el.value : '';
+    clearSel($('selL3')); clearSel($('selL4'));
+    $('codePreview').value = '';
+    if (!id) return Promise.resolve();
+    if (LEVEL_NO === 3) return refreshCode();
+    return load('/coa/children/level-three?level_two_id=' + encodeURIComponent(id), $('selL3'), selected);
+  }
+
+  function onL3Change(selected) {
+    if ($('drawersInp') && $('drawersInp').value.trim()) setTimeout(checkDrawers, 350);
+    var el = $('selL3');
+    var id = el ? el.value : '';
+    clearSel($('selL4'));
+    $('codePreview').value = '';
+    if (!id) return Promise.resolve();
+    if (LEVEL_NO === 4) return refreshCode();
+    return load('/coa/children/level-four?level_three_id=' + encodeURIComponent(id), $('selL4'), selected);
+  }
+
+  function onL4Change() {
+    if ($('drawersInp') && $('drawersInp').value.trim()) setTimeout(checkDrawers, 350);
+    $('codePreview').value = '';
+    var el = $('selL4');
+    if (el && el.value) refreshCode();
+  }
+
+  /* The immediate parent for THIS level. */
+  function currentParentId() {
+    if (LEVEL_NO === 2) return $('selL1').value;
+    if (LEVEL_NO === 3) return $('selL2') ? $('selL2').value : '';
+    if (LEVEL_NO === 4) return $('selL3') ? $('selL3').value : '';
+    return $('selL4') ? $('selL4').value : '';
+  }
+
+  function refreshCode() {
+    var pid = currentParentId();
+    var prev = $('codePreview');
+    if (!pid) { prev.value = ''; return Promise.resolve(); }
+    prev.value = '...';
+    return fetch(NEXTCODE + '?' + PARENT_KEY + '=' + encodeURIComponent(pid))
+      .then(function (r) { return r.json(); })
+      .then(function (d) { prev.value = d.code || ''; })
+      .catch(function () { prev.value = ''; });
+  }
+
+  function openAdd() {
+    $('lvlModalTitle').textContent = T.add;
+    var f = $('lvlForm');
+    f.setAttribute('action', ADD_URL);
+    f.reset();
+    $('selL1').value = '';
+    clearSel($('selL2')); clearSel($('selL3')); clearSel($('selL4'));
+    $('codePreview').value = '';
+    $('cascadeWrap').style.display = '';
+    $('stActive').checked = true;
+    _editParentId = null; _editRowId = null;
+    setDrawersState('none');
+  }
+
+  /* EDIT: parent + code are immutable, so hide the cascade. */
+  function openEdit(id, code, drawers, status, parentId) {
+    $('lvlModalTitle').textContent = T.edit;
+    var f = $('lvlForm');
+    f.setAttribute('action', LIST_URL + '/' + id + '/edit');
+    $('codePreview').value = code;
+    $('drawersInp').value = drawers;
+    $(status === 'inactive' ? 'stInactive' : 'stActive').checked = true;
+    $('cascadeWrap').style.display = 'none';
+    // Parent is immutable on edit; scope the duplicate check to it and
+    // exclude this row so its own name doesn't read as a duplicate.
+    _editRowId = id;
+    _editParentId = parentId || null;
+    setDrawersState('ok');
+    if (typeof bootstrap === 'undefined') { console.error('Bootstrap not loaded'); return; }
+    new bootstrap.Modal($('lvlModal')).show();
+  }
+
+  function openView(pcode, code, drawers, desc, status, len) {
+    var badge = (status === 'inactive')
+      ? '<span style="background:#fee2e2;color:#b91c1c;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">' + T.inactive + '</span>'
+      : '<span style="background:#dcfce7;color:#15803d;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">' + T.active + '</span>';
+    function row(k, v) {
+      return '<tr><td style="padding:8px 12px;font-weight:600;color:#374151;width:40%;border-bottom:1px solid #f1f5f9;">' + k +
+             '</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;">' + v + '</td></tr>';
+    }
+    $('viewBody').innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+      + row(IS_AR ? 'الأب' : 'Parent', pcode)
+      + row(IS_AR ? 'الكود' : 'Code', '<strong style="color:#2563eb">' + code + '</strong>')
+      + row(IS_AR ? 'طول الكود' : 'Code Length', len)
+      + row(IS_AR ? 'المجموعة' : 'Drawers', drawers)
+      + row(IS_AR ? 'الوصف' : 'Description', desc)
+      + row(IS_AR ? 'الحالة' : 'Status', badge)
+      + '</table>';
+    if (typeof bootstrap === 'undefined') { console.error('Bootstrap not loaded'); return; }
+    new bootstrap.Modal($('viewModal')).show();
+  }
+
+  function validateLvl() {
+    var f = $('lvlForm');
+    var isEdit = (f.getAttribute('action') || '').indexOf('/edit') !== -1;
+    if (!isEdit) {
+      /* Enforce the whole chain so an invalid hierarchy can never be posted. */
+      if (!$('selL1').value) { alert(IS_AR ? 'اختر المستوى الأول' : 'Level 1 is required'); return false; }
+      if (LEVEL_NO >= 3 && !$('selL2').value) { alert(IS_AR ? 'اختر المستوى الثاني' : 'Level 2 is required'); return false; }
+      if (LEVEL_NO >= 4 && !$('selL3').value) { alert(IS_AR ? 'اختر المستوى الثالث' : 'Level 3 is required'); return false; }
+      if (LEVEL_NO >= 5 && !$('selL4').value) { alert(IS_AR ? 'اختر المستوى الرابع' : 'Level 4 is required'); return false; }
+    }
+    if (!$('drawersInp').value.trim()) {
+      setDrawersState('bad', IS_AR ? 'المجموعة مطلوبة' : 'Drawers is required');
+      return false;
+    }
+    if (!_drawersOk) {
+      alert(IS_AR ? 'الرجاء تصحيح حقل المجموعة' : 'Please fix the Drawers field');
+      return false;
+    }
+    return true;
+  }
+
+  /* Inline onclick/onchange attributes need these on `window`. */
+  window.onL1Change  = onL1Change;
+  window.onL2Change  = onL2Change;
+  window.onL3Change  = onL3Change;
+  window.onL4Change  = onL4Change;
+  window.openAdd     = openAdd;
+  window.openEdit    = openEdit;
+  window.openView    = openView;
+  window.validateLvl = validateLvl;
 })();
 </script>
-
 {% endmacro %}

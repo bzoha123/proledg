@@ -13,10 +13,8 @@
 {{ coa_level_page(
      3,
      'Chart of Accounts — Level 3', 'دليل الحسابات — المستوى الثالث',
-     'Level Two', 'المستوى الثاني',
-     'level_two_id',
-     {'list':'coa.level_three_list','add':'coa.level_three_add',
-      'delete':'coa.level_three_delete','next_code':'coa.level_three_next_code'},
+     {'list':'coa.level_three_list','add':'coa.level_three_add','delete':'coa.level_three_delete','next_code':'coa.level_three_next_code'},
      5, 'Heading Account',
-     rows, pg, parents, q, parent, sort, ar, current_user) }}
+     rows, pg, parents, level_ones,
+     q, parent, sort, status, ar, current_user) }}
 {% endblock %}
