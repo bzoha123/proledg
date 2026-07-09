@@ -1,0 +1,267 @@
+{# ══════════════════════════════════════════════════════════════
+   Shared CRUD page for Chart of Accounts levels 3, 4 and 5.
+   All three levels are structurally identical, so a single macro
+   renders the table, search/filter bar, pagination and modal.
+
+   Callers supply:
+     level_no      3 | 4 | 5
+     title_en/ar   page heading
+     parent_label  'Level Two' / 'Level Three' / 'Level Four'
+     parent_field  form field name (level_two_id / ...)
+     endpoints     dict of url endpoints for this level
+     fixed_len     5 | 8 | 12
+     fixed_desc    'Heading Account' | 'Transactional Account'
+   ══════════════════════════════════════════════════════════════ #}
+
+{% macro coa_level_page(level_no, title_en, title_ar, parent_label_en, parent_label_ar,
+                        parent_field, endpoints, fixed_len, fixed_desc,
+                        rows, pg, parents, q, parent, sort, ar, current_user) %}
+
+
+<div class="proledg-page">
+  <h2 class="page-heading">{% if ar %}{{ title_ar }}{% else %}{{ title_en }}{% endif %}</h2>
+
+  {# ── Toolbar: add, search, parent filter ── #}
+  <div class="toolbar" style="gap:8px;flex-wrap:wrap;">
+    <div class="toolbar-left" style="gap:6px;">
+      {% if current_user.is_admin() %}
+      <button type="button" class="tool-btn tool-btn-green" data-bs-toggle="modal" data-bs-target="#lvlModal" onclick="openAdd()">
+        <i class="fas fa-plus"></i>
+      </button>
+      {% endif %}
+    </div>
+    <form method="GET" class="toolbar-right" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+      <select name="parent" class="form-select form-select-sm" style="width:auto;min-width:190px;" onchange="this.form.submit()">
+        <option value="">{% if ar %}كل الحسابات الأب{% else %}All parents{% endif %}</option>
+        {% for p in parents %}
+        <option value="{{ p.code }}" {% if parent == p.code %}selected{% endif %}>{{ p.code }} — {{ p.drawers[:34] }}</option>
+        {% endfor %}
+      </select>
+      <select name="sort" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+        <option value="code"        {% if sort=='code' %}selected{% endif %}>{% if ar %}الكود ↑{% else %}Code ↑{% endif %}</option>
+        <option value="-code"       {% if sort=='-code' %}selected{% endif %}>{% if ar %}الكود ↓{% else %}Code ↓{% endif %}</option>
+        <option value="drawers"     {% if sort=='drawers' %}selected{% endif %}>{% if ar %}الاسم ↑{% else %}Drawers ↑{% endif %}</option>
+        <option value="-created_at" {% if sort=='-created_at' %}selected{% endif %}>{% if ar %}الأحدث{% else %}Newest{% endif %}</option>
+      </select>
+      <div class="search-form" style="margin:0;">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" name="q" value="{{ q }}" class="search-input"
+               placeholder="{% if ar %}بحث بالكود أو الاسم...{% else %}Search code or drawers...{% endif %}">
+      </div>
+      <button type="submit" class="tool-btn"><i class="fas fa-filter"></i></button>
+      {% if q or parent %}
+      <a href="{{ url_for(endpoints.list) }}" class="tool-btn" title="{% if ar %}مسح{% else %}Clear{% endif %}"><i class="fas fa-times"></i></a>
+      {% endif %}
+    </form>
+  </div>
+
+  {# ── Table ── #}
+  <div class="proledg-table-wrap">
+    <table class="proledg-table">
+      <thead>
+        <tr>
+          <th style="width:40px">#</th>
+          <th style="width:80px">{% if ar %}الطول{% else %}Length{% endif %}</th>
+          <th style="width:130px">{% if ar %}{{ parent_label_ar }}{% else %}{{ parent_label_en }}{% endif %}</th>
+          <th style="width:150px">{% if ar %}الكود{% else %}Code{% endif %}</th>
+          <th>{% if ar %}المجموعة{% else %}Drawers{% endif %}</th>
+          <th style="width:160px">{% if ar %}الوصف{% else %}Description{% endif %}</th>
+          {% if current_user.is_admin() %}
+          <th style="width:100px" class="text-center">{% if ar %}إجراءات{% else %}Actions{% endif %}</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        {% set parent_code = r.level_two_code if level_no == 3 else (r.level_three_code if level_no == 4 else r.level_four_code) %}
+        <tr>
+          <td>{{ pg.per_page * (pg.page - 1) + loop.index }}</td>
+          <td>{{ r.code_length }}</td>
+          <td><span class="code-badge">{{ parent_code }}</span></td>
+          <td><span class="code-badge" style="background:#eff6ff;color:#2563eb;">{{ r.code }}</span></td>
+          <td class="fw-semibold">{{ r.drawers }}</td>
+          <td style="color:#6b7280;font-size:12px">{{ r.description }}</td>
+          {% if current_user.is_admin() %}
+          <td class="text-center">
+            <button class="action-btn action-btn-edit" onclick="openEdit({{ r.id }}, {{ r.code|tojson }}, {{ r.drawers|tojson }})">
+              <i class="fas fa-pencil-alt"></i>
+            </button>
+            <form method="POST" action="{{ url_for(endpoints.delete, id=r.id) }}" class="d-inline"
+                  onsubmit="return confirm('{% if ar %}حذف هذا الحساب؟{% else %}Delete this account?{% endif %}')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="action-btn action-btn-delete"><i class="fas fa-trash"></i></button>
+            </form>
+          </td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="empty-row"><i class="fas fa-folder-open fa-2x mb-2 d-block"></i>
+          {% if ar %}لا توجد حسابات{% else %}No accounts found{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# ── Pagination ── #}
+  <div class="proledg-pagination" style="display:flex;justify-content:space-between;align-items:center;">
+    <span class="page-count">
+      {{ pg.total }} {% if ar %}حساب{% else %}account(s){% endif %} ·
+      {% if ar %}صفحة{% else %}page{% endif %} {{ pg.page }}/{{ pg.pages or 1 }}
+    </span>
+    {% if pg.pages and pg.pages > 1 %}
+    <nav>
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item {% if not pg.has_prev %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for(endpoints.list, page=pg.prev_num, q=q or none, parent=parent or none, sort=sort) }}">&laquo;</a>
+        </li>
+        {% for p in pg.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+          {% if p %}
+          <li class="page-item {% if p == pg.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for(endpoints.list, page=p, q=q or none, parent=parent or none, sort=sort) }}">{{ p }}</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not pg.has_next %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for(endpoints.list, page=pg.next_num, q=q or none, parent=parent or none, sort=sort) }}">&raquo;</a>
+        </li>
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Add / Edit modal ── #}
+<div class="modal fade" id="lvlModal" tabindex="-1">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content proledg-modal">
+      <div class="modal-header proledg-modal-header">
+        <h5 class="modal-title" id="lvlModalTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="lvlForm" method="POST" action="{{ url_for(endpoints.add) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-3" id="parentWrap">
+            <label class="form-label fw-semibold">
+              {% if ar %}{{ parent_label_ar }}{% else %}{{ parent_label_en }}{% endif %} <span style="color:#ef4444">*</span>
+            </label>
+            <select name="{{ parent_field }}" id="parentSel" class="form-select" onchange="refreshNextCode()" required>
+              <option value="">-- {% if ar %}اختر{% else %}Select{% endif %} --</option>
+              {% for p in parents %}
+              <option value="{{ p.id }}">{{ p.code }} — {{ p.drawers }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="row">
+            <div class="col-4 mb-3">
+              <label class="form-label fw-semibold">{% if ar %}طول الكود{% else %}Code Length{% endif %}</label>
+              <input type="text" class="form-control" value="{{ fixed_len }}" readonly style="background:#f1f5f9;">
+              <small class="text-muted">{% if ar %}ثابت{% else %}Fixed{% endif %}</small>
+            </div>
+            <div class="col-8 mb-3">
+              <label class="form-label fw-semibold">{% if ar %}الكود (تلقائي){% else %}Code (auto){% endif %}</label>
+              <input type="text" id="codePreview" class="form-control" readonly
+                     style="background:#f0fdf4;color:#15803d;font-weight:700;"
+                     placeholder="{% if ar %}يُولّد تلقائياً{% else %}Auto-generated{% endif %}">
+              <small class="text-muted">{% if ar %}للقراءة فقط{% else %}Read-only{% endif %}</small>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{% if ar %}المجموعة{% else %}Drawers{% endif %} <span style="color:#ef4444">*</span></label>
+            <input type="text" name="drawers" id="drawersInp" class="form-control" required maxlength="250">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{% if ar %}الوصف{% else %}Description{% endif %}</label>
+            <input type="text" class="form-control" value="{{ fixed_desc }}" readonly style="background:#f1f5f9;">
+            <small class="text-muted">{% if ar %}ثابت{% else %}Fixed{% endif %}</small>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer proledg-modal-footer">
+        <button type="button" class="pl-footer-btn pl-btn-cancel" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}
+        </button>
+        <button type="button" class="pl-footer-btn pl-btn-save" onclick="submitLvl()">
+          <i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* This markup renders inside the page content block, which base.html emits
+   BEFORE it loads bootstrap.bundle.min.js. Everything below only *defines*
+   functions (safe at this point); the single call that needs the Bootstrap
+   global -- new bootstrap.Modal(...) in openEdit -- runs on click, long after
+   load. We still guard it so a mis-ordered include can never throw. */
+(function () {
+const IS_AR       = {{ 'true' if ar else 'false' }};
+const ADD_URL     = '{{ url_for(endpoints.add) }}';
+const NEXTCODE_URL= '{{ url_for(endpoints.next_code) }}';
+const EDIT_BASE   = '{{ url_for(endpoints.list) }}';
+const PARENT_PARAM= '{{ parent_field }}';
+const T_ADD       = {{ (('إضافة حساب المستوى ' ~ level_no) if ar else ('Add Level ' ~ level_no ~ ' Account'))|tojson }};
+const T_EDIT      = {{ (('تعديل حساب المستوى ' ~ level_no) if ar else ('Edit Level ' ~ level_no ~ ' Account'))|tojson }};
+
+function refreshNextCode() {
+  const id = document.getElementById('parentSel').value;
+  const prev = document.getElementById('codePreview');
+  if (!id) { prev.value = ''; return; }
+  prev.value = '...';
+  fetch(NEXTCODE_URL + '?' + PARENT_PARAM + '=' + encodeURIComponent(id))
+    .then(r => r.json()).then(d => { prev.value = d.code || ''; })
+    .catch(() => { prev.value = ''; });
+}
+
+function openAdd() {
+  document.getElementById('lvlModalTitle').textContent = T_ADD;
+  const f = document.getElementById('lvlForm');
+  f.action = ADD_URL; f.reset();
+  document.getElementById('codePreview').value = '';
+  document.getElementById('parentWrap').style.display = '';
+  document.getElementById('parentSel').disabled = false;
+}
+
+function openEdit(id, code, drawers) {
+  document.getElementById('lvlModalTitle').textContent = T_EDIT;
+  const f = document.getElementById('lvlForm');
+  f.action = EDIT_BASE + '/' + id + '/edit';
+  // Code and parent are fixed on edit.
+  document.getElementById('codePreview').value = code;
+  document.getElementById('parentWrap').style.display = 'none';
+  document.getElementById('parentSel').disabled = true;
+  document.getElementById('drawersInp').value = drawers;
+  if (typeof bootstrap === 'undefined') {
+    console.error('Bootstrap JS not loaded yet'); return;
+  }
+  new bootstrap.Modal(document.getElementById('lvlModal')).show();
+}
+
+function submitLvl() {
+  const f = document.getElementById('lvlForm');
+  const isEdit = f.action.indexOf('/edit') !== -1;
+  if (!isEdit && !document.getElementById('parentSel').value) {
+    alert(IS_AR ? 'يرجى اختيار الحساب الأب' : 'Please select a parent account'); return;
+  }
+  if (!document.getElementById('drawersInp').value.trim()) {
+    alert(IS_AR ? 'المجموعة مطلوبة' : 'Drawers is required'); return;
+  }
+  f.submit();
+}
+
+  // Expose the handlers used by inline onclick/onchange attributes.
+  window.refreshNextCode = refreshNextCode;
+  window.openAdd         = openAdd;
+  window.openEdit        = openEdit;
+  window.submitLvl       = submitLvl;
+})();
+</script>
+
+{% endmacro %}

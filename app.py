@@ -134,12 +134,17 @@ def init_db(app):
 
         # Seed the Chart of Accounts (idempotent — safe on every startup).
         try:
-            from models import seed_chart_of_accounts
+            from models import seed_chart_of_accounts, seed_coa_levels_3_4_5
             result = seed_chart_of_accounts()
             if result['level_one_inserted'] or result['level_two_inserted']:
                 print(f"Chart of Accounts seeded: "
                       f"{result['level_one_inserted']} Level 1, "
                       f"{result['level_two_inserted']} Level 2 records inserted.")
+            deep = seed_coa_levels_3_4_5()
+            if any(deep.values()):
+                print(f"Chart of Accounts seeded: "
+                      f"{deep['level_three']} Level 3, {deep['level_four']} Level 4, "
+                      f"{deep['level_five']} Level 5 records inserted.")
         except Exception as exc:
             print(f'Chart of Accounts seed skipped: {exc}')
 

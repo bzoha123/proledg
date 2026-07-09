@@ -2403,3 +2403,191 @@ def seed_chart_of_accounts():
         db.session.commit()
 
     return {'level_one_inserted': inserted_l1, 'level_two_inserted': inserted_l2}
+
+
+# ═════════════════════════════════════════════════════════════════
+#  CHART OF ACCOUNTS — Levels 3, 4, 5
+#  L3: <L2code>-NN        e.g. A1-01   (code_length 5,  Heading Account)
+#  L4: <L3code>-NN        e.g. A1-01-01(code_length 8,  Heading Account)
+#  L5: <L4code>-NNN       e.g. A1-01-01-001 (code_length 12, Transactional Account)
+# ═════════════════════════════════════════════════════════════════
+
+class LevelThree(db.Model):
+    """Level 3 — heading accounts under a Level 2 (code: A1-01)."""
+    __tablename__ = 'level_three'
+
+    id             = db.Column(db.Integer, primary_key=True)
+    code_length    = db.Column(db.Integer, nullable=False, default=5)        # fixed = 5
+    level_two_id   = db.Column(db.Integer, db.ForeignKey('level_two.id', ondelete='RESTRICT'), nullable=False)
+    level_two_code = db.Column(db.String(10), nullable=False)                # denormalised for search
+    code           = db.Column(db.String(20), nullable=False, unique=True)
+    drawers        = db.Column(db.String(200), nullable=False)
+    description    = db.Column(db.String(255), nullable=False, default='Heading Account')
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+
+    level_two   = db.relationship('LevelTwo', backref=db.backref('level_threes', lazy=True))
+    level_fours = db.relationship('LevelFour', backref=db.backref('level_three', lazy=True), lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'code_length': self.code_length,
+            'level_two_id': self.level_two_id, 'level_two_code': self.level_two_code,
+            'code': self.code, 'drawers': self.drawers, 'description': self.description,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'child_count': len(self.level_fours) if self.level_fours is not None else 0,
+        }
+
+
+class LevelFour(db.Model):
+    """Level 4 — heading accounts under a Level 3 (code: A1-01-01)."""
+    __tablename__ = 'level_four'
+
+    id               = db.Column(db.Integer, primary_key=True)
+    code_length      = db.Column(db.Integer, nullable=False, default=8)      # fixed = 8
+    level_three_id   = db.Column(db.Integer, db.ForeignKey('level_three.id', ondelete='RESTRICT'), nullable=False)
+    level_three_code = db.Column(db.String(20), nullable=False)
+    code             = db.Column(db.String(30), nullable=False, unique=True)
+    drawers          = db.Column(db.String(200), nullable=False)
+    description      = db.Column(db.String(255), nullable=False, default='Heading Account')
+    created_at       = db.Column(db.DateTime, default=datetime.utcnow)
+
+    level_fives = db.relationship('LevelFive', backref=db.backref('level_four', lazy=True), lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'code_length': self.code_length,
+            'level_three_id': self.level_three_id, 'level_three_code': self.level_three_code,
+            'code': self.code, 'drawers': self.drawers, 'description': self.description,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'child_count': len(self.level_fives) if self.level_fives is not None else 0,
+        }
+
+
+class LevelFive(db.Model):
+    """Level 5 — transactional accounts under a Level 4 (code: A1-01-01-001)."""
+    __tablename__ = 'level_five'
+
+    id              = db.Column(db.Integer, primary_key=True)
+    code_length     = db.Column(db.Integer, nullable=False, default=12)      # fixed = 12
+    level_four_id   = db.Column(db.Integer, db.ForeignKey('level_four.id', ondelete='RESTRICT'), nullable=False)
+    level_four_code = db.Column(db.String(30), nullable=False)
+    code            = db.Column(db.String(40), nullable=False, unique=True)
+    drawers         = db.Column(db.String(250), nullable=False)
+    description     = db.Column(db.String(255), nullable=False, default='Transactional Account')
+    created_at      = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'code_length': self.code_length,
+            'level_four_id': self.level_four_id, 'level_four_code': self.level_four_code,
+            'code': self.code, 'drawers': self.drawers, 'description': self.description,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+        }
+
+
+# ── Auto code generation (shared by routes and the seeder) ───────
+def _next_child_code(parent_code, model, code_col, parent_id_col, parent_id, width):
+    """Return ``<parent_code>-<n>`` zero-padded to ``width`` digits.
+
+    Scans existing children of ``parent_id`` for the highest numeric suffix and
+    increments it. Starts at 1 when the parent has no children, so the first
+    child of A1 is A1-01 and the first child of A1-01-01 is A1-01-01-001.
+    """
+    import re as _re
+    rows = model.query.filter(parent_id_col == parent_id).all()
+    pattern = _re.compile(r'^' + _re.escape(parent_code) + r'-(\d+)$')
+    highest = 0
+    for r in rows:
+        m = pattern.match(getattr(r, 'code') or '')
+        if m:
+            highest = max(highest, int(m.group(1)))
+    candidate = f'{parent_code}-{highest + 1:0{width}d}'
+    # Guard against collisions from manually inserted codes.
+    while model.query.filter(code_col == candidate).first():
+        highest += 1
+        candidate = f'{parent_code}-{highest + 1:0{width}d}'
+    return candidate
+
+
+def next_level_three_code(level_two):
+    return _next_child_code(level_two.code, LevelThree, LevelThree.code,
+                            LevelThree.level_two_id, level_two.id, 2)
+
+
+def next_level_four_code(level_three):
+    return _next_child_code(level_three.code, LevelFour, LevelFour.code,
+                            LevelFour.level_three_id, level_three.id, 2)
+
+
+def next_level_five_code(level_four):
+    return _next_child_code(level_four.code, LevelFive, LevelFive.code,
+                            LevelFive.level_four_id, level_four.id, 3)
+
+
+def seed_coa_levels_3_4_5():
+    """Idempotently insert the Level 3/4/5 defaults.
+
+    Records are matched on (parent, drawers); codes are generated by the same
+    algorithm the UI uses, so re-running never creates duplicates.
+    """
+    from database.coa_seed_data import (LEVEL_THREE_SEED, LEVEL_FOUR_SEED, LEVEL_FIVE_SEED)
+    counts = {'level_three': 0, 'level_four': 0, 'level_five': 0}
+
+    # ---- Level 3 (parent = level_two.code) ----
+    l2_by_code = {r.code: r for r in LevelTwo.query.all()}
+    for parent_code, drawers in LEVEL_THREE_SEED:
+        parent = l2_by_code.get(parent_code)
+        if not parent:
+            continue
+        exists = LevelThree.query.filter_by(level_two_id=parent.id, drawers=drawers).first()
+        if exists:
+            continue
+        db.session.add(LevelThree(
+            code_length=5, level_two_id=parent.id, level_two_code=parent.code,
+            code=next_level_three_code(parent), drawers=drawers,
+            description='Heading Account',
+        ))
+        db.session.flush()          # so the next code sees this row
+        counts['level_three'] += 1
+    if counts['level_three']:
+        db.session.commit()
+
+    # ---- Level 4 (parent = level_three.code) ----
+    l3_by_code = {r.code: r for r in LevelThree.query.all()}
+    for parent_code, drawers in LEVEL_FOUR_SEED:
+        parent = l3_by_code.get(parent_code)
+        if not parent:
+            continue
+        exists = LevelFour.query.filter_by(level_three_id=parent.id, drawers=drawers).first()
+        if exists:
+            continue
+        db.session.add(LevelFour(
+            code_length=8, level_three_id=parent.id, level_three_code=parent.code,
+            code=next_level_four_code(parent), drawers=drawers,
+            description='Heading Account',
+        ))
+        db.session.flush()
+        counts['level_four'] += 1
+    if counts['level_four']:
+        db.session.commit()
+
+    # ---- Level 5 (parent = level_four.code) ----
+    l4_by_code = {r.code: r for r in LevelFour.query.all()}
+    for parent_code, drawers in LEVEL_FIVE_SEED:
+        parent = l4_by_code.get(parent_code)
+        if not parent:
+            continue
+        exists = LevelFive.query.filter_by(level_four_id=parent.id, drawers=drawers).first()
+        if exists:
+            continue
+        db.session.add(LevelFive(
+            code_length=12, level_four_id=parent.id, level_four_code=parent.code,
+            code=next_level_five_code(parent), drawers=drawers,
+            description='Transactional Account',
+        ))
+        db.session.flush()
+        counts['level_five'] += 1
+    if counts['level_five']:
+        db.session.commit()
+
+    return counts

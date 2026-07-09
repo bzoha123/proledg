@@ -271,3 +271,304 @@ def level_two_delete(id):
 def level_two_data():
     return jsonify([r.to_dict() for r in
                     LevelTwo.query.order_by(LevelTwo.level_one_code, LevelTwo.id).all()])
+
+
+# ═════════════════════════════════════════════════════════════════
+#  LEVELS 3, 4, 5
+#  Shared helpers + CRUD. All three levels behave identically:
+#    * code is auto-generated (read-only)
+#    * code_length and description are fixed server-side
+#    * a parent cannot be deleted while it has children
+#    * duplicate drawers under the same parent are rejected
+# ═════════════════════════════════════════════════════════════════
+from models import (LevelThree, LevelFour, LevelFive,
+                    next_level_three_code, next_level_four_code, next_level_five_code)
+
+PER_PAGE = 25
+
+
+def _paginate_filter_sort(model, parent_code_col, request):
+    """Apply search / parent filter / sorting / pagination to a level query.
+
+    Query-string params:
+        q        free-text search over code + drawers
+        parent   exact parent-code filter
+        sort     one of: code, drawers, created_at   (prefix '-' for desc)
+        page     1-based page number
+    """
+    q_text  = (request.args.get('q') or '').strip()
+    parent  = (request.args.get('parent') or '').strip()
+    sort    = (request.args.get('sort') or 'code').strip()
+    page    = request.args.get('page', 1, type=int)
+
+    query = model.query
+    if q_text:
+        like = f'%{q_text}%'
+        query = query.filter(db.or_(model.code.ilike(like), model.drawers.ilike(like)))
+    if parent:
+        query = query.filter(parent_code_col == parent)
+
+    desc = sort.startswith('-')
+    field = sort[1:] if desc else sort
+    col = {'code': model.code, 'drawers': model.drawers,
+           'created_at': model.created_at}.get(field, model.code)
+    query = query.order_by(col.desc() if desc else col.asc())
+
+    return query.paginate(page=page, per_page=PER_PAGE, error_out=False), q_text, parent, sort
+
+
+# ─── LEVEL THREE ─────────────────────────────────────────────────
+@coa_bp.route('/level-three')
+@login_required
+def level_three_list():
+    pg, q_text, parent, sort = _paginate_filter_sort(LevelThree, LevelThree.level_two_code, request)
+    parents = LevelTwo.query.order_by(LevelTwo.code).all()
+    return render_template('coa/level_three.html', pg=pg, rows=pg.items,
+                           parents=parents, q=q_text, parent=parent, sort=sort)
+
+
+@coa_bp.route('/level-three/next-code')
+@login_required
+def level_three_next_code():
+    p = LevelTwo.query.get(request.args.get('level_two_id', type=int))
+    return jsonify({'code': next_level_three_code(p) if p else ''})
+
+
+@coa_bp.route('/level-three/add', methods=['POST'])
+@login_required
+@admin_required
+def level_three_add():
+    from forms import LevelThreeForm
+    form = LevelThreeForm()
+    form.level_two_id.choices = [(r.id, f'{r.code} — {r.drawers}') for r in LevelTwo.query.order_by(LevelTwo.code)]
+    if not form.validate_on_submit():
+        flash(_t('Please correct the errors.', 'يرجى تصحيح الأخطاء.'), 'danger')
+        return redirect(url_for('coa.level_three_list'))
+    parent = LevelTwo.query.get(form.level_two_id.data)
+    if not parent:
+        flash(_t('Parent not found.', 'الحساب الأب غير موجود.'), 'danger')
+        return redirect(url_for('coa.level_three_list'))
+    drawers = form.drawers.data.strip()
+    if LevelThree.query.filter(LevelThree.level_two_id == parent.id,
+                               db.func.lower(LevelThree.drawers) == drawers.lower()).first():
+        flash(_t(f'"{drawers}" already exists under {parent.code}.',
+                 f'"{drawers}" موجود بالفعل ضمن {parent.code}.'), 'danger')
+        return redirect(url_for('coa.level_three_list'))
+    db.session.add(LevelThree(code_length=5, level_two_id=parent.id, level_two_code=parent.code,
+                              code=next_level_three_code(parent), drawers=drawers,
+                              description='Heading Account'))
+    db.session.commit()
+    flash(_t('Level 3 account created.', 'تم إنشاء حساب المستوى الثالث.'), 'success')
+    return redirect(url_for('coa.level_three_list'))
+
+
+@coa_bp.route('/level-three/<int:id>/edit', methods=['POST'])
+@login_required
+@admin_required
+def level_three_edit(id):
+    row = LevelThree.query.get_or_404(id)
+    from forms import LevelThreeEditForm
+    form = LevelThreeEditForm()
+    if not form.validate_on_submit():
+        flash(_t('Please correct the errors.', 'يرجى تصحيح الأخطاء.'), 'danger')
+        return redirect(url_for('coa.level_three_list'))
+    drawers = form.drawers.data.strip()
+    if LevelThree.query.filter(LevelThree.level_two_id == row.level_two_id,
+                               db.func.lower(LevelThree.drawers) == drawers.lower(),
+                               LevelThree.id != row.id).first():
+        flash(_t('Duplicate drawers under the same parent.', 'اسم مكرر ضمن نفس الأب.'), 'danger')
+        return redirect(url_for('coa.level_three_list'))
+    row.drawers, row.code_length, row.description = drawers, 5, 'Heading Account'
+    db.session.commit()
+    flash(_t('Level 3 account updated.', 'تم تحديث الحساب.'), 'success')
+    return redirect(url_for('coa.level_three_list'))
+
+
+@coa_bp.route('/level-three/<int:id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def level_three_delete(id):
+    row = LevelThree.query.get_or_404(id)
+    if row.level_fours:
+        flash(_t('Cannot delete: this account has Level 4 children.',
+                 'لا يمكن الحذف: يحتوي على حسابات فرعية.'), 'danger')
+        return redirect(url_for('coa.level_three_list'))
+    db.session.delete(row); db.session.commit()
+    flash(_t('Level 3 account deleted.', 'تم حذف الحساب.'), 'success')
+    return redirect(url_for('coa.level_three_list'))
+
+
+@coa_bp.route('/level-three/data')
+@login_required
+def level_three_data():
+    return jsonify([r.to_dict() for r in LevelThree.query.order_by(LevelThree.code).all()])
+
+
+# ─── LEVEL FOUR ──────────────────────────────────────────────────
+@coa_bp.route('/level-four')
+@login_required
+def level_four_list():
+    pg, q_text, parent, sort = _paginate_filter_sort(LevelFour, LevelFour.level_three_code, request)
+    parents = LevelThree.query.order_by(LevelThree.code).all()
+    return render_template('coa/level_four.html', pg=pg, rows=pg.items,
+                           parents=parents, q=q_text, parent=parent, sort=sort)
+
+
+@coa_bp.route('/level-four/next-code')
+@login_required
+def level_four_next_code():
+    p = LevelThree.query.get(request.args.get('level_three_id', type=int))
+    return jsonify({'code': next_level_four_code(p) if p else ''})
+
+
+@coa_bp.route('/level-four/add', methods=['POST'])
+@login_required
+@admin_required
+def level_four_add():
+    from forms import LevelFourForm
+    form = LevelFourForm()
+    form.level_three_id.choices = [(r.id, f'{r.code} — {r.drawers}') for r in LevelThree.query.order_by(LevelThree.code)]
+    if not form.validate_on_submit():
+        flash(_t('Please correct the errors.', 'يرجى تصحيح الأخطاء.'), 'danger')
+        return redirect(url_for('coa.level_four_list'))
+    parent = LevelThree.query.get(form.level_three_id.data)
+    if not parent:
+        flash(_t('Parent not found.', 'الحساب الأب غير موجود.'), 'danger')
+        return redirect(url_for('coa.level_four_list'))
+    drawers = form.drawers.data.strip()
+    if LevelFour.query.filter(LevelFour.level_three_id == parent.id,
+                              db.func.lower(LevelFour.drawers) == drawers.lower()).first():
+        flash(_t(f'"{drawers}" already exists under {parent.code}.',
+                 f'"{drawers}" موجود بالفعل ضمن {parent.code}.'), 'danger')
+        return redirect(url_for('coa.level_four_list'))
+    db.session.add(LevelFour(code_length=8, level_three_id=parent.id, level_three_code=parent.code,
+                             code=next_level_four_code(parent), drawers=drawers,
+                             description='Heading Account'))
+    db.session.commit()
+    flash(_t('Level 4 account created.', 'تم إنشاء حساب المستوى الرابع.'), 'success')
+    return redirect(url_for('coa.level_four_list'))
+
+
+@coa_bp.route('/level-four/<int:id>/edit', methods=['POST'])
+@login_required
+@admin_required
+def level_four_edit(id):
+    row = LevelFour.query.get_or_404(id)
+    from forms import LevelFourEditForm
+    form = LevelFourEditForm()
+    if not form.validate_on_submit():
+        flash(_t('Please correct the errors.', 'يرجى تصحيح الأخطاء.'), 'danger')
+        return redirect(url_for('coa.level_four_list'))
+    drawers = form.drawers.data.strip()
+    if LevelFour.query.filter(LevelFour.level_three_id == row.level_three_id,
+                              db.func.lower(LevelFour.drawers) == drawers.lower(),
+                              LevelFour.id != row.id).first():
+        flash(_t('Duplicate drawers under the same parent.', 'اسم مكرر ضمن نفس الأب.'), 'danger')
+        return redirect(url_for('coa.level_four_list'))
+    row.drawers, row.code_length, row.description = drawers, 8, 'Heading Account'
+    db.session.commit()
+    flash(_t('Level 4 account updated.', 'تم تحديث الحساب.'), 'success')
+    return redirect(url_for('coa.level_four_list'))
+
+
+@coa_bp.route('/level-four/<int:id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def level_four_delete(id):
+    row = LevelFour.query.get_or_404(id)
+    if row.level_fives:
+        flash(_t('Cannot delete: this account has Level 5 children.',
+                 'لا يمكن الحذف: يحتوي على حسابات فرعية.'), 'danger')
+        return redirect(url_for('coa.level_four_list'))
+    db.session.delete(row); db.session.commit()
+    flash(_t('Level 4 account deleted.', 'تم حذف الحساب.'), 'success')
+    return redirect(url_for('coa.level_four_list'))
+
+
+@coa_bp.route('/level-four/data')
+@login_required
+def level_four_data():
+    return jsonify([r.to_dict() for r in LevelFour.query.order_by(LevelFour.code).all()])
+
+
+# ─── LEVEL FIVE ──────────────────────────────────────────────────
+@coa_bp.route('/level-five')
+@login_required
+def level_five_list():
+    pg, q_text, parent, sort = _paginate_filter_sort(LevelFive, LevelFive.level_four_code, request)
+    parents = LevelFour.query.order_by(LevelFour.code).all()
+    return render_template('coa/level_five.html', pg=pg, rows=pg.items,
+                           parents=parents, q=q_text, parent=parent, sort=sort)
+
+
+@coa_bp.route('/level-five/next-code')
+@login_required
+def level_five_next_code():
+    p = LevelFour.query.get(request.args.get('level_four_id', type=int))
+    return jsonify({'code': next_level_five_code(p) if p else ''})
+
+
+@coa_bp.route('/level-five/add', methods=['POST'])
+@login_required
+@admin_required
+def level_five_add():
+    from forms import LevelFiveForm
+    form = LevelFiveForm()
+    form.level_four_id.choices = [(r.id, f'{r.code} — {r.drawers}') for r in LevelFour.query.order_by(LevelFour.code)]
+    if not form.validate_on_submit():
+        flash(_t('Please correct the errors.', 'يرجى تصحيح الأخطاء.'), 'danger')
+        return redirect(url_for('coa.level_five_list'))
+    parent = LevelFour.query.get(form.level_four_id.data)
+    if not parent:
+        flash(_t('Parent not found.', 'الحساب الأب غير موجود.'), 'danger')
+        return redirect(url_for('coa.level_five_list'))
+    drawers = form.drawers.data.strip()
+    if LevelFive.query.filter(LevelFive.level_four_id == parent.id,
+                              db.func.lower(LevelFive.drawers) == drawers.lower()).first():
+        flash(_t(f'"{drawers}" already exists under {parent.code}.',
+                 f'"{drawers}" موجود بالفعل ضمن {parent.code}.'), 'danger')
+        return redirect(url_for('coa.level_five_list'))
+    db.session.add(LevelFive(code_length=12, level_four_id=parent.id, level_four_code=parent.code,
+                             code=next_level_five_code(parent), drawers=drawers,
+                             description='Transactional Account'))
+    db.session.commit()
+    flash(_t('Level 5 account created.', 'تم إنشاء حساب المستوى الخامس.'), 'success')
+    return redirect(url_for('coa.level_five_list'))
+
+
+@coa_bp.route('/level-five/<int:id>/edit', methods=['POST'])
+@login_required
+@admin_required
+def level_five_edit(id):
+    row = LevelFive.query.get_or_404(id)
+    from forms import LevelFiveEditForm
+    form = LevelFiveEditForm()
+    if not form.validate_on_submit():
+        flash(_t('Please correct the errors.', 'يرجى تصحيح الأخطاء.'), 'danger')
+        return redirect(url_for('coa.level_five_list'))
+    drawers = form.drawers.data.strip()
+    if LevelFive.query.filter(LevelFive.level_four_id == row.level_four_id,
+                              db.func.lower(LevelFive.drawers) == drawers.lower(),
+                              LevelFive.id != row.id).first():
+        flash(_t('Duplicate drawers under the same parent.', 'اسم مكرر ضمن نفس الأب.'), 'danger')
+        return redirect(url_for('coa.level_five_list'))
+    row.drawers, row.code_length, row.description = drawers, 12, 'Transactional Account'
+    db.session.commit()
+    flash(_t('Level 5 account updated.', 'تم تحديث الحساب.'), 'success')
+    return redirect(url_for('coa.level_five_list'))
+
+
+@coa_bp.route('/level-five/<int:id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def level_five_delete(id):
+    row = LevelFive.query.get_or_404(id)
+    db.session.delete(row); db.session.commit()
+    flash(_t('Level 5 account deleted.', 'تم حذف الحساب.'), 'success')
+    return redirect(url_for('coa.level_five_list'))
+
+
+@coa_bp.route('/level-five/data')
+@login_required
+def level_five_data():
+    return jsonify([r.to_dict() for r in LevelFive.query.order_by(LevelFive.code).all()])
