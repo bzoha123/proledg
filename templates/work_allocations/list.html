@@ -750,10 +750,10 @@ function initPickerGrid(emps) {
     andCondition:'AND / و',orCondition:'OR / أو',noRowsToShow:'No records found',searchOoo:'Search...',
   };
   agGrid.createGrid(document.getElementById('pickerGrid'),{
-    columnDefs:pickerCols, rowData:emps,
+    columnDefs:pickerCols, multiSortKey:'ctrl', rowData:emps,
     rowSelection:'multiple', suppressRowClickSelection:true,
     animateRows:true, localeText:_agLocale, enableRtl:IS_AR,
-    defaultColDef:{sortable:true,resizable:true,filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}},
+    defaultColDef:{sortable:true,unSortIcon:true,resizable:true,filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}},
     onSelectionChanged: updatePickerCount,
     getRowStyle:p=>p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'},
     onGridReady(p){
@@ -1008,7 +1008,15 @@ let gridApi;
 agGrid.createGrid(document.getElementById('waGrid'),{
   columnDefs:mainCols, rowData:[], pagination:true, paginationPageSize:25,
   animateRows:true, enableRtl:IS_AR, defaultColDef:defCol,
-  onGridReady(p){gridApi=p.api;loadData();},
+  onGridReady(p) {
+    gridApi = p.api;
+    // Pass the whole event: AG-Grid v31 keeps column operations on
+    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
+    if (window.GridKit) {
+      GridKit.enhance(p, 'waGrid', { storageKey: 'work_allocations', exportName: 'Work Allocations' });
+    }
+    loadData();
+  },
   onPaginationChanged(){upd();},
   getRowStyle(p){return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'};}
 });

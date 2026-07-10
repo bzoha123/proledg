@@ -480,7 +480,7 @@ const colDefs = [
 let sdGrid;
 document.addEventListener('DOMContentLoaded', () => {
   sdGrid = agGrid.createGrid(document.getElementById('sdGrid'), {
-    columnDefs: colDefs,
+    columnDefs: colDefs, multiSortKey:'ctrl',
     rowData: [],
     pagination: true,
     paginationPageSize: 20,
@@ -489,11 +489,18 @@ document.addEventListener('DOMContentLoaded', () => {
     animateRows: true,
     enableRtl: IS_AR,
     defaultColDef: {
-      sortable: true, resizable: true,
+      sortable:true, unSortIcon:true, resizable: true,
       filter: true, suppressMenu: false,
       menuTabs: ['filterMenuTab','generalMenuTab'],
     },
-    onGridReady(){ loadData(); },
+    onGridReady(p){
+      // Pass the whole event: AG-Grid v31 keeps column operations on
+      // p.columnApi, which GridKit needs for show/hide, pin and sizing.
+      if (window.GridKit) {
+        GridKit.enhance(p, 'sdGrid', { storageKey: 'seller_docs', exportName: 'Seller Documents' });
+      }
+      loadData();
+    },
     onFilterChanged(){ updateBadge(); },
     onPaginationChanged(){ updateBadge(); },
     onSelectionChanged(){ updateBadge(); },

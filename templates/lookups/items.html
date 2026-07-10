@@ -1029,7 +1029,7 @@ class ActR {
   getGui() { return this.g; }
 }
 
-const defCol = { sortable:true, resizable:true, filter:true, floatingFilter:true, filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} };
+const defCol = { sortable:true, unSortIcon:true, resizable:true, filter:true, floatingFilter:true, filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} };
 const cols = [
   {headerName:'#', field:'id', width:60, floatingFilter:false, suppressMenu:true},
   {headerName:IS_AR?'كود البند':'Item Code', field:'item_code', width:130},
@@ -1046,10 +1046,18 @@ const cols = [
 
 let gridApi;
 agGrid.createGrid(document.getElementById('itemGrid'), {
-  columnDefs:cols, rowData:[], pagination:true, paginationPageSize:15,
+  columnDefs:cols, multiSortKey:'ctrl', rowData:[], pagination:true, paginationPageSize:15,
   animateRows:true, enableRtl:IS_AR, defaultColDef:defCol,
   localeText: IS_AR ? {filterOoo:'تصفية...',contains:'يحتوي على',notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',blank:'فارغ',notBlank:'غير فارغ',applyFilter:'تطبيق',clearFilter:'مسح',resetFilter:'إعادة تعيين',noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...'} : {filterOoo:'Filter...',applyFilter:'Apply',clearFilter:'Clear',resetFilter:'Reset',noRowsToShow:'No records found'},
-  onGridReady(p) { gridApi=p.api; loadData(); },
+  onGridReady(p) {
+    gridApi = p.api;
+    // Pass the whole event: AG-Grid v31 keeps column operations on
+    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
+    if (window.GridKit) {
+      GridKit.enhance(p, 'itemGrid', { storageKey: 'items', exportName: 'Items' });
+    }
+    loadData();
+  },
   getRowStyle(p) { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
 });
 

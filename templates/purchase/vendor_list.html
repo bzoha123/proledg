@@ -448,11 +448,11 @@ function initBankGrid() {
   if (!bankGridEl) return;
   
   agGrid.createGrid(bankGridEl, {
-    columnDefs: bankCols,
+    columnDefs: bankCols, multiSortKey:'ctrl',
     rowData: vendorBanks,
     enableRtl: IS_AR,
     defaultColDef: {
-      sortable: true,
+      sortable:true, unSortIcon:true,
       resizable: true,
       filter: true,
       floatingFilter: true,
@@ -800,7 +800,15 @@ const cols = [
 let gridApi;
 agGrid.createGrid(document.getElementById('vndGrid'),{
   columnDefs:cols,rowData:[],pagination:true,paginationPageSize:10,animateRows:true,enableRtl:IS_AR,defaultColDef:defCol,localeText:AG_LOCALE,
-  onGridReady(p){gridApi=p.api;loadData();},
+  onGridReady(p) {
+    gridApi = p.api;
+    // Pass the whole event: AG-Grid v31 keeps column operations on
+    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
+    if (window.GridKit) {
+      GridKit.enhance(p, 'vndGrid', { storageKey: 'vendors', exportName: 'Vendors' });
+    }
+    loadData();
+  },
   getRowStyle(p){return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'};}
 });
 function loadData(){fetch('/purchase/vendors/data').then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);const c=gridApi.getDisplayedRowCount();document.getElementById('selText').textContent=c+' '+(IS_AR?'مورد':'vendors');});}

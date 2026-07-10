@@ -777,7 +777,7 @@ class ActR {
 }
 
 const defCol = {
-  sortable: true,
+  sortable:true, unSortIcon:true,
   resizable: true,
   filter: true,
   floatingFilter: true,
@@ -808,7 +808,7 @@ const cols = [
 
 let gridApi;
 agGrid.createGrid(document.getElementById('grnGrid'), {
-  columnDefs: cols,
+  columnDefs: cols, multiSortKey:'ctrl',
   rowData: [],
   pagination: true,
   paginationPageSize: 10,
@@ -816,8 +816,15 @@ agGrid.createGrid(document.getElementById('grnGrid'), {
   enableRtl: IS_AR,
   defaultColDef: defCol,
   localeText: AG_LOCALE,
-  onGridReady(p) { gridApi = p.api;
-    loadData(); },
+  onGridReady(p) {
+    gridApi = p.api;
+    // Pass the whole event: AG-Grid v31 keeps column operations on
+    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
+    if (window.GridKit) {
+      GridKit.enhance(p, 'grnGrid', { storageKey: 'purchase_grn', exportName: 'Goods Receipt Notes' });
+    }
+    loadData();
+  },
   onPaginationChanged() { upd(); },
   getRowStyle(p) { return p.node.rowIndex % 2 === 0 ? { background: '#fff' } : { background: '#fafbfc' }; }
 });

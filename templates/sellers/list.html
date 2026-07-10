@@ -722,6 +722,7 @@ class ActR{
 
 let gridApi;
 agGrid.createGrid(document.getElementById('sellerGrid'),{
+  multiSortKey:'ctrl',
   columnDefs:[
     {field:'id',width:48,checkboxSelection:true,headerCheckboxSelection:true,sortable:false,suppressMenu:true,resizable:false,pinned:IS_AR?'right':'left'},
     {headerName:IS_AR?'الاسم':'Name',field:'name',minWidth:180,pinned:IS_AR?'right':'left',cellRenderer:renderName,filter:'agTextColumnFilter'},
@@ -738,8 +739,16 @@ agGrid.createGrid(document.getElementById('sellerGrid'),{
   ],
   rowData:[],pagination:true,paginationPageSize:20,
   rowSelection:'multiple',suppressRowClickSelection:true,animateRows:true,enableRtl:IS_AR,
-  defaultColDef:{sortable:true,resizable:true,filter:true,suppressMenu:false,menuTabs:['filterMenuTab','generalMenuTab'],filterParams:{buttons:['apply','reset','clear'],closeOnApply:true}},
-  onGridReady(p){gridApi=p.api;loadData();},
+  defaultColDef:{sortable:true,unSortIcon:true,resizable:true,filter:true,suppressMenu:false,menuTabs:['filterMenuTab','generalMenuTab'],filterParams:{buttons:['apply','reset','clear'],closeOnApply:true}},
+  onGridReady(p) {
+    gridApi = p.api;
+    // Pass the whole event: AG-Grid v31 keeps column operations on
+    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
+    if (window.GridKit) {
+      GridKit.enhance(p, 'sellerGrid', { storageKey: 'sellers', exportName: 'Sellers' });
+    }
+    loadData();
+  },
   onFilterChanged(){updateBadge();},onPaginationChanged(){updateBadge();},onSelectionChanged(){updateBadge();},
 });
 function loadData(){fetch(DATA_URL).then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);updateBadge();});}

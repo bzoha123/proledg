@@ -2604,8 +2604,24 @@ agGrid.createGrid(document.getElementById('empGrid'), {
   columnDefs: cols, rowData: [], pagination: true, paginationPageSize: 20,
   rowSelection: 'multiple', suppressRowClickSelection: true, animateRows: true, enableRtl: IS_AR,
   localeText: _agLocale,
-  defaultColDef: {sortable:true,resizable:true,filter:true,suppressMenu:false,menuTabs:['filterMenuTab','generalMenuTab'],filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}},
-  onGridReady(p) { gridApi = p.api; loadData(); },
+  // Ctrl/Cmd + click a second header to sort by multiple columns.
+  multiSortKey: 'ctrl',
+  // Render the "unsorted" arrows so the icon is always present, not hover-only.
+  defaultColDef: {
+    sortable: true, resizable: true, filter: true, suppressMenu: false,
+    unSortIcon: true,
+    menuTabs: ['filterMenuTab', 'generalMenuTab'],
+    filterParams: { buttons: ['apply', 'reset', 'clear'], closeOnApply: true, maxNumConditions: 10 }
+  },
+  onGridReady(p) {
+    gridApi = p.api;
+    // Pass the whole event: AG-Grid v31 keeps column operations on
+    // `p.columnApi`, which GridKit needs for show/hide, pin and sizing.
+    if (window.GridKit) {
+      GridKit.enhance(p, 'empGrid', { storageKey: 'employees', exportName: 'Employees' });
+    }
+    loadData();
+  },
   onFilterChanged() { upd(); }, onPaginationChanged() { upd(); }, onSelectionChanged() { upd(); },
   getRowStyle(p) { return p.node.rowIndex%2===0 ? {background:'#fff'} : {background:'#fafbfc'}; }
 });

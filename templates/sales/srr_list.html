@@ -850,7 +850,7 @@ class ActR {
 }
 
 const defCol = {
-  sortable:true, resizable:true, filter:true, floatingFilter:true,
+  sortable:true, unSortIcon:true, resizable:true, filter:true, floatingFilter:true,
   filterParams:{buttons:['apply','reset','clear'], closeOnApply:true, maxNumConditions:10}
 };
 const cols = [
@@ -869,9 +869,17 @@ const cols = [
 
 let gridApi;
 agGrid.createGrid(document.getElementById('grrGrid'), {
-  columnDefs:cols, rowData:[], pagination:true, paginationPageSize:10,
+  columnDefs:cols, multiSortKey:'ctrl', rowData:[], pagination:true, paginationPageSize:10,
   animateRows:true, enableRtl:IS_AR, defaultColDef:defCol, localeText:AG_LOCALE,
-  onGridReady(p) { gridApi=p.api; loadData(); },
+  onGridReady(p) {
+    gridApi = p.api;
+    // Pass the whole event: AG-Grid v31 keeps column operations on
+    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
+    if (window.GridKit) {
+      GridKit.enhance(p, 'grrGrid', { storageKey: 'sales_srr', exportName: 'Sales Returns' });
+    }
+    loadData();
+  },
   onPaginationChanged() { upd(); },
   getRowStyle(p) { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
 });

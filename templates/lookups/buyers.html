@@ -1142,10 +1142,18 @@ const _agLocale = IS_AR ? {
 };
 
 agGrid.createGrid(document.getElementById('buyerGrid'),{
-  columnDefs:cols, rowData:[], pagination:true, paginationPageSize:20,
+  columnDefs:cols, multiSortKey:'ctrl', rowData:[], pagination:true, paginationPageSize:20,
   animateRows:true, localeText:_agLocale, enableRtl:IS_AR,
-  defaultColDef:{sortable:true,resizable:true,filter:true,filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}},
-  onGridReady(p){gridApi=p.api;loadData();},
+  defaultColDef:{sortable:true,unSortIcon:true,resizable:true,filter:true,filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}},
+  onGridReady(p) {
+    gridApi = p.api;
+    // Pass the whole event: AG-Grid v31 keeps column operations on
+    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
+    if (window.GridKit) {
+      GridKit.enhance(p, 'buyerGrid', { storageKey: 'buyers', exportName: 'Buyers' });
+    }
+    loadData();
+  },
   onPaginationChanged(){upd();},
   getRowStyle(p){return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'};}
 });

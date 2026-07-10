@@ -1,0 +1,248 @@
+/* ══════════════════════════════════════════════════════════════════
+   grid-kit.css
+
+   Two goals:
+     1. Make sort / filter / menu affordances permanent, not hover-only.
+     2. Stay quiet. One accent colour (slate-blue), one warning colour
+        (amber) for active filters. Nothing else competes.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Sort icons: always present, never hover-only ───────────── */
+.ag-theme-alpine .ag-header-cell .ag-sort-indicator-icon,
+.ag-theme-alpine .ag-header-cell .ag-icon-none,
+.ag-theme-alpine .ag-header-cell .ag-sort-none-icon {
+  opacity: .3 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
+}
+
+/* Active sort: a thin underline and a solid arrow. No background fill —
+   a coloured header cell fights with the row data underneath. */
+.ag-theme-alpine .ag-header-cell[aria-sort="ascending"],
+.ag-theme-alpine .ag-header-cell[aria-sort="descending"] {
+  box-shadow: inset 0 -2px 0 #60a5fa;
+}
+.ag-theme-alpine .ag-header-cell[aria-sort="ascending"]  .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-header-cell[aria-sort="descending"] .ag-sort-descending-icon {
+  opacity: 1 !important;
+}
+
+/* Multi-sort rank, kept small and unobtrusive. */
+.ag-theme-alpine .ag-header-cell .ag-sort-order {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, .22);
+  border-radius: 7px;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 0 4px;
+  margin-inline-start: 3px;
+}
+
+/* ── 2. Column menu button: always visible ─────────────────────── */
+.ag-theme-alpine .ag-header-cell .ag-header-cell-menu-button,
+.ag-theme-alpine .ag-header-cell .ag-header-icon.ag-header-cell-menu-button {
+  opacity: .45 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
+  transition: opacity .12s ease;
+}
+.ag-theme-alpine .ag-header-cell:hover .ag-header-cell-menu-button { opacity: .95 !important; }
+
+/* ── 3. Active filter: one amber underline, nothing more ───────── */
+.ag-theme-alpine .ag-header-cell.ag-header-cell-filtered {
+  box-shadow: inset 0 -2px 0 #f59e0b;
+}
+.ag-theme-alpine .ag-header-cell .ag-filter-icon,
+.ag-theme-alpine .ag-header-cell .ag-icon-filter {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* ── 4. Sticky header, pinned-column separators ────────────────── */
+.ag-theme-alpine .ag-header { position: sticky; top: 0; z-index: 2; }
+.ag-theme-alpine .ag-pinned-left-cols-container,
+.ag-theme-alpine .ag-pinned-left-header  { box-shadow: 3px 0 6px -4px rgba(15, 23, 42, .2); }
+.ag-theme-alpine .ag-pinned-right-cols-container,
+.ag-theme-alpine .ag-pinned-right-header { box-shadow: -3px 0 6px -4px rgba(15, 23, 42, .2); }
+
+/* ══ Toolbar — three controls, all identical in weight ══════════ */
+.gk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.gk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 11px;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  background: #fff;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .12s ease, border-color .12s ease, color .12s ease;
+}
+.gk-btn:hover { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+.gk-btn.gk-open { background: #f1f5f9; border-color: #cbd5e1; color: #1e293b; }
+
+/* Icons stay muted — they are labels, not decoration. */
+.gk-btn > i:first-child { font-size: 11px; color: #94a3b8; }
+.gk-btn:hover > i:first-child,
+.gk-btn.gk-open > i:first-child { color: #64748b; }
+
+.gk-caret { font-size: 8px !important; color: #cbd5e1 !important; margin-inline-start: 1px; }
+
+/* The only coloured state in the whole toolbar: filters are active. */
+.gk-btn.gk-armed {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
+}
+.gk-btn.gk-armed > i:first-child { color: #d97706; }
+
+.gk-badge {
+  background: #d97706;
+  color: #fff;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 6px;
+}
+
+/* ══ Popover panels ════════════════════════════════════════════ */
+.gk-pop {
+  position: absolute;
+  z-index: 1090;
+  width: 260px;
+  max-height: 360px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .13);
+  overflow: hidden;
+}
+
+.gk-pop-head {
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.gk-pop-title {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+.gk-pop-bulk { display: flex; gap: 12px; margin-top: 7px; }
+
+.gk-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #2563eb;
+  cursor: pointer;
+}
+.gk-link:hover { text-decoration: underline; }
+.gk-link.gk-danger { color: #dc2626; }
+
+.gk-pop-list { overflow-y: auto; padding: 4px; }
+
+.gk-col-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+}
+.gk-col-row:hover { background: #f8fafc; }
+
+.gk-col-name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  color: #334155;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gk-col-name input { cursor: pointer; flex: none; }
+
+/* Three-state pin toggle: L | – | R */
+.gk-pin {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.gk-pin-btn {
+  width: 21px;
+  height: 20px;
+  border: 0;
+  background: #fff;
+  color: #cbd5e1;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+.gk-pin-btn + .gk-pin-btn { border-inline-start: 1px solid #e2e8f0; }
+.gk-pin-btn:hover { background: #f1f5f9; color: #64748b; }
+.gk-pin-btn.gk-pin-on { background: #eff6ff; color: #2563eb; }
+
+.gk-chip-x {
+  border: 0;
+  background: none;
+  color: #cbd5e1;
+  font-size: 11px;
+  padding: 3px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.gk-chip-x:hover { background: #fee2e2; color: #b91c1c; }
+
+.gk-empty {
+  padding: 18px 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.gk-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  background: none;
+  font-size: 12.5px;
+  color: #334155;
+  text-align: start;
+  cursor: pointer;
+}
+.gk-item:hover { background: #f8fafc; }
+.gk-item i { width: 14px; font-size: 12px; }
+
+/* ── Responsive ────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .gk-btn span { display: none; }
+  .gk-btn { padding: 0 10px; }
+  .gk-pop { width: calc(100vw - 24px); }
+}
