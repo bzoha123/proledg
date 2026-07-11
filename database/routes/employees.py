@@ -752,6 +752,19 @@ def employee_documents(emp_id):
     rows = EmployeeDocument.query.filter_by(employee_id=emp_id).order_by(EmployeeDocument.id).all()
     return jsonify([d.to_dict() for d in rows])
 
+@employees_bp.route('/employees/documents/<int:doc_id>/file')
+@login_required
+def employee_document_file(doc_id):
+    """Serve an employee document file inline (missing file -> 404)."""
+    from flask import send_file, abort
+    d = EmployeeDocument.query.get_or_404(doc_id)
+    parts = (d.file_path or '').replace('\\', '/').split('/')
+    full = os.path.join(current_app.config['UPLOAD_FOLDER'], *parts)
+    if not d.file_path or not os.path.exists(full):
+        abort(404)
+    return send_file(full, download_name=(d.original_name or parts[-1]))
+
+
 @employees_bp.route('/employees/documents/<int:doc_id>/delete', methods=['POST'])
 @login_required
 @admin_required

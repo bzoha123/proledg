@@ -668,6 +668,7 @@ def pr_add():
         requester_name=current_user.username,
         vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
         status=f.get('status','Open'),
+        kind=f.get('kind','Goods'),
         posting_date=pd(f.get('posting_date')),
         valid_until=valid_until,
         document_date=date.today(),
@@ -696,6 +697,7 @@ def pr_edit(id):
 
     for fld in ['status','remarks','approved_by']:
         setattr(pr, fld, f.get(fld,'').strip())
+    pr.kind = f.get('kind','Goods')
     if not pr.requester:
         pr.requester = current_user.username
     if not pr.requester_name:
@@ -786,6 +788,7 @@ def pq_add():
         vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
         vendor_ref_no=f.get('vendor_ref_no','').strip(),
         status=f.get('status','Open'),
+        kind=f.get('kind','Goods'),
         posting_date=pd(f.get('posting_date')),
         valid_until=valid_until,
         document_date=date.today(),
@@ -824,6 +827,7 @@ def pq_edit(id):
 
     for fld in ['status','remarks','approved_by']:
         setattr(pq, fld, f.get(fld,'').strip())
+    pq.kind = f.get('kind','Goods')
     if not pq.requester:
         pq.requester = current_user.username
     if not pq.requester_name:
@@ -928,6 +932,7 @@ def po_add():
             vendor_ref_no=f.get('vendor_ref_no', '').strip(),
             remarks=f.get('remarks', '').strip(),
             status=f.get('status', 'Open'),
+            kind=f.get('kind','Goods'),
             posting_date=pd(f.get('posting_date')),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
@@ -966,6 +971,7 @@ def po_edit(id):
         po.vendor_ref_no = f.get('vendor_ref_no', '').strip()
         po.remarks = f.get('remarks', '').strip()
         po.status = f.get('status', 'Open')
+        po.kind = f.get('kind','Goods')
         po.posting_date  = pd(f.get('posting_date'))
         po.delivery_date = pd(f.get('delivery_date'))
         po.document_date = date.today()
@@ -1061,6 +1067,7 @@ def grn_add():
             contact_person=f.get('contact_person','').strip(),
             vendor_ref_no=f.get('vendor_ref_no','').strip(),
             status=f.get('status','Open'),
+            kind=f.get('kind','Goods'),
             posting_date=pd(f.get('posting_date')),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
@@ -1088,6 +1095,7 @@ def grn_edit(id):
         doc.contact_person=f.get('contact_person','').strip()
         doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
         doc.status=f.get('status','Open')
+        doc.kind=f.get('kind','Goods')
         doc.posting_date  = pd(f.get('posting_date'))
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
@@ -1173,6 +1181,9 @@ def pinv_add():
             vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else (po.vendor_id if po else None),
             vendor_ref_no=f.get('vendor_ref_no','').strip(),
             status=status,
+            kind=f.get('kind','Goods'),
+            payment_method=f.get('payment_method','Credit'),
+            bank_account_id=int(f.get('bank_account_id')) if f.get('bank_account_id') else None,
             posting_date=posting_date,
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
@@ -1215,6 +1226,9 @@ def pinv_edit(id):
         doc.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
         doc.vendor_ref_no = f.get('vendor_ref_no','').strip()
         doc.status = status
+        doc.kind = f.get('kind','Goods')
+        doc.payment_method = f.get('payment_method','Credit')
+        doc.bank_account_id = int(f.get('bank_account_id')) if f.get('bank_account_id') else None
         doc.posting_date  = posting_date
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
@@ -1343,6 +1357,7 @@ def grr_add():
             contact_person=f.get('contact_person','').strip(),
             vendor_ref_no=f.get('vendor_ref_no','').strip(),
             status=f.get('status','Open'),
+            kind=f.get('kind','Goods'),
             posting_date=pd(f.get('posting_date')),
             delivery_date=delivery_date,
             document_date=date.today(),
@@ -1379,6 +1394,7 @@ def grr_edit(id):
         doc.contact_person=f.get('contact_person','').strip()
         doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
         doc.status=f.get('status','Open')
+        doc.kind=f.get('kind','Goods')
         doc.posting_date  = pd(f.get('posting_date'))
         doc.delivery_date = delivery_date
         doc.document_date = date.today()
@@ -1451,6 +1467,9 @@ def pdm_add():
             contact_person=f.get('contact_person','').strip(),
             vendor_ref_no=f.get('vendor_ref_no','').strip(),
             status=f.get('status','Open'),
+            kind=f.get('kind','Goods'),
+            payment_method=f.get('payment_method','Credit'),
+            bank_account_id=int(f.get('bank_account_id')) if f.get('bank_account_id') else None,
             posting_date=pd(f.get('posting_date')),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
@@ -1481,6 +1500,9 @@ def pdm_edit(id):
         doc.contact_person=f.get('contact_person','').strip()
         doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
         doc.status=f.get('status','Open')
+        doc.kind=f.get('kind','Goods')
+        doc.payment_method = f.get('payment_method','Credit')
+        doc.bank_account_id = int(f.get('bank_account_id')) if f.get('bank_account_id') else None
         doc.posting_date  = pd(f.get('posting_date'))
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()

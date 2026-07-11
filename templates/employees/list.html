@@ -334,7 +334,6 @@
 .field-input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
 .field-input:hover:not(:focus) { border-color:#cbd5e1; }
 
-
 /* ── Grouped field-set blocks inside a form section ── */
 .fs-group {
   border: 1px solid #e8eef5;
@@ -396,6 +395,7 @@
 [dir="rtl"] .pf-input-wrap .pf-retrans { right:auto; left:7px; }
 
 #impDrop:hover { border-color: #2563eb !important; background: #f8faff !important; }
+
 /* ── Multi-select checkbox dropdown (professions) ── */
 .ms-dd { position:relative; }
 .ms-dd-toggle { display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; text-align:start; width:100%; }
@@ -422,6 +422,166 @@
 }
 .ms-chip button { border:none; background:transparent; color:#1d4ed8; cursor:pointer; font-size:11px; line-height:1; padding:0; opacity:.7; }
 .ms-chip button:hover { opacity:1; }
+
+/* ── Employee Photo Styles - Between columns ─────────────────────────────── */
+.emp-photo-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.emp-photo-container {
+  width: 150px;
+  height: 180px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px dashed #d1d5db;
+  background: #f8fafc;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.emp-photo-container:hover {
+  border-color: #2563eb;
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.15);
+}
+
+.emp-photo-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+.emp-photo-container .placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 52px;
+}
+
+.emp-photo-container .placeholder i {
+  opacity: 0.5;
+}
+
+.photo-upload-btn {
+  cursor: pointer;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.photo-upload-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  transform: translateY(-1px);
+}
+
+.photo-upload-btn input[type="file"] {
+  display: none;
+}
+
+/* Single-parent 3-column grid: EN fields | photo | AR fields */
+.employee-personal-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) 180px minmax(320px, 1fr);
+  gap: 20px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+.employee-personal-grid .left-column,
+.employee-personal-grid .right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.employee-personal-grid .photo-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: sticky;
+  top: 20px;
+  width: 180px;
+}
+
+.employee-personal-grid .field-input,
+.employee-personal-grid .field-wrap {
+  width: 100%;
+  max-width: none;
+}
+
+@media (max-width: 992px) {
+  .employee-personal-grid {
+    grid-template-columns: 1fr;
+  }
+  .employee-personal-grid .photo-column {
+    order: -1;
+    position: static;
+    margin-bottom: 20px;
+    width: 100%;
+  }
+}
+
+/* View photo in modal - centered circular */
+.view-photo-container {
+  text-align: center;
+  margin: 16px 0 20px;
+  padding: 10px 0;
+}
+
+.view-photo-container .view-avatar {
+  display: inline-block;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #e2e8f0;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  background: #f8fafc;
+}
+
+.view-photo-container .view-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.view-photo-container .view-avatar .view-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 46px;
+  background: #f8fafc;
+}
+
+.view-photo-container .view-avatar .view-placeholder i {
+  opacity: 0.5;
+}
 </style>
 {% endblock %}
 
@@ -585,35 +745,150 @@
 {% endmacro %}
 
           {{ sec('personal','user-circle','Personal Information','المعلومات الشخصية',True) }}
-              <div class="field-row" style="align-items:center;">
-                <div class="field-item" style="max-width:170px;">
-                  <div class="field-label">{% if ar %}صورة الموظف{% else %}Employee Photo{% endif %}</div>
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-                    <img id="empPhotoPreview" src="" alt="" onerror="setEmpPhoto('')"
-                         style="width:110px;height:110px;border-radius:12px;object-fit:cover;border:2px solid #e2e8f0;background:#f8fafc;display:none;">
-                    <div id="empPhotoPlaceholder"
-                         style="width:110px;height:110px;border-radius:12px;border:2px dashed #cbd5e1;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;">
-                      <i class="fas fa-user" style="font-size:38px;"></i>
+  
+              <!-- Single parent grid: EN fields (left) | Employee Photo (center) | AR fields (right) -->
+              <div class="employee-personal-grid">
+
+                <!-- LEFT COLUMN: English fields -->
+                <div class="left-column">
+                  <!-- NAME -->
+                  <div class="field-item">
+                    <div class="field-label" dir="ltr" style="text-align:left">
+                      Name <span class="field-req">*</span>
                     </div>
-                    <label style="cursor:pointer;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;">
-                      <i class="fas fa-camera me-1"></i>{% if ar %}اختر صورة{% else %}Choose Photo{% endif %}
-                      <input type="file" name="photo" id="f_photo" accept="image/*,.jfif,.avif,.heic,.heif" style="display:none;" onchange="previewEmpPhoto(this)">
+                    <div class="field-wrap" dir="ltr">
+                      <input type="text" name="name" id="f_name" class="field-input" dir="ltr" required placeholder="Name" oninput="biTrans('f_name','f_name_ar','en')">
+                      {% if not ar %}
+                      <button type="button" class="retrans-btn en-retrans" title="Re-translate EN → AR" onclick="biRetrans('f_name','f_name_ar','en')">
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <!-- KAFEEL NAME -->
+                  <div class="field-item">
+                    <div class="field-label" dir="ltr" style="text-align:left">Kafeel Name</div>
+                    <div class="field-wrap" dir="ltr">
+                      <input type="text" name="kafeel_name" id="f_kafeel_name" class="field-input" dir="ltr" placeholder="Kafeel Name" oninput="biTrans('f_kafeel_name','f_kafeel_name_ar','en')">
+                      {% if not ar %}
+                      <button type="button" class="retrans-btn en-retrans" title="Re-translate EN → AR" onclick="biRetrans('f_kafeel_name','f_kafeel_name_ar','en')">
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <!-- KAFEEL REFERENCE -->
+                  <div class="field-item">
+                    <div class="field-label" dir="ltr" style="text-align:left">Kafeel Reference</div>
+                    <div class="field-wrap" dir="ltr">
+                      <input type="text" name="kafeel_reference" id="f_kafeel_reference" class="field-input" dir="ltr" placeholder="Kafeel Reference" oninput="biTrans('f_kafeel_reference','f_kafeel_reference_ar','en')">
+                      {% if not ar %}
+                      <button type="button" class="retrans-btn en-retrans" title="Re-translate EN → AR" onclick="biRetrans('f_kafeel_reference','f_kafeel_reference_ar','en')">
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <!-- EDUCATION -->
+                  <div class="field-item">
+                    <div class="field-label" dir="ltr" style="text-align:left">Education</div>
+                    <div class="field-wrap" dir="ltr">
+                      <input type="text" name="education" id="f_education" class="field-input" dir="ltr" placeholder="Education" oninput="biTrans('f_education','f_education_ar','en')">
+                      {% if not ar %}
+                      <button type="button" class="retrans-btn en-retrans" title="Re-translate EN → AR" onclick="biRetrans('f_education','f_education_ar','en')">
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- CENTER COLUMN: Employee Photo (appears once, spans all rows) -->
+                <div class="photo-column">
+                  <div class="field-label" style="text-align:center;width:100%;margin-bottom:6px;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;">
+                    {% if ar %}صورة الموظف{% else %}Employee Photo{% endif %}
+                  </div>
+                  <div class="emp-photo-wrapper">
+                    <div class="emp-photo-container">
+                      <img id="empPhotoPreview" src="" alt="{% if ar %}صورة الموظف{% else %}Employee Photo{% endif %}">
+                      <div class="placeholder" id="empPhotoPlaceholder">
+                        <i class="fas fa-user"></i>
+                      </div>
+                    </div>
+                    <label class="photo-upload-btn">
+                      <i class="fas fa-camera"></i>
+                      {% if ar %}اختر صورة{% else %}Choose Photo{% endif %}
+                      <input type="file" name="photo" id="f_photo" accept="image/*,.jfif,.avif,.heic,.heif" onchange="previewEmpPhoto(this)">
                     </label>
                   </div>
                 </div>
+
+                <!-- RIGHT COLUMN: Arabic fields -->
+                <div class="right-column">
+                  <!-- الاسم -->
+                  <div class="field-item">
+                    <div class="field-label" dir="rtl" style="text-align:right">
+                      <span class="field-req">*</span>الاسم
+                    </div>
+                    <div class="field-wrap" dir="rtl">
+                      <input type="text" name="name_ar" id="f_name_ar" class="field-input" dir="rtl" placeholder="الاسم" oninput="biTrans('f_name_ar','f_name','ar')">
+                      <span class="field-spin" id="spin_name"></span>
+                      {% if ar %}
+                      <button type="button" class="retrans-btn ar-retrans" title="ترجمة AR → EN" onclick="biRetrans('f_name_ar','f_name','ar')">
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <!-- اسم الكفيل -->
+                  <div class="field-item">
+                    <div class="field-label" dir="rtl" style="text-align:right">اسم الكفيل</div>
+                    <div class="field-wrap" dir="rtl">
+                      <input type="text" name="kafeel_name_ar" id="f_kafeel_name_ar" class="field-input" dir="rtl" placeholder="اسم الكفيل" oninput="biTrans('f_kafeel_name_ar','f_kafeel_name','ar')">
+                      <span class="field-spin" id="spin_kafeel_name"></span>
+                      {% if ar %}
+                      <button type="button" class="retrans-btn ar-retrans" title="ترجمة AR → EN" onclick="biRetrans('f_kafeel_name_ar','f_kafeel_name','ar')">
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <!-- المرجع -->
+                  <div class="field-item">
+                    <div class="field-label" dir="rtl" style="text-align:right">المرجع</div>
+                    <div class="field-wrap" dir="rtl">
+                      <input type="text" name="kafeel_reference_ar" id="f_kafeel_reference_ar" class="field-input" dir="rtl" placeholder="المرجع" oninput="biTrans('f_kafeel_reference_ar','f_kafeel_reference','ar')">
+                      <span class="field-spin" id="spin_kafeel_reference"></span>
+                      {% if ar %}
+                      <button type="button" class="retrans-btn ar-retrans" title="ترجمة AR → EN" onclick="biRetrans('f_kafeel_reference_ar','f_kafeel_reference','ar')">
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <!-- التعليم -->
+                  <div class="field-item">
+                    <div class="field-label" dir="rtl" style="text-align:right">التعليم</div>
+                    <div class="field-wrap" dir="rtl">
+                      <input type="text" name="education_ar" id="f_education_ar" class="field-input" dir="rtl" placeholder="التعليم" oninput="biTrans('f_education_ar','f_education','ar')">
+                      <span class="field-spin" id="spin_education"></span>
+                      {% if ar %}
+                      <button type="button" class="retrans-btn ar-retrans" title="ترجمة AR → EN" onclick="biRetrans('f_education_ar','f_education','ar')">
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
               </div>
-              <div class="field-row">
-                {{ bf('name','Name','الاسم',True) }}
-              </div>
-              <div class="field-row">
-                {{ bf('kafeel_name','Kafeel Name','اسم الكفيل') }}
-              </div>
-              <div class="field-row">
-                {{ bf('kafeel_reference','Kafeel Reference','المرجع') }}
-              </div>
-              <div class="field-row">
-                {{ bf('education','Education','التعليم') }}
-              </div>
+
               <hr style="border-color:#f1f5f9;margin:16px 0;">
               <div class="field-row">
                 {{ sd('nationality','Nationality','الجنسية') }}
@@ -670,6 +945,7 @@
           </div>
 
           {{ sec('docs','upload','Document Upload','تحميل المستندات') }}
+              <div id="existingDocsList"></div>
               <div id="docFilesList"></div>
               <div style="margin-top:8px;">
                 <button type="button" class="btn btn-success btn-sm" onclick="addDocRow()">
@@ -842,9 +1118,6 @@
                   </div>
                 </div>
 
-                {# Department — cascades from the selected Company / HR.
-                   Disabled until a company is chosen; only that company's
-                   departments are ever offered. #}
                 <div class="field-row" style="margin-bottom:10px;">
                   <div class="field-item">
                     <div class="field-label">
@@ -866,10 +1139,8 @@
                            title="{% if ar %}يُملأ تلقائياً من القسم المختار{% else %}Filled from the selected department{% endif %}">
                   </div>
                 </div>
-                {# Keep the legacy free-text name in sync for reporting. #}
                 <input type="hidden" name="department" id="f_department_en">
 
-                {# Section — free text, bilingual #}
                 {% for fid, en_lbl, ar_lbl in [('section','Section','القطاع')] %}
                 <div class="field-row" style="margin-bottom:10px;">
                   <div class="field-item">
@@ -892,7 +1163,6 @@
                 {% endfor %}
               </div>
 
-              {# ── Group 2: Contract Period ─────────────────────── #}
               <div class="fs-group">
                 <div class="fs-group-title">
                   <i class="fas fa-calendar-alt"></i>
@@ -910,7 +1180,6 @@
                 </div>
               </div>
 
-              {# ── Group 3: Status & Shift ──────────────────────── #}
               <div class="fs-group" style="margin-bottom:0;">
                 <div class="fs-group-title">
                   <i class="fas fa-user-clock"></i>
@@ -999,7 +1268,7 @@
       <div class="modal-footer-bar">
         <button type="button" class="btn-footer btn-footer-reset" onclick="resetEmpForm()"><i class="fas fa-redo me-1"></i>{% if ar %}إعادة تعيين{% else %}Reset{% endif %}</button>
         <button type="button" class="btn-footer btn-footer-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button type="button" class="btn-footer btn-footer-save" onclick="if(validateForm(document.getElementById('empForm'))){injectEmpBanks();injectProfessionIds();document.getElementById('empForm').submit();}"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+        <button type="button" class="btn-footer btn-footer-save" onclick="if(validateForm(document.getElementById('empForm'))){injectEmpBanks();injectProfessionIds();injectAllowances();document.getElementById('empForm').submit();}"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
       </div>
 
     </div>
@@ -1419,10 +1688,9 @@ function loadAsyncDropdown(url, cacheSetter, cacheGetter, selectId, hiddenArId, 
   });
 }
 
-let _selectedProfs = [];   // [{id, en, ar, label}]
+let _selectedProfs = [];
 
 function initProfession(selectedIds) {
-  // selectedIds: array of profession ids (numbers/strings) to pre-check
   const pre = (selectedIds || []).map(String);
   const render = (items) => {
     _profCache = items;
@@ -1463,7 +1731,6 @@ function toggleProf(id, checked) {
     _selectedProfs = _selectedProfs.filter(s => String(s.id) !== String(id));
   }
   renderProfChips();
-  // reflect checked style
   renderProfDDList(_profCache || [], document.getElementById('profDDSearch')?.value || '');
 }
 
@@ -1480,7 +1747,6 @@ function renderProfChips() {
     <span class="ms-chip">${IS_AR ? (s.ar||s.label) : (s.en||s.label)}
       <button type="button" onclick="toggleProf(${s.id}, false)"><i class="fas fa-times"></i></button>
     </span>`).join('');
-  // keep the primary profession hidden field (first selected) for grid/view compat
   const arHid = document.getElementById('f_profession_arval');
   if (arHid) arHid.value = _selectedProfs.length ? (_selectedProfs[0].ar || '') : '';
 }
@@ -1491,13 +1757,11 @@ function toggleProfDD(ev) {
 }
 function filterProfDD(v) { renderProfDDList(_profCache || [], v); }
 
-// close dropdown on outside click
 document.addEventListener('click', (e) => {
   const dd = document.getElementById('profDD');
   if (dd && !dd.contains(e.target)) dd.classList.remove('open');
 });
 
-// inject profession_ids hidden inputs before submit
 function injectProfessionIds() {
   document.querySelectorAll('#empForm .prof-hidden').forEach(e => e.remove());
   const form = document.getElementById('empForm');
@@ -1506,20 +1770,35 @@ function injectProfessionIds() {
     h.type = 'hidden'; h.name = 'profession_ids'; h.value = s.id; h.className = 'prof-hidden';
     form.appendChild(h);
   });
-  // primary single profession (first) for backward-compat columns
   const primary = document.createElement('input');
   primary.type = 'hidden'; primary.name = 'profession_id'; primary.className = 'prof-hidden';
   primary.value = _selectedProfs.length ? _selectedProfs[0].id : '';
   form.appendChild(primary);
 }
+
+/* Write the current allowance list into the form as hidden fields so the
+   backend's save_allowances() persists them. Required because that route
+   deletes all rows and re-inserts from allow_type_id[]/allow_amount[] on
+   every save — without this, saving an employee wipes their allowances. */
+function injectAllowances() {
+  const form = document.getElementById('empForm');
+  form.querySelectorAll('.pend-allow').forEach(el => el.remove());
+  (_pendingAllows || []).forEach(a => {
+    const t = document.createElement('input');
+    t.type = 'hidden'; t.name = 'allow_type_id[]';
+    t.value = a.allowance_type_id; t.className = 'pend-allow';
+    form.appendChild(t);
+    const m = document.createElement('input');
+    m.type = 'hidden'; m.name = 'allow_amount[]';
+    m.value = a.amount; m.className = 'pend-allow';
+    form.appendChild(m);
+  });
+}
+
 function initBuyer(selectedId) {
   loadAsyncDropdown(BYURL, d => _buyerCache = d, () => _buyerCache,
     'f_buyer_id', null,
     IS_AR ? '-- اختر مشتري --' : '-- Select a Buyer --', selectedId || '', true);
-
-  // loadAsyncDropdown assigns `sel.onchange` itself, which wipes the inline
-  // onchange="onCompanyChange()" attribute. Re-attach ours as a listener so
-  // both run: theirs syncs the hidden AR field, ours auto-fills Department.
   const sel = document.getElementById('f_buyer_id');
   if (sel && !sel._companyHooked) {
     sel.addEventListener('change', onCompanyChange);
@@ -1527,19 +1806,12 @@ function initBuyer(selectedId) {
   }
 }
 
-/* Edit mode: load the buyer list, then its departments, preselecting both. */
 function initBuyerAndDept(buyerId, departmentId) {
   initBuyer(buyerId || '');
   loadDepartments(buyerId || '', departmentId || '');
 }
 
-
-/* ══ Company / HR  ->  Department  (cascading dropdowns) ══════════
-   Department stays disabled until a Company is chosen, then loads ONLY
-   that company's departments. Changing the Company clears and reloads
-   the Department. Edit mode preselects the saved value. ─────────── */
-
-let _deptLoadToken = 0;   // guards against out-of-order fetch responses
+let _deptLoadToken = 0;
 
 function _setDeptPlaceholder(text, disabled) {
   const sel = document.getElementById('f_department_id');
@@ -1555,7 +1827,6 @@ function _clearDeptSelection() {
   if (en) en.value = '';
 }
 
-/* Load departments for a buyer; optionally preselect one (edit mode). */
 function loadDepartments(buyerId, preselectId) {
   const sel  = document.getElementById('f_department_id');
   const hint = document.getElementById('f_dept_hint');
@@ -1574,7 +1845,7 @@ function loadDepartments(buyerId, preselectId) {
   return fetch('/employees/departments-by-buyer?buyer_id=' + encodeURIComponent(buyerId))
     .then(r => r.json())
     .then(list => {
-      if (token !== _deptLoadToken) return;         // a newer request won
+      if (token !== _deptLoadToken) return;
       if (!list.length) {
         _setDeptPlaceholder(IS_AR ? '-- لا توجد أقسام لهذه الشركة --' : '-- No departments for this company --', true);
         _clearDeptSelection();
@@ -1594,7 +1865,7 @@ function loadDepartments(buyerId, preselectId) {
       sel.innerHTML = html;
       sel.disabled = false;
       if (hint) hint.style.display = 'none';
-      onDepartmentChange();                          // sync the AR / hidden fields
+      onDepartmentChange();
     })
     .catch(() => {
       if (token !== _deptLoadToken) return;
@@ -1602,7 +1873,6 @@ function loadDepartments(buyerId, preselectId) {
     });
 }
 
-/* Mirror the chosen department into the read-only AR box and hidden EN name. */
 function onDepartmentChange() {
   const sel = document.getElementById('f_department_id');
   const ar  = document.getElementById('f_department_ar');
@@ -1614,7 +1884,6 @@ function onDepartmentChange() {
   if (en) en.value = isReal ? (opt.dataset.en || opt.textContent.trim()) : '';
 }
 
-/* Company changed -> clear + reload Department. */
 function onCompanyChange() {
   const sel = document.getElementById('f_buyer_id');
   _clearDeptSelection();
@@ -1732,6 +2001,45 @@ const DOC_TYPE_OPTIONS = [
   {en:'Certificate',ar:'شهادة'},
   {en:'Other',ar:'أخرى'},
 ];
+
+function renderExistingDocs(docs) {
+  const box = document.getElementById('existingDocsList');
+  if (!box) return;
+  box.innerHTML = '';
+  if (!docs || !docs.length) return;
+  docs.forEach(doc => {
+    const row = document.createElement('div');
+    row.id = 'existDoc_' + doc.id;
+    row.style.cssText = 'display:flex;gap:10px;align-items:center;margin-bottom:8px;padding:10px;background:#eef6ff;border:1px solid #bfdbfe;border-radius:7px;';
+    const label = (IS_AR ? '' : '') + (doc.document_type || (IS_AR?'مستند':'Document'));
+    const fname = doc.original_name || (IS_AR?'ملف':'file');
+    row.innerHTML = `
+      <i class="fas fa-file-alt" style="color:#2563eb;"></i>
+      <span style="flex:1.5;font-weight:600;font-size:12px;color:#374151;">${label}</span>
+      <a href="/employees/documents/${doc.id}/file" target="_blank"
+         style="flex:2;font-size:12px;color:#2563eb;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+         title="${fname}"><i class="fas fa-eye me-1"></i>${fname}</a>
+      <button type="button" class="allow-del" title="${IS_AR?'حذف':'Delete'}"
+              onclick="deleteExistingDoc(${doc.id})">
+        <i class="fas fa-times"></i>
+      </button>`;
+    box.appendChild(row);
+  });
+}
+
+function deleteExistingDoc(docId) {
+  if (!confirm(IS_AR ? 'حذف هذا المستند؟' : 'Delete this document?')) return;
+  fetch('/employees/documents/' + docId + '/delete', {
+    method: 'POST', headers: { 'X-CSRFToken': CSRF }
+  }).then(r => r.json()).then(res => {
+    if (res && res.ok) {
+      const row = document.getElementById('existDoc_' + docId);
+      if (row) row.remove();
+    } else {
+      alert(IS_AR ? 'تعذر حذف المستند.' : 'Could not delete the document.');
+    }
+  }).catch(() => alert(IS_AR ? 'تعذر حذف المستند.' : 'Could not delete the document.'));
+}
 
 function addDocRow() {
   _docSerial++;
@@ -1909,6 +2217,8 @@ function resetEmpForm() {
 
   const docList = document.getElementById('docFilesList');
   if (docList) docList.innerHTML = '';
+  const existDocs = document.getElementById('existingDocsList');
+  if (existDocs) existDocs.innerHTML = '';
   _docSerial = 0;
 
   _selectedProfs = [];
@@ -1928,39 +2238,93 @@ function resetEmpForm() {
   setMCQ('workStatusGrp', 'active', 'f_work_status');
   document.querySelectorAll('.hijri-badge').forEach(b => b.style.display='none');
 
-  // reset photo
   const pf = document.getElementById('f_photo'); if (pf) pf.value = '';
   setEmpPhoto('');
 
-  // reset the Company -> Department cascade
   _clearDeptSelection();
   _setDeptPlaceholder(IS_AR ? '-- اختر الشركة أولاً --' : '-- Select a company first --', true);
 }
 
-
-/* Fetch just the photo URL and paint it. Independent of the big edit fetch. */
-function loadEmpPhoto(id) {
-  fetch('/employees/' + id + '/json')
-    .then(r => r.json())
-    .then(d => setEmpPhoto(d.photo_url || ''))
-    .catch(() => setEmpPhoto(''));
-}
+/* ── EMPLOYEE PHOTO HANDLING ─────────────────────────────────────────────── */
 
 function setEmpPhoto(url) {
   const img = document.getElementById('empPhotoPreview');
   const ph  = document.getElementById('empPhotoPlaceholder');
   if (!img || !ph) return;
-  if (url) { img.src = url; img.style.display = 'block'; ph.style.display = 'none'; }
-  else     { img.src = ''; img.style.display = 'none'; ph.style.display = 'flex'; }
+  
+  if (!url || url === '') {
+    img.src = '';
+    img.style.display = 'none';
+    ph.style.display = 'flex';
+    return;
+  }
+  
+  let imageUrl = url;
+  if (imageUrl.startsWith('/')) {
+    imageUrl = imageUrl;
+  } else if (!imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
+    imageUrl = '/uploads/employees/' + imageUrl;
+  }
+  
+  const testImg = new Image();
+  testImg.onload = function() {
+    img.src = imageUrl;
+    img.style.display = 'block';
+    ph.style.display = 'none';
+  };
+  testImg.onerror = function() {
+    img.src = '';
+    img.style.display = 'none';
+    ph.style.display = 'flex';
+    console.log('Failed to load image:', imageUrl);
+  };
+  testImg.src = imageUrl;
+}
+
+function loadEmpPhoto(id) {
+  fetch('/employees/' + id + '/photo')
+    .then(r => r.json())
+    .then(d => {
+      setEmpPhoto(d.photo_url || '');
+    })
+    .catch(() => {
+      fetch('/employees/' + id + '/json')
+        .then(r => r.json())
+        .then(d => setEmpPhoto(d.photo_url || ''))
+        .catch(() => setEmpPhoto(''));
+    });
 }
 
 function previewEmpPhoto(input) {
   const f = input.files && input.files[0];
   if (!f) return;
+  
+  const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jfif', 'image/avif', 'image/heic', 'image/heif'];
+  const isValidType = validTypes.some(type => f.type === type || f.type.startsWith('image/'));
+  if (!isValidType) {
+    alert(IS_AR ? 'يرجى اختيار ملف صورة صالح (JPEG, PNG, GIF, WebP)' : 'Please select a valid image file (JPEG, PNG, GIF, WebP)');
+    input.value = '';
+    return;
+  }
+  
+  if (f.size > 5 * 1024 * 1024) {
+    alert(IS_AR ? 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت' : 'Image size must be less than 5MB');
+    input.value = '';
+    return;
+  }
+  
   const reader = new FileReader();
-  reader.onload = e => setEmpPhoto(e.target.result);
+  reader.onload = function(e) {
+    setEmpPhoto(e.target.result);
+  };
+  reader.onerror = function() {
+    alert(IS_AR ? 'فشل في قراءة الملف' : 'Failed to read file');
+    input.value = '';
+  };
   reader.readAsDataURL(f);
 }
+
+/* ── END PHOTO HANDLING ─────────────────────────────────────────────────── */
 
 function validateForm(form) {
   const reqFields = form.querySelectorAll('[required]');
@@ -1993,15 +2357,15 @@ function openEditEmp(id) {
   document.getElementById('empModalTitle').textContent = IS_AR ? 'تعديل موظف' : 'Edit Employee';
   document.getElementById('empForm').action = '/employees/' + id + '/edit';
   document.getElementById('empFormId').value = id;
-  resetEmpForm();                       // clear the previous employee's values
+  resetEmpForm();
   new bootstrap.Modal(document.getElementById('empModal')).show();
   _currentEmpId  = id;
   _pendingAllows = [];
   setAllowBtn(true);
 
-  // Load the photo on its own so an error further down this callback
-  // can never leave the avatar blank.
-  loadEmpPhoto(id);
+  // Photo is set from the /json response below (which returns photo_url).
+  // The old loadEmpPhoto() did a second fetch against the image route and
+  // parsed it as JSON, which failed and could blank the preview — removed.
 
   fetch('/employees/' + id + '/json').then(r => r.json()).then(d => {
     document.getElementById('empCodeDisplay').textContent = d.employee_code;
@@ -2017,8 +2381,6 @@ function openEditEmp(id) {
       if (arr) arr.value = d[f+'_ar'] || '';
     });
 
-    // Department is driven by the Company -> Department cascade below
-    // (initBuyerAndDept), so only Section is populated as free text here.
     ['section'].forEach(f => {
       const en = document.getElementById('f_'+f+'_en');
       const arr = document.getElementById('f_'+f+'_ar');
@@ -2058,9 +2420,17 @@ function openEditEmp(id) {
 
     const inlineBody = document.getElementById('allowInlineBody');
     if (inlineBody) inlineBody.innerHTML = '';
-    _renderRows(d.allowances || []);
+    // Seed the working array so the Manage popup shows existing rows and a
+    // re-save doesn't drop them. Give each a stable _key for edit/delete.
+    _pendingAllows = (d.allowances || []).map((a, i) => Object.assign({}, a, {
+      _key: (a.id != null ? String(a.id) : 'tmp_' + i)
+    }));
+    _renderRows(_pendingAllows);
     calcNet();
     calcOvertimeRate();
+
+    // Render existing saved documents (separate from the add-new widget).
+    renderExistingDocs(d.documents || []);
 
     setEmpPhoto(d.photo_url || '');
 
@@ -2084,9 +2454,13 @@ function calcAgeStr(birthDate) {
   if (t.getMonth() < b.getMonth() || (t.getMonth()===b.getMonth() && t.getDate()<b.getDate())) y--;
   return IS_AR ? `${y} سنة` : `${y} Years`;
 }
+
 function openViewEmp(id) {
   currentViewId = id;
-  fetch('/employees/' + id + '/json').then(r => r.json()).then(d => {
+  fetch('/employees/' + id + '/json').then(r => {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }).then(d => {
     const na = IS_AR ? 'غير محدد' : 'N/A';
     const yn = v => v ? (IS_AR?'نعم':'Yes') : (IS_AR?'لا':'No');
     const rows = [
@@ -2109,25 +2483,32 @@ function openViewEmp(id) {
       [IS_AR?'تاريخ الانضمام':'Joining Date', viewDateFmt(d.joining_date) || na],
       [IS_AR?'نشيط':'Active', yn(d.is_active)],
     ];
+    
     let html = '';
-    if (!d.photo_url) {
-      // No photo on file -> default placeholder avatar.
-      html += `<div style="text-align:center;margin-bottom:16px;">
-        <div style="display:flex;width:130px;height:130px;margin:0 auto;border-radius:14px;border:2px dashed #cbd5e1;background:#f8fafc;align-items:center;justify-content:center;color:#94a3b8;">
-          <i class="fas fa-user" style="font-size:46px;"></i>
-        </div>
-      </div>`;
-    }
+    
+    // Photo display in view modal — same 150×180 rounded card as the form.
+    html += '<div style="text-align:center;margin:16px 0 20px;padding:10px 0;">';
+    html += '<div style="display:inline-block;width:150px;height:180px;border-radius:10px;overflow:hidden;border:2px solid #e2e8f0;box-shadow:0 4px 14px rgba(15,23,42,.12);background:#f8fafc;">';
+    
     if (d.photo_url) {
-      html += `<div style="text-align:center;margin-bottom:16px;">
-        <img src="${d.photo_url}" alt=""
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-             style="width:130px;height:130px;border-radius:14px;object-fit:cover;border:3px solid #e2e8f0;box-shadow:0 4px 14px rgba(15,23,42,.12);">
-        <div style="display:none;width:130px;height:130px;margin:0 auto;border-radius:14px;border:2px dashed #cbd5e1;background:#f8fafc;align-items:center;justify-content:center;color:#94a3b8;">
-          <i class="fas fa-user" style="font-size:46px;"></i>
-        </div>
-      </div>`;
+      let viewUrl = d.photo_url;
+      if (!viewUrl.startsWith('/') && !viewUrl.startsWith('http') && !viewUrl.startsWith('data:')) {
+        viewUrl = '/uploads/employees/' + viewUrl;
+      }
+      html += `<img src="${viewUrl}" alt=""
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+               style="width:100%;height:100%;object-fit:cover;display:block;">
+               <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;color:#94a3b8;font-size:52px;background:#f8fafc;">
+                 <i class="fas fa-user" style="opacity:0.5;"></i>
+               </div>`;
+    } else {
+      html += `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:52px;background:#f8fafc;">
+                <i class="fas fa-user" style="opacity:0.5;"></i>
+              </div>`;
     }
+    
+    html += '</div></div>';
+    
     html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
     rows.forEach((r,i) => {
       const bg = i%2===0 ? '#f9fafb' : 'white';
@@ -2138,8 +2519,12 @@ function openViewEmp(id) {
     document.getElementById('viewEmpTitle').textContent = (IS_AR?'بيانات الموظف: ':'Employee: ') + (IS_AR && d.name_ar ? d.name_ar : d.name);
     document.getElementById('viewEmpBody').innerHTML = html;
     new bootstrap.Modal(document.getElementById('viewEmpModal')).show();
+  }).catch(err => {
+    console.error('openViewEmp failed:', err);
+    alert(IS_AR ? 'تعذر تحميل بيانات الموظف.' : 'Could not load employee details.');
   });
 }
+
 function editFromView() {
   const m = bootstrap.Modal.getInstance(document.getElementById('viewEmpModal'));
   if (m) m.hide();
@@ -2195,7 +2580,15 @@ function _fillTypeDropdown(types, usedTypeIds) {
 function _loadFromDB(empId) {
   fetch(`/employees/${empId}/allowances`)
   .then(r=>r.json())
-  .then(rows=>{ _lastRows=rows; _renderRows(rows); })
+  .then(rows=>{
+    _lastRows=rows;
+    // Keep the working array in sync so injectAllowances() submits the
+    // current set (each row keyed by its DB id).
+    _pendingAllows = (rows||[]).map(a => Object.assign({}, a, {
+      _key: (a.id != null ? String(a.id) : a._key)
+    }));
+    _renderRows(rows);
+  })
   .catch(()=>_renderRows([]));
 }
 
@@ -2495,7 +2888,6 @@ function saveQuickProfession() {
   }).then(r=>r.json()).then(d=>{
     if(d.ok){
       bootstrap.Modal.getInstance(document.getElementById('addProfModal'))?.hide();
-      // remember current selections, refresh the master list, then re-check + add the new one
       const keepIds = _selectedProfs.map(s => s.id);
       if (d.id) keepIds.push(d.id);
       _profCache = null;
@@ -2507,7 +2899,6 @@ function saveQuickProfession() {
 function openAddAllowTypeModal() {
   ['qat_code','qat_name_en','qat_name_ar'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   const errEl=document.getElementById('qat_error'); if(errEl) errEl.style.display='none';
-  // Auto-generate the allowance code (read-only, filled from server).
   const codeEl=document.getElementById('qat_code');
   if(codeEl){ codeEl.value=IS_AR?'... جارٍ التوليد':'generating...'; }
   fetch('/allowance-types/next-code')
@@ -2604,9 +2995,7 @@ agGrid.createGrid(document.getElementById('empGrid'), {
   columnDefs: cols, rowData: [], pagination: true, paginationPageSize: 20,
   rowSelection: 'multiple', suppressRowClickSelection: true, animateRows: true, enableRtl: IS_AR,
   localeText: _agLocale,
-  // Ctrl/Cmd + click a second header to sort by multiple columns.
   multiSortKey: 'ctrl',
-  // Render the "unsorted" arrows so the icon is always present, not hover-only.
   defaultColDef: {
     sortable: true, resizable: true, filter: true, suppressMenu: false,
     unSortIcon: true,
@@ -2615,8 +3004,6 @@ agGrid.createGrid(document.getElementById('empGrid'), {
   },
   onGridReady(p) {
     gridApi = p.api;
-    // Pass the whole event: AG-Grid v31 keeps column operations on
-    // `p.columnApi`, which GridKit needs for show/hide, pin and sizing.
     if (window.GridKit) {
       GridKit.enhance(p, 'empGrid', { storageKey: 'employees', exportName: 'Employees' });
     }

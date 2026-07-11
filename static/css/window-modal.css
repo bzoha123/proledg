@@ -71,15 +71,27 @@ body.wm-drag-active { cursor: move; user-select: none; }
 .modal-dialog.wm-moved { margin: 0 !important; }
 
 /* ── Maximized ─────────────────────────────────────────────────── */
+/* Maximize expands only the workspace. The left navigation (and an
+   optional top bar) stay visible, per ERP spec. The offsets are driven by
+   CSS variables that window-modal.js updates from the live sidebar width,
+   so a collapsed sidebar still lines up. Falls back to full viewport when
+   no sidebar is present. */
+:root { --wm-work-left: 0px; --wm-work-top: 0px; }
 .modal-dialog.wm-maximized {
   position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  max-width: 100vw !important;
-  height: 100vh !important;
+  top: var(--wm-work-top, 0px) !important;
+  inset-inline-start: var(--wm-work-left, 0px) !important;
+  inset-inline-end: 0 !important;
+  bottom: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  height: auto !important;
   margin: 0 !important;
   transform: none !important;
   display: flex;
+}
+html[dir="rtl"] .modal-dialog.wm-maximized {
+  /* inset-inline-* already flips for RTL; nothing extra needed. */
 }
 .modal-dialog.wm-maximized .modal-content {
   width: 100%;
@@ -170,4 +182,35 @@ body.wm-resize-active { user-select: none; }
   .wm-resizer  { display: none; }
   .modal-dialog.wm-moved { margin: .5rem auto !important; transform: none !important; }
   .wm-task { max-width: 180px; }
+}
+
+/* ── Nested-modal stacking ─────────────────────────────────────────
+   Lower modals in a nested stack stay visible but non-interactive, so the
+   user always sees the parent behind the active child. The top-most modal
+   is untouched. Pointer-events are disabled on the dialog only (not the
+   backdrop) so a click on a lower window's backdrop still dismisses top. */
+.modal.wm-inactive .modal-dialog { pointer-events: none; }
+.modal.wm-inactive .modal-content { filter: brightness(0.97); }
+.modal.wm-inactive .modal-content::after {
+  content: ""; position: absolute; inset: 0; z-index: 6;
+  background: rgba(15, 23, 42, 0.04); border-radius: inherit;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Keep the left navigation VISIBLE and FUNCTIONAL while a modal is open
+   (and especially while maximized). The Bootstrap backdrop normally covers
+   the whole viewport, so even a visible sidebar can't be clicked. We lift
+   the sidebar above the backdrop and let it receive clicks.
+   ══════════════════════════════════════════════════════════════════ */
+body.modal-open .sidebar,
+body.modal-open #sidebar {
+  z-index: 1060 !important;      /* above .modal-backdrop (1050) */
+  pointer-events: auto !important;
+}
+/* When a window-modal is maximized, pull the backdrop in so it starts after
+   the sidebar — the nav stays fully interactive, no dimming over it. */
+body.wm-has-maximized .modal-backdrop {
+  inset-inline-start: var(--wm-work-left, 0px) !important;
+  inset-inline-end: 0 !important;
+  width: auto !important;
 }

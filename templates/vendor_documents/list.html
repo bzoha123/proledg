@@ -4,6 +4,14 @@
 {% block title %}{% if ar %}مستندات الموردين{% else %}Vendor Documents{% endif %}{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
+<style>
+  .ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif; --ag-font-size:13px; --ag-header-background-color:#1e3a5f; --ag-header-foreground-color:#fff; --ag-border-color:#e2e8f0; --ag-row-hover-color:#eff6ff; --ag-selected-row-background-color:#dbeafe; --ag-header-height:44px; --ag-row-height:44px; }
+  .ag-theme-alpine .ag-header-cell-label { font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; }
+  .vd-badge { padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+</style>
+
 <style>
 :root {
     --navy: #1e3a5f; --blue: #2563eb; --green: #16a34a; --red: #ef4444;
@@ -263,30 +271,7 @@
 <!-- DOCUMENTS TABLE                                            -->
 <!-- ════════════════════════════════════════════════════════════ -->
 <div class="table-card">
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th style="width:40px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
-                    <th>{% if ar %}المستند{% else %}Document{% endif %}</th>
-                    <th>{% if ar %}المورد{% else %}Vendor{% endif %}</th>
-                    <th>{% if ar %}النوع{% else %}Type{% endif %}</th>
-                    <th>{% if ar %}تاريخ الإنتهاء{% else %}Expiry Date{% endif %}</th>
-                    <th>{% if ar %}الحجم{% else %}Size{% endif %}</th>
-                    <th>{% if ar %}تاريخ الرفع{% else %}Uploaded{% endif %}</th>
-                    <th>{% if ar %}الإجراءات{% else %}Actions{% endif %}</th>
-                </tr>
-            </thead>
-            <tbody id="documentsTableBody">
-                <tr>
-                    <td colspan="8" class="empty-state">
-                        <i class="fas fa-file-alt"></i>
-                        <p>{% if ar %}جاري التحميل...{% else %}Loading...{% endif %}</p>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <div id="vdGrid" class="ag-theme-alpine" style="width:100%;height:560px;"></div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════════ -->
@@ -369,6 +354,49 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script>
+/* ── Vendor Documents AG-Grid (matches buyer documents / standard grids) ── */
+(function(){
+  const IS_AR_G = {{ 'true' if ar else 'false' }};
+  function badge(v){ return '<span class="badge '+getCategoryClass(v)+'">'+getCategoryLabel(v)+'</span>'; }
+  function sizeFmt(p){ const b=p.value||0; return b>1048576?(b/1048576).toFixed(1)+' MB':b?(b/1024).toFixed(0)+' KB':'—'; }
+  function dateFmt(p){ return p.value ? new Date(p.value).toLocaleDateString() : '—'; }
+  class VdAct{
+    init(p){ const d=p.data; this.el=document.createElement('div'); this.el.style.cssText='display:flex;gap:4px;';
+      this.el.innerHTML =
+        '<button class="btn-action btn-view" onclick="viewDocument('+d.id+')" title="'+(IS_AR_G?'عرض':'View')+'"><i class="fas fa-eye"></i></button>'+
+        '<button class="btn-action btn-download" onclick="downloadDocument('+d.id+')" title="'+(IS_AR_G?'تحميل':'Download')+'"><i class="fas fa-download"></i></button>'+
+        '<button class="btn-action btn-delete" onclick="deleteDocument('+d.id+')" title="'+(IS_AR_G?'حذف':'Delete')+'"><i class="fas fa-trash"></i></button>';
+    }
+    getGui(){ return this.el; }
+  }
+  const _cf = { filter:'agTextColumnFilter', filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} };
+  const vdCols = [
+    { field:'document_name', headerName:IS_AR_G?'المستند':'Document', minWidth:220, flex:2, ..._cf },
+    { field:'vendor_name', headerName:IS_AR_G?'المورد':'Vendor', minWidth:180, flex:1, ..._cf },
+    { field:'document_type', headerName:IS_AR_G?'النوع':'Type', width:170, cellRenderer:p=>badge(p.value), filter:'agSetColumnFilter', filterParams:{buttons:['apply','reset','clear']} },
+    { field:'expiry_date', headerName:IS_AR_G?'تاريخ الإنتهاء':'Expiry Date', width:150, valueFormatter:dateFmt, filter:'agDateColumnFilter', filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} },
+    { field:'file_size', headerName:IS_AR_G?'الحجم':'Size', width:110, valueFormatter:sizeFmt, filter:'agNumberColumnFilter', filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} },
+    { field:'uploaded_at', headerName:IS_AR_G?'تاريخ الرفع':'Uploaded', width:160, valueFormatter:dateFmt, ..._cf },
+    { field:'_actions', headerName:IS_AR_G?'الإجراءات':'Actions', width:140, pinned:IS_AR_G?'left':'right', sortable:false, suppressMenu:true, resizable:false, cellRenderer:VdAct, cellStyle:{overflow:'visible'} },
+  ];
+  document.addEventListener('DOMContentLoaded', function(){
+    const el=document.getElementById('vdGrid'); if(!el) return;
+    window.vdGrid = agGrid.createGrid(el, {
+      columnDefs: vdCols, rowData: [], pagination:true, paginationPageSize:20,
+      rowSelection:'multiple', suppressRowClickSelection:true, animateRows:true, enableRtl:IS_AR_G,
+      localeText: IS_AR_G ? {noRowsToShow:'لا توجد مستندات',searchOoo:'بحث...'} : {noRowsToShow:'No documents found',searchOoo:'Search...'},
+      multiSortKey:'ctrl',
+      defaultColDef:{ sortable:true, resizable:true, filter:true, floatingFilter:true, unSortIcon:true,
+        menuTabs:['filterMenuTab','generalMenuTab'], filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} },
+      onGridReady(p){ if(window.GridKit) GridKit.enhance(p,'vdGrid',{storageKey:'vendor_docs',exportName:'VendorDocuments'}); p.api.sizeColumnsToFit(); },
+      onGridSizeChanged(p){ p.api.sizeColumnsToFit(); },
+      getRowStyle(p){ return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; },
+    });
+  });
+})();
+</script>
 <script>
 // ─────────────────────────────────────────────────────────────
 // GLOBAL VARIABLES
@@ -520,80 +548,8 @@ function updateDocCount(count) {
 // RENDER DOCUMENTS TABLE
 // ─────────────────────────────────────────────────────────────
 function renderDocumentsTable(docs) {
-    const tbody = document.getElementById('documentsTableBody');
-    if (!tbody) return;
-    
-    if (!docs || docs.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="empty-state">
-                    <i class="fas fa-file-alt"></i>
-                    <p>${isArabic ? 'لا توجد مستندات' : 'No documents found'}</p>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-    
-    tbody.innerHTML = docs.map((doc, i) => {
-        const docType = doc.document_type || '';
-        const catClass = getCategoryClass(docType);
-        const catLabel = getCategoryLabel(docType);
-        
-        const ext = (doc.file_path || '').split('.').pop().toLowerCase();
-        
-        let fileIconClass = 'other';
-        if (ext === 'pdf') fileIconClass = 'pdf';
-        else if (['jpg','jpeg','png','gif','bmp','webp'].includes(ext)) fileIconClass = 'image';
-        else if (['doc','docx'].includes(ext)) fileIconClass = 'word';
-        else if (['xls','xlsx'].includes(ext)) fileIconClass = 'excel';
-        
-        const fileSize = doc.file_size 
-            ? (doc.file_size > 1048576 
-                ? (doc.file_size / 1048576).toFixed(1) + ' MB' 
-                : (doc.file_size / 1024).toFixed(0) + ' KB')
-            : '—';
-        
-        const uploadedAt = doc.uploaded_at 
-            ? new Date(doc.uploaded_at).toLocaleDateString() 
-            : '—';
-        
-        let expiryHtml = '—';
-        if (doc.expiry_date) {
-            const expiryDate = new Date(doc.expiry_date);
-            const isExpired = expiryDate < new Date();
-            expiryHtml = `<span style="color:${isExpired ? 'var(--red)' : 'var(--green)'};font-weight:600;">${doc.expiry_date}</span>`;
-        }
-        
-        const docName = doc.document_name || (doc.file_path ? doc.file_path.split('/').pop() : '—');
-        
-        return `
-        <tr data-id="${doc.id}" data-vendor-id="${doc.vendor_id || ''}">
-            <td><input type="checkbox" class="doc-checkbox" value="${doc.id}"></td>
-            <td>
-                <i class="fas fa-file file-icon ${fileIconClass}"></i>
-                ${escapeHtml(docName)}
-            </td>
-            <td>${escapeHtml(doc.vendor_name || '—')}</td>
-            <td><span class="badge ${catClass}">${escapeHtml(catLabel)}</span></td>
-            <td>${expiryHtml}</td>
-            <td>${fileSize}</td>
-            <td>${uploadedAt}</td>
-            <td>
-                <div style="display:flex; gap:4px;">
-                    <button class="btn-action btn-view" onclick="viewDocument(${doc.id})" title="${isArabic ? 'عرض' : 'View'}">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn-action btn-download" onclick="downloadDocument(${doc.id})" title="${isArabic ? 'تحميل' : 'Download'}">
-                        <i class="fas fa-download"></i>
-                    </button>
-                    <button class="btn-action btn-delete" onclick="deleteDocument(${doc.id})" title="${isArabic ? 'حذف' : 'Delete'}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>`;
-    }).join('');
+    // Feed the AG-Grid instead of building table rows.
+    if (window.vdGrid) window.vdGrid.setGridOption('rowData', docs || []);
 }
 
 function getCategoryClass(docType) {

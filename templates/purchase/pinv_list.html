@@ -145,6 +145,30 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             </button>
             <div class="pur-section-body open">
 
+              {# ── Kind / Payment / Vendor Bank ── #}
+              <div class="f-grid3" style="margin-bottom:14px;">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
+                  <select id="pinv_kind" class="f-inp">
+                    <option value="Goods">Goods / بضائع</option>
+                    <option value="Services">Services / خدمات</option>
+                  </select>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}طريقة الدفع{% else %}Payment{% endif %}<span class="f-req">*</span></div>
+                  <select id="pinv_payment" class="f-inp">
+                    <option value="Credit">Credit / آجل</option>
+                    <option value="Cash">Cash / نقدي</option>
+                  </select>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}حساب بنك المورد{% else %}Vendor Bank Account{% endif %}</div>
+                  <select id="pinv_bank_account" class="f-inp">
+                    <option value="">-- {% if ar %}اختر المورد أولاً{% else %}Select vendor first{% endif %} --</option>
+                  </select>
+                </div>
+              </div>
+
               {# ── PO selector with required badge ── #}
               <div class="f-grid2" style="margin-bottom:14px;">
                 <div class="f-item">
@@ -457,6 +481,7 @@ async function onPOChange() {
   // ── Auto-fill (vendor derived, not user-selectable) ──
   document.getElementById('pinv_vendor').value = po.vendor_id || '';
   document.getElementById('pinv_vendor_name').value = po.vendor_name || '';
+  loadPinvVendorBanks(po.vendor_id || '');
 
   const vref = document.getElementById('pinv_vendor_ref');
   if (vref && po.vendor_ref_no) vref.value = po.vendor_ref_no;
@@ -521,6 +546,31 @@ function switchTab(tabId, btn) {
   document.querySelectorAll('.pur-tab').forEach(b => b.classList.remove('active'));
   const t = document.getElementById(tabId); if (t) t.style.display = 'block';
   btn.classList.add('active');
+}
+
+/* ══ Vendor bank accounts → populate bank dropdown ══ */
+function loadPinvVendorBanks(vendorId, selectedId) {
+  const sel = document.getElementById('pinv_bank_account');
+  if (!sel) return;
+  if (!vendorId) {
+    sel.innerHTML = '<option value="">-- ' + (IS_AR ? 'اختر المورد أولاً' : 'Select vendor first') + ' --</option>';
+    return;
+  }
+  fetch('/purchase/vendors/' + vendorId + '/banks')
+    .then(r => r.json())
+    .then(banks => {
+      let html = '<option value="">-- ' + (IS_AR ? 'اختر حساباً' : 'Select account') + ' --</option>';
+      (banks || []).forEach(b => {
+        const label = (b.bank_name_en || b.bank_name || '') +
+                      (b.account_number ? ' — ' + b.account_number : '');
+        const selAttr = (String(b.id) === String(selectedId)) ? ' selected' : '';
+        html += '<option value="' + b.id + '"' + selAttr + '>' + label + '</option>';
+      });
+      sel.innerHTML = html;
+    })
+    .catch(() => {
+      sel.innerHTML = '<option value="">-- ' + (IS_AR ? 'لا توجد حسابات' : 'No accounts') + ' --</option>';
+    });
 }
 
 /* ══ Doc No fetch ══ */
@@ -653,6 +703,9 @@ function openAddPINV() {
   document.getElementById('pinv_doc_no').value = '';
   document.getElementById('pinvDocBadge').textContent = 'NEW';
   document.getElementById('pinv_status').value = 'Open';
+  document.getElementById('pinv_kind').value = 'Goods';
+  document.getElementById('pinv_payment').value = 'Credit';
+  loadPinvVendorBanks('');
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('pinv_posting_date').value = '';
   document.getElementById('pinv_posting_date').disabled = true;
@@ -702,8 +755,11 @@ function openEditPINV(id) {
       document.getElementById('pinv_doc_no').value = d.doc_no || '';
       document.getElementById('pinvDocBadge').textContent = d.doc_no || '';
       document.getElementById('pinv_status').value = d.status || 'Open';
+      document.getElementById('pinv_kind').value = d.kind || 'Goods';
+      document.getElementById('pinv_payment').value = d.payment_method || 'Credit';
       document.getElementById('pinv_vendor').value = d.vendor_id || '';
       document.getElementById('pinv_vendor_name').value = d.vendor_name || '';
+      loadPinvVendorBanks(d.vendor_id || '', d.bank_account_id || '');
       const vr = document.getElementById('pinv_vendor_ref');  if(vr) vr.value = d.vendor_ref_no||'';
       const rm = document.getElementById('pinv_remarks');     if(rm) rm.value = d.remarks||'';
       document.getElementById('pinv_posting_date').disabled = (d.status === 'Open');
@@ -770,6 +826,9 @@ async function savePINV() {
   fd.append('po_id', poId);
   fd.append('grn_id', document.getElementById('pinv_grn_id')?.value || '');
   fd.append('status', document.getElementById('pinv_status').value);
+  fd.append('kind', document.getElementById('pinv_kind').value);
+  fd.append('payment_method', document.getElementById('pinv_payment').value);
+  fd.append('bank_account_id', document.getElementById('pinv_bank_account').value || '');
   fd.append('vendor_id', document.getElementById('pinv_vendor').value || '');
   fd.append('vendor_ref_no', document.getElementById('pinv_vendor_ref')?.value || '');
   fd.append('remarks', document.getElementById('pinv_remarks')?.value || '');

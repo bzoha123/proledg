@@ -4,6 +4,7 @@ from decimal import Decimal
 from datetime import datetime, date
 from models import (
     db, BuyerMaster,
+    Seller, SellerBank,
     SalesRequest, SalesQuotation, SalesOrder, DeliveryNote,
     SalesInvoice, SalesReturnRequest, SalesCreditMemo,
     SalesAttachment,
@@ -34,6 +35,14 @@ def _buyer_list():
     """Return list of buyers for dropdowns (sales counterpart of vendors)."""
     return [{'id': b.id, 'name': b.buyer_name_en, 'name_ar': b.buyer_name_ar or ''}
             for b in BuyerMaster.query.filter_by(is_active=True).order_by(BuyerMaster.buyer_name_en).all()]
+
+
+@sale_bp.route('/sales/sellers/<int:seller_id>/banks')
+@login_required
+def seller_banks(seller_id):
+    """Active bank accounts for a seller, for the invoice/credit-memo bank dropdown."""
+    banks = SellerBank.query.filter_by(seller_id=seller_id).order_by(SellerBank.is_primary.desc()).all()
+    return jsonify([b.to_dict() for b in banks])
 
 
 def _validate_sr_sq_dates(valid_until, required_date):
@@ -230,6 +239,7 @@ def sr_add():
         requester_name=current_user.username,
         buyer_id=int(f.get('buyer_id')) if f.get('buyer_id') else None,
         status=f.get('status','Open'),
+        kind=f.get('kind','Goods'),
         posting_date=pd(f.get('posting_date')),
         valid_until=valid_until,
         document_date=date.today(),
@@ -258,6 +268,7 @@ def sr_edit(id):
 
     for fld in ['status','remarks','approved_by']:
         setattr(sr, fld, f.get(fld,'').strip())
+    sr.kind = f.get('kind','Goods')
     if not sr.requester:
         sr.requester = current_user.username
     if not sr.requester_name:
@@ -348,6 +359,7 @@ def sq_add():
         buyer_id=int(f.get('buyer_id')) if f.get('buyer_id') else None,
         buyer_ref_no=f.get('buyer_ref_no','').strip(),
         status=f.get('status','Open'),
+        kind=f.get('kind','Goods'),
         posting_date=pd(f.get('posting_date')),
         valid_until=valid_until,
         document_date=date.today(),
@@ -386,6 +398,7 @@ def sq_edit(id):
 
     for fld in ['status','remarks','approved_by']:
         setattr(sq, fld, f.get(fld,'').strip())
+    sq.kind = f.get('kind','Goods')
     if not sq.requester:
         sq.requester = current_user.username
     if not sq.requester_name:
@@ -490,6 +503,7 @@ def so_add():
             buyer_ref_no=f.get('buyer_ref_no', '').strip(),
             remarks=f.get('remarks', '').strip(),
             status=f.get('status', 'Open'),
+            kind=f.get('kind','Goods'),
             posting_date=pd(f.get('posting_date')),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
@@ -528,6 +542,7 @@ def so_edit(id):
         so.buyer_ref_no = f.get('buyer_ref_no', '').strip()
         so.remarks = f.get('remarks', '').strip()
         so.status = f.get('status', 'Open')
+        so.kind = f.get('kind','Goods')
         so.posting_date  = pd(f.get('posting_date'))
         so.delivery_date = pd(f.get('delivery_date'))
         so.document_date = date.today()
@@ -623,6 +638,7 @@ def dn_add():
             contact_person=f.get('contact_person','').strip(),
             buyer_ref_no=f.get('buyer_ref_no','').strip(),
             status=f.get('status','Open'),
+            kind=f.get('kind','Goods'),
             posting_date=pd(f.get('posting_date')),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
@@ -650,6 +666,7 @@ def dn_edit(id):
         doc.contact_person=f.get('contact_person','').strip()
         doc.buyer_ref_no=f.get('buyer_ref_no','').strip()
         doc.status=f.get('status','Open')
+        doc.kind=f.get('kind','Goods')
         doc.posting_date  = pd(f.get('posting_date'))
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
@@ -681,7 +698,7 @@ def dn_delete(id):
 def sinv_list():
     sos = [{'id':p.sales_order_id,'doc_no':p.doc_no} for p in SalesOrder.query.filter_by(status='Approved').order_by(SalesOrder.sales_order_id.desc()).all()]
     dns = [{'id':g.delivery_note_id,'doc_no':g.doc_no,'sales_order_id':g.sales_order_id} for g in DeliveryNote.query.order_by(DeliveryNote.delivery_note_id.desc()).all()]
-    return render_template('sales/sinv_list.html', buyers=_buyer_list(), sos=sos, dns=dns)
+    return render_template('sales/sinv_list.html', buyers=_buyer_list(), sos=sos, dns=dns, sellers=Seller.query.order_by(Seller.name).all())
 
 @sale_bp.route('/sales/invoices/data')
 @login_required
@@ -762,6 +779,10 @@ def sinv_add():
             invoice_category=f.get('invoice_category','').strip() or None,
             reference_invoices=f.get('reference_invoices','').strip() or None,
             status=status,
+            kind=f.get('kind','Goods'),
+            payment_method=f.get('payment_method','Credit'),
+            seller_id=int(f.get('seller_id')) if f.get('seller_id') else None,
+            bank_account_id=int(f.get('bank_account_id')) if f.get('bank_account_id') else None,
             posting_date=posting_date,
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
@@ -807,6 +828,10 @@ def sinv_edit(id):
         doc.invoice_category = f.get('invoice_category','').strip() or None
         doc.reference_invoices = f.get('reference_invoices','').strip() or None
         doc.status = status
+        doc.kind = f.get('kind','Goods')
+        doc.payment_method = f.get('payment_method','Credit')
+        doc.seller_id = int(f.get('seller_id')) if f.get('seller_id') else None
+        doc.bank_account_id = int(f.get('bank_account_id')) if f.get('bank_account_id') else None
         doc.posting_date  = posting_date
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
@@ -935,6 +960,7 @@ def srr_add():
             contact_person=f.get('contact_person','').strip(),
             buyer_ref_no=f.get('buyer_ref_no','').strip(),
             status=f.get('status','Open'),
+            kind=f.get('kind','Goods'),
             posting_date=pd(f.get('posting_date')),
             delivery_date=delivery_date,
             document_date=date.today(),
@@ -971,6 +997,7 @@ def srr_edit(id):
         doc.contact_person=f.get('contact_person','').strip()
         doc.buyer_ref_no=f.get('buyer_ref_no','').strip()
         doc.status=f.get('status','Open')
+        doc.kind=f.get('kind','Goods')
         doc.posting_date  = pd(f.get('posting_date'))
         doc.delivery_date = delivery_date
         doc.document_date = date.today()
@@ -1001,7 +1028,7 @@ def srr_delete(id):
 @login_required
 def scm_list():
     srrs = [{'id':p.sales_return_request_id,'doc_no':p.doc_no} for p in SalesReturnRequest.query.filter_by(status='Approved').order_by(SalesReturnRequest.sales_return_request_id.desc()).all()]
-    return render_template('sales/scm_list.html', buyers=_buyer_list(), srrs=srrs)
+    return render_template('sales/scm_list.html', buyers=_buyer_list(), srrs=srrs, sellers=Seller.query.order_by(Seller.name).all())
 
 @sale_bp.route('/sales/credit-memos/data')
 @login_required
@@ -1043,6 +1070,10 @@ def scm_add():
             contact_person=f.get('contact_person','').strip(),
             buyer_ref_no=f.get('buyer_ref_no','').strip(),
             status=f.get('status','Open'),
+            kind=f.get('kind','Goods'),
+            payment_method=f.get('payment_method','Credit'),
+            seller_id=int(f.get('seller_id')) if f.get('seller_id') else None,
+            bank_account_id=int(f.get('bank_account_id')) if f.get('bank_account_id') else None,
             posting_date=pd(f.get('posting_date')),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
@@ -1073,6 +1104,10 @@ def scm_edit(id):
         doc.contact_person=f.get('contact_person','').strip()
         doc.buyer_ref_no=f.get('buyer_ref_no','').strip()
         doc.status=f.get('status','Open')
+        doc.kind=f.get('kind','Goods')
+        doc.payment_method = f.get('payment_method','Credit')
+        doc.seller_id = int(f.get('seller_id')) if f.get('seller_id') else None
+        doc.bank_account_id = int(f.get('bank_account_id')) if f.get('bank_account_id') else None
         doc.posting_date  = pd(f.get('posting_date'))
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()

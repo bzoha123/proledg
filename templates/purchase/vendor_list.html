@@ -93,6 +93,8 @@
         <button class="btn-close" style="filter:brightness(0) invert(1);" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body p-0" style="overflow-y:auto;max-height:70vh;background:#f8fafc;">
+        <input type="hidden" id="v_edit_id" value="">
+
         <div style="padding:16px 18px;">
 
           {# ── Basic Info ── #}
@@ -664,6 +666,7 @@ function openAdd(){
   vendorBanks = [];
   refreshBankGrid();
   document.getElementById('vndTitle').innerHTML='<i class="fas fa-plus-circle me-2"></i>'+(IS_AR?'إضافة مورد':'Add Vendor');
+  sv('v_edit_id','');   // new record
   ['v_name_en','v_name_ar','v_vat','v_crn','v_contact','v_phone','v_fax','v_email','v_website','v_street_en','v_street_ar','v_bldg','v_addl','v_postal'].forEach(id=>sv(id,''));
   sv('v_status','active');
   initVCountry('Saudi Arabia');
@@ -677,6 +680,7 @@ function openEdit(id){
   refreshBankGrid();
   fetch('/purchase/vendors/'+id+'/json').then(r=>r.json()).then(d=>{
     document.getElementById('vndTitle').innerHTML='<i class="fas fa-edit me-2"></i>'+(IS_AR?'تعديل المورد':'Edit Vendor');
+    sv('v_edit_id', d.id);   // ensures Save updates this record instead of inserting
     sv('v_name_en',d.vendor_name_en);sv('v_name_ar',d.vendor_name_ar);
     sv('v_vat',d.vat_number);sv('v_crn',d.crn);
     sv('v_contact',d.contact_person);sv('v_phone',d.phone);

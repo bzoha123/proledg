@@ -137,11 +137,41 @@
   }
 
   /* ── Maximize / restore ───────────────────────────────────── */
+  /* Measure the live sidebar / top navbar so a maximized window fills only
+     the workspace and never covers the left navigation (ERP spec §4).
+     The sidebar in this app is `.sidebar`; the top bar is `.top-navbar`. */
+  function updateWorkspaceOffsets() {
+    var root = document.documentElement;
+    var sb = document.querySelector('.sidebar, #sidebar, #erp-sidebar');
+    var tb = document.querySelector('.top-navbar, #erp-topbar');
+    var dir = root.getAttribute('dir') === 'rtl';
+    var left = 0, top = 0;
+    if (sb) {
+      var r = sb.getBoundingClientRect();
+      // On mobile the sidebar is off-canvas (r.width 0 or off-screen); ignore.
+      if (r.width > 0 && r.left < window.innerWidth && r.right > 0) {
+        left = dir ? Math.max(0, window.innerWidth - r.left) : Math.max(0, r.right);
+      }
+    }
+    if (tb) {
+      var tr = tb.getBoundingClientRect();
+      if (tr.height > 0 && tr.top < 60) top = Math.max(0, tr.bottom);
+    }
+    // Below the mobile breakpoint the sidebar overlays content, so go full.
+    if (window.innerWidth < 768) { left = 0; }
+    root.style.setProperty('--wm-work-left', left + 'px');
+    root.style.setProperty('--wm-work-top', top + 'px');
+  }
+
   function toggleMaximize(modal) {
     var dlg = dialog(modal);
     if (!dlg) return;
     var max = dlg.classList.toggle('wm-maximized');
+    // Body flag drives the backdrop offset so the sidebar stays clickable.
+    document.body.classList.toggle('wm-has-maximized',
+      !!document.querySelector('.modal-dialog.wm-maximized'));
     if (max) {
+      updateWorkspaceOffsets();
       // Remember where the window was so Restore puts it back.
       dlg._wmPrev = {
         transform: dlg.style.transform,
@@ -371,9 +401,72 @@
     modal._wmReady = true;
   }
 
+  /* ── Nested-modal stacking ────────────────────────────────────
+     Bootstrap gives every modal the same z-index (1055) and every
+     backdrop the same 1050, so a child opened over a parent can render
+     *behind* it (the classic "Add Department appears behind the Employee
+     form" bug). We raise each newly shown modal — and its own backdrop —
+     above whatever is already open, and restore the baseline as modals
+     close. Focus follows the topmost window; parents stay visible but
+     inactive. Works to unlimited depth.                            */
+  var WM_BASE_Z = 1055;   // Bootstrap's default modal z-index
+  var WM_STEP   = 20;     // gap per level: +10 backdrop, +20 modal
+
+  function openModals() {
+    return Array.prototype.filter.call(
+      document.querySelectorAll('.modal'),
+      function (m) { return m.classList.contains('show') ||
+                            m.style.display === 'block'; });
+  }
+
+  function restackModals() {
+    // Order by the depth we assigned at open time; unranked = oldest.
+    var mods = openModals().sort(function (a, b) {
+      return (a._wmDepth || 0) - (b._wmDepth || 0);
+    });
+    mods.forEach(function (m, i) {
+      var z = WM_BASE_Z + i * WM_STEP;
+      m.style.zIndex = z;
+      var bd = m._wmOwnBackdrop;
+      if (bd) bd.style.zIndex = (z - 10);
+      // Only the top-most modal is interactive; lower ones dim but show.
+      m.classList.toggle('wm-inactive', i !== mods.length - 1);
+    });
+    var top = mods[mods.length - 1];
+    if (top) {
+      var dlg = dialog(top);
+      var focusEl = top.querySelector(
+        'input:not([type=hidden]),select,textarea,button');
+      if (focusEl) { try { focusEl.focus({ preventScroll: true }); } catch (_) {} }
+    }
+  }
+
   /* ── Wire global modal events ─────────────────────────────── */
   document.addEventListener('show.bs.modal', function (e) {
-    upgrade(e.target);
+    var modal = e.target;
+    // Assign a depth deeper than every currently-open modal.
+    var maxDepth = 0;
+    openModals().forEach(function (m) {
+      if (m !== modal) maxDepth = Math.max(maxDepth, m._wmDepth || 0);
+    });
+    modal._wmDepth = maxDepth + 1;
+    upgrade(modal);
+  });
+
+  /* Bootstrap creates the backdrop *after* show fires, so capture this
+     modal's own backdrop once it's shown, then restack. */
+  document.addEventListener('shown.bs.modal', function (e) {
+    var modal = e.target;
+    // The most recently added backdrop without an owner belongs to us.
+    var backdrops = document.querySelectorAll('.modal-backdrop');
+    for (var i = backdrops.length - 1; i >= 0; i--) {
+      if (!backdrops[i]._wmOwned) {
+        backdrops[i]._wmOwned = true;
+        modal._wmOwnBackdrop = backdrops[i];
+        break;
+      }
+    }
+    restackModals();
   });
 
   document.addEventListener('shown.bs.modal', function (e) {
@@ -400,8 +493,22 @@
       dlg.style.maxWidth = '';
       dlg._wmPos = { x: 0, y: 0 };
     }
+    // Recompute the maximized-body flag after this modal is gone.
+    document.body.classList.toggle('wm-has-maximized',
+      !!document.querySelector('.modal-dialog.wm-maximized'));
     var c = modal.querySelector('.modal-content');
     if (c) { c.style.width = ''; c.style.height = ''; }
+
+    // Release stacking state and re-rank whatever modals remain open, so
+    // focus returns to the parent and z-indexes stay contiguous.
+    modal.style.zIndex = '';
+    modal.classList.remove('wm-inactive');
+    modal._wmDepth = 0;
+    if (modal._wmOwnBackdrop) { modal._wmOwnBackdrop = null; }
+    // Bootstrap removes body.modal-open when the *last* modal closes; if a
+    // parent is still open, re-assert it so scrolling stays locked.
+    if (openModals().length) document.body.classList.add('modal-open');
+    restackModals();
   });
 
   /* Bootstrap's own dismissals (Esc, backdrop, data-bs-dismiss) must honour
@@ -443,6 +550,10 @@
 
   /* Keep windows on screen when the viewport shrinks. */
   window.addEventListener('resize', function () {
+    // Re-measure the sidebar so any maximized window keeps clearing it.
+    if (document.querySelector('.modal-dialog.wm-maximized')) {
+      updateWorkspaceOffsets();
+    }
     document.querySelectorAll('.modal.show .modal-dialog.wm-moved').forEach(function (dlg) {
       var r = dlg.getBoundingClientRect();
       if (r.right > window.innerWidth || r.bottom > window.innerHeight) {

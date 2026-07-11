@@ -151,7 +151,14 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
-            <div class="pur-section-body open">
+                        <div class="pur-section-body open">
+              <div class="f-item" style="margin-bottom:12px;max-width:260px;">
+                <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
+                <select id="po_kind" class="f-inp">
+                  <option value="Goods">Goods / بضائع</option>
+                  <option value="Services">Services / خدمات</option>
+                </select>
+              </div>
 
               {# ── Row 1: PQ reference + Vendor info ── #}
               <div class="f-grid4" style="margin-bottom:12px;">
@@ -587,6 +594,7 @@ function openAddPO() {
   document.getElementById('po_delivery_date').value = today;
   document.getElementById('po_doc_date').value = today;
   document.getElementById('po_status').value = 'Open';
+  document.getElementById('po_kind').value = 'Goods';
   document.getElementById('po_vendor').value = '';
   document.getElementById('po_pq_id').value = '';
   document.getElementById('po_doc_no').value = '';
@@ -617,6 +625,7 @@ function openEditPO(id) {
     document.getElementById('po_doc_no').value = d.doc_no || '';
     document.getElementById('poDocBadge').textContent = d.doc_no || '';
     document.getElementById('po_status').value = d.status || 'Open';
+    document.getElementById('po_kind').value = d.kind || 'Goods';
     document.getElementById('po_pq_id').value = d.pq_id || '';
     document.getElementById('po_vendor').value = d.vendor_id || '';
     document.getElementById('po_vendor_ref').value = d.vendor_ref_no || '';
@@ -666,6 +675,7 @@ async function savePO() {
   
   fd.set('csrf_token', CSRF);
   fd.set('status',         document.getElementById('po_status').value);
+  fd.set('kind', document.getElementById('po_kind').value);
   fd.set('pq_id',          document.getElementById('po_pq_id')?.value || '');
   fd.set('vendor_id',      document.getElementById('po_vendor').value);
   fd.set('vendor_ref_no',  document.getElementById('po_vendor_ref').value);

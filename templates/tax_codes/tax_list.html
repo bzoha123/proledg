@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% set ar = current_locale == 'ar' %}
+{% block title %}{% if ar %}{{ title_ar }}{% else %}{{ title_en }}{% endif %}{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
+<li class="breadcrumb-item">{% if kind=='purchase' %}{% if ar %}المشتريات{% else %}Purchase{% endif %}{% else %}{% if ar %}المبيعات{% else %}Sales{% endif %}{% endif %}</li>
+<li class="breadcrumb-item active">{% if ar %}{{ title_ar }}{% else %}{{ title_en }}{% endif %}</li>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
+<style>
+  .ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif; --ag-font-size:13px; --ag-header-background-color:#1e3a5f; --ag-header-foreground-color:#fff; --ag-border-color:#e2e8f0; --ag-row-hover-color:#eff6ff; --ag-selected-row-background-color:#dbeafe; --ag-header-height:44px; --ag-row-height:42px; }
+  .ag-theme-alpine .ag-header-cell-label { font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; }
+  .tx-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  .tx-badge-active { background:#dcfce7; color:#15803d; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+  .tx-badge-inactive { background:#fee2e2; color:#b91c1c; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="proledg-page">
+  <h2 class="page-heading">{% if ar %}{{ title_ar }}{% else %}{{ title_en }}{% endif %}</h2>
+  <div class="tx-toolbar">
+    <button class="tool-btn tool-btn-green" onclick="openAdd()" title="{% if ar %}جديد{% else %}New{% endif %}"><i class="fas fa-plus"></i></button>
+    <button class="tool-btn" onclick="openEdit()" title="{% if ar %}تعديل{% else %}Edit{% endif %}"><i class="fas fa-pencil-alt"></i></button>
+    <button class="tool-btn" onclick="del()" title="{% if ar %}حذف{% else %}Delete{% endif %}"><i class="fas fa-trash"></i></button>
+    <button class="tool-btn" onclick="loadData()" title="{% if ar %}تحديث{% else %}Refresh{% endif %}"><i class="fas fa-sync-alt"></i></button>
+    <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'{{ kind }}_tax_codes.csv'})" title="Excel/CSV"><i class="fas fa-file-export"></i></button>
+    <div class="search-form" style="margin-inline-start:auto;"><i class="fas fa-search search-icon"></i>
+      <input type="text" class="search-input" style="width:220px" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" oninput="gridApi&&gridApi.setGridOption('quickFilterText',this.value)">
+    </div>
+  </div>
+  <div id="txGrid" class="ag-theme-alpine" style="width:100%;height:520px;"></div>
+</div>
+
+<div class="modal fade" id="txModal" tabindex="-1">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1e3a5f;color:#fff;">
+        <h5 class="modal-title" id="txModalTitle">{% if ar %}رمز ضريبي جديد{% else %}New Tax Code{% endif %}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="tx_id">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{% if ar %}رمز الحساب{% else %}Account Code{% endif %}<span class="text-danger">*</span></label>
+          <input type="text" id="tx_account" class="form-control" placeholder="VAT 15%">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{% if ar %}الرمز الضريبي{% else %}Tax Code{% endif %}<span class="text-danger">*</span></label>
+          <input type="text" id="tx_code" class="form-control" placeholder="{% if kind=='purchase' %}P1{% else %}S1{% endif %}">
+          <div class="form-text" id="tx_code_hint" style="display:none;">{% if ar %}لا يمكن تعديل الرمز بعد الإنشاء{% else %}Tax Code cannot be changed after creation{% endif %}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{% if ar %}الوصف{% else %}Section{% endif %}<span class="text-danger">*</span></label>
+          <textarea id="tx_section" class="form-control" rows="2" placeholder="{% if ar %}وصف القسم الضريبي{% else %}Description of the VAT section{% endif %}"></textarea>
+        </div>
+        <div class="mb-2">
+          <label class="form-label fw-semibold">{% if ar %}الحالة{% else %}Status{% endif %}</label>
+          <select id="tx_status" class="form-select">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button type="button" class="btn btn-outline-primary" onclick="save(true)">{% if ar %}حفظ وجديد{% else %}Save &amp; New{% endif %}</button>
+        <button type="button" class="btn btn-primary" onclick="save(false)">{% if ar %}حفظ{% else %}Save{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script>
+const CSRF  = '{{ csrf_token() }}';
+const IS_AR = {{ 'true' if ar else 'false' }};
+const KIND  = '{{ kind }}';
+const DATA_URL = '/' + KIND + '-tax-codes/data';
+let gridApi;
+
+function badge(v){ return v==='Active'
+  ? '<span class="tx-badge-active">'+(IS_AR?'نشط':'Active')+'</span>'
+  : '<span class="tx-badge-inactive">'+(IS_AR?'غير نشط':'Inactive')+'</span>'; }
+
+const _locale = IS_AR ? { noRowsToShow:'لا توجد بيانات', searchOoo:'بحث...' }
+                      : { noRowsToShow:'No records found', searchOoo:'Search...' };
+const cols = [
+  { headerName: IS_AR?'رمز الحساب':'Account Code', field:'account_code', minWidth:140, pinned:IS_AR?'right':'left', filter:'agTextColumnFilter' },
+  { headerName: IS_AR?'الرمز الضريبي':'Tax Code', field:'tax_code', width:130, filter:'agTextColumnFilter' },
+  { headerName: IS_AR?'الوصف':'Section', field:'section', minWidth:320, flex:2, filter:'agTextColumnFilter' },
+  { headerName: IS_AR?'الحالة':'Status', field:'status', width:130, cellRenderer:p=>badge(p.value) },
+];
+agGrid.createGrid(document.getElementById('txGrid'), {
+  columnDefs: cols, rowData: [], pagination:true, paginationPageSize:20,
+  rowSelection:'single', animateRows:true, enableRtl:IS_AR, localeText:_locale,
+  multiSortKey:'ctrl',
+  defaultColDef:{ sortable:true, resizable:true, filter:true, floatingFilter:true, unSortIcon:true,
+    menuTabs:['filterMenuTab','generalMenuTab'],
+    filterParams:{ buttons:['apply','reset','clear'], closeOnApply:true } },
+  onGridReady(p){ gridApi=p.api; if(window.GridKit) GridKit.enhance(p,'txGrid',{storageKey:KIND+'_tax',exportName:KIND+'TaxCodes'}); p.api.sizeColumnsToFit(); loadData(); },
+  onGridSizeChanged(p){ p.api.sizeColumnsToFit(); },
+  onRowDoubleClicked(){ openEdit(); },
+});
+
+function loadData(){ fetch(DATA_URL).then(r=>r.json()).then(d=>gridApi.setGridOption('rowData',d)); }
+
+function openAdd(){
+  document.getElementById('txModalTitle').textContent = IS_AR?'رمز ضريبي جديد':'New Tax Code';
+  document.getElementById('tx_id').value='';
+  document.getElementById('tx_account').value='';
+  document.getElementById('tx_code').value='';
+  document.getElementById('tx_code').readOnly=false;
+  document.getElementById('tx_code_hint').style.display='none';
+  document.getElementById('tx_section').value='';
+  document.getElementById('tx_status').value='Active';
+  new bootstrap.Modal(document.getElementById('txModal')).show();
+}
+function openEdit(){
+  const r=gridApi.getSelectedRows()[0];
+  if(!r){ alert(IS_AR?'اختر سجلاً':'Select a record'); return; }
+  document.getElementById('txModalTitle').textContent = IS_AR?'تعديل رمز ضريبي':'Edit Tax Code';
+  document.getElementById('tx_id').value=r.id;
+  document.getElementById('tx_account').value=r.account_code;
+  document.getElementById('tx_code').value=r.tax_code;
+  document.getElementById('tx_code').readOnly=true;      // tax_code fixed after creation
+  document.getElementById('tx_code_hint').style.display='block';
+  document.getElementById('tx_section').value=r.section;
+  document.getElementById('tx_status').value=r.status;
+  new bootstrap.Modal(document.getElementById('txModal')).show();
+}
+function save(again){
+  const id=document.getElementById('tx_id').value;
+  const acc=document.getElementById('tx_account').value.trim();
+  const code=document.getElementById('tx_code').value.trim();
+  const section=document.getElementById('tx_section').value.trim();
+  if(!acc||!code||!section){ alert(IS_AR?'جميع الحقول مطلوبة':'Account Code, Tax Code and Section are required'); return; }
+  const fd=new FormData();
+  fd.set('csrf_token',CSRF);
+  fd.set('account_code',acc);
+  fd.set('tax_code',code);
+  fd.set('section',section);
+  fd.set('status',document.getElementById('tx_status').value);
+  const url = id ? '/'+KIND+'-tax-codes/'+id+'/edit' : '/'+KIND+'-tax-codes/add';
+  fetch(url,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+    if(!d.ok){ alert(d.error||'Error'); return; }
+    loadData();
+    if(again && !id){ openAdd(); }
+    else { bootstrap.Modal.getInstance(document.getElementById('txModal')).hide(); }
+  }).catch(()=>alert(IS_AR?'خطأ في الحفظ':'Save failed'));
+}
+function del(){
+  const r=gridApi.getSelectedRows()[0];
+  if(!r){ alert(IS_AR?'اختر سجلاً':'Select a record'); return; }
+  if(!confirm((IS_AR?'حذف ':'Delete ')+r.tax_code+'?')) return;
+  const fd=new FormData(); fd.set('csrf_token',CSRF);
+  fetch('/'+KIND+'-tax-codes/'+r.id+'/delete',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+    if(!d.ok){ alert(d.error||'Error'); return; }
+    loadData();
+  });
+}
+</script>
+{% endblock %}

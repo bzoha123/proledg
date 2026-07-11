@@ -406,10 +406,6 @@ class Employee(db.Model):
 
     # ── Misc / relations ──
     buyer_id         = db.Column(db.Integer, db.ForeignKey('buyers.id'))
-    # Department the employee belongs to, scoped to `buyer_id`.
-    # The free-text `department` / `department_ar` columns above are kept in
-    # sync for reporting and for records created before this FK existed.
-    department_id    = db.Column(db.Integer, db.ForeignKey('buyer_departments.id'))
     document_path    = db.Column(db.String(300))
     photo_path       = db.Column(db.String(300))
     created_at       = db.Column(db.DateTime, default=datetime.utcnow)
@@ -737,6 +733,7 @@ class PurchaseRequest(db.Model):
     __tablename__ = 'purchase_requests'
     purchase_request_id   = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
     requester             = db.Column(db.String(150))
     requester_name        = db.Column(db.String(200))
     vendor_id             = db.Column(db.Integer, db.ForeignKey('vendors.id'))
@@ -760,6 +757,7 @@ class PurchaseRequest(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
             'id': self.purchase_request_id,
             'purchase_request_id': self.purchase_request_id,
             'doc_no': self.doc_no or '', 'requester': self.requester or '',
@@ -831,6 +829,7 @@ class PurchaseQuotation(db.Model):
     __tablename__ = 'purchase_quotations'
     purchase_quotation_id = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
     purchase_request_id   = db.Column(db.Integer, db.ForeignKey('purchase_requests.purchase_request_id'))
     requester             = db.Column(db.String(150))
     requester_name        = db.Column(db.String(200))
@@ -857,6 +856,7 @@ class PurchaseQuotation(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
             'id': self.purchase_quotation_id,
             'purchase_quotation_id': self.purchase_quotation_id,
             'doc_no': self.doc_no or '',
@@ -933,6 +933,7 @@ class PurchaseOrder(db.Model):
     __tablename__ = 'purchase_orders'
     purchase_order_id     = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
     purchase_quotation_id = db.Column(db.Integer, db.ForeignKey('purchase_quotations.purchase_quotation_id'))
     vendor_id             = db.Column(db.Integer, db.ForeignKey('vendors.id'))
     vendor_ref_no         = db.Column(db.String(100))
@@ -955,6 +956,7 @@ class PurchaseOrder(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
             'id': self.purchase_order_id,
             'purchase_order_id': self.purchase_order_id,
             'doc_no': self.doc_no or '',
@@ -1029,6 +1031,7 @@ class GoodsReceiptNote(db.Model):
     __tablename__ = 'goods_receipt_notes'
     goods_receipt_note_id = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
     purchase_order_id     = db.Column(db.Integer, db.ForeignKey('purchase_orders.purchase_order_id'))
     vendor_id             = db.Column(db.Integer, db.ForeignKey('vendors.id'))
     contact_person        = db.Column(db.String(150))
@@ -1051,6 +1054,7 @@ class GoodsReceiptNote(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
             'id': self.goods_receipt_note_id,
             'goods_receipt_note_id': self.goods_receipt_note_id,
             'doc_no': self.doc_no or '',
@@ -1124,6 +1128,9 @@ class PurchaseInvoice(db.Model):
     __tablename__ = 'purchase_invoices'
     purchase_invoice_id   = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
+    payment_method        = db.Column(db.String(20), default='Credit')
+    bank_account_id       = db.Column(db.Integer)
     purchase_order_id     = db.Column(db.Integer, db.ForeignKey('purchase_orders.purchase_order_id'))
     goods_receipt_note_id = db.Column(db.Integer, db.ForeignKey('goods_receipt_notes.goods_receipt_note_id'))
     vendor_id             = db.Column(db.Integer, db.ForeignKey('vendors.id'))
@@ -1147,6 +1154,9 @@ class PurchaseInvoice(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
+            'payment_method': self.payment_method or 'Credit',
+            'bank_account_id': self.bank_account_id,
             'id': self.purchase_invoice_id,
             'purchase_invoice_id': self.purchase_invoice_id,
             'doc_no': self.doc_no or '',
@@ -1220,6 +1230,7 @@ class GoodsReturnRequest(db.Model):
     __tablename__ = 'goods_return_requests'
     goods_return_request_id = db.Column(db.Integer, primary_key=True)
     doc_no                  = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
     purchase_invoice_id     = db.Column(db.Integer, db.ForeignKey('purchase_invoices.purchase_invoice_id'))
     vendor_id               = db.Column(db.Integer, db.ForeignKey('vendors.id'))
     contact_person          = db.Column(db.String(150))
@@ -1242,6 +1253,7 @@ class GoodsReturnRequest(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
             'id': self.goods_return_request_id,
             'goods_return_request_id': self.goods_return_request_id,
             'doc_no': self.doc_no or '',
@@ -1315,6 +1327,9 @@ class PurchaseDebitMemo(db.Model):
     __tablename__ = 'purchase_debit_memos'
     purchase_debit_memo_id  = db.Column(db.Integer, primary_key=True)
     doc_no                  = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
+    payment_method        = db.Column(db.String(20), default='Credit')
+    bank_account_id       = db.Column(db.Integer)
     goods_return_request_id = db.Column(db.Integer, db.ForeignKey('goods_return_requests.goods_return_request_id'))
     purchase_invoice_id     = db.Column(db.Integer, db.ForeignKey('purchase_invoices.purchase_invoice_id'))
     vendor_id               = db.Column(db.Integer, db.ForeignKey('vendors.id'))
@@ -1338,6 +1353,9 @@ class PurchaseDebitMemo(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
+            'payment_method': self.payment_method or 'Credit',
+            'bank_account_id': self.bank_account_id,
             'id': self.purchase_debit_memo_id,
             'purchase_debit_memo_id': self.purchase_debit_memo_id,
             'doc_no': self.doc_no or '',
@@ -1575,6 +1593,7 @@ class SalesRequest(db.Model):
     __tablename__ = 'sales_requests'
     sales_request_id   = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
     requester             = db.Column(db.String(150))
     requester_name        = db.Column(db.String(200))
     buyer_id             = db.Column(db.Integer, db.ForeignKey('buyers.id'))
@@ -1598,6 +1617,7 @@ class SalesRequest(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
             'id': self.sales_request_id,
             'sales_request_id': self.sales_request_id,
             'doc_no': self.doc_no or '', 'requester': self.requester or '',
@@ -1669,6 +1689,7 @@ class SalesQuotation(db.Model):
     __tablename__ = 'sales_quotations'
     sales_quotation_id = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
     sales_request_id   = db.Column(db.Integer, db.ForeignKey('sales_requests.sales_request_id'))
     requester             = db.Column(db.String(150))
     requester_name        = db.Column(db.String(200))
@@ -1695,6 +1716,7 @@ class SalesQuotation(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
             'id': self.sales_quotation_id,
             'sales_quotation_id': self.sales_quotation_id,
             'doc_no': self.doc_no or '',
@@ -1771,6 +1793,7 @@ class SalesOrder(db.Model):
     __tablename__ = 'sales_orders'
     sales_order_id     = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
     sales_quotation_id = db.Column(db.Integer, db.ForeignKey('sales_quotations.sales_quotation_id'))
     buyer_id             = db.Column(db.Integer, db.ForeignKey('buyers.id'))
     buyer_ref_no         = db.Column(db.String(100))
@@ -1793,6 +1816,7 @@ class SalesOrder(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
             'id': self.sales_order_id,
             'sales_order_id': self.sales_order_id,
             'doc_no': self.doc_no or '',
@@ -1867,6 +1891,7 @@ class DeliveryNote(db.Model):
     __tablename__ = 'delivery_notes'
     delivery_note_id = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
     sales_order_id     = db.Column(db.Integer, db.ForeignKey('sales_orders.sales_order_id'))
     buyer_id             = db.Column(db.Integer, db.ForeignKey('buyers.id'))
     contact_person        = db.Column(db.String(150))
@@ -1889,6 +1914,7 @@ class DeliveryNote(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
             'id': self.delivery_note_id,
             'delivery_note_id': self.delivery_note_id,
             'doc_no': self.doc_no or '',
@@ -1962,6 +1988,10 @@ class SalesInvoice(db.Model):
     __tablename__ = 'sales_invoices'
     sales_invoice_id   = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
+    payment_method        = db.Column(db.String(20), default='Credit')
+    bank_account_id       = db.Column(db.Integer)
+    seller_id             = db.Column(db.Integer)
     sales_order_id     = db.Column(db.Integer, db.ForeignKey('sales_orders.sales_order_id'))
     delivery_note_id = db.Column(db.Integer, db.ForeignKey('delivery_notes.delivery_note_id'))
     buyer_id             = db.Column(db.Integer, db.ForeignKey('buyers.id'))
@@ -1988,6 +2018,10 @@ class SalesInvoice(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
+            'payment_method': self.payment_method or 'Credit',
+            'bank_account_id': self.bank_account_id,
+            'seller_id': self.seller_id,
             'id': self.sales_invoice_id,
             'sales_invoice_id': self.sales_invoice_id,
             'doc_no': self.doc_no or '',
@@ -2064,6 +2098,7 @@ class SalesReturnRequest(db.Model):
     __tablename__ = 'sales_return_requests'
     sales_return_request_id = db.Column(db.Integer, primary_key=True)
     doc_no                  = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
     sales_invoice_id     = db.Column(db.Integer, db.ForeignKey('sales_invoices.sales_invoice_id'))
     buyer_id               = db.Column(db.Integer, db.ForeignKey('buyers.id'))
     contact_person          = db.Column(db.String(150))
@@ -2086,6 +2121,7 @@ class SalesReturnRequest(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
             'id': self.sales_return_request_id,
             'sales_return_request_id': self.sales_return_request_id,
             'doc_no': self.doc_no or '',
@@ -2159,6 +2195,10 @@ class SalesCreditMemo(db.Model):
     __tablename__ = 'sales_credit_memos'
     sales_credit_memo_id  = db.Column(db.Integer, primary_key=True)
     doc_no                  = db.Column(db.String(20), unique=True)
+    kind                  = db.Column(db.String(20), default='Goods')
+    payment_method        = db.Column(db.String(20), default='Credit')
+    bank_account_id       = db.Column(db.Integer)
+    seller_id             = db.Column(db.Integer)
     sales_return_request_id = db.Column(db.Integer, db.ForeignKey('sales_return_requests.sales_return_request_id'))
     sales_invoice_id     = db.Column(db.Integer, db.ForeignKey('sales_invoices.sales_invoice_id'))
     buyer_id               = db.Column(db.Integer, db.ForeignKey('buyers.id'))
@@ -2182,6 +2222,10 @@ class SalesCreditMemo(db.Model):
 
     def to_dict(self):
         return {
+            'kind': self.kind or 'Goods',
+            'payment_method': self.payment_method or 'Credit',
+            'bank_account_id': self.bank_account_id,
+            'seller_id': self.seller_id,
             'id': self.sales_credit_memo_id,
             'sales_credit_memo_id': self.sales_credit_memo_id,
             'doc_no': self.doc_no or '',
@@ -2653,9 +2697,6 @@ class BuyerDepartment(db.Model):
     buyer    = db.relationship('BuyerMaster',
                                backref=db.backref('departments', lazy=True,
                                                   cascade='all, delete-orphan'))
-    employees = db.relationship('Employee',
-                                backref=db.backref('department_ref', lazy=True),
-                                lazy=True)
     location = db.relationship('DepartmentLocation',
                                backref=db.backref('buyer_departments', lazy=True))
 
@@ -2688,6 +2729,159 @@ def seed_department_locations():
                 db.func.lower(DepartmentLocation.location_name) == en.lower()).first():
             db.session.add(DepartmentLocation(location_name=en, location_name_ar=ar,
                                               is_active=True))
+            added += 1
+    if added:
+        db.session.commit()
+    return added
+
+# ═════════════════════════════════════════════════════════════════
+# FINANCIAL YEAR (Master) + FINANCIAL YEAR DETAIL (Financial Months)
+# ═════════════════════════════════════════════════════════════════
+
+import calendar as _calendar
+
+_MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+
+class FinancialYear(db.Model):
+    __tablename__ = 'financial_year'
+    id             = db.Column(db.Integer, primary_key=True)
+    financial_year = db.Column(db.String(20), unique=True, nullable=False)  # FY-2026
+    range          = db.Column(db.String(60))                               # 01-Jan-2026 → 31-Dec-2026
+    year           = db.Column(db.Integer)                                  # 2026
+    status         = db.Column(db.String(10), default='Open')               # Open / Closed
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at     = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    months = db.relationship('FinancialYearDetail', backref='parent',
+                             cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'financial_year': self.financial_year,
+            'range': self.range or '',
+            'year': self.year,
+            'status': self.status or 'Open',
+            'months_count': len(self.months),
+        }
+
+
+class FinancialYearDetail(db.Model):
+    __tablename__ = 'financial_year_detail'
+    id                = db.Column(db.Integer, primary_key=True)
+    financial_year_id = db.Column(db.Integer,
+                                  db.ForeignKey('financial_year.id', ondelete='CASCADE'),
+                                  nullable=False)
+    financial_year    = db.Column(db.String(20))   # FY-2026 (copied from parent)
+    label             = db.Column(db.String(30))    # FM-Jan-2026
+    range             = db.Column(db.String(60))    # 01-Jan-2026 → 31-Jan-2026
+    month_no          = db.Column(db.Integer)       # 1..12
+    status            = db.Column(db.String(10), default='Open')
+    created_at        = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at        = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'financial_year_id': self.financial_year_id,
+            'financial_year': self.financial_year or '',
+            'label': self.label or '',
+            'range': self.range or '',
+            'month_no': self.month_no,
+            'status': self.status or 'Open',
+        }
+
+
+def build_financial_months(year):
+    """Return a list of 12 dicts describing each financial month for a year,
+    with correct last-day handling (incl. leap-year February)."""
+    fy = f'FY-{year}'
+    out = []
+    for m in range(1, 13):
+        last = _calendar.monthrange(year, m)[1]     # correct leap-year Feb
+        abbr = _MONTH_ABBR[m - 1]
+        rng  = f'01-{abbr}-{year} → {last:02d}-{abbr}-{year}'
+        out.append({
+            'financial_year': fy,
+            'label': f'FM-{abbr}-{year}',
+            'range': rng,
+            'month_no': m,
+            'status': 'Open',
+        })
+    return out
+
+
+# ═════════════════════════════════════════════════════════════════
+# PURCHASE / SALES TAX CODES
+# ═════════════════════════════════════════════════════════════════
+
+class PurchaseTaxCode(db.Model):
+    __tablename__ = 'purchase_tax_code'
+    id           = db.Column(db.Integer, primary_key=True)
+    account_code = db.Column(db.String(60), nullable=False, index=True)   # VAT 15%
+    tax_code     = db.Column(db.String(20), unique=True, nullable=False, index=True)  # P1
+    section      = db.Column(db.String(255), nullable=False)
+    status       = db.Column(db.String(10), default='Active')             # Active / Inactive
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at   = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'account_code': self.account_code,
+            'tax_code': self.tax_code, 'section': self.section,
+            'status': self.status or 'Active',
+        }
+
+
+class SalesTaxCode(db.Model):
+    __tablename__ = 'sales_tax_code'
+    id           = db.Column(db.Integer, primary_key=True)
+    account_code = db.Column(db.String(60), nullable=False, index=True)   # VAT 15%
+    tax_code     = db.Column(db.String(20), unique=True, nullable=False, index=True)  # S1
+    section      = db.Column(db.String(255), nullable=False)
+    status       = db.Column(db.String(10), default='Active')
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at   = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'account_code': self.account_code,
+            'tax_code': self.tax_code, 'section': self.section,
+            'status': self.status or 'Active',
+        }
+
+
+DEFAULT_PURCHASE_TAX_CODES = [
+    ('VAT 15%',      'P1',   'Standard rated domestic purchases'),
+    ('VAT 15%',      'PC',   'Imports subject to VAT paid at customs'),
+    ('Import',       'PRCM', 'Imports subject to VAT accounted for through Reverse Charge Mechanism (RCM)'),
+    ('VAT 0%',       'P0',   'Zero rated purchases'),
+    ('Exempt',       'PE',   'Exempt purchases'),
+    ('Out of Scope', 'POC',  'Out of Scope expenses'),
+]
+
+DEFAULT_SALES_TAX_CODES = [
+    ('VAT 15%',         'S1',  'Standard rated supplies'),
+    ('VAT 0%',          'S0',  'Zero rated domestic supplies'),
+    ('VAT 0%',          'SE',  'Exports'),
+    ('Exempt Supplies', 'SES', 'Exempt supplies'),
+    ('Out of Scope',    'SOC', 'Out of Scope expenses'),
+]
+
+
+def seed_tax_codes():
+    """Idempotently seed default purchase & sales tax codes."""
+    added = 0
+    for acc, code, section in DEFAULT_PURCHASE_TAX_CODES:
+        if not PurchaseTaxCode.query.filter_by(tax_code=code).first():
+            db.session.add(PurchaseTaxCode(account_code=acc, tax_code=code,
+                                           section=section, status='Active'))
+            added += 1
+    for acc, code, section in DEFAULT_SALES_TAX_CODES:
+        if not SalesTaxCode.query.filter_by(tax_code=code).first():
+            db.session.add(SalesTaxCode(account_code=acc, tax_code=code,
+                                        section=section, status='Active'))
             added += 1
     if added:
         db.session.commit()

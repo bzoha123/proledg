@@ -154,7 +154,14 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
             <div class="pur-section-body open">
-              <div class="f-grid3">
+              <div class="f-grid4">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
+                  <select id="pr_kind" class="f-inp">
+                    <option value="Goods">{% if ar %}بضائع / Goods{% else %}Goods / بضائع{% endif %}</option>
+                    <option value="Services">{% if ar %}خدمات / Services{% else %}Services / خدمات{% endif %}</option>
+                  </select>
+                </div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}رقم المستند{% else %}Document No{% endif %}</div>
                   <input type="text" id="pr_doc_no" class="f-inp" readonly
@@ -686,6 +693,7 @@ async function openAdd() {
   document.getElementById('pr_req_date').value = today;
   document.getElementById('prDateErr').style.display = 'none';
   document.getElementById('pr_status').value = 'Open';
+  document.getElementById('pr_kind').value = 'Goods';
   document.getElementById('pr_vendor').value = '';
   document.getElementById('pr_doc_no').value = '';
   document.getElementById('prDocBadge').textContent = 'NEW';
@@ -735,6 +743,7 @@ function openEdit(id) {
         '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل طلب الشراء' : 'Edit Purchase Request');
       document.getElementById('pr_doc_no').value = d.doc_no || '';
       document.getElementById('prDocBadge').textContent = d.doc_no || '';
+      document.getElementById('pr_kind').value = d.kind || 'Goods';
       document.getElementById('pr_status').value = d.status || 'Open';
       document.getElementById('pr_vendor').value = d.vendor_id || '';
       document.getElementById('pr_requester').value = d.requester || CURRENT_USERNAME;
@@ -801,6 +810,7 @@ async function savePR() {
     
     const fd  = new FormData();
     fd.set('csrf_token', CSRF);
+    fd.set('kind',           document.getElementById('pr_kind').value);
     fd.set('status',         document.getElementById('pr_status').value);
     fd.set('vendor_id',      document.getElementById('pr_vendor').value);
     fd.set('requester',      document.getElementById('pr_requester').value);

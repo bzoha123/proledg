@@ -508,9 +508,11 @@ document.addEventListener('DOMContentLoaded', () => {
     defaultColDef: {
       sortable: true, resizable: true,
       filter: true, suppressMenu: false,
+      floatingFilter: true, unSortIcon: true,
       menuTabs: ['filterMenuTab','generalMenuTab'],
+      filterParams: { buttons: ['apply','reset','clear'], closeOnApply: true },
     },
-    onGridReady(){ loadData(); },
+    onGridReady(p){ if(window.GridKit) GridKit.enhance(p,'sdGrid',{storageKey:'buyer_docs',exportName:'BuyerDocuments'}); loadData(); },
     onFilterChanged(){ updateBadge(); },
     onPaginationChanged(){ updateBadge(); },
     onSelectionChanged(){ updateBadge(); },

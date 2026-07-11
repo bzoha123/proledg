@@ -145,6 +145,37 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             </button>
             <div class="pur-section-body open">
 
+              {# ── Kind / Payment / Seller / Seller Bank ── #}
+              <div class="f-grid4" style="margin-bottom:14px;">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
+                  <select id="sinv_kind" class="f-inp">
+                    <option value="Goods">Goods / بضائع</option>
+                    <option value="Services">Services / خدمات</option>
+                  </select>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}طريقة الدفع{% else %}Payment{% endif %}<span class="f-req">*</span></div>
+                  <select id="sinv_payment" class="f-inp">
+                    <option value="Credit">Credit / آجل</option>
+                    <option value="Cash">Cash / نقدي</option>
+                  </select>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}البائع{% else %}Seller{% endif %}</div>
+                  <select id="sinv_seller" class="f-inp" onchange="loadSinvSellerBanks(this.value)">
+                    <option value="">-- {% if ar %}اختر البائع{% else %}Select seller{% endif %} --</option>
+                    {% for s in sellers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+                  </select>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}حساب بنك البائع{% else %}Seller Bank Account{% endif %}</div>
+                  <select id="sinv_bank_account" class="f-inp">
+                    <option value="">-- {% if ar %}اختر البائع أولاً{% else %}Select seller first{% endif %} --</option>
+                  </select>
+                </div>
+              </div>
+
               {# ── PO selector with required badge ── #}
               <div class="f-grid2" style="margin-bottom:14px;">
                 <div class="f-item">
@@ -480,6 +511,22 @@ let _attachments = [];
 const _grnList = [
   {% for g in dns %}{ id: {{ g.id }}, doc_no: '{{ g.doc_no }}', sales_order_id: {{ g.sales_order_id or 'null' }} },{% endfor %}
 ];
+
+
+/* ══ Seller bank accounts → bank dropdown ══ */
+function loadSinvSellerBanks(sellerId, selectedId) {
+  const sel = document.getElementById('sinv_bank_account');
+  if (!sel) return;
+  if (!sellerId) { sel.innerHTML = '<option value="">-- ' + (IS_AR ? 'اختر البائع أولاً' : 'Select seller first') + ' --</option>'; return; }
+  fetch('/sales/sellers/' + sellerId + '/banks').then(r=>r.json()).then(banks=>{
+    let html = '<option value="">-- ' + (IS_AR ? 'اختر حساباً' : 'Select account') + ' --</option>';
+    (banks||[]).forEach(b=>{
+      const label=(b.bank_name||b.bank_name_en||'')+(b.account_number?' — '+b.account_number:'');
+      html += '<option value="'+b.id+'"'+(String(b.id)===String(selectedId)?' selected':'')+'>'+label+'</option>';
+    });
+    sel.innerHTML=html;
+  }).catch(()=>{ sel.innerHTML='<option value="">-- '+(IS_AR?'لا توجد حسابات':'No accounts')+' --</option>'; });
+}
 
 function refreshGrnOptions(poId) {
   const sel = document.getElementById('sinv_dn_id');
@@ -947,6 +994,10 @@ function openAddPINV() {
   onTxnTypeChange();
   document.getElementById('pinvDocBadge').textContent = 'NEW';
   document.getElementById('sinv_status').value = 'Open';
+  document.getElementById('sinv_kind').value = 'Goods';
+  document.getElementById('sinv_payment').value = 'Credit';
+  document.getElementById('sinv_seller').value = '';
+  loadSinvSellerBanks('');
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('sinv_posting_date').value = '';
   document.getElementById('sinv_posting_date').disabled = true;
@@ -996,6 +1047,9 @@ function openEditPINV(id) {
       document.getElementById('sinv_doc_no').value = d.doc_no || '';
       document.getElementById('pinvDocBadge').textContent = d.doc_no || '';
       document.getElementById('sinv_status').value = d.status || 'Open';
+      document.getElementById('sinv_kind').value = d.kind || 'Goods';
+      document.getElementById('sinv_payment').value = d.payment_method || 'Credit';
+      if (d.seller_id) { document.getElementById('sinv_seller').value = d.seller_id; loadSinvSellerBanks(d.seller_id, d.bank_account_id || ''); }
       document.getElementById('sinv_buyer').value = d.buyer_id || '';
       document.getElementById('sinv_buyer_name').value = d.buyer_name || '';
       const vr = document.getElementById('sinv_buyer_ref');  if(vr) vr.value = d.buyer_ref_no||'';
@@ -1083,6 +1137,10 @@ async function savePINV() {
   fd.append('so_id', poId);
   fd.append('dn_id', document.getElementById('sinv_dn_id')?.value || '');
   fd.append('status', document.getElementById('sinv_status').value);
+  fd.append('kind', document.getElementById('sinv_kind').value);
+  fd.append('payment_method', document.getElementById('sinv_payment').value);
+  fd.append('seller_id', document.getElementById('sinv_seller').value || '');
+  fd.append('bank_account_id', document.getElementById('sinv_bank_account').value || '');
   fd.append('buyer_id', document.getElementById('sinv_buyer').value || '');
   fd.append('buyer_ref_no', document.getElementById('sinv_buyer_ref')?.value || '');
   fd.append('transaction_type', document.getElementById('sinv_transaction_type')?.value || '');

@@ -71,6 +71,8 @@ def create_app(config_name='default'):
     from database.routes.sales import sale_bp
     from database.routes.coa import coa_bp
     from database.routes.lookups import lookups_bp
+    from database.routes.financial import financial_bp
+    from database.routes.tax_codes import tax_bp
     from database.routes.employee_import import emp_import_bp
     app.register_blueprint(emp_import_bp)
     app.register_blueprint(auth_bp)
@@ -82,6 +84,8 @@ def create_app(config_name='default'):
     app.register_blueprint(sale_bp)
     app.register_blueprint(coa_bp)
     app.register_blueprint(lookups_bp)
+    app.register_blueprint(financial_bp)
+    app.register_blueprint(tax_bp)
     app.register_blueprint(vendor_doc_bp)
     app.register_blueprint(buyer_doc_bp)
 
@@ -156,6 +160,15 @@ def init_db(app):
                 print(f'Department locations seeded: {n} records inserted.')
         except Exception as exc:
             print(f'Department location seed skipped: {exc}')
+
+        # Seed purchase & sales tax codes (idempotent).
+        try:
+            from models import seed_tax_codes
+            n = seed_tax_codes()
+            if n:
+                print(f'Tax codes seeded: {n} records inserted.')
+        except Exception as exc:
+            print(f'Tax code seed skipped: {exc}')
 
 if __name__ == '__main__':
     os.makedirs('database', exist_ok=True)

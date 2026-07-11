@@ -7,14 +7,66 @@
         (amber) for active filters. Nothing else competes.
    ══════════════════════════════════════════════════════════════════ */
 
-/* ── 1. Sort icons: always present, never hover-only ───────────── */
-.ag-theme-alpine .ag-header-cell .ag-sort-indicator-icon,
-.ag-theme-alpine .ag-header-cell .ag-icon-none,
-.ag-theme-alpine .ag-header-cell .ag-sort-none-icon {
-  opacity: .3 !important;
-  visibility: visible !important;
-  display: inline-flex !important;
+/* ── 1. Sort affordance: exactly ONE dark icon, always visible ──
+   Requirement: every sortable column shows a single sort indicator at all
+   times (never hover-only), dark and clear, up/down when sorted — and NO
+   second faint/gray icon beside it.
+
+   AG-Grid with `unSortIcon: true` renders a neutral glyph AND the two
+   directional glyphs in the same header. We show only the ONE that applies:
+     • unsorted  → the neutral (sortable) glyph, dark
+     • ascending → the up arrow only
+     • descending→ the down arrow only
+   Every other sort glyph in that cell is removed, so there is never a
+   duplicate or a leftover gray icon. */
+
+/* Hide ALL directional arrows by default; reveal the matching one only when
+   the column carries that aria-sort state. */
+.ag-theme-alpine .ag-header-cell .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-header-cell .ag-sort-descending-icon {
+  display: none !important;
 }
+.ag-theme-alpine .ag-header-cell[aria-sort="ascending"]  .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-header-cell[aria-sort="descending"] .ag-sort-descending-icon {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #0f172a !important;          /* near-black: clearly visible */
+}
+
+/* Neutral (unsorted) glyph: shown ONLY while the column is not sorted, in a
+   solid dark tone (not the faint gray that read as a "second icon"). */
+.ag-theme-alpine .ag-header-cell .ag-sort-none-icon,
+.ag-theme-alpine .ag-header-cell .ag-icon-none {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #334155 !important;
+}
+/* …and removed entirely once a direction is active, so only the arrow shows. */
+.ag-theme-alpine .ag-header-cell[aria-sort="ascending"]  .ag-sort-none-icon,
+.ag-theme-alpine .ag-header-cell[aria-sort="descending"] .ag-sort-none-icon,
+.ag-theme-alpine .ag-header-cell[aria-sort="ascending"]  .ag-icon-none,
+.ag-theme-alpine .ag-header-cell[aria-sort="descending"] .ag-icon-none {
+  display: none !important;
+}
+
+/* Consistent icon size + alignment. */
+.ag-theme-alpine .ag-header-cell .ag-sort-indicator-icon {
+  font-size: 15px !important;
+  margin: 0 !important;
+}
+
+/* The label always wins the space it needs. */
+.ag-theme-alpine .ag-header-cell-label { min-width: 0; flex: 1 1 auto; }
+.ag-theme-alpine .ag-header-cell-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Icons never grow, and stay out of the label's way. */
+.ag-theme-alpine .ag-header-cell .ag-header-icon,
+.ag-theme-alpine .ag-header-cell .ag-sort-indicator-container { flex: none; }
 
 /* Active sort: a thin underline and a solid arrow. No background fill —
    a coloured header cell fights with the row data underneath. */
@@ -47,6 +99,12 @@
   transition: opacity .12s ease;
 }
 .ag-theme-alpine .ag-header-cell:hover .ag-header-cell-menu-button { opacity: .95 !important; }
+
+/* Some pages inject their own `.plfilt` button into every header. It opens a
+   bespoke popup that duplicates AG-Grid's built-in column filter, and it is
+   a sixth glyph in an already crowded cell. Hide it — the standard filter
+   icon and column menu cover the same ground. */
+.ag-theme-alpine .ag-header-cell .plfilt { display: none !important; }
 
 /* ── 3. Active filter: one amber underline, nothing more ───────── */
 .ag-theme-alpine .ag-header-cell.ag-header-cell-filtered {
@@ -245,4 +303,188 @@
   .gk-btn span { display: none; }
   .gk-btn { padding: 0 10px; }
   .gk-pop { width: calc(100vw - 24px); }
+}
+
+/* ══ Inline toolbar: slot into the page's existing .toolbar-left ══
+   Each list page already has an Add / Refresh / Clear button group. A
+   second toolbar row above the grid duplicated those affordances, so our
+   three controls now join that row behind a hairline divider. */
+.gk-toolbar.gk-inline { margin: 0; display: inline-flex; }
+
+.gk-divider {
+  display: inline-block;
+  width: 1px;
+  height: 20px;
+  margin: 0 8px;
+  background: #e2e8f0;
+  vertical-align: middle;
+}
+
+/* When a grid sits inside `.ag-theme-alpine`, AG-Grid's CSS variables leak
+   into anything nested there. Pin our own colours so the toolbar never
+   inherits the grid's dark header palette. */
+.ag-theme-alpine .gk-toolbar .gk-btn {
+  background: #fff;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+/* ══ Filter panel ═══════════════════════════════════════════════ */
+.gk-pop.gk-pop-wide { width: 300px; }
+
+.gk-qs { position: relative; padding: 8px 10px 4px; }
+.gk-qs-icon {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 20px;
+  transform: translateY(-30%);
+  font-size: 11px;
+  color: #cbd5e1;
+  pointer-events: none;
+}
+.gk-qs-input {
+  width: 100%;
+  height: 32px;
+  padding-inline: 30px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  font-size: 12.5px;
+  color: #1e293b;
+  outline: none;
+}
+.gk-qs-input:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(59, 130, 246, .1); }
+
+.gk-filter-row { padding: 5px 10px; border-radius: 6px; }
+.gk-filter-row:hover { background: #f8fafc; }
+
+.gk-filter-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-bottom: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gk-filter-box { display: flex; align-items: center; gap: 4px; }
+
+.gk-filter-input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #1e293b;
+  outline: none;
+}
+.gk-filter-input:focus { border-color: #93c5fd; }
+
+/* An applied filter is amber — the one warning colour in the whole kit. */
+.gk-filter-row.gk-filter-on .gk-filter-input {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+.gk-filter-row.gk-filter-on .gk-filter-label { color: #b45309; }
+/* ══════════════════════════════════════════════════════════════════
+   PROFESSIONAL HEADER + TABLE POLISH  (applies to every .ag-theme-alpine)
+   Clearer headings, crisp separators, comfortable rows.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Header: solid dark bar, clear bright labels, subtle column dividers. */
+.ag-theme-alpine .ag-header {
+  background: #1e3a5f !important;
+  border-bottom: 2px solid #16304f !important;
+}
+.ag-theme-alpine .ag-header-cell {
+  border-right: 1px solid rgba(255,255,255,.10) !important;
+}
+.ag-theme-alpine .ag-header-cell-text {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  letter-spacing: .35px !important;
+  text-transform: uppercase !important;
+}
+/* Header icons (sort/filter/menu) readable on the dark bar. */
+.ag-theme-alpine .ag-header-cell .ag-sort-none-icon,
+.ag-theme-alpine .ag-header-cell .ag-icon-none,
+.ag-theme-alpine .ag-header-cell .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-header-cell .ag-sort-descending-icon,
+.ag-theme-alpine .ag-header-cell .ag-icon-filter,
+.ag-theme-alpine .ag-header-cell .ag-header-cell-menu-button .ag-icon {
+  color: #dbe6f5 !important;
+}
+.ag-theme-alpine .ag-header-cell[aria-sort="ascending"]  .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-header-cell[aria-sort="descending"] .ag-sort-descending-icon {
+  color: #ffffff !important;
+}
+.ag-theme-alpine .ag-header-cell:hover { background: rgba(255,255,255,.06) !important; }
+
+/* Active sort/filter markers legible on the dark header. */
+.ag-theme-alpine .ag-header-cell[aria-sort="ascending"],
+.ag-theme-alpine .ag-header-cell[aria-sort="descending"] {
+  box-shadow: inset 0 -3px 0 #38bdf8 !important;
+}
+.ag-theme-alpine .ag-header-cell.ag-header-cell-filtered {
+  box-shadow: inset 0 -3px 0 #fbbf24 !important;
+}
+
+/* Floating-filter row (the per-column search fields): clean and clearly a
+   search box, sitting just under the headings. */
+.ag-theme-alpine .ag-header-row-floating-filter {
+  background: #f1f5f9 !important;
+}
+.ag-theme-alpine .ag-floating-filter { border-right: 1px solid #e2e8f0 !important; }
+.ag-theme-alpine .ag-floating-filter-input input {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  padding: 3px 8px !important;
+  font-size: 12px !important;
+  background: #fff !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input:focus {
+  outline: none !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 2px rgba(37,99,235,.14) !important;
+}
+
+/* Rows: comfortable height, clear zebra striping, crisp hover/selection. */
+.ag-theme-alpine .ag-row { border-bottom: 1px solid #eef2f7 !important; }
+.ag-theme-alpine .ag-row-odd  { background: #fafbfc !important; }
+.ag-theme-alpine .ag-row-even { background: #ffffff !important; }
+.ag-theme-alpine .ag-row-hover { background: #eff6ff !important; }
+.ag-theme-alpine .ag-row-selected { background: #dbeafe !important; }
+.ag-theme-alpine .ag-cell {
+  display: flex; align-items: center;
+  border-right: 1px solid #f1f5f9 !important;
+  color: #334155;
+}
+
+/* Whole grid: soft frame + rounded corners so it reads as one clean panel. */
+.ag-theme-alpine {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15,23,42,.06);
+}
+
+/* Pagination bar tidy. */
+.ag-theme-alpine .ag-paging-panel {
+  border-top: 1px solid #eef2f7 !important;
+  color: #475569;
+  font-size: 12.5px;
+}
+
+/* NUCLEAR: guarantee no duplicate sort glyph survives. Inside a single
+   header cell, if a directional arrow is present the neutral one is hidden;
+   AG-Grid only ever sets aria-sort OR renders none, so this keeps exactly
+   one glyph visible at all times regardless of theme quirks. */
+.ag-theme-alpine .ag-header-cell .ag-sort-indicator-container > span { }
+.ag-theme-alpine .ag-header-cell[aria-sort="ascending"]  .ag-sort-descending-icon,
+.ag-theme-alpine .ag-header-cell[aria-sort="descending"] .ag-sort-ascending-icon {
+  display: none !important;
 }

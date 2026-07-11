@@ -155,6 +155,30 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
             <div class="pur-section-body open">
+
+              {# ── Kind / Payment / Vendor Bank ── #}
+              <div class="f-grid3" style="margin-bottom:14px;">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
+                  <select id="pdm_kind" class="f-inp">
+                    <option value="Goods">Goods / بضائع</option>
+                    <option value="Services">Services / خدمات</option>
+                  </select>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}طريقة الدفع{% else %}Payment{% endif %}<span class="f-req">*</span></div>
+                  <select id="pdm_payment" class="f-inp">
+                    <option value="Credit">Credit / آجل</option>
+                    <option value="Cash">Cash / نقدي</option>
+                  </select>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}حساب بنك المورد{% else %}Vendor Bank Account{% endif %}</div>
+                  <select id="pdm_bank_account" class="f-inp">
+                    <option value="">-- {% if ar %}اختر المورد أولاً{% else %}Select vendor first{% endif %} --</option>
+                  </select>
+                </div>
+              </div>
               <div class="f-grid3" style="margin-bottom:12px;">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}رقم طلب الإرجاع{% else %}Goods Return Request{% endif %} <span class="f-lbl-req" style="color:#ef4444;">*</span></div>
@@ -412,6 +436,7 @@ async function onGrrChange() {
     const grr = await res.json();
 
     document.getElementById('pdm_vendor').value = grr.vendor_id || '';
+    loadPdmVendorBanks(grr.vendor_id || '');
     document.getElementById('pdm_vendor_name').value = grr.vendor_name || '';
     if (grr.vendor_ref_no) document.getElementById('pdm_vendor_ref').value = grr.vendor_ref_no;
     if (grr.contact_person) document.getElementById('pdm_contact').value = grr.contact_person;
@@ -433,6 +458,22 @@ async function onGrrChange() {
 }
 
 /* ══ Posting Date: empty + disabled until status = Approved ══ */
+
+/* ══ Vendor bank accounts → bank dropdown ══ */
+function loadPdmVendorBanks(vendorId, selectedId) {
+  const sel = document.getElementById('pdm_bank_account');
+  if (!sel) return;
+  if (!vendorId) { sel.innerHTML = '<option value="">-- ' + (IS_AR ? 'اختر المورد أولاً' : 'Select vendor first') + ' --</option>'; return; }
+  fetch('/purchase/vendors/' + vendorId + '/banks').then(r=>r.json()).then(banks=>{
+    let html = '<option value="">-- ' + (IS_AR ? 'اختر حساباً' : 'Select account') + ' --</option>';
+    (banks||[]).forEach(b=>{
+      const label=(b.bank_name_en||b.bank_name||'')+(b.account_number?' — '+b.account_number:'');
+      html += '<option value="'+b.id+'"'+(String(b.id)===String(selectedId)?' selected':'')+'>'+label+'</option>';
+    });
+    sel.innerHTML=html;
+  }).catch(()=>{ sel.innerHTML='<option value="">-- '+(IS_AR?'لا توجد حسابات':'No accounts')+' --</option>'; });
+}
+
 function onPdmStatusChange() {
   const statusEl = document.getElementById('pdm_status');
   const postEl   = document.getElementById('pdm_posting_date');
@@ -670,6 +711,9 @@ function openAddPDM() {
   document.getElementById('pdm_delivery_date').value = today;
   document.getElementById('pdm_doc_date').value = today;
   document.getElementById('pdm_status').value = 'Open';
+  document.getElementById('pdm_kind').value = 'Goods';
+  document.getElementById('pdm_payment').value = 'Credit';
+  loadPdmVendorBanks('');
   document.getElementById('pdm_vendor').value = '';
   document.getElementById('pdm_doc_no').value = '';
   document.getElementById('pdmDocBadge').textContent = 'NEW';
@@ -698,7 +742,10 @@ function openEditPDM(id) {
     document.getElementById('pdm_doc_no').value = d.doc_no || '';
     document.getElementById('pdmDocBadge').textContent = d.doc_no || '';
     document.getElementById('pdm_status').value = d.status || 'Open';
+    document.getElementById('pdm_kind').value = d.kind || 'Goods';
+    document.getElementById('pdm_payment').value = d.payment_method || 'Credit';
     document.getElementById('pdm_vendor').value = d.vendor_id || '';
+    loadPdmVendorBanks(d.vendor_id || '', d.bank_account_id || '');
     const vn = document.getElementById('pdm_vendor_name'); if(vn) vn.value = d.vendor_name||'';
     const vr = document.getElementById('pdm_vendor_ref'); if(vr) vr.value = d.vendor_ref_no||'';
     const rm = document.getElementById('pdm_remarks'); if(rm) rm.value = d.remarks||'';
@@ -745,6 +792,9 @@ async function savePDM() {
   const fd  = new FormData();
   fd.set('csrf_token', CSRF);
   fd.set('status',        document.getElementById('pdm_status').value);
+  fd.set('kind', document.getElementById('pdm_kind').value);
+  fd.set('payment_method', document.getElementById('pdm_payment').value);
+  fd.set('bank_account_id', document.getElementById('pdm_bank_account').value || '');
   fd.set('vendor_id',     document.getElementById('pdm_vendor').value);
   fd.set('vendor_ref_no', document.getElementById('pdm_vendor_ref')?.value||'');
   fd.set('remarks',       document.getElementById('pdm_remarks')?.value||'');

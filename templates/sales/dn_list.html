@@ -153,7 +153,14 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
-            <div class="pur-section-body open">
+                        <div class="pur-section-body open">
+              <div class="f-item" style="margin-bottom:12px;max-width:260px;">
+                <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
+                <select id="dn_kind" class="f-inp">
+                  <option value="Goods">Goods / بضائع</option>
+                  <option value="Services">Services / خدمات</option>
+                </select>
+              </div>
 
               <div class="f-grid4" style="margin-bottom:12px;">
                 <div class="f-item">
@@ -581,6 +588,7 @@ function openAddGRN() {
   document.getElementById('dn_doc_date').value = today; // editable per spec, but server re-stamps to today on save
   
   document.getElementById('dn_status').value = 'Open';
+  document.getElementById('dn_kind').value = 'Goods';
   document.getElementById('dn_buyer').value = '';
   document.getElementById('dn_buyer_name').value = '';
   document.getElementById('dn_so_id').value = '';
@@ -614,6 +622,7 @@ function openEditGRN(id) {
     document.getElementById('dn_doc_no').value = d.doc_no || '';
     document.getElementById('grnDocBadge').textContent = d.doc_no || '';
     document.getElementById('dn_status').value = d.status || 'Open';
+    document.getElementById('dn_kind').value = d.kind || 'Goods';
     document.getElementById('dn_buyer').value = d.buyer_id || '';
     document.getElementById('dn_buyer_name').value = d.buyer_name || '';
     document.getElementById('dn_contact').value = d.contact_person || '';
@@ -668,6 +677,7 @@ async function saveGRN() {
   
   // Get form data
   fd.set('status', document.getElementById('dn_status').value);
+  fd.set('kind', document.getElementById('dn_kind').value);
   fd.set('buyer_id', document.getElementById('dn_buyer').value);
   fd.set('so_id', document.getElementById('dn_so_id')?.value || '');
   fd.set('contact_person', document.getElementById('dn_contact')?.value || '');

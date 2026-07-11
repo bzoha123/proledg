@@ -153,7 +153,14 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
-            <div class="pur-section-body open">
+                        <div class="pur-section-body open">
+              <div class="f-item" style="margin-bottom:12px;max-width:260px;">
+                <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
+                <select id="sq_kind" class="f-inp">
+                  <option value="Goods">Goods / بضائع</option>
+                  <option value="Services">Services / خدمات</option>
+                </select>
+              </div>
               <div class="f-grid4">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}رقم المستند{% else %}Document No{% endif %}</div>
@@ -716,6 +723,7 @@ async function openAddPQ() {
   document.getElementById('sq_req_date').value = today;
   document.getElementById('pqDateErr').style.display = 'none';
   document.getElementById('sq_status').value = 'Open';
+  document.getElementById('sq_kind').value = 'Goods';
   document.getElementById('sq_buyer').value = '';
   document.getElementById('sq_sr_id').value = '';
   document.getElementById('sq_doc_no').value = '';
@@ -751,6 +759,7 @@ function openEditPQ(id) {
     document.getElementById('sq_doc_no').value = d.doc_no || '';
     document.getElementById('sqDocBadge').textContent = d.doc_no || '';
     document.getElementById('sq_status').value = d.status || 'Open';
+    document.getElementById('sq_kind').value = d.kind || 'Goods';
     document.getElementById('sq_buyer').value = d.buyer_id || '';
     document.getElementById('sq_sr_id').value = d.sales_request_id || '';
     document.getElementById('sq_requester').value = d.requester || CURRENT_USERNAME;
@@ -809,6 +818,7 @@ async function savePQ() {
     const fd  = new FormData();
     fd.set('csrf_token', CSRF);
     fd.set('status',         document.getElementById('sq_status').value);
+  fd.set('kind', document.getElementById('sq_kind').value);
     fd.set('sr_id', document.getElementById('sq_sr_id')?.value || '');
     fd.set('buyer_id',      document.getElementById('sq_buyer').value);
     fd.set('buyer_ref_no',  document.getElementById('sq_buyer_ref').value);

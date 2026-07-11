@@ -153,7 +153,14 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
-            <div class="pur-section-body open">
+                        <div class="pur-section-body open">
+              <div class="f-item" style="margin-bottom:12px;max-width:260px;">
+                <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
+                <select id="pq_kind" class="f-inp">
+                  <option value="Goods">Goods / بضائع</option>
+                  <option value="Services">Services / خدمات</option>
+                </select>
+              </div>
               <div class="f-grid4">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}رقم المستند{% else %}Document No{% endif %}</div>
@@ -716,6 +723,7 @@ async function openAddPQ() {
   document.getElementById('pq_req_date').value = today;
   document.getElementById('pqDateErr').style.display = 'none';
   document.getElementById('pq_status').value = 'Open';
+  document.getElementById('pq_kind').value = 'Goods';
   document.getElementById('pq_vendor').value = '';
   document.getElementById('pq_pr_id').value = '';
   document.getElementById('pq_doc_no').value = '';
@@ -751,6 +759,7 @@ function openEditPQ(id) {
     document.getElementById('pq_doc_no').value = d.doc_no || '';
     document.getElementById('pqDocBadge').textContent = d.doc_no || '';
     document.getElementById('pq_status').value = d.status || 'Open';
+    document.getElementById('pq_kind').value = d.kind || 'Goods';
     document.getElementById('pq_vendor').value = d.vendor_id || '';
     document.getElementById('pq_pr_id').value = d.purchase_request_id || '';
     document.getElementById('pq_requester').value = d.requester || CURRENT_USERNAME;
@@ -809,6 +818,7 @@ async function savePQ() {
     const fd  = new FormData();
     fd.set('csrf_token', CSRF);
     fd.set('status',         document.getElementById('pq_status').value);
+  fd.set('kind', document.getElementById('pq_kind').value);
     fd.set('pr_id', document.getElementById('pq_pr_id')?.value || '');
     fd.set('vendor_id',      document.getElementById('pq_vendor').value);
     fd.set('vendor_ref_no',  document.getElementById('pq_vendor_ref').value);

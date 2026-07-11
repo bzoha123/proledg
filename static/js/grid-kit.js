@@ -34,7 +34,7 @@
     clearFilters: 'مسح كل الفلاتر', noFilters: 'لا توجد فلاتر',
     csv: 'ملف CSV', excel: 'ملف Excel', pdf: 'طباعة / PDF',
     pinLeft: 'تثبيت لليسار', pinRight: 'تثبيت لليمين', unpin: 'إلغاء التثبيت',
-    visible: 'مرئي'
+    visible: 'مرئي', searchAll: 'بحث في كل الأعمدة...', clearOne: 'مسح'
   } : {
     columns: 'Columns', filters: 'Filters', exportLbl: 'Export',
     showAll: 'Show all', hideAll: 'Hide all',
@@ -42,7 +42,7 @@
     clearFilters: 'Clear all filters', noFilters: 'No active filters',
     csv: 'CSV file', excel: 'Excel file', pdf: 'Print / PDF',
     pinLeft: 'Pin left', pinRight: 'Pin right', unpin: 'Unpin',
-    visible: 'Visible'
+    visible: 'Visible', searchAll: 'Search all columns...', clearOne: 'Clear'
   };
 
   /* ── Version bridge ───────────────────────────────────────────
@@ -221,49 +221,106 @@
     p.appendChild(list);
   }
 
-  /* ══ Filters panel ═══════════════════════════════════════════ */
+  /* ══ Filters panel ═══════════════════════════════════════════
+     A read-only list of active filters is useless when nothing is
+     filtered — which is most of the time. So this panel is a place to
+     *apply* filters: type in any column's box and it filters as you go,
+     with the active ones surfaced at the top and clearable in one click. */
   function filtersPanel(ctx, anchor) {
     var api = ctx.api;
     var p = popover(anchor);
-    var model = api.getFilterModel ? (api.getFilterModel() || {}) : {};
-    var keys = Object.keys(model);
+    p.classList.add('gk-pop-wide');
+
+    var model = (api.getFilterModel && api.getFilterModel()) || {};
+    var active = Object.keys(model);
 
     var head = el('div', 'gk-pop-head');
     head.appendChild(el('span', 'gk-pop-title', T.filters));
+    if (active.length) {
+      var clear = el('button', 'gk-link gk-danger', T.clearFilters);
+      clear.type = 'button';
+      clear.style.marginTop = '7px';
+      clear.addEventListener('click', function () {
+        api.setFilterModel(null);
+        closeMenus();
+      });
+      head.appendChild(clear);
+    }
     p.appendChild(head);
 
-    if (!keys.length) {
-      p.appendChild(el('div', 'gk-empty', T.noFilters));
-      return;
+    /* Quick search across every column — the fastest way to find a row. */
+    var qsWrap = el('div', 'gk-qs');
+    var qs = el('input');
+    qs.type = 'search';
+    qs.className = 'gk-qs-input';
+    qs.placeholder = T.searchAll;
+    qs.value = ctx._gkQuick || '';
+    qs.addEventListener('input', function () {
+      ctx._gkQuick = qs.value;
+      api.setGridOption('quickFilterText', qs.value);
+    });
+    qsWrap.appendChild(el('i', 'fas fa-magnifying-glass gk-qs-icon'));
+    qsWrap.appendChild(qs);
+    p.appendChild(qsWrap);
+    setTimeout(function () { qs.focus(); }, 30);
+
+    /* One text box per filterable column. */
+    var list = el('div', 'gk-pop-list');
+    var filterable = allColumns(ctx).filter(function (c) {
+      var d = c.getColDef();
+      return c.isVisible() && d.filter !== false && d.field;
+    });
+
+    if (!filterable.length) {
+      list.appendChild(el('div', 'gk-empty', T.noFilters));
     }
 
-    var list = el('div', 'gk-pop-list');
-    keys.forEach(function (id) {
-      var col = allColumns(ctx).filter(function (c) { return c.getColId() === id; })[0];
-      var row = el('div', 'gk-col-row');
-      row.appendChild(el('span', 'gk-col-name', esc(col ? colName(col) : id)));
+    filterable.forEach(function (col) {
+      var id = col.getColId();
+      var row = el('div', 'gk-filter-row');
+
+      var lab = el('label', 'gk-filter-label', esc(colName(col)));
+      row.appendChild(lab);
+
+      var box = el('div', 'gk-filter-box');
+      var inp = el('input');
+      inp.type = 'text';
+      inp.className = 'gk-filter-input';
+      var cur = model[id];
+      inp.value = (cur && (cur.filter != null ? cur.filter : '')) || '';
+      if (inp.value) row.classList.add('gk-filter-on');
+
+      var timer = null;
+      inp.addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          var m = (api.getFilterModel && api.getFilterModel()) || {};
+          var v = inp.value.trim();
+          if (v) m[id] = { filterType: 'text', type: 'contains', filter: v };
+          else delete m[id];
+          api.setFilterModel(m);
+          row.classList.toggle('gk-filter-on', !!v);
+        }, 260);
+      });
+
       var x = el('button', 'gk-chip-x', '<i class="fas fa-times"></i>');
       x.type = 'button';
+      x.title = T.clearOne;
       x.addEventListener('click', function () {
-        var m = api.getFilterModel();
+        inp.value = '';
+        var m = (api.getFilterModel && api.getFilterModel()) || {};
         delete m[id];
         api.setFilterModel(m);
-        p.remove();
-        filtersPanel(ctx, anchor);
+        row.classList.remove('gk-filter-on');
       });
-      row.appendChild(x);
+
+      box.appendChild(inp);
+      box.appendChild(x);
+      row.appendChild(box);
       list.appendChild(row);
     });
-    p.appendChild(list);
 
-    var clear = el('button', 'gk-link gk-danger', T.clearFilters);
-    clear.type = 'button';
-    clear.style.margin = '4px 8px 6px';
-    clear.addEventListener('click', function () {
-      api.setFilterModel(null);
-      closeMenus();
-    });
-    p.appendChild(clear);
+    p.appendChild(list);
   }
 
   /* ══ Export ══════════════════════════════════════════════════ */
@@ -349,6 +406,35 @@
     var ctx = params && params.api ? params : { api: params, columnApi: null };
     if (!ctx.api) return;
 
+    /* ── Consistency guarantee (applies to EVERY grid that calls enhance) ──
+       - a per-column search field (floating filter) on every data column
+       - a filter on every data column
+       - always-visible single sort icon (unSortIcon)
+       This runs once against the live columnDefs so pages that forgot to set
+       these still get the standard behaviour. Action/utility columns opt out. */
+    try {
+      var defs = ctx.api.getColumnDefs ? ctx.api.getColumnDefs() : null;
+      if (defs) {
+        var changed = false;
+        defs.forEach(function (cd) {
+          var fld = cd.field || '';
+          var isAction = (!cd.field && !cd.colId) ||
+                         cd.headerName === '' ||
+                         cd.suppressColumnFilter === true ||
+                         cd.gkNoFilter === true ||
+                         cd.checkboxSelection === true ||
+                         cd.sortable === false ||             // action/utility cols
+                         fld.charAt(0) === '_' ||              // e.g. _actions, _a
+                         cd.cellRenderer && /Act|action/i.test(String(cd.field || cd.headerName || ''));
+          if (isAction) { if (cd.floatingFilter !== false) { cd.floatingFilter = false; changed = true; } return; }
+          if (cd.filter === undefined) { cd.filter = true; changed = true; }
+          if (cd.floatingFilter === undefined) { cd.floatingFilter = true; changed = true; }
+          if (cd.sortable !== false && cd.unSortIcon === undefined) { cd.unSortIcon = true; changed = true; }
+        });
+        if (changed && ctx.api.setGridOption) { ctx.api.setGridOption('columnDefs', defs); }
+      }
+    } catch (e) { /* non-fatal */ }
+
     var container = typeof containerId === 'string'
       ? document.getElementById(containerId) : containerId;
     if (!container || container._gkReady) return;
@@ -394,7 +480,29 @@
       exportPanel(ctx, bExp, name);
     });
 
-    container.parentNode.insertBefore(bar, container);
+    /* Every list page already renders a `.toolbar` with Add / Refresh / Clear.
+       Adding a *second* bar above the grid duplicates those affordances and
+       looks cluttered. Slot our three controls into that existing toolbar
+       instead, and only fall back to a standalone row when a page has none. */
+    var host = opts.toolbar
+      ? (typeof opts.toolbar === 'string' ? document.querySelector(opts.toolbar) : opts.toolbar)
+      : null;
+
+    if (!host) {
+      var page = container.closest('.proledg-page, .pur-page, .emp-page') || document;
+      host = page.querySelector('.toolbar .toolbar-left') ||
+             page.querySelector('.toolbar-left');
+    }
+
+    if (host) {
+      bar.classList.add('gk-inline');
+      // A hairline divider keeps our group visually distinct from the
+      // page's own Add / Refresh buttons without adding a whole row.
+      host.appendChild(el('span', 'gk-divider'));
+      host.appendChild(bar);
+    } else {
+      container.parentNode.insertBefore(bar, container);
+    }
 
     function badge() {
       var n = Object.keys((ctx.api.getFilterModel && ctx.api.getFilterModel()) || {}).length;

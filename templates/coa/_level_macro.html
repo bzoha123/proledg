@@ -36,8 +36,7 @@
   <div class="toolbar" style="gap:8px;flex-wrap:wrap;">
     <div class="toolbar-left" style="gap:6px;">
       {% if current_user.is_admin() %}
-      <button type="button" class="tool-btn tool-btn-green"
-              data-bs-toggle="modal" data-bs-target="#lvlModal" onclick="openAdd()">
+      <button type="button" class="tool-btn tool-btn-green js-coa-add">
         <i class="fas fa-plus"></i>
       </button>
       {% endif %}
@@ -128,12 +127,12 @@
           </td>
           {% if current_user.is_admin() %}
           <td class="text-center">
-            <button type="button" class="action-btn action-btn-edit"
-                    onclick="openView({{ pcode|tojson }}, {{ r.code|tojson }}, {{ r.drawers|tojson }}, {{ r.description|tojson }}, {{ (r.status or 'active')|tojson }}, {{ r.code_length }})">
-              <i class="fas fa-eye"></i>
-            </button>
-            <button type="button" class="action-btn action-btn-edit"
-                    onclick="openEdit({{ r.id }}, {{ r.code|tojson }}, {{ r.drawers|tojson }}, {{ (r.status or 'active')|tojson }}, {{ pid }})">
+            <button type="button" class="action-btn action-btn-edit js-coa-edit"
+                    data-id="{{ r.id }}"
+                    data-code="{{ r.code }}"
+                    data-drawers="{{ r.drawers }}"
+                    data-status="{{ r.status or 'active' }}"
+                    data-parent="{{ pid if pid is not none else '' }}">
               <i class="fas fa-pencil-alt"></i>
             </button>
             <form method="POST" action="{{ url_for(endpoints.delete, id=r.id) }}" class="d-inline"
@@ -302,24 +301,6 @@
           </button>
         </div>
       </form>
-    </div>
-  </div>
-</div>
-
-{# ── View modal ─────────────────────────────────────────────── #}
-<div class="modal fade" id="viewModal" tabindex="-1">
-  <div class="modal-dialog modal-md">
-    <div class="modal-content proledg-modal">
-      <div class="modal-header proledg-modal-header">
-        <h5 class="modal-title">{% if ar %}تفاصيل الحساب{% else %}Account Details{% endif %}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" id="viewBody"></div>
-      <div class="modal-footer proledg-modal-footer">
-        <button type="button" class="pl-footer-btn pl-btn-cancel" data-bs-dismiss="modal">
-          {% if ar %}إغلاق{% else %}Close{% endif %}
-        </button>
-      </div>
     </div>
   </div>
 </div>
@@ -503,10 +484,29 @@
     $('stActive').checked = true;
     _editParentId = null; _editRowId = null;
     setDrawersState('none');
+    showLvlModal();
+  }
+
+  /* One code path opens the modal, so Bootstrap never ends up with two
+     competing instances on the same element. */
+  function showLvlModal() {
+    var el = $('lvlModal');
+    console.log('[COA] showLvlModal. modal:', el, 'bootstrap:', typeof bootstrap);
+    if (!el) { console.error('[COA] #lvlModal not found'); return; }
+    if (typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+      console.error('[COA] Bootstrap Modal unavailable'); return;
+    }
+    try {
+      bootstrap.Modal.getOrCreateInstance(el).show();
+      console.log('[COA] .show() invoked OK');
+    } catch (err) {
+      console.error('[COA] .show() threw:', err);
+    }
   }
 
   /* EDIT: parent + code are immutable, so hide the cascade. */
   function openEdit(id, code, drawers, status, parentId) {
+    console.log('[COA] openEdit fired:', {id: id, code: code, parentId: parentId});
     $('lvlModalTitle').textContent = T.edit;
     var f = $('lvlForm');
     f.setAttribute('action', LIST_URL + '/' + id + '/edit');
@@ -519,28 +519,7 @@
     _editRowId = id;
     _editParentId = parentId || null;
     setDrawersState('ok');
-    if (typeof bootstrap === 'undefined') { console.error('Bootstrap not loaded'); return; }
-    new bootstrap.Modal($('lvlModal')).show();
-  }
-
-  function openView(pcode, code, drawers, desc, status, len) {
-    var badge = (status === 'inactive')
-      ? '<span style="background:#fee2e2;color:#b91c1c;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">' + T.inactive + '</span>'
-      : '<span style="background:#dcfce7;color:#15803d;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">' + T.active + '</span>';
-    function row(k, v) {
-      return '<tr><td style="padding:8px 12px;font-weight:600;color:#374151;width:40%;border-bottom:1px solid #f1f5f9;">' + k +
-             '</td><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;">' + v + '</td></tr>';
-    }
-    $('viewBody').innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
-      + row(IS_AR ? 'الأب' : 'Parent', pcode)
-      + row(IS_AR ? 'الكود' : 'Code', '<strong style="color:#2563eb">' + code + '</strong>')
-      + row(IS_AR ? 'طول الكود' : 'Code Length', len)
-      + row(IS_AR ? 'المجموعة' : 'Drawers', drawers)
-      + row(IS_AR ? 'الوصف' : 'Description', desc)
-      + row(IS_AR ? 'الحالة' : 'Status', badge)
-      + '</table>';
-    if (typeof bootstrap === 'undefined') { console.error('Bootstrap not loaded'); return; }
-    new bootstrap.Modal($('viewModal')).show();
+    showLvlModal();
   }
 
   function validateLvl() {
@@ -564,15 +543,54 @@
     return true;
   }
 
-  /* Inline onclick/onchange attributes need these on `window`. */
+  /* Exposed so both the inline cascade handlers AND the separate binding
+     script below can reach them. */
   window.onL1Change  = onL1Change;
   window.onL2Change  = onL2Change;
   window.onL3Change  = onL3Change;
   window.onL4Change  = onL4Change;
+  window.onDrawersInput = onDrawersInput;
+  window.validateLvl = validateLvl;
   window.openAdd     = openAdd;
   window.openEdit    = openEdit;
-  window.openView    = openView;
-  window.validateLvl = validateLvl;
+})();
+</script>
+
+{# ── Button binding lives in its OWN script block. If anything in the IIFE
+      above ever throws, its exports may be missing — but this block still
+      runs, and it fails loudly instead of silently. It binds by class hook,
+      not inline onclick, so a missing global can't turn clicks into no-ops. #}
+<script>
+(function () {
+  function bind() {
+    var addBtn = document.querySelector('.js-coa-add');
+    if (addBtn) {
+      addBtn.addEventListener('click', function () {
+        if (typeof window.openAdd === 'function') window.openAdd();
+        else console.error('[COA] window.openAdd is not defined — the COA init script failed to load.');
+      });
+    }
+    document.querySelectorAll('.js-coa-edit').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (typeof window.openEdit !== 'function') {
+          console.error('[COA] window.openEdit is not defined — the COA init script failed to load.');
+          return;
+        }
+        window.openEdit(
+          this.getAttribute('data-id'),
+          this.getAttribute('data-code'),
+          this.getAttribute('data-drawers'),
+          this.getAttribute('data-status'),
+          this.getAttribute('data-parent') || null
+        );
+      });
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bind);
+  } else {
+    bind();
+  }
 })();
 </script>
 {% endmacro %}

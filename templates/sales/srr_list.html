@@ -153,7 +153,14 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
-            <div class="pur-section-body open">
+                        <div class="pur-section-body open">
+              <div class="f-item" style="margin-bottom:12px;max-width:260px;">
+                <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
+                <select id="srr_kind" class="f-inp">
+                  <option value="Goods">Goods / بضائع</option>
+                  <option value="Services">Services / خدمات</option>
+                </select>
+              </div>
 
               <div class="f-grid4" style="margin-bottom:12px;">
                 <div class="f-item">
@@ -609,6 +616,7 @@ function openAddGRR() {
   document.getElementById('srr_doc_date').value = today;
   document.getElementById('grrDateErr').style.display = 'none';
   document.getElementById('srr_status').value = 'Open';
+  document.getElementById('srr_kind').value = 'Goods';
   document.getElementById('srr_buyer').value = '';
   document.getElementById('srr_buyer_name').value = '';
   document.getElementById('srr_pi_id').value = '';
@@ -644,6 +652,7 @@ function openEditGRR(id) {
     document.getElementById('srr_doc_no').value = d.doc_no || '';
     document.getElementById('grrDocBadge').textContent = d.doc_no || '';
     document.getElementById('srr_status').value = d.status || 'Open';
+    document.getElementById('srr_kind').value = d.kind || 'Goods';
     document.getElementById('srr_buyer').value = d.buyer_id || '';
     document.getElementById('srr_buyer_name').value = d.buyer_name || '';
     document.getElementById('srr_contact').value = d.contact_person || '';
@@ -727,6 +736,7 @@ async function saveGRR() {
   fd.append('contact_person', contact_person);
   fd.append('buyer_ref_no', buyer_ref_no);
   fd.append('status', status);
+  fd.append('kind', document.getElementById('srr_kind').value);
   fd.append('posting_date', posting_date);
   fd.append('delivery_date', delivery_date);
   fd.append('document_date', document_date);
