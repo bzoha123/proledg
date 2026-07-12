@@ -90,6 +90,86 @@
 .ag-theme-alpine .ag-row-hover { background: var(--blue-light) !important; }
 .ag-theme-alpine .ag-cell      { border-right: 1px solid var(--border-lt) !important; }
 
+/* ── Toolbar ────────────────────────────────────────────────── */
+.toolbar {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:14px;
+}
+.toolbar-left, .toolbar-right {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+}
+.tool-btn {
+    width:34px;
+    height:34px;
+    border-radius:7px;
+    border:1.5px solid #d1d5db;
+    background:white;
+    color:#6b7280;
+    cursor:pointer;
+    font-size:13px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    transition:all .12s;
+}
+.tool-btn:hover {
+    border-color:#2563eb;
+    color:#2563eb;
+    background:#eff6ff;
+}
+.tool-btn-green { background:#16a34a; color:white; border:none; }
+.tool-btn-green:hover { background:#15803d; }
+.tool-btn-blue { background:#2563eb; color:white; border:none; }
+.tool-btn-blue:hover { background:#1d4ed8; }
+
+.search-form { position:relative; }
+.search-icon {
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#9ca3af;
+    font-size:12px;
+    z-index:2;
+}
+.search-input {
+    padding:7px 12px 7px 32px;
+    border:1.5px solid #d1d5db;
+    border-radius:7px;
+    font-size:12px;
+    outline:none;
+}
+.search-input:focus { border-color:#2563eb; }
+
+.sel-badge {
+    font-size:11px;
+    color:#6b7280;
+    background:#f1f5f9;
+    padding:4px 10px;
+    border-radius:5px;
+    font-weight:600;
+}
+
+.proledg-pagination {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 16px;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-top:none;
+    border-radius:0 0 8px 8px;
+}
+.page-count { font-size:12px; color:#6b7280; font-weight:600; }
+
 /* ── Action buttons ────────────────────────────────────────── */
 .pl-act { display: flex; align-items: center; gap: 3px; }
 .pl-btn {
@@ -159,9 +239,6 @@
 .acc-header.open .acc-arrow { color: var(--blue); }
 .acc-body  { padding: 20px 22px; background: white; }
 .acc-body.hidden { display: none !important; }
-/* lists sit flush inside accordion bodies (their own margins are for full-width use) */
-.acc-body .bank-table-wrap,
-.acc-body .bank-empty { margin: 0 0 0 0; }
 
 /* ── Field rows ────────────────────────────────────────────── */
 .field-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
@@ -371,6 +448,12 @@
   </div>
   <div class="proledg-pagination">
     <span class="page-count" id="pageInfo">–</span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="small text-muted">{% if ar %}صفوف:{% else %}Rows:{% endif %}</span>
+      <select class="form-select form-select-sm" style="width:72px" onchange="gridApi&&gridApi.setGridOption('paginationPageSize',+this.value)">
+        <option value="10">10</option><option value="20" selected>20</option><option value="50">50</option>
+      </select>
+    </div>
   </div>
 </div>
 
@@ -819,7 +902,7 @@
 
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
 <script>
 const TR      = '{{ url_for("sellers.translate_text") }}';
 const CSRF    = '{{ csrf_token() }}';
@@ -1080,7 +1163,7 @@ function confDel(url, name) {
   new bootstrap.Modal(document.getElementById('delModal')).show();
 }
 
-/* ══ AG-GRID ══ */
+/* ══ AG-GRID ENTERPRISE ══ */
 function rCode(p){return p.value?`<span class="code-badge">${p.value}</span>`:'';}
 function rStatus(p){return p.value==='active'||p.value===true
   ?`<span class="st-pill st-active">${IS_AR?'نشيط':'Active'}</span>`
@@ -1100,6 +1183,23 @@ class ActR {
   getGui(){return this.g;}
 }
 
+const AG_LOCALE = IS_AR ? {
+  filterOoo:'تصفية...',equals:'يساوي',notEqual:'لا يساوي',contains:'يحتوي على',
+  notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',
+  blank:'فارغ',notBlank:'غير فارغ',lessThan:'أقل من',greaterThan:'أكبر من',
+  applyFilter:'تطبيق',clearFilter:'مسح',resetFilter:'إعادة تعيين',
+  addFilterCondition:'+ إضافة قاعدة',matchAll:'يطابق الكل',
+  matchAny:'يطابق أي',andCondition:'و',orCondition:'أو',
+  noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...',searchOoo:'بحث...',
+  sortAscending:'تصاعدي',sortDescending:'تنازلي',
+} : {
+  filterOoo:'Filter...',applyFilter:'Apply',clearFilter:'Clear',
+  resetFilter:'Reset',addFilterCondition:'+ Add Rule',
+  matchAll:'Match All',matchAny:'Match Any',
+  noRowsToShow:'No records found',searchOoo:'Search...',
+};
+
+const defCol={sortable:true,unSortIcon:true,resizable:true,filter:true,filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}};
 const cols=[
   {headerName:'#',field:'_idx',width:55,sortable:false,suppressMenu:true,valueGetter:p=>p.node.rowIndex+1,cellStyle:{color:'#6b7280',fontSize:'12px'}},
   {headerName:IS_AR?'كود المشتري':'Buyer Code',field:'buyer_code',width:130,cellRenderer:rCode,filter:'agTextColumnFilter'},
@@ -1125,47 +1225,72 @@ if(ADM) cols.push({
 });
 
 let gridApi;
-const _agLocale = IS_AR ? {
-  filterOoo:'تصفية...',equals:'يساوي',notEqual:'لا يساوي',contains:'يحتوي على',
-  notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',
-  blank:'فارغ',notBlank:'غير فارغ',lessThan:'أقل من',greaterThan:'أكبر من',
-  applyFilter:'تطبيق / Apply',clearFilter:'مسح / Clear',resetFilter:'إعادة تعيين',
-  addFilterCondition:'+ إضافة قاعدة / Add Rule',matchAll:'يطابق الكل / Match All',
-  matchAny:'يطابق أي / Match Any',andCondition:'و / AND',orCondition:'أو / OR',
-  noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...',searchOoo:'بحث...',
-  sortAscending:'تصاعدي',sortDescending:'تنازلي',
-} : {
-  filterOoo:'Filter...',applyFilter:'Apply / تطبيق',clearFilter:'Clear / مسح',
-  resetFilter:'Reset',addFilterCondition:'+ Add Rule / إضافة قاعدة',
-  matchAll:'Match All / بتطابق مع الكل',matchAny:'Match Any / يطابق أي',
-  andCondition:'AND / و',orCondition:'OR / أو',noRowsToShow:'No records found',searchOoo:'Search...',
-};
 
 agGrid.createGrid(document.getElementById('buyerGrid'),{
-  columnDefs:cols, multiSortKey:'ctrl', rowData:[], pagination:true, paginationPageSize:20,
-  animateRows:true, localeText:_agLocale, enableRtl:IS_AR,
-  defaultColDef:{sortable:true,unSortIcon:true,resizable:true,filter:true,filterParams:{buttons:['apply','reset','clear'],closeOnApply:true,maxNumConditions:10}},
+  columnDefs:cols, multiSortKey:'ctrl',
+  rowData:[], pagination:true, paginationPageSize:20,
+  animateRows:true, enableRtl:IS_AR, defaultColDef:defCol,
+  localeText:AG_LOCALE,
+  
+  // ── ENTERPRISE FEATURES (EXACTLY LIKE EMPLOYEES) ──
+  sideBar: {
+    toolPanels: [
+      {
+        id: 'columns',
+        labelDefault: IS_AR ? 'الأعمدة' : 'Columns',
+        labelKey: 'columns',
+        iconKey: 'columns',
+        toolPanel: 'agColumnsToolPanel'
+      },
+      {
+        id: 'filters',
+        labelDefault: IS_AR ? 'الفلاتر' : 'Filters',
+        labelKey: 'filters',
+        iconKey: 'filter',
+        toolPanel: 'agFiltersToolPanel'
+      }
+    ],
+    defaultToolPanel: ''
+  },
+  rowGroupPanelShow: 'always',
+  pivotPanelShow: 'always',
+  groupDisplayType: 'groupRows',
+  
+  rowSelection: 'multiple',
+  suppressRowClickSelection: true,
+  
   onGridReady(p) {
     gridApi = p.api;
-    // Pass the whole event: AG-Grid v31 keeps column operations on
-    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
     if (window.GridKit) {
       GridKit.enhance(p, 'buyerGrid', { storageKey: 'buyers', exportName: 'Buyers' });
     }
     loadData();
   },
+  onFilterChanged(){upd();},
   onPaginationChanged(){upd();},
+  onSelectionChanged(){upd();},
   getRowStyle(p){return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'};}
 });
 
 function loadData(){
-  fetch(DATA_URL).then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);upd();}).catch(e=>console.error(e));
+  var savedFilters = gridApi ? gridApi.getFilterModel() : null;
+  fetch(DATA_URL).then(r=>r.json()).then(d=>{
+    gridApi.setGridOption('rowData', d);
+    if (savedFilters && Object.keys(savedFilters).length) {
+      gridApi.setFilterModel(savedFilters);
+    }
+    upd();
+  }).catch(e=>console.error(e));
 }
 function upd(){
   if(!gridApi)return;
-  const cnt=gridApi.getDisplayedRowCount();
-  document.getElementById('selText').textContent=cnt+' '+(IS_AR?'سجل':'records');
-  document.getElementById('pageInfo').textContent=cnt+' '+(IS_AR?'مشتري':'buyer(s)');
+  const total = gridApi.getDisplayedRowCount();
+  const selected = gridApi.getSelectedRows().length;
+  const text = selected > 0 
+    ? `${selected} ${IS_AR ? 'محدد' : 'selected'}`
+    : `${total} ${IS_AR ? 'سجل' : 'records'}`;
+  document.getElementById('selText').textContent = text;
+  document.getElementById('pageInfo').textContent = `${total} ${IS_AR ? 'مشتري' : 'buyers'}`;
 }
 
 document.getElementById('buyerForm').addEventListener('submit',()=>setTimeout(loadData,600));

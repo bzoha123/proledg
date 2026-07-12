@@ -305,6 +305,12 @@
                                 <span>{% if current_locale=='ar' %}المستوى الخامس{% else %}Level 5{% endif %}</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('coa.coa_views') }}" class="nav-link {% if request.endpoint == 'coa.coa_views' %}active{% endif %}">
+                                <i class="fas fa-sitemap"></i>
+                                <span>{% if current_locale=='ar' %}العروض (مسطّح/شجري){% else %}Views (Flat/Tree){% endif %}</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </li>
@@ -314,6 +320,14 @@
                 <a href="{{ url_for('financial.fy_page') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('financial.') %}active{% endif %}">
                     <i class="fas fa-calendar-alt"></i>
                     <span>{% if current_locale=='ar' %}السنة المالية{% else %}Financial Year{% endif %}</span>
+                </a>
+            </li>
+
+            {# ══ JOURNAL ENTRIES ══════════════════════════════ #}
+            <li class="nav-item">
+                <a href="{{ url_for('journal.journal_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('journal.') %}active{% endif %}">
+                    <i class="fas fa-book"></i>
+                    <span>{% if current_locale=='ar' %}قيود اليومية{% else %}Journal Entries{% endif %}</span>
                 </a>
             </li>
 

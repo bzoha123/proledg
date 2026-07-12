@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}{% if ar %}عرض دليل الحسابات{% else %}Chart of Accounts — Views{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.min.css">
+<style>
+.page-title{font-size:22px;font-weight:800;color:#1e3a5f;margin-bottom:2px;}
+.page-sub{font-size:13px;color:#9ca3af;margin-bottom:16px;}
+.coa-tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:2px solid #e2e8f0;}
+.coa-tab{padding:9px 20px;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;border:none;background:none;border-bottom:3px solid transparent;margin-bottom:-2px;}
+.coa-tab.active{color:#2563eb;border-bottom-color:#2563eb;}
+.tab-pane{display:none;} .tab-pane.active{display:block;}
+.grid-wrap{border-radius:10px;overflow:hidden;border:1.5px solid #e2e8f0;background:#fff;}
+#flatGrid{width:100%;height:560px;}
+.ag-theme-alpine{--ag-font-family:'Segoe UI',system-ui,sans-serif;--ag-font-size:13px;}
+.ag-theme-alpine .ag-header{background:#e5e7eb!important;}
+.ag-theme-alpine .ag-header-cell-text{color:#1e293b!important;font-weight:700;font-size:11px;letter-spacing:.4px;}
+
+/* Tree */
+.tree-wrap{background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;padding:18px 20px;max-height:640px;overflow:auto;}
+.tree-toolbar{display:flex;gap:8px;margin-bottom:12px;}
+.tree-btn{border:1.5px solid #d1d5db;background:#fff;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;color:#374151;cursor:pointer;}
+.tree-btn:hover{background:#f3f4f6;}
+.tree ul{list-style:none;margin:0;padding-left:22px;}
+.tree > ul{padding-left:0;}
+.tree li{position:relative;padding:3px 0;}
+.tree-node{display:inline-flex;align-items:center;gap:7px;cursor:pointer;border-radius:6px;padding:3px 8px;font-size:13px;}
+.tree-node:hover{background:#f1f5f9;}
+.tree-caret{width:14px;display:inline-block;color:#94a3b8;font-size:11px;transition:transform .12s;}
+.tree-caret.open{transform:rotate(90deg);}
+.tree-caret.leaf{visibility:hidden;}
+.tree-code{font-family:monospace;font-size:11.5px;color:#2563eb;font-weight:700;}
+.tree-name{color:#1e293b;}
+.tree-l1 > .tree-node .tree-name{font-weight:800;color:#1e3a5f;}
+.tree-l5 .tree-name{color:#475569;}
+.tree li > ul{display:none;}
+.tree li.open > ul{display:block;}
+.tree-loading{color:#94a3b8;font-size:13px;padding:20px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding:24px;">
+  <div class="page-title">{% if ar %}عرض دليل الحسابات{% else %}Chart of Accounts — Views{% endif %}</div>
+  <div class="page-sub">{% if ar %}عرض مسطّح وشجري لكامل هيكل الحسابات{% else %}Flat and tree views of the full account hierarchy{% endif %}</div>
+
+  <div class="coa-tabs">
+    <button class="coa-tab active" id="tabFlatBtn" onclick="showTab('flat')">{% if ar %}عرض مسطّح{% else %}Flat View{% endif %}</button>
+    <button class="coa-tab" id="tabTreeBtn" onclick="showTab('tree')">{% if ar %}عرض شجري{% else %}Tree View{% endif %}</button>
+  </div>
+
+  <!-- FLAT -->
+  <div class="tab-pane active" id="pane-flat">
+    <div class="grid-wrap ag-theme-alpine"><div id="flatGrid"></div></div>
+  </div>
+
+  <!-- TREE -->
+  <div class="tab-pane" id="pane-tree">
+    <div class="tree-toolbar">
+      <button class="tree-btn" onclick="expandAll(true)"><i class="fas fa-plus-square"></i> {% if ar %}توسيع الكل{% else %}Expand All{% endif %}</button>
+      <button class="tree-btn" onclick="expandAll(false)"><i class="fas fa-minus-square"></i> {% if ar %}طيّ الكل{% else %}Collapse All{% endif %}</button>
+    </div>
+    <div class="tree-wrap"><div class="tree" id="treeRoot"><div class="tree-loading">{% if ar %}جارٍ التحميل...{% else %}Loading...{% endif %}</div></div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
+<script>
+const IS_AR = {{ 'true' if ar else 'false' }};
+let treeLoaded = false;
+
+function showTab(which){
+  document.getElementById('pane-flat').classList.toggle('active', which==='flat');
+  document.getElementById('pane-tree').classList.toggle('active', which==='tree');
+  document.getElementById('tabFlatBtn').classList.toggle('active', which==='flat');
+  document.getElementById('tabTreeBtn').classList.toggle('active', which==='tree');
+  if(which==='tree' && !treeLoaded){ loadTree(); }
+}
+
+/* ── FLAT VIEW (enterprise grid) ── */
+const defCol = { sortable:true, unSortIcon:true, resizable:true, filter:true, floatingFilter:true, enableRowGroup:true, enablePivot:true, enableValue:true, menuTabs:['filterMenuTab','columnsMenuTab','generalMenuTab'], filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} };
+const cols = [
+  {headerName:IS_AR?'كود الحساب':'Account Code', field:'account_code', width:150, cellStyle:{fontFamily:'monospace',fontWeight:'700',color:'#2563eb'}},
+  {headerName:IS_AR?'المستوى 1':'Level 1 Drawer', field:'level1_drawer', width:150},
+  {headerName:IS_AR?'المستوى 2':'Level 2 Drawer', field:'level2_drawer', width:160},
+  {headerName:IS_AR?'المستوى 3':'Level 3 Drawer', field:'level3_drawer', width:180},
+  {headerName:IS_AR?'المستوى 4':'Level 4 Drawer', field:'level4_drawer', width:180},
+  {headerName:IS_AR?'المستوى 5':'Level 5 Drawer', field:'level5_drawer', width:180},
+];
+let flatApi;
+agGrid.createGrid(document.getElementById('flatGrid'), {
+  columnDefs:cols, rowData:[], pagination:true, paginationPageSize:20,
+  alwaysShowHorizontalScroll:true, alwaysShowVerticalScroll:true,
+  sideBar:{toolPanels:[{id:'columns',labelDefault:IS_AR?'الأعمدة':'Columns',labelKey:'columns',iconKey:'columns',toolPanel:'agColumnsToolPanel'},{id:'filters',labelDefault:IS_AR?'الفلاتر':'Filters',labelKey:'filters',iconKey:'filter',toolPanel:'agFiltersToolPanel'}],defaultToolPanel:''},
+  rowGroupPanelShow:'always', pivotPanelShow:'always', groupDisplayType:'groupRows',
+  animateRows:true, enableRtl:IS_AR, defaultColDef:defCol,
+  localeText: IS_AR ? {noRowsToShow:'لا توجد بيانات'} : {noRowsToShow:'No records found'},
+  onGridReady(p){ flatApi=p.api; fetch('/coa/views/flat').then(r=>r.json()).then(d=>flatApi.setGridOption('rowData',d)); },
+  getRowStyle(p){ return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
+});
+
+/* ── TREE VIEW ── */
+function loadTree(){
+  fetch('/coa/views/tree').then(r=>r.json()).then(data=>{
+    treeLoaded=true;
+    const root=document.getElementById('treeRoot');
+    root.innerHTML='';
+    const ul=document.createElement('ul');
+    data.forEach((n,i)=>ul.appendChild(buildNode(n, 1)));
+    root.appendChild(ul);
+  }).catch(e=>{ document.getElementById('treeRoot').innerHTML='<div class="tree-loading">Error loading tree.</div>'; });
+}
+function buildNode(n, level){
+  const li=document.createElement('li');
+  li.className='tree-l'+level;
+  const hasKids=n.children && n.children.length>0;
+  const node=document.createElement('div');
+  node.className='tree-node';
+  node.innerHTML = `<span class="tree-caret ${hasKids?'':'leaf'}">▶</span>`+
+                   `<span class="tree-code">${n.code||''}</span>`+
+                   `<span class="tree-name">${n.name||''}</span>`;
+  node.onclick=()=>{ if(hasKids){ li.classList.toggle('open'); node.querySelector('.tree-caret').classList.toggle('open'); } };
+  li.appendChild(node);
+  if(hasKids){
+    const ul=document.createElement('ul');
+    n.children.forEach(ch=>ul.appendChild(buildNode(ch, level+1)));
+    li.appendChild(ul);
+  }
+  return li;
+}
+function expandAll(open){
+  document.querySelectorAll('#treeRoot li').forEach(li=>{
+    const hasKids=li.querySelector('ul');
+    if(hasKids){
+      li.classList.toggle('open', open);
+      const c=li.querySelector(':scope > .tree-node .tree-caret');
+      if(c) c.classList.toggle('open', open);
+    }
+  });
+}
+</script>
+{% endblock %}

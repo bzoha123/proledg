@@ -2,23 +2,46 @@ from flask import Blueprint, render_template, request, jsonify, redirect, url_fo
 from flask_login import login_required, current_user
 from decimal import Decimal
 from datetime import datetime, date
-from models import (
-    db, VendorMaster, VendorBank, VendorDocument,
-    PurchaseRequest, PurchaseQuotation, PurchaseOrder, GoodsReceiptNote,
-    PurchaseInvoice, GoodsReturnRequest, PurchaseDebitMemo,
-    PurchaseAttachment,
-    PurchaseRequestLineItem, PurchaseQuotationLineItem, PurchaseOrderLineItem,
-    GoodsReceiptLineItem, PurchaseInvoiceLineItem, GoodsReturnLineItem, PurchaseDebitMemoLineItem,
-    ItemMaster, UnitOfMeasurement, ItemUOM,
-)
+from sqlalchemy import text
 import os, re
 from werkzeug.utils import secure_filename
+
+# ✅ FIX: Complete imports - ItemMaster is in models.py
+from models import (
+    db, 
+    VendorMaster, 
+    VendorBank,
+    VendorDocument,
+    PurchaseRequest, 
+    PurchaseQuotation, 
+    PurchaseOrder, 
+    GoodsReceiptNote,
+    PurchaseInvoice, 
+    GoodsReturnRequest, 
+    PurchaseDebitMemo,
+    PurchaseAttachment,
+    PurchaseRequestLineItem, 
+    PurchaseQuotationLineItem, 
+    PurchaseOrderLineItem,
+    GoodsReceiptLineItem, 
+    PurchaseInvoiceLineItem, 
+    GoodsReturnLineItem, 
+    PurchaseDebitMemoLineItem,
+    PurchaseTaxCode,
+    SalesTaxCode,
+    ItemMaster,           # ✅ Now properly imported
+    ItemCategory,         # ✅ Now properly imported
+    ItemSubCategory,      # ✅ Now properly imported
+    TaxCategory,          # ✅ Now properly imported
+    UnitOfMeasurement,    # ✅ Now properly imported
+    ItemUOM,              # ✅ Now properly imported
+)
 
 pur_bp = Blueprint('purchase', __name__)
 
 
 # ══════════════════════════════════════════════════════════════════
-# HELPER FUNCTIONS (ONCE ONLY)
+# HELPER FUNCTIONS
 # ══════════════════════════════════════════════════════════════════
 
 def _t(en, ar): return ar if session.get('lang') == 'ar' else en
@@ -38,14 +61,13 @@ def _vendor_list():
             for v in VendorMaster.query.filter_by(is_active=True).order_by(VendorMaster.vendor_name_en).all()]
 
 def _next_doc_no(doc_type, model):
-    """Generate unique doc number per type. Format: PR-2026-0001, PQ-2026-0001, PO-2026-0001.
-       ⭐ FIX: Always gets MAX number from ALL records to prevent reuse.
-    """
+    """Generate unique doc number per type. Format: PR-2026-0001, PQ-2026-0001, etc."""
     year = date.today().year
     prefix = doc_type
     like = f'{prefix}-{year}-%'
     
-    pk_name = None
+    # Determine primary key column
+    pk_name = 'id'
     if hasattr(model, 'purchase_request_id'):
         pk_name = 'purchase_request_id'
     elif hasattr(model, 'purchase_quotation_id'):
@@ -60,12 +82,10 @@ def _next_doc_no(doc_type, model):
         pk_name = 'goods_return_request_id'
     elif hasattr(model, 'purchase_debit_memo_id'):
         pk_name = 'purchase_debit_memo_id'
-    else:
-        pk_name = 'id'
     
     pk_column = getattr(model, pk_name)
     
-    # ⭐ FIX: Get ALL records for this year and find the MAX number
+    # Get all records for this year
     all_docs = db.session.query(model).filter(
         model.doc_no.like(like)
     ).all()
@@ -82,11 +102,22 @@ def _next_doc_no(doc_type, model):
             except (ValueError, IndexError):
                 continue
     
-    # ⭐ Always increment from max + 1
     n = max_num + 1
+    doc_no = f'{prefix}-{year}-{n:04d}'
     
-    # Format with 4 digits
-    return f'{prefix}-{year}-{n:04d}'
+    # Safety check - ensure uniqueness
+    retries = 0
+    while model.query.filter_by(doc_no=doc_no).first() and retries < 100:
+        n += 1
+        doc_no = f'{prefix}-{year}-{n:04d}'
+        retries += 1
+    
+    if retries >= 100:
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        doc_no = f'{prefix}-{year}-{timestamp}'
+    
+    return doc_no
+
 
 def _save_attachments(doc_type, doc_id, files):
     """Save uploaded attachments."""
@@ -105,7 +136,28 @@ def _save_attachments(doc_type, doc_id, files):
         )
         db.session.add(att)
 
-def _save_doc_line_items(LIModel, fk_field, fk_value, f):
+
+def _get_tax_rate(tax_code, doc_type='purchase'):
+    """Get tax rate from tax code (numeric only)."""
+    try:
+        if doc_type == 'purchase':
+            tax = PurchaseTaxCode.query.filter_by(tax_code=tax_code, status='Active').first()
+        else:
+            tax = SalesTaxCode.query.filter_by(tax_code=tax_code, status='Active').first()
+        
+        if tax and hasattr(tax, 'tax_rate'):
+            return Decimal(str(tax.tax_rate))
+        
+        # Fallback: try to parse tax_code as number
+        try:
+            return Decimal(tax_code)
+        except:
+            return Decimal('0')
+    except Exception:
+        return Decimal('0')
+
+
+def _save_doc_line_items(LIModel, fk_field, fk_value, f, doc_type='purchase'):
     """Generic save for any dedicated line item model."""
     LIModel.query.filter_by(**{fk_field: fk_value}).delete()
 
@@ -120,20 +172,41 @@ def _save_doc_line_items(LIModel, fk_field, fk_value, f):
     freights = f.getlist('li_freight[]')
     tcodes   = f.getlist('li_tax_code[]')
 
-    total_bd = Decimal(0); total_disc = Decimal(0)
-    total_fr = Decimal(0); total_vat  = Decimal(0)
+    total_bd = Decimal(0)
+    total_disc = Decimal(0)
+    total_fr = Decimal(0)
+    total_vat = Decimal(0)
 
     for i in range(len(qtys)):
         try:
-            qty      = Decimal(qtys[i]     or '0')
-            rate     = Decimal(rates[i]    if i < len(rates)    else '0')
-            disc     = Decimal(discs[i]    if i < len(discs)    else '0')
-            fr       = Decimal(freights[i] if i < len(freights) else '0')
-            tax_code = tcodes[i] if i < len(tcodes) else 'VAT15'
-            tax_rate = Decimal('15') if '15' in tax_code else Decimal('0')
-            taxable  = max(Decimal('0'), (qty * rate - disc) + fr)
-            tax_amt  = (taxable * tax_rate / 100).quantize(Decimal('0.01'))
-            total    = taxable + tax_amt
+            # ✅ FIX: Handle empty/None values safely
+            qty_str = qtys[i] if i < len(qtys) and qtys[i] else '0'
+            rate_str = rates[i] if i < len(rates) and rates[i] else '0'
+            disc_str = discs[i] if i < len(discs) and discs[i] else '0'
+            fr_str = freights[i] if i < len(freights) and freights[i] else '0'
+            
+            # Remove commas and clean
+            qty_str = qty_str.replace(',', '').strip()
+            rate_str = rate_str.replace(',', '').strip()
+            disc_str = disc_str.replace(',', '').strip()
+            fr_str = fr_str.replace(',', '').strip()
+            
+            # Parse with 4 decimal precision
+            qty = Decimal(qty_str or '0').quantize(Decimal('0.0001'))
+            rate = Decimal(rate_str or '0').quantize(Decimal('0.0001'))
+            disc = Decimal(disc_str or '0').quantize(Decimal('0.0001'))
+            fr = Decimal(fr_str or '0').quantize(Decimal('0.0001'))
+            
+            # Get tax rate from tax code (numeric only)
+            tax_code = tcodes[i] if i < len(tcodes) and tcodes[i] else '0'
+            tax_code = tax_code.strip()
+            tax_rate = _get_tax_rate(tax_code, doc_type)
+            
+            # Calculate with proper precision
+            taxable = max(Decimal('0'), (qty * rate - disc) + fr)
+            tax_amt = (taxable * tax_rate / 100).quantize(Decimal('0.01'))  # 2 decimals
+            total = (taxable + tax_amt).quantize(Decimal('0.01'))  # 2 decimals
+            taxable_rounded = taxable.quantize(Decimal('0.01'))  # 2 decimals
 
             li = LIModel(**{
                 fk_field:        fk_value,
@@ -143,14 +216,14 @@ def _save_doc_line_items(LIModel, fk_field, fk_value, f):
                 'required_date': pd(rdates[i]) if i < len(rdates) and rdates[i] else None,
                 'warehouse':     whs[i]    if i < len(whs)    else '',
                 'uom':           uoms[i]   if i < len(uoms)   else 'unit',
-                'quantity':      qty,
-                'rate':          rate,
-                'discount':      disc,
-                'freight':       fr,
-                'taxable':       taxable,
+                'quantity':      qty,  # 4 decimals
+                'rate':          rate,  # 4 decimals
+                'discount':      disc,  # 4 decimals
+                'freight':       fr,    # 4 decimals
+                'taxable':       taxable_rounded,  # 2 decimals
                 'tax_code':      tax_code,
-                'tax_amount':    tax_amt,
-                'total':         total,
+                'tax_amount':    tax_amt,  # 2 decimals
+                'total':         total,  # 2 decimals
             })
             db.session.add(li)
             total_bd   += qty * rate
@@ -164,25 +237,54 @@ def _save_doc_line_items(LIModel, fk_field, fk_value, f):
 
     excl = (total_bd - total_disc) + total_fr
     return {
-        'total_before_discount': total_bd,
-        'total_discount':        total_disc,
-        'total_freight':         total_fr,
-        'total_excl_vat':        excl,
-        'vat_amount':            total_vat,
-        'total_incl_vat':        excl + total_vat,
+        'total_before_discount': total_bd.quantize(Decimal('0.01')),
+        'total_discount':        total_disc.quantize(Decimal('0.01')),
+        'total_freight':         total_fr.quantize(Decimal('0.01')),
+        'total_excl_vat':        excl.quantize(Decimal('0.01')),
+        'vat_amount':            total_vat.quantize(Decimal('0.01')),
+        'total_incl_vat':        (excl + total_vat).quantize(Decimal('0.01')),
     }
 
 
+def _validate_pr_pq_dates(valid_until, required_date):
+    """valid_until must be >= today (document_date); required_date must be <= valid_until."""
+    today = date.today()
+    if valid_until and valid_until < today:
+        return 'Valid Until must be on/after the document date'
+    if required_date and valid_until and required_date > valid_until:
+        return 'Required Date must be on/before Valid Until'
+    return None
+
+
+def _next_item_code():
+    """Generate the next sequential item code. Format: ITM-0001, ITM-0002, ..."""
+    prefix = 'ITM'
+    like = f'{prefix}-%'
+    last = db.session.query(ItemMaster).filter(
+        ItemMaster.item_code.like(like)
+    ).order_by(ItemMaster.id.desc()).first()
+
+    n = 1
+    if last and last.item_code:
+        try:
+            n = int(last.item_code.split('-')[-1]) + 1
+        except (ValueError, IndexError):
+            n = ItemMaster.query.count() + 1
+    code = f'{prefix}-{n:04d}'
+    while ItemMaster.query.filter_by(item_code=code).first():
+        n += 1
+        code = f'{prefix}-{n:04d}'
+    return code
+
+
 # ══════════════════════════════════════════════════════════════════
-# UNIFIED NEXT-DOC-NO ENDPOINT (FIXED)
+# UNIFIED NEXT-DOC-NO ENDPOINT
 # ══════════════════════════════════════════════════════════════════
 
 @pur_bp.route('/purchase/next-doc-no')
 @login_required
 def next_doc_no():
-    """Return next document number for AJAX - works for all types.
-       ⭐ FIX: Always returns the next available unique number.
-    """
+    """Return next document number for AJAX - works for all types."""
     doc_type = request.args.get('type', 'PO')
     force_new = request.args.get('force_new', 'false').lower() == 'true'
     
@@ -197,7 +299,6 @@ def next_doc_no():
     }
     model = model_map.get(doc_type, PurchaseOrder)
     
-    # ⭐ Always get the next number - never reuse
     doc_no = _next_doc_no(doc_type, model)
     
     return jsonify({
@@ -228,6 +329,7 @@ def purchase_next_no():
 # ══════════════════════════════════════════════════════════════════
 # VENDOR REGISTRATION
 # ══════════════════════════════════════════════════════════════════
+
 @pur_bp.route('/purchase/vendors')
 @login_required
 def vendor_list():
@@ -371,9 +473,11 @@ def vendor_delete(id):
     db.session.delete(v); db.session.commit()
     return jsonify({'ok': True})
 
+
 # ══════════════════════════════════════════════════════════════════
 # VENDOR BANKS
 # ══════════════════════════════════════════════════════════════════
+
 @pur_bp.route('/purchase/vendors/<int:vendor_id>/banks')
 @login_required
 def vendor_banks(vendor_id):
@@ -440,8 +544,6 @@ def vendor_bank_set_primary(bank_id):
 # ══════════════════════════════════════════════════════════════════
 # VENDOR DOCUMENTS
 # ══════════════════════════════════════════════════════════════════
-from werkzeug.utils import secure_filename as _sf
-import uuid as _uuid
 
 VENDOR_DOC_TYPES = [
     'CR / سجل تجاري', 'VAT Certificate / شهادة ضريبة', 'ID / هوية',
@@ -465,7 +567,7 @@ def vendor_doc_upload(vendor_id):
     ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
     if ext not in VENDOR_ALLOWED_EXT:
         return jsonify({'ok': False, 'error': f'File type .{ext} not allowed'}), 400
-    unique_name = f'{_uuid.uuid4().hex}.{ext}'
+    unique_name = f'{uuid.uuid4().hex}.{ext}'
     folder = os.path.join('uploads', 'vendors', str(vendor_id))
     os.makedirs(folder, exist_ok=True)
     full_path = os.path.join(folder, unique_name)
@@ -505,45 +607,131 @@ def vendor_doc_delete(doc_id):
     return jsonify({'ok': True})
 
 
-def _validate_pr_pq_dates(valid_until, required_date):
-    """valid_until must be >= today (document_date); required_date must be <= valid_until."""
-    today = date.today()
-    if valid_until and valid_until < today:
-        return 'Valid Until must be on/after the document date'
-    if required_date and valid_until and required_date > valid_until:
-        return 'Required Date must be on/before Valid Until'
-    return None
-
-
-def _next_item_code():
-    """Generate the next sequential item code. Format: ITM-0001, ITM-0002, ..."""
-    prefix = 'ITM'
-    like = f'{prefix}-%'
-    last = db.session.query(ItemMaster).filter(
-        ItemMaster.item_code.like(like)
-    ).order_by(ItemMaster.id.desc()).first()
-
-    n = 1
-    if last and last.item_code:
-        try:
-            n = int(last.item_code.split('-')[-1]) + 1
-        except (ValueError, IndexError):
-            n = ItemMaster.query.count() + 1
-    code = f'{prefix}-{n:04d}'
-    # Guard against a rare unique-constraint collision (e.g. manually entered codes)
-    while ItemMaster.query.filter_by(item_code=code).first():
-        n += 1
-        code = f'{prefix}-{n:04d}'
-    return code
+# ══════════════════════════════════════════════════════════════════
+# ITEM MASTER
+# ══════════════════════════════════════════════════════════════════
 
 @pur_bp.route('/items/next-code')
 @login_required
 def item_next_code():
     return jsonify({'item_code': _next_item_code()})
 
+@pur_bp.route('/items/data')
+@login_required
+def item_data():
+    rows = ItemMaster.query.filter_by(is_active=True).order_by(ItemMaster.item_code).all()
+    return jsonify([r.to_dict() for r in rows])
+
+@pur_bp.route('/items/all')
+@login_required
+def items_all():
+    rows = ItemMaster.query.order_by(ItemMaster.item_code).all()
+    return jsonify([r.to_dict() for r in rows])
+
+@pur_bp.route('/items/<int:id>/json')
+@login_required
+def item_json(id):
+    item = ItemMaster.query.get_or_404(id)
+    return jsonify(item.to_dict())
+
+@pur_bp.route('/items/add', methods=['POST'])
+@login_required
+def item_add():
+    f = request.form
+    try:
+        item = ItemMaster(
+            item_code=_next_item_code(),
+            item_type=f.get('item_type','Product'),
+            article_no=f.get('article_no','').strip() or None,
+            name_en=f.get('name_en','').strip(),
+            name_ar=f.get('name_ar','').strip() or None,
+            print_name=f.get('print_name','').strip() or None,
+            uom=f.get('uom','unit'),
+            item_desc=f.get('item_desc','').strip() or None,
+            category_id=int(f.get('category_id')) if f.get('category_id') else None,
+            sub_category_id=int(f.get('sub_category_id')) if f.get('sub_category_id') else None,
+            tax_category_id=int(f.get('tax_category_id')) if f.get('tax_category_id') else None,
+            vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
+            main_rate=Decimal(f.get('main_rate') or '0'),
+            po_rate=Decimal(f.get('po_rate') or '0'),
+            retail_rate=Decimal(f.get('retail_rate') or '0'),
+            wholesale_rate=Decimal(f.get('wholesale_rate') or '0'),
+            special_rate=Decimal(f.get('special_rate') or '0'),
+            mrp=Decimal(f.get('mrp') or '0'),
+            minimum_sp=Decimal(f.get('minimum_sp') or '0'),
+            is_active=f.get('is_active') == '1',
+            created_by=current_user.id,
+        )
+        db.session.add(item)
+        db.session.flush()
+        
+        # Handle UOMs if provided
+        uom_ids = f.getlist('uom_ids[]')
+        for uom_id in uom_ids:
+            if uom_id:
+                item_uom = ItemUOM(
+                    item_id=item.id,
+                    uom_id=int(uom_id),
+                    is_default=False
+                )
+                db.session.add(item_uom)
+        
+        db.session.commit()
+        return jsonify({'ok': True, 'id': item.id, 'item_code': item.item_code})
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error adding item: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+@pur_bp.route('/items/<int:id>/edit', methods=['POST'])
+@login_required
+def item_edit(id):
+    item = ItemMaster.query.get_or_404(id)
+    f = request.form
+    try:
+        item.item_type = f.get('item_type','Product')
+        item.article_no = f.get('article_no','').strip() or None
+        item.name_en = f.get('name_en','').strip()
+        item.name_ar = f.get('name_ar','').strip() or None
+        item.print_name = f.get('print_name','').strip() or None
+        item.uom = f.get('uom','unit')
+        item.item_desc = f.get('item_desc','').strip() or None
+        item.category_id = int(f.get('category_id')) if f.get('category_id') else None
+        item.sub_category_id = int(f.get('sub_category_id')) if f.get('sub_category_id') else None
+        item.tax_category_id = int(f.get('tax_category_id')) if f.get('tax_category_id') else None
+        item.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
+        item.main_rate = Decimal(f.get('main_rate') or '0')
+        item.po_rate = Decimal(f.get('po_rate') or '0')
+        item.retail_rate = Decimal(f.get('retail_rate') or '0')
+        item.wholesale_rate = Decimal(f.get('wholesale_rate') or '0')
+        item.special_rate = Decimal(f.get('special_rate') or '0')
+        item.mrp = Decimal(f.get('mrp') or '0')
+        item.minimum_sp = Decimal(f.get('minimum_sp') or '0')
+        item.is_active = f.get('is_active') == '1'
+        item.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error editing item: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+@pur_bp.route('/items/<int:id>/delete', methods=['POST'])
+@login_required
+def item_delete(id):
+    item = ItemMaster.query.get_or_404(id)
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({'ok': True})
+
 
 # ══════════════════════════════════════════════════════════════════
-# ITEM MASTER — UNIT OF MEASUREMENT (multi-UOM per item)
+# UNIT OF MEASUREMENT
 # ══════════════════════════════════════════════════════════════════
 
 @pur_bp.route('/items/uom/list')
@@ -703,7 +891,7 @@ def pr_add():
         created_by=current_user.id,
     )
     db.session.add(pr); db.session.flush()
-    tots = _save_doc_line_items(PurchaseRequestLineItem, 'purchase_request_id', pr.purchase_request_id, f)
+    tots = _save_doc_line_items(PurchaseRequestLineItem, 'purchase_request_id', pr.purchase_request_id, f, 'purchase')
     for k,v in tots.items(): setattr(pr, k, v)
     _save_attachments('PR', pr.purchase_request_id, request.files.getlist('attachments'))
     db.session.commit()
@@ -732,7 +920,7 @@ def pr_edit(id):
     pr.valid_until    = valid_until
     pr.document_date  = date.today()
     pr.required_date  = required_date
-    tots = _save_doc_line_items(PurchaseRequestLineItem, 'purchase_request_id', id, f)
+    tots = _save_doc_line_items(PurchaseRequestLineItem, 'purchase_request_id', id, f, 'purchase')
     for k,v in tots.items(): setattr(pr, k, v)
     _save_attachments('PR', id, request.files.getlist('attachments'))
     db.session.commit()
@@ -828,7 +1016,8 @@ def pq_add():
         PurchaseQuotationLineItem,
         'purchase_quotation_id',
         pq.purchase_quotation_id,
-        f
+        f,
+        'purchase'
     )
 
     for k, v in tots.items():
@@ -869,7 +1058,8 @@ def pq_edit(id):
         PurchaseQuotationLineItem,
         'purchase_quotation_id',
         id,
-        f
+        f,
+        'purchase'
     )
 
     for k, v in tots.items():
@@ -964,7 +1154,7 @@ def po_add():
         db.session.add(po)
         db.session.flush()
 
-        tots = _save_doc_line_items(PurchaseOrderLineItem, 'purchase_order_id', po.purchase_order_id, f)
+        tots = _save_doc_line_items(PurchaseOrderLineItem, 'purchase_order_id', po.purchase_order_id, f, 'purchase')
         for k, v in tots.items():
             setattr(po, k, v)
 
@@ -999,7 +1189,7 @@ def po_edit(id):
         po.delivery_date = pd(f.get('delivery_date'))
         po.document_date = date.today()
 
-        tots = _save_doc_line_items(PurchaseOrderLineItem, 'purchase_order_id', id, f)
+        tots = _save_doc_line_items(PurchaseOrderLineItem, 'purchase_order_id', id, f, 'purchase')
         for k, v in tots.items():
             setattr(po, k, v)
 
@@ -1096,7 +1286,7 @@ def grn_add():
             created_by=current_user.id,
         )
         db.session.add(doc); db.session.flush()
-        tots = _save_doc_line_items(GoodsReceiptLineItem, 'goods_receipt_note_id', doc.goods_receipt_note_id, f)
+        tots = _save_doc_line_items(GoodsReceiptLineItem, 'goods_receipt_note_id', doc.goods_receipt_note_id, f, 'purchase')
         for k,v in tots.items(): setattr(doc, k, v)
         _save_attachments('GRN', doc.goods_receipt_note_id, request.files.getlist('attachments'))
         db.session.commit()
@@ -1121,7 +1311,7 @@ def grn_edit(id):
         doc.posting_date  = pd(f.get('posting_date'))
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
-        tots = _save_doc_line_items(GoodsReceiptLineItem, 'goods_receipt_note_id', id, f)
+        tots = _save_doc_line_items(GoodsReceiptLineItem, 'goods_receipt_note_id', id, f, 'purchase')
         for k,v in tots.items(): setattr(doc, k, v)
         _save_attachments('GRN', id, request.files.getlist('attachments'))
         db.session.commit(); return jsonify({'ok':True})
@@ -1143,11 +1333,11 @@ def grn_delete(id):
 # ══════════════════════════════════════════════════════════════════
 # PURCHASE INVOICE (PINV)
 # ══════════════════════════════════════════════════════════════════
+
 @pur_bp.route('/purchase/invoices')
 @login_required
 def pinv_list():
     pos = [{'id':p.purchase_order_id,'doc_no':p.doc_no} for p in PurchaseOrder.query.filter_by(status='Approved').order_by(PurchaseOrder.purchase_order_id.desc()).all()]
-    # ⭐ FIX: Only get Approved GRNs
     grns = [{'id':g.goods_receipt_note_id,'doc_no':g.doc_no,'purchase_order_id':g.purchase_order_id} 
             for g in GoodsReceiptNote.query.filter_by(status='Approved').order_by(GoodsReceiptNote.goods_receipt_note_id.desc()).all()]
     return render_template('purchase/pinv_list.html', vendors=_vendor_list(), pos=pos, grns=grns)
@@ -1215,7 +1405,7 @@ def pinv_add():
         db.session.add(doc)
         db.session.flush()
 
-        tots = _save_doc_line_items(PurchaseInvoiceLineItem, 'purchase_invoice_id', doc.purchase_invoice_id, f)
+        tots = _save_doc_line_items(PurchaseInvoiceLineItem, 'purchase_invoice_id', doc.purchase_invoice_id, f, 'purchase')
 
         for k,v in tots.items():
             setattr(doc, k, v)
@@ -1256,7 +1446,7 @@ def pinv_edit(id):
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
         
-        tots = _save_doc_line_items(PurchaseInvoiceLineItem, 'purchase_invoice_id', id, f)
+        tots = _save_doc_line_items(PurchaseInvoiceLineItem, 'purchase_invoice_id', id, f, 'purchase')
         for k,v in tots.items(): 
             setattr(doc, k, v)
         _save_attachments('PINV', id, request.files.getlist('attachments'))
@@ -1386,7 +1576,7 @@ def grr_add():
             created_by=current_user.id,
         )
         db.session.add(doc); db.session.flush()
-        tots = _save_doc_line_items(GoodsReturnLineItem, 'goods_return_request_id', doc.goods_return_request_id, f)
+        tots = _save_doc_line_items(GoodsReturnLineItem, 'goods_return_request_id', doc.goods_return_request_id, f, 'purchase')
         for k,v in tots.items(): setattr(doc, k, v)
         _save_attachments('GRR', doc.goods_return_request_id, request.files.getlist('attachments'))
         db.session.commit(); return jsonify({'ok':True,'id':doc.goods_return_request_id,'doc_no':doc.doc_no})
@@ -1420,7 +1610,7 @@ def grr_edit(id):
         doc.posting_date  = pd(f.get('posting_date'))
         doc.delivery_date = delivery_date
         doc.document_date = date.today()
-        tots = _save_doc_line_items(GoodsReturnLineItem, 'goods_return_request_id', id, f)
+        tots = _save_doc_line_items(GoodsReturnLineItem, 'goods_return_request_id', id, f, 'purchase')
         for k,v in tots.items(): setattr(doc, k, v)
         _save_attachments('GRR', id, request.files.getlist('attachments'))
         db.session.commit(); return jsonify({'ok':True})
@@ -1498,7 +1688,7 @@ def pdm_add():
             created_by=current_user.id,
         )
         db.session.add(doc); db.session.flush()
-        tots = _save_doc_line_items(PurchaseDebitMemoLineItem, 'purchase_debit_memo_id', doc.purchase_debit_memo_id, f)
+        tots = _save_doc_line_items(PurchaseDebitMemoLineItem, 'purchase_debit_memo_id', doc.purchase_debit_memo_id, f, 'purchase')
         for k,v in tots.items(): setattr(doc, k, v)
         _save_attachments('PDM', doc.purchase_debit_memo_id, request.files.getlist('attachments'))
         db.session.commit(); return jsonify({'ok':True,'id':doc.purchase_debit_memo_id,'doc_no':doc.doc_no})
@@ -1528,7 +1718,7 @@ def pdm_edit(id):
         doc.posting_date  = pd(f.get('posting_date'))
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
-        tots = _save_doc_line_items(PurchaseDebitMemoLineItem, 'purchase_debit_memo_id', id, f)
+        tots = _save_doc_line_items(PurchaseDebitMemoLineItem, 'purchase_debit_memo_id', id, f, 'purchase')
         for k,v in tots.items(): setattr(doc, k, v)
         _save_attachments('PDM', id, request.files.getlist('attachments'))
         db.session.commit(); return jsonify({'ok':True})

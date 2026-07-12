@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+{% block title %}{% if ar %}قيود اليومية{% else %}Journal Entries{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.min.css">
+<style>
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.page-title{font-size:22px;font-weight:800;color:#1e3a5f;}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.tool-btn{width:34px;height:34px;border-radius:8px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:14px;transition:all .12s;}
+.tool-btn-green{background:#16a34a;color:#fff;} .tool-btn-green:hover{background:#15803d;}
+.tool-btn-blue{background:#2563eb;color:#fff;} .tool-btn-blue:hover{background:#1d4ed8;}
+.tool-btn-gray{background:#e5e7eb;color:#374151;} .tool-btn-gray:hover{background:#d1d5db;}
+.grid-wrap{border-radius:10px;overflow:hidden;border:1.5px solid #e2e8f0;background:#fff;}
+#jeGrid{width:100%;height:560px;}
+.ag-theme-alpine{--ag-font-family:'Segoe UI',system-ui,sans-serif;--ag-font-size:13px;}
+.ag-theme-alpine .ag-header{background:#e5e7eb!important;}
+.ag-theme-alpine .ag-header-cell-text{color:#1e293b!important;font-weight:700;font-size:11px;letter-spacing:.4px;}
+.ag-ab{width:26px;height:26px;border-radius:6px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin:0 2px;}
+.ag-ab-edit{background:#fef3c7;color:#d97706;} .ag-ab-del{background:#fee2e2;color:#dc2626;}
+.st-badge{padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;}
+.st-draft{background:#f1f5f9;color:#475569;}
+.st-posted{background:#dcfce7;color:#15803d;}
+.st-cancelled{background:#fee2e2;color:#dc2626;}
+
+/* Modal */
+.je-modal .modal-dialog{max-width:820px;}
+.je-modal .modal-content{border:none;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.je-hdr{background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:16px 22px;display:flex;align-items:center;justify-content:space-between;}
+.je-hdr h5{color:#fff;font-weight:700;font-size:15px;margin:0;}
+.je-hdr .btn-close{filter:brightness(0)invert(1);opacity:.8;}
+.je-body{padding:18px;background:#f8fafc;max-height:78vh;overflow-y:auto;}
+.f-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.f-grid1{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px;}
+.f-item{display:flex;flex-direction:column;}
+.f-lbl{font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px;}
+.f-lbl-req{color:#ef4444;}
+.f-inp{width:100%;border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;box-sizing:border-box;background:#fff;color:#1f2937;}
+.f-inp:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.f-inp[disabled],.f-inp[readonly]{background:#f3f4f6;color:#6b7280;}
+select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
+textarea.f-inp{resize:vertical;min-height:70px;}
+.je-footer{display:flex;justify-content:flex-end;gap:8px;padding:14px 22px;background:#f8fafc;border-top:1.5px solid #e2e8f0;}
+.btn-save{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;padding:9px 22px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-cancel{background:#fff;color:#374151;border:1.5px solid #d1d5db;padding:9px 20px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;}
+.je-err{display:none;background:#fee2e2;color:#dc2626;font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:12px;}
+.bal-box{display:flex;gap:14px;align-items:center;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;padding:8px 12px;font-size:12px;color:#1e3a5f;font-weight:600;}
+@media(max-width:640px){.f-grid2{grid-template-columns:1fr;}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding:24px;">
+  <div class="page-header">
+    <div>
+      <div class="page-title">{% if ar %}قيود اليومية{% else %}Journal Entries{% endif %}</div>
+      <div style="font-size:13px;color:#9ca3af;margin-top:2px;">{% if ar %}إدارة قيود اليومية المحاسبية{% else %}Manage accounting journal entries{% endif %}</div>
+    </div>
+  </div>
+
+  <div class="toolbar" style="margin-bottom:14px;">
+    <button class="tool-btn tool-btn-green" onclick="openAddJe()" title="Add"><i class="fas fa-plus"></i></button>
+    <button class="tool-btn tool-btn-blue"  onclick="loadData()" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+    <button class="tool-btn tool-btn-gray"  onclick="gridApi.setFilterModel(null)" title="Clear Filters"><i class="fas fa-times"></i></button>
+    <div style="flex:1;"></div>
+    <span id="selText" style="font-size:13px;color:#6b7280;"></span>
+    <div style="position:relative;">
+      <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:12px;"></i>
+      <input type="text" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"
+             style="padding:7px 12px 7px 30px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;width:200px;"
+             oninput="gridApi.setQuickFilter(this.value)">
+    </div>
+  </div>
+
+  <div class="grid-wrap ag-theme-alpine">
+    <div id="jeGrid"></div>
+  </div>
+</div>
+
+<!-- ══ ADD / EDIT MODAL ══ -->
+<div class="modal fade je-modal" id="jeModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="je-hdr">
+        <h5 id="jeModalTitle"><i class="fas fa-plus-circle me-2"></i>{% if ar %}إضافة قيد{% else %}Add Journal Entry{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="je-body">
+        <input type="hidden" id="je_id">
+        <div class="je-err" id="jeErr"></div>
+
+        <div class="f-grid2">
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}رقم القيد{% else %}JE No{% endif %}</div>
+            <input type="text" id="je_no" class="f-inp" readonly>
+          </div>
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}التاريخ{% else %}Date{% endif %} <span class="f-lbl-req">*</span></div>
+            <input type="date" id="je_date" class="f-inp" onchange="deriveMonth()">
+          </div>
+        </div>
+
+        <div class="f-grid2">
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}الشهر{% else %}Month{% endif %}</div>
+            <input type="text" id="je_month" class="f-inp" readonly>
+          </div>
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}طريقة الدفع / المرجع{% else %}Payment Ref Method{% endif %}</div>
+            <select id="je_payment" class="f-inp">
+              <option value="">-- {% if ar %}اختر{% else %}Select{% endif %} --</option>
+              <option value="Cash">{% if ar %}نقداً{% else %}Cash{% endif %}</option>
+              <option value="Bank Transfer">{% if ar %}تحويل بنكي{% else %}Bank Transfer{% endif %}</option>
+              <option value="Cheque">{% if ar %}شيك{% else %}Cheque{% endif %}</option>
+              <option value="Online Payment">{% if ar %}دفع إلكتروني{% else %}Online Payment{% endif %}</option>
+              <option value="Credit Card">{% if ar %}بطاقة ائتمان{% else %}Credit Card{% endif %}</option>
+              <option value="Other">{% if ar %}أخرى{% else %}Other{% endif %}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Cascading Level 1 -> Level 5 -->
+        <div class="f-grid2">
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}المستوى 1{% else %}Level 1 Drawer{% endif %}</div>
+            <select id="lv1" class="f-inp" onchange="onLv(1)">
+              <option value="">-- {% if ar %}اختر{% else %}Select{% endif %} --</option>
+              {% for l in level_ones %}
+              <option value="{{ l.id }}">{{ l.code }} - {{ l.drawers }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}المستوى 2{% else %}Level 2 Drawer{% endif %}</div>
+            <select id="lv2" class="f-inp" onchange="onLv(2)" disabled></select>
+          </div>
+        </div>
+        <div class="f-grid2">
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}المستوى 3{% else %}Level 3 Drawer{% endif %}</div>
+            <select id="lv3" class="f-inp" onchange="onLv(3)" disabled></select>
+          </div>
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}المستوى 4{% else %}Level 4 Drawer{% endif %}</div>
+            <select id="lv4" class="f-inp" onchange="onLv(4)" disabled></select>
+          </div>
+        </div>
+        <div class="f-grid2">
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}المستوى 5 (الحساب){% else %}Level 5 Drawer (Account){% endif %} <span class="f-lbl-req">*</span></div>
+            <select id="lv5" class="f-inp" onchange="onLv5()" disabled></select>
+          </div>
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}كود الحساب{% else %}Account Code{% endif %}</div>
+            <input type="text" id="je_code" class="f-inp" readonly placeholder="{% if ar %}يُملأ تلقائياً{% else %}Auto-filled{% endif %}">
+          </div>
+        </div>
+
+        <div class="f-grid2">
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}مدين{% else %}Debit{% endif %}</div>
+            <input type="number" id="je_debit" class="f-inp" value="0.00" min="0" step="0.01" oninput="calcBal()">
+          </div>
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}دائن{% else %}Credit{% endif %}</div>
+            <input type="number" id="je_credit" class="f-inp" value="0.00" min="0" step="0.01" oninput="calcBal()">
+          </div>
+        </div>
+
+        <div class="f-grid1">
+          <div class="bal-box">
+            <span>{% if ar %}الرصيد{% else %}Balance{% endif %}: <span id="je_bal">0.00</span></span>
+            <span id="balHint" style="color:#16a34a;"></span>
+          </div>
+        </div>
+
+        <div class="f-grid2">
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}المشروع / العميل{% else %}Project / Client{% endif %}</div>
+            <input type="text" id="je_project" class="f-inp" placeholder="{% if ar %}اختياري{% else %}Optional{% endif %}">
+          </div>
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div>
+            <select id="je_status" class="f-inp">
+              <option value="Draft">{% if ar %}مسودة{% else %}Draft{% endif %}</option>
+              <option value="Posted">{% if ar %}مُرحّل{% else %}Posted{% endif %}</option>
+              <option value="Cancelled">{% if ar %}ملغى{% else %}Cancelled{% endif %}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="f-grid1">
+          <div class="f-item">
+            <div class="f-lbl">{% if ar %}الوصف{% else %}Description{% endif %}</div>
+            <textarea id="je_desc" class="f-inp" rows="3" placeholder="{% if ar %}وصف القيد...{% else %}Entry description...{% endif %}"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="je-footer">
+        <button class="btn-cancel" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button class="btn-save" onclick="saveJe('Draft')"><i class="fas fa-save me-1"></i>{% if ar %}حفظ كمسودة{% else %}Save as Draft{% endif %}</button>
+        <button class="btn-save" style="background:linear-gradient(135deg,#16a34a,#15803d);" onclick="saveJe('Posted')"><i class="fas fa-check me-1"></i>{% if ar %}ترحيل{% else %}Post{% endif %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm -->
+<div class="modal fade" id="delModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content" style="border-radius:12px;overflow:hidden;">
+    <div style="background:#fee2e2;padding:16px 20px;"><div style="font-weight:700;color:#dc2626;font-size:14px;"><i class="fas fa-trash me-2"></i>{% if ar %}تأكيد الحذف{% else %}Confirm Delete{% endif %}</div></div>
+    <div style="padding:16px 20px;"><p id="delTxt" style="font-size:13px;color:#374151;margin:0;"></p></div>
+    <div style="padding:12px 20px;display:flex;justify-content:flex-end;gap:8px;background:#f8fafc;"><button class="btn-cancel" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button><button id="delBtn" style="background:#dc2626;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">{% if ar %}حذف{% else %}Delete{% endif %}</button></div>
+  </div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
+<script>
+const IS_AR = {{ 'true' if ar else 'false' }};
+const CSRF  = '{{ csrf_token() }}';
+
+/* ── Cascading level dropdowns (reuse COA endpoints) ── */
+function fillSelect(sel, rows, placeholder){
+  sel.innerHTML = '<option value="">'+placeholder+'</option>' +
+    rows.map(r=>`<option value="${r.id}">${r.label||(r.code+' - '+r.drawers)}</option>`).join('');
+}
+function resetFrom(level){
+  const ph = '-- '+(IS_AR?'اختر':'Select')+' --';
+  for(let i=level;i<=5;i++){
+    const s=document.getElementById('lv'+i);
+    s.innerHTML='<option value="">'+ph+'</option>'; s.disabled=true;
+  }
+  if(level<=5){ document.getElementById('je_code').value=''; }
+}
+async function onLv(level){
+  const val = document.getElementById('lv'+level).value;
+  resetFrom(level+1);
+  if(!val) return;
+  const map = {
+    1:['/coa/children/level-two?level_one_id=',2],
+    2:['/coa/children/level-three?level_two_id=',3],
+    3:['/coa/children/level-four?level_three_id=',4],
+    4:['/journal/level-five/children?level_four_id=',5],
+  };
+  const [url,next]=map[level];
+  try{
+    const rows = await fetch(url+encodeURIComponent(val)).then(r=>r.json());
+    const s=document.getElementById('lv'+next);
+    fillSelect(s, rows, '-- '+(IS_AR?'اختر':'Select')+' --');
+    s.disabled=false;
+  }catch(e){ console.error('cascade error',e); }
+}
+async function onLv5(){
+  const id=document.getElementById('lv5').value;
+  if(!id){ document.getElementById('je_code').value=''; return; }
+  try{
+    const h=await fetch('/journal/level-five/'+id+'/hierarchy').then(r=>r.json());
+    document.getElementById('je_code').value = h.level5_code || '';
+  }catch(e){ console.error('hierarchy error',e); }
+}
+
+/* ── Month + balance helpers ── */
+function deriveMonth(){
+  const v=document.getElementById('je_date').value;
+  if(!v){ document.getElementById('je_month').value=''; return; }
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const d=new Date(v+'T00:00:00');
+  document.getElementById('je_month').value = months[d.getMonth()]||'';
+}
+function calcBal(){
+  const dr=parseFloat(document.getElementById('je_debit').value)||0;
+  const cr=parseFloat(document.getElementById('je_credit').value)||0;
+  const bal=(dr-cr);
+  document.getElementById('je_bal').textContent = bal.toFixed(2);
+  const hint=document.getElementById('balHint');
+  if(bal===0 && (dr>0||cr>0)){ hint.textContent=(IS_AR?'متوازن ✓':'Balanced ✓'); hint.style.color='#16a34a'; }
+  else if(dr>0||cr>0){ hint.textContent=(IS_AR?'غير متوازن':'Not balanced'); hint.style.color='#d97706'; }
+  else { hint.textContent=''; }
+}
+
+/* ── Open Add ── */
+async function openAddJe(){
+  document.getElementById('je_id').value='';
+  document.getElementById('jeModalTitle').innerHTML='<i class="fas fa-plus-circle me-2"></i>'+(IS_AR?'إضافة قيد':'Add Journal Entry');
+  document.getElementById('jeErr').style.display='none';
+  ['je_date','je_month','je_code','je_project','je_desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('je_debit').value='0.00';
+  document.getElementById('je_credit').value='0.00';
+  document.getElementById('je_payment').value='';
+  document.getElementById('je_status').value='Draft';
+  document.getElementById('lv1').value='';
+  resetFrom(2);
+  calcBal();
+  try{ const d=await fetch('/journal/next-no').then(r=>r.json()); document.getElementById('je_no').value=d.je_no||''; }catch(e){}
+  new bootstrap.Modal(document.getElementById('jeModal')).show();
+}
+
+/* ── Open Edit ── */
+async function openEditJe(id){
+  try{
+    const d=await fetch('/journal/'+id+'/json').then(r=>r.json());
+    document.getElementById('je_id').value=d.id;
+    document.getElementById('jeModalTitle').innerHTML='<i class="fas fa-edit me-2"></i>'+(IS_AR?'تعديل القيد':'Edit Journal Entry');
+    document.getElementById('jeErr').style.display='none';
+    document.getElementById('je_no').value=d.je_no;
+    document.getElementById('je_date').value=d.je_date;
+    deriveMonth();
+    document.getElementById('je_payment').value=d.payment_ref_method||'';
+    document.getElementById('je_debit').value=(d.debit||0).toFixed(2);
+    document.getElementById('je_credit').value=(d.credit||0).toFixed(2);
+    document.getElementById('je_project').value=d.project_client||'';
+    document.getElementById('je_status').value=d.status||'Draft';
+    document.getElementById('je_desc').value=d.description||'';
+    document.getElementById('je_code').value=d.level5_code||'';
+    calcBal();
+    // Repopulate the cascade from the stored Level 5 id (if resolvable).
+    document.getElementById('lv1').value=''; resetFrom(2);
+    if(d.level_five_id){
+      await rebuildCascade(d.level_five_id);
+    }
+    new bootstrap.Modal(document.getElementById('jeModal')).show();
+  }catch(e){ console.error(e); alert('Could not load entry.'); }
+}
+
+/* Walk the ancestor chain via COA endpoint, then set each dropdown in order. */
+async function rebuildCascade(l5id){
+  try{
+    const anc = await fetch('/coa/ancestors/level-five/'+l5id).then(r=>r.json());
+    if(anc.level_one_id){ document.getElementById('lv1').value=anc.level_one_id; await onLv(1); }
+    if(anc.level_two_id){ document.getElementById('lv2').value=anc.level_two_id; await onLv(2); }
+    if(anc.level_three_id){ document.getElementById('lv3').value=anc.level_three_id; await onLv(3); }
+    if(anc.level_four_id){ document.getElementById('lv4').value=anc.level_four_id; await onLv(4); }
+    document.getElementById('lv5').value=l5id; await onLv5();
+  }catch(e){ console.error('rebuildCascade error',e); }
+}
+
+/* ── Save ── */
+async function saveJe(intended){
+  const errEl=document.getElementById('jeErr'); errEl.style.display='none';
+  const id=document.getElementById('je_id').value;
+  const l5=document.getElementById('lv5').value;
+  const date=document.getElementById('je_date').value;
+  if(!date){ errEl.textContent=IS_AR?'التاريخ مطلوب':'Date is required'; errEl.style.display='block'; return; }
+  if(!l5){ errEl.textContent=IS_AR?'حساب المستوى الخامس مطلوب':'Level 5 account is required'; errEl.style.display='block'; return; }
+  const dr=parseFloat(document.getElementById('je_debit').value)||0;
+  const cr=parseFloat(document.getElementById('je_credit').value)||0;
+  if(intended==='Posted' && (dr-cr)!==0){
+    errEl.textContent=IS_AR?'لا يمكن الترحيل: يجب أن يساوي المدين الدائن':'Cannot post: Debit must equal Credit';
+    errEl.style.display='block'; return;
+  }
+  const fd=new FormData();
+  fd.set('csrf_token',CSRF);
+  fd.set('je_date',date);
+  fd.set('level_five_id',l5);
+  fd.set('debit',dr);
+  fd.set('credit',cr);
+  fd.set('payment_ref_method',document.getElementById('je_payment').value);
+  fd.set('project_client',document.getElementById('je_project').value.trim());
+  fd.set('description',document.getElementById('je_desc').value.trim());
+  fd.set('status',intended);
+  const url=id?('/journal/'+id+'/edit'):'/journal/add';
+  try{
+    const res=await fetch(url,{method:'POST',headers:{'X-CSRFToken':CSRF},body:fd});
+    const data=await res.json();
+    if(data.ok){
+      bootstrap.Modal.getInstance(document.getElementById('jeModal'))?.hide();
+      loadData();
+    } else { errEl.textContent=data.error||'Error'; errEl.style.display='block'; }
+  }catch(e){ console.error(e); errEl.textContent=IS_AR?'خطأ في الشبكة':'Network error'; errEl.style.display='block'; }
+}
+
+/* ── Delete ── */
+function confDelJe(id, no){
+  document.getElementById('delTxt').textContent=(IS_AR?'حذف القيد: ':'Delete entry: ')+no+'?';
+  document.getElementById('delBtn').onclick=()=>{
+    fetch('/journal/'+id+'/delete',{method:'POST',headers:{'X-CSRFToken':CSRF},body:new URLSearchParams({csrf_token:CSRF})})
+    .then(r=>r.json()).then(d=>{
+      if(d.ok){ bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide(); loadData(); }
+      else alert(d.error||'Cannot delete');
+    });
+  };
+  new bootstrap.Modal(document.getElementById('delModal')).show();
+}
+
+/* ── AG-Grid ── */
+const rStatus = p => {
+  const s=(p.value||'Draft');
+  const cls = s==='Posted'?'st-posted':(s==='Cancelled'?'st-cancelled':'st-draft');
+  const lbl = IS_AR ? (s==='Posted'?'مُرحّل':s==='Cancelled'?'ملغى':'مسودة') : s;
+  return `<span class="st-badge ${cls}">${lbl}</span>`;
+};
+const rNum = p => p.value!=null ? `<span style="font-weight:600;">${parseFloat(p.value).toFixed(2)}</span>` : '';
+
+class ActR{
+  init(p){
+    this.g=document.createElement('div'); this.g.style.cssText='display:flex;align-items:center;gap:3px;';
+    const d=p.data;
+    this.g.innerHTML=`<button class="ag-ab ag-ab-edit" onclick="openEditJe(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button><button class="ag-ab ag-ab-del" onclick="confDelJe(${d.id},'${(d.je_no||'')}')" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
+  }
+  getGui(){ return this.g; }
+}
+
+const defCol = { sortable:true, unSortIcon:true, resizable:true, filter:true, floatingFilter:true, enableRowGroup:true, enablePivot:true, enableValue:true, menuTabs:['filterMenuTab','columnsMenuTab','generalMenuTab'], filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} };
+const cols = [
+  {headerName:'#', field:'id', width:60, floatingFilter:false, filter:false, suppressMenu:true, enableRowGroup:false, enablePivot:false, enableValue:false, suppressColumnsToolPanel:true},
+  {headerName:IS_AR?'رقم القيد':'JE No', field:'je_no', width:120},
+  {headerName:IS_AR?'التاريخ':'Date', field:'je_date', width:120},
+  {headerName:IS_AR?'الشهر':'Month', field:'month', width:110},
+  {headerName:IS_AR?'كود الحساب':'Account Code', field:'level5_code', width:130},
+  {headerName:IS_AR?'المستوى 1':'Level 1', field:'level1_drawer', width:130},
+  {headerName:IS_AR?'المستوى 5':'Level 5', field:'level5_drawer', width:150},
+  {headerName:IS_AR?'مدين':'Debit', field:'debit', width:110, cellRenderer:rNum, floatingFilter:false},
+  {headerName:IS_AR?'دائن':'Credit', field:'credit', width:110, cellRenderer:rNum, floatingFilter:false},
+  {headerName:IS_AR?'المشروع/العميل':'Project/Client', field:'project_client', width:150},
+  {headerName:IS_AR?'الحالة':'Status', field:'status', width:110, cellRenderer:rStatus},
+  {headerName:IS_AR?'إجراءات':'Actions', field:'_a', width:100, pinned:IS_AR?'left':'right', sortable:false, suppressMenu:true, floatingFilter:false, filter:false, resizable:false, enableRowGroup:false, enablePivot:false, enableValue:false, suppressColumnsToolPanel:true, cellRenderer:ActR, cellStyle:{overflow:'visible',padding:'0 6px'}},
+];
+
+let gridApi;
+agGrid.createGrid(document.getElementById('jeGrid'), {
+  columnDefs:cols, multiSortKey:'ctrl', rowData:[], pagination:true, paginationPageSize:20,
+  alwaysShowHorizontalScroll:true, alwaysShowVerticalScroll:true,
+  sideBar:{toolPanels:[{id:'columns',labelDefault:IS_AR?'الأعمدة':'Columns',labelKey:'columns',iconKey:'columns',toolPanel:'agColumnsToolPanel'},{id:'filters',labelDefault:IS_AR?'الفلاتر':'Filters',labelKey:'filters',iconKey:'filter',toolPanel:'agFiltersToolPanel'}],defaultToolPanel:''},
+  rowGroupPanelShow:'always', pivotPanelShow:'always', groupDisplayType:'groupRows',
+  animateRows:true, enableRtl:IS_AR, defaultColDef:defCol,
+  localeText: IS_AR ? {noRowsToShow:'لا توجد بيانات'} : {noRowsToShow:'No records found'},
+  onGridReady(p){ gridApi=p.api; loadData(); },
+  getRowStyle(p){ return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
+});
+
+function loadData(){
+  var sf = gridApi ? gridApi.getFilterModel() : null;
+  fetch('/journal/data').then(r=>r.json()).then(d=>{
+    gridApi.setGridOption('rowData', d);
+    if(sf && Object.keys(sf).length) gridApi.setFilterModel(sf);
+    document.getElementById('selText').textContent = d.length + ' ' + (IS_AR?'قيد':'entries');
+  });
+}
+</script>
+{% endblock %}

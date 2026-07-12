@@ -12,8 +12,11 @@ except Exception as exc:  # pragma: no cover - defensive for env issues
     MIGRATE_IMPORT_ERROR = exc
 else:
     MIGRATE_IMPORT_ERROR = None
+
+# Import document blueprints
 from database.routes.vendor_doc import vendor_doc_bp
-from database.routes.buyer_doc  import buyer_doc_bp
+from database.routes.buyer_doc import buyer_doc_bp
+
 # Try to import Flask-Babel; gracefully degrade if missing
 try:
     import importlib
@@ -28,8 +31,10 @@ login_manager = LoginManager()
 csrf = CSRFProtect()
 migrate = Migrate() if Migrate is not None else None
 
+
 def get_locale():
     return session.get('lang', 'en')
+
 
 def create_app(config_name='default'):
     app = Flask(__name__)
@@ -70,10 +75,12 @@ def create_app(config_name='default'):
     from database.routes.purchase import pur_bp
     from database.routes.sales import sale_bp
     from database.routes.coa import coa_bp
+    from database.routes.journal import journal_bp
     from database.routes.lookups import lookups_bp
-    from database.routes.financial import financial_bp
-    from database.routes.tax_codes import tax_bp
     from database.routes.employee_import import emp_import_bp
+    from database.routes.tax_codes import tax_bp
+    from database.routes.financial import financial_bp  # ✅ ADD THIS
+    
     app.register_blueprint(emp_import_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -83,11 +90,12 @@ def create_app(config_name='default'):
     app.register_blueprint(pur_bp)
     app.register_blueprint(sale_bp)
     app.register_blueprint(coa_bp)
+    app.register_blueprint(journal_bp)
     app.register_blueprint(lookups_bp)
-    app.register_blueprint(financial_bp)
-    app.register_blueprint(tax_bp)
     app.register_blueprint(vendor_doc_bp)
     app.register_blueprint(buyer_doc_bp)
+    app.register_blueprint(financial_bp)  # ✅ ADD THIS
+    app.register_blueprint(tax_bp)   
 
     # Error handlers
     @app.errorhandler(404)
@@ -112,6 +120,7 @@ def create_app(config_name='default'):
 
     return app
 
+
 def init_db(app):
     """Initialize database and create default admin user."""
     from sqlalchemy.exc import OperationalError
@@ -125,6 +134,7 @@ def init_db(app):
             else:
                 raise
 
+        # Create default users if they don't exist
         if not User.query.filter_by(username='admin').first():
             admin = User(username='admin', email='admin@sellerms.com', role='admin')
             admin.set_password('Admin@123')
@@ -136,7 +146,61 @@ def init_db(app):
             db.session.commit()
             print('Default users created: admin / Admin@123 | staff / Staff@123')
 
-        # Seed the Chart of Accounts (idempotent — safe on every startup).
+        # ✅ FIX: Add tax_rate column to existing tax code tables
+        try:
+            from sqlalchemy import text
+            # Check if tax_rate column exists in purchase_tax_code
+            result = db.session.execute(text(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name='purchase_tax_code'"
+            )).fetchone()
+            
+            if result:
+                sql = result[0]
+                if 'tax_rate' not in sql:
+                    db.session.execute(text(
+                        "ALTER TABLE purchase_tax_code ADD COLUMN tax_rate NUMERIC(10, 4) DEFAULT 0"
+                    ))
+                    db.session.commit()
+                    print("Added tax_rate column to purchase_tax_code")
+                
+                # Check sales_tax_code
+                result2 = db.session.execute(text(
+                    "SELECT sql FROM sqlite_master WHERE type='table' AND name='sales_tax_code'"
+                )).fetchone()
+                
+                if result2 and 'tax_rate' not in result2[0]:
+                    db.session.execute(text(
+                        "ALTER TABLE sales_tax_code ADD COLUMN tax_rate NUMERIC(10, 4) DEFAULT 0"
+                    ))
+                    db.session.commit()
+                    print("Added tax_rate column to sales_tax_code")
+                    
+                # Update existing tax codes with default rates
+                try:
+                    # Update purchase tax codes
+                    db.session.execute(text(
+                        "UPDATE purchase_tax_code SET tax_rate = 15 WHERE tax_code IN ('15', '15C', '15R')"
+                    ))
+                    db.session.execute(text(
+                        "UPDATE purchase_tax_code SET tax_rate = 0 WHERE tax_code IN ('0', '0E', '0O')"
+                    ))
+                    
+                    # Update sales tax codes
+                    db.session.execute(text(
+                        "UPDATE sales_tax_code SET tax_rate = 15 WHERE tax_code IN ('15', '15C', '15R')"
+                    ))
+                    db.session.execute(text(
+                        "UPDATE sales_tax_code SET tax_rate = 0 WHERE tax_code IN ('0', '0E', '0O', '0S')"
+                    ))
+                    
+                    db.session.commit()
+                    print("Updated existing tax codes with default tax rates")
+                except Exception as e:
+                    print(f"Note: Could not update tax rates: {e}")
+        except Exception as e:
+            print(f"Note: Tax rate migration skipped: {e}")
+
+        # Seed the Chart of Accounts (idempotent — safe on every startup)
         try:
             from models import seed_chart_of_accounts, seed_coa_levels_3_4_5
             result = seed_chart_of_accounts()
@@ -152,7 +216,7 @@ def init_db(app):
         except Exception as exc:
             print(f'Chart of Accounts seed skipped: {exc}')
 
-        # Seed department locations (idempotent).
+        # Seed department locations (idempotent)
         try:
             from models import seed_department_locations
             n = seed_department_locations()
@@ -161,7 +225,7 @@ def init_db(app):
         except Exception as exc:
             print(f'Department location seed skipped: {exc}')
 
-        # Seed purchase & sales tax codes (idempotent).
+        # Seed tax codes (idempotent)
         try:
             from models import seed_tax_codes
             n = seed_tax_codes()
@@ -170,9 +234,15 @@ def init_db(app):
         except Exception as exc:
             print(f'Tax code seed skipped: {exc}')
 
+
 if __name__ == '__main__':
     os.makedirs('database', exist_ok=True)
     os.makedirs('uploads', exist_ok=True)
+    # Create uploads subdirectories
+    os.makedirs('uploads/vendors', exist_ok=True)
+    os.makedirs('uploads/buyers', exist_ok=True)
+    os.makedirs('static/uploads/purchase', exist_ok=True)
+    os.makedirs('static/uploads/sales', exist_ok=True)
     
     app = create_app()
     init_db(app)

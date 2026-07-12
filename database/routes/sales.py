@@ -2,6 +2,12 @@ from flask import Blueprint, render_template, request, jsonify, redirect, url_fo
 from flask_login import login_required, current_user
 from decimal import Decimal
 from datetime import datetime, date
+from sqlalchemy import text
+import os
+import random
+import re
+from werkzeug.utils import secure_filename
+
 from models import (
     db, BuyerMaster,
     Seller, SellerBank,
@@ -10,15 +16,14 @@ from models import (
     SalesAttachment,
     SalesRequestLineItem, SalesQuotationLineItem, SalesOrderLineItem,
     DeliveryLineItem, SalesInvoiceLineItem, SalesReturnLineItem, SalesCreditMemoLineItem,
+    PurchaseTaxCode, SalesTaxCode,
 )
-import os
-from werkzeug.utils import secure_filename
 
 sale_bp = Blueprint('sales', __name__)
 
 
 # ══════════════════════════════════════════════════════════════════
-# HELPERS  (mirror of purchase.py, but scoped to the sales chain)
+# HELPERS
 # ══════════════════════════════════════════════════════════════════
 
 def pd(val):
@@ -55,12 +60,105 @@ def _validate_sr_sq_dates(valid_until, required_date):
     return None
 
 
+def _ensure_doc_counters_table():
+    """Ensure the doc_counters table exists."""
+    try:
+        table_exists = db.session.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='doc_counters'")
+        ).fetchone()
+        
+        if not table_exists:
+            db.session.execute(text("""
+                CREATE TABLE doc_counters (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    doc_type TEXT NOT NULL UNIQUE,
+                    counter_value INTEGER DEFAULT 0,
+                    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            db.session.commit()
+            
+            doc_types = ['SR', 'SQ', 'SO', 'DN', 'SINV', 'SRR', 'SCM']
+            for dt in doc_types:
+                db.session.execute(
+                    text("INSERT OR IGNORE INTO doc_counters (doc_type, counter_value) VALUES (:dt, 0)"),
+                    {'dt': dt}
+                )
+            db.session.commit()
+        return True
+    except Exception as e:
+        print(f"Error creating doc_counters table: {e}")
+        return False
+
+
 def _next_doc_no(doc_type, model):
-    """Generate unique doc number per type. Format: SR-2026-0001, SQ-2026-0001, ..."""
+    """Generate unique doc number per type with atomic counter."""
     year = date.today().year
     prefix = doc_type
-    like = f'{prefix}-{year}-%'
+    
+    _ensure_doc_counters_table()
+    
+    try:
+        db.session.execute(text("BEGIN"))
+        
+        row = db.session.execute(
+            text("SELECT counter_value FROM doc_counters WHERE doc_type = :dt"),
+            {'dt': doc_type}
+        ).fetchone()
+        
+        if row:
+            counter = row[0] + 1
+            db.session.execute(
+                text("UPDATE doc_counters SET counter_value = :val, last_updated = CURRENT_TIMESTAMP WHERE doc_type = :dt"),
+                {'val': counter, 'dt': doc_type}
+            )
+        else:
+            counter = 1
+            db.session.execute(
+                text("INSERT INTO doc_counters (doc_type, counter_value) VALUES (:dt, :val)"),
+                {'dt': doc_type, 'val': counter}
+            )
+        
+        db.session.commit()
+        
+        doc_no = f'{prefix}-{year}-{counter:04d}'
+        
+        existing = model.query.filter_by(doc_no=doc_no).first()
+        if existing:
+            db.session.execute(text("BEGIN"))
+            db.session.execute(
+                text("UPDATE doc_counters SET counter_value = counter_value + 1, last_updated = CURRENT_TIMESTAMP WHERE doc_type = :dt"),
+                {'dt': doc_type}
+            )
+            db.session.commit()
+            
+            row = db.session.execute(
+                text("SELECT counter_value FROM doc_counters WHERE doc_type = :dt"),
+                {'dt': doc_type}
+            ).fetchone()
+            
+            if row:
+                counter = row[0]
+                doc_no = f'{prefix}-{year}-{counter:04d}'
+                
+                if model.query.filter_by(doc_no=doc_no).first():
+                    timestamp = datetime.now().strftime("%H%M%S")
+                    doc_no = f'{prefix}-{year}-{counter:04d}-{timestamp}'
+        
+        return doc_no
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in atomic counter: {e}")
+        return _fallback_next_doc_no(doc_type, model)
 
+
+def _fallback_next_doc_no(doc_type, model):
+    """Fallback method if atomic counter fails."""
+    year = date.today().year
+    prefix = doc_type
+    
+    pk_name = 'id'
     if hasattr(model, 'sales_request_id'):
         pk_name = 'sales_request_id'
     elif hasattr(model, 'sales_quotation_id'):
@@ -75,19 +173,37 @@ def _next_doc_no(doc_type, model):
         pk_name = 'sales_return_request_id'
     elif hasattr(model, 'sales_credit_memo_id'):
         pk_name = 'sales_credit_memo_id'
-    else:
-        pk_name = 'id'
-
+    
     pk_column = getattr(model, pk_name)
+    like = f'{prefix}-{year}-%'
+    
     last = db.session.query(model).filter(model.doc_no.like(like)).order_by(pk_column.desc()).first()
+    
     if last and last.doc_no:
         try:
-            n = int(last.doc_no.split('-')[-1]) + 1
+            parts = last.doc_no.split('-')
+            if len(parts) >= 3:
+                n = int(parts[-1]) + 1
+            else:
+                n = 1
         except Exception:
             n = 1
     else:
         n = 1
-    return f'{prefix}-{year}-{n:04d}'
+    
+    doc_no = f'{prefix}-{year}-{n:04d}'
+    
+    retries = 0
+    while model.query.filter_by(doc_no=doc_no).first() and retries < 100:
+        n += 1
+        doc_no = f'{prefix}-{year}-{n:04d}'
+        retries += 1
+    
+    if retries >= 100:
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        doc_no = f'{prefix}-{year}-{timestamp}'
+    
+    return doc_no
 
 
 def _save_attachments(doc_type, doc_id, files):
@@ -109,8 +225,28 @@ def _save_attachments(doc_type, doc_id, files):
         db.session.add(att)
 
 
-def _save_doc_line_items(LIModel, fk_field, fk_value, f):
-    """Generic save for any dedicated line item model (identical calc to purchase)."""
+def _get_tax_rate(tax_code, doc_type='purchase'):
+    """Get tax rate from tax code (numeric only)."""
+    try:
+        if doc_type == 'purchase':
+            tax = PurchaseTaxCode.query.filter_by(tax_code=tax_code, status='Active').first()
+        else:
+            tax = SalesTaxCode.query.filter_by(tax_code=tax_code, status='Active').first()
+        
+        if tax and hasattr(tax, 'tax_rate') and tax.tax_rate is not None:
+            return Decimal(str(tax.tax_rate))
+        
+        # Fallback: try to parse tax_code as number
+        try:
+            return Decimal(tax_code)
+        except:
+            return Decimal('0')
+    except Exception:
+        return Decimal('0')
+
+
+def _save_doc_line_items(LIModel, fk_field, fk_value, f, doc_type='purchase'):
+    """Generic save for any dedicated line item model with improved decimal precision."""
     LIModel.query.filter_by(**{fk_field: fk_value}).delete()
 
     codes    = f.getlist('li_item_code[]')
@@ -124,20 +260,41 @@ def _save_doc_line_items(LIModel, fk_field, fk_value, f):
     freights = f.getlist('li_freight[]')
     tcodes   = f.getlist('li_tax_code[]')
 
-    total_bd = Decimal(0); total_disc = Decimal(0)
-    total_fr = Decimal(0); total_vat  = Decimal(0)
+    total_bd = Decimal(0)
+    total_disc = Decimal(0)
+    total_fr = Decimal(0)
+    total_vat = Decimal(0)
 
     for i in range(len(qtys)):
         try:
-            qty      = Decimal(qtys[i]     or '0')
-            rate     = Decimal(rates[i]    if i < len(rates)    else '0')
-            disc     = Decimal(discs[i]    if i < len(discs)    else '0')
-            fr       = Decimal(freights[i] if i < len(freights) else '0')
-            tax_code = tcodes[i] if i < len(tcodes) else 'VAT15'
-            tax_rate = Decimal('15') if '15' in tax_code else Decimal('0')
-            taxable  = max(Decimal('0'), (qty * rate - disc) + fr)
-            tax_amt  = (taxable * tax_rate / 100).quantize(Decimal('0.01'))
-            total    = taxable + tax_amt
+            # Handle empty/None values safely
+            qty_str = qtys[i] if i < len(qtys) and qtys[i] else '0'
+            rate_str = rates[i] if i < len(rates) and rates[i] else '0'
+            disc_str = discs[i] if i < len(discs) and discs[i] else '0'
+            fr_str = freights[i] if i < len(freights) and freights[i] else '0'
+            
+            # Remove commas and clean
+            qty_str = qty_str.replace(',', '').strip()
+            rate_str = rate_str.replace(',', '').strip()
+            disc_str = disc_str.replace(',', '').strip()
+            fr_str = fr_str.replace(',', '').strip()
+            
+            # Parse with 4 decimal precision
+            qty = Decimal(qty_str or '0').quantize(Decimal('0.0001'))
+            rate = Decimal(rate_str or '0').quantize(Decimal('0.0001'))
+            disc = Decimal(disc_str or '0').quantize(Decimal('0.0001'))
+            fr = Decimal(fr_str or '0').quantize(Decimal('0.0001'))
+            
+            # Get tax rate from tax code (numeric only)
+            tax_code = tcodes[i] if i < len(tcodes) and tcodes[i] else '0'
+            tax_code = tax_code.strip()
+            tax_rate = _get_tax_rate(tax_code, doc_type)
+            
+            # Calculate with proper precision
+            taxable = max(Decimal('0'), (qty * rate - disc) + fr)
+            tax_amt = (taxable * tax_rate / 100).quantize(Decimal('0.01'))  # 2 decimals
+            total = (taxable + tax_amt).quantize(Decimal('0.01'))  # 2 decimals
+            taxable_rounded = taxable.quantize(Decimal('0.01'))  # 2 decimals
 
             li = LIModel(**{
                 fk_field:        fk_value,
@@ -147,9 +304,14 @@ def _save_doc_line_items(LIModel, fk_field, fk_value, f):
                 'required_date': pd(rdates[i]) if i < len(rdates) and rdates[i] else None,
                 'warehouse':     whs[i]    if i < len(whs)    else '',
                 'uom':           uoms[i]   if i < len(uoms)   else 'unit',
-                'quantity':      qty, 'rate': rate, 'discount': disc, 'freight': fr,
-                'taxable':       taxable, 'tax_code': tax_code,
-                'tax_amount':    tax_amt, 'total': total,
+                'quantity':      qty,  # 4 decimals
+                'rate':          rate,  # 4 decimals
+                'discount':      disc,  # 4 decimals
+                'freight':       fr,    # 4 decimals
+                'taxable':       taxable_rounded,  # 2 decimals
+                'tax_code':      tax_code,
+                'tax_amount':    tax_amt,  # 2 decimals
+                'total':         total,  # 2 decimals
             })
             db.session.add(li)
             total_bd   += qty * rate
@@ -158,16 +320,17 @@ def _save_doc_line_items(LIModel, fk_field, fk_value, f):
             total_vat  += tax_amt
         except Exception as e:
             print(f"Error processing line item {i}: {str(e)}")
-            import traceback; traceback.print_exc()
+            import traceback
+            traceback.print_exc()
 
     excl = (total_bd - total_disc) + total_fr
     return {
-        'total_before_discount': total_bd,
-        'total_discount':        total_disc,
-        'total_freight':         total_fr,
-        'total_excl_vat':        excl,
-        'vat_amount':            total_vat,
-        'total_incl_vat':        excl + total_vat,
+        'total_before_discount': total_bd.quantize(Decimal('0.01')),
+        'total_discount':        total_disc.quantize(Decimal('0.01')),
+        'total_freight':         total_fr.quantize(Decimal('0.01')),
+        'total_excl_vat':        excl.quantize(Decimal('0.01')),
+        'vat_amount':            total_vat.quantize(Decimal('0.01')),
+        'total_incl_vat':        (excl + total_vat).quantize(Decimal('0.01')),
     }
 
 
@@ -176,25 +339,39 @@ def _save_doc_line_items(LIModel, fk_field, fk_value, f):
 def next_doc_no():
     """Preview the next document number for a given sales doc type."""
     t = (request.args.get('type') or 'SR').upper()
+    force_new = request.args.get('force_new', 'false').lower() == 'true'
+    
     model_map = {
         'SR': SalesRequest, 'SQ': SalesQuotation, 'SO': SalesOrder,
         'DN': DeliveryNote, 'SINV': SalesInvoice,
         'SRR': SalesReturnRequest, 'SCM': SalesCreditMemo,
     }
     model = model_map.get(t, SalesRequest)
-    return jsonify({'doc_no': _next_doc_no(t, model)})
+    try:
+        doc_no = _next_doc_no(t, model)
+        return jsonify({'doc_no': doc_no, 'force_new': force_new})
+    except Exception as e:
+        print(f"Error generating doc number: {e}")
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        return jsonify({'doc_no': f'{t}-{timestamp}', 'force_new': force_new})
 
+
+# ══════════════════════════════════════════════════════════════════
+# SALES REQUESTS (SR)
+# ══════════════════════════════════════════════════════════════════
 
 @sale_bp.route('/sales/requests')
 @login_required
 def sr_list():
     return render_template('sales/sr_list.html', buyers=_buyer_list())
 
+
 @sale_bp.route('/sales/requests/data')
 @login_required
 def sr_data():
     rows = SalesRequest.query.order_by(SalesRequest.sales_request_id.desc()).all()
     return jsonify([r.to_dict() for r in rows])
+
 
 @sale_bp.route('/sales/requests/<int:id>/json')
 @login_required
@@ -206,6 +383,7 @@ def sr_json(id):
                         SalesAttachment.query.filter_by(doc_type='SR', doc_id=id).all()]
     return jsonify(d)
 
+
 @sale_bp.route('/sales/requests/<int:id>/view')
 @login_required
 def sr_view(id):
@@ -213,6 +391,7 @@ def sr_view(id):
     items = SalesRequestLineItem.query.filter_by(sales_request_id=id).order_by(SalesRequestLineItem.line_number).all()
     attachments = SalesAttachment.query.filter_by(doc_type='SR', doc_id=id).all()
     return render_template('sales/sr_view.html', pr=sr, items=items, attachments=attachments)
+
 
 @sale_bp.route('/sales/requests/<int:id>/summary')
 @login_required
@@ -222,6 +401,7 @@ def sr_summary(id):
     d = sr.to_dict()
     d['items'] = [i.to_dict() for i in SalesRequestLineItem.query.filter_by(sales_request_id=id).order_by(SalesRequestLineItem.line_number).all()]
     return jsonify(d)
+
 
 @sale_bp.route('/sales/requests/add', methods=['POST'])
 @login_required
@@ -248,12 +428,15 @@ def sr_add():
         approved_by=f.get('approved_by','').strip(),
         created_by=current_user.id,
     )
-    db.session.add(sr); db.session.flush()
-    tots = _save_doc_line_items(SalesRequestLineItem, 'sales_request_id', sr.sales_request_id, f)
-    for k,v in tots.items(): setattr(sr, k, v)
+    db.session.add(sr)
+    db.session.flush()
+    tots = _save_doc_line_items(SalesRequestLineItem, 'sales_request_id', sr.sales_request_id, f, 'purchase')
+    for k,v in tots.items(): 
+        setattr(sr, k, float(v) if isinstance(v, Decimal) else v)
     _save_attachments('SR', sr.sales_request_id, request.files.getlist('attachments'))
     db.session.commit()
     return jsonify({'ok': True, 'id': sr.sales_request_id, 'doc_no': sr.doc_no})
+
 
 @sale_bp.route('/sales/requests/<int:id>/edit', methods=['POST'])
 @login_required
@@ -278,11 +461,13 @@ def sr_edit(id):
     sr.valid_until    = valid_until
     sr.document_date  = date.today()
     sr.required_date  = required_date
-    tots = _save_doc_line_items(SalesRequestLineItem, 'sales_request_id', id, f)
-    for k,v in tots.items(): setattr(sr, k, v)
+    tots = _save_doc_line_items(SalesRequestLineItem, 'sales_request_id', id, f, 'purchase')
+    for k,v in tots.items(): 
+        setattr(sr, k, float(v) if isinstance(v, Decimal) else v)
     _save_attachments('SR', id, request.files.getlist('attachments'))
     db.session.commit()
     return jsonify({'ok': True})
+
 
 @sale_bp.route('/sales/requests/<int:id>/delete', methods=['POST'])
 @login_required
@@ -290,12 +475,13 @@ def sr_delete(id):
     sr = SalesRequest.query.get_or_404(id)
     SalesRequestLineItem.query.filter_by(sales_request_id=id).delete()
     SalesAttachment.query.filter_by(doc_type='SR', doc_id=id).delete()
-    db.session.delete(sr); db.session.commit()
+    db.session.delete(sr)
+    db.session.commit()
     return jsonify({'ok': True})
 
 
 # ══════════════════════════════════════════════════════════════════
-# PURCHASE QUOTATION (PQ)
+# SALES QUOTATIONS (SQ)
 # ══════════════════════════════════════════════════════════════════
 
 @sale_bp.route('/sales/quotations')
@@ -304,11 +490,13 @@ def sq_list():
     srs = [{'id':p.sales_request_id,'doc_no':p.doc_no} for p in SalesRequest.query.filter_by(status='Approved').order_by(SalesRequest.sales_request_id.desc()).all()]
     return render_template('sales/sq_list.html', buyers=_buyer_list(), srs=srs)
 
+
 @sale_bp.route('/sales/quotations/data')
 @login_required
 def sq_data():
     rows = SalesQuotation.query.order_by(SalesQuotation.sales_quotation_id.desc()).all()
     return jsonify([r.to_dict() for r in rows])
+
 
 @sale_bp.route('/sales/quotations/<int:id>/json')
 @login_required
@@ -319,6 +507,7 @@ def sq_json(id):
     d['attachments'] = [{'filename':a.filename} for a in SalesAttachment.query.filter_by(doc_type='SQ', doc_id=id).all()]
     return jsonify(d)
 
+
 @sale_bp.route('/sales/quotations/<int:id>/view')
 @login_required
 def sq_view(id):
@@ -326,6 +515,7 @@ def sq_view(id):
     items = SalesQuotationLineItem.query.filter_by(sales_quotation_id=id).order_by(SalesQuotationLineItem.line_number).all()
     attachments = SalesAttachment.query.filter_by(doc_type='SQ', doc_id=id).all()
     return render_template('sales/sq_view.html', doc=sq, items=items, attachments=attachments, doc_type='SQ')
+
 
 @sale_bp.route('/sales/quotations/<int:id>/summary')
 @login_required
@@ -335,6 +525,7 @@ def sq_summary(id):
     d = sq.to_dict()
     d['items'] = [i.to_dict() for i in SalesQuotationLineItem.query.filter_by(sales_quotation_id=id).order_by(SalesQuotationLineItem.line_number).all()]
     return jsonify(d)
+
 
 @sale_bp.route('/sales/quotations/add', methods=['POST'])
 @login_required
@@ -371,19 +562,14 @@ def sq_add():
     db.session.add(sq)
     db.session.flush()
 
-    tots = _save_doc_line_items(
-        SalesQuotationLineItem,
-        'sales_quotation_id',
-        sq.sales_quotation_id,
-        f
-    )
-
+    tots = _save_doc_line_items(SalesQuotationLineItem, 'sales_quotation_id', sq.sales_quotation_id, f, 'sales')
     for k, v in tots.items():
         setattr(sq, k, float(v) if isinstance(v, Decimal) else v)
 
     _save_attachments('SQ', sq.sales_quotation_id, request.files.getlist('attachments'))
     db.session.commit()
     return jsonify({'ok': True, 'id': sq.sales_quotation_id, 'doc_no': sq.doc_no})
+
 
 @sale_bp.route('/sales/quotations/<int:id>/edit', methods=['POST'])
 @login_required
@@ -412,13 +598,7 @@ def sq_edit(id):
     sq.document_date  = date.today()
     sq.required_date  = required_date
 
-    tots = _save_doc_line_items(
-        SalesQuotationLineItem,
-        'sales_quotation_id',
-        id,
-        f
-    )
-
+    tots = _save_doc_line_items(SalesQuotationLineItem, 'sales_quotation_id', id, f, 'sales')
     for k, v in tots.items():
         setattr(sq, k, float(v) if isinstance(v, Decimal) else v)
 
@@ -426,18 +606,20 @@ def sq_edit(id):
     db.session.commit()
     return jsonify({'ok': True})
 
+
 @sale_bp.route('/sales/quotations/<int:id>/delete', methods=['POST'])
 @login_required
 def sq_delete(id):
     SalesQuotationLineItem.query.filter_by(sales_quotation_id=id).delete()
     SalesAttachment.query.filter_by(doc_type='SQ', doc_id=id).delete()
     sq = SalesQuotation.query.get_or_404(id)
-    db.session.delete(sq); db.session.commit()
+    db.session.delete(sq)
+    db.session.commit()
     return jsonify({'ok': True})
 
 
 # ══════════════════════════════════════════════════════════════════
-# PURCHASE ORDER (PO)
+# SALES ORDERS (SO)
 # ══════════════════════════════════════════════════════════════════
 
 @sale_bp.route('/sales/orders')
@@ -447,11 +629,13 @@ def so_list():
            for p in SalesQuotation.query.filter_by(status='Approved').order_by(SalesQuotation.sales_quotation_id.desc()).all()]
     return render_template('sales/so_list.html', buyers=_buyer_list(), sqs=sqs)
 
+
 @sale_bp.route('/sales/orders/data')
 @login_required
 def so_data():
     rows = SalesOrder.query.order_by(SalesOrder.sales_order_id.desc()).all()
     return jsonify([r.to_dict() for r in rows])
+
 
 @sale_bp.route('/sales/orders/<int:id>/json')
 @login_required
@@ -465,6 +649,7 @@ def so_json(id):
                         for a in SalesAttachment.query.filter_by(doc_type='SO', doc_id=id).all()]
     return jsonify(d)
 
+
 @sale_bp.route('/sales/orders/<int:id>/summary')
 @login_required
 def so_summary(id):
@@ -476,6 +661,7 @@ def so_summary(id):
                   .order_by(SalesOrderLineItem.line_number).all()]
     return jsonify(d)
 
+
 @sale_bp.route('/sales/orders/<int:id>/view')
 @login_required
 def so_view(id):
@@ -483,6 +669,7 @@ def so_view(id):
     items = SalesOrderLineItem.query.filter_by(sales_order_id=id).order_by(SalesOrderLineItem.line_number).all()
     attachments = SalesAttachment.query.filter_by(doc_type='SO', doc_id=id).all()
     return render_template('sales/so_view.html', doc=so, items=items, attachments=attachments, doc_type='SO')
+
 
 @sale_bp.route('/sales/orders/add', methods=['POST'])
 @login_required
@@ -496,8 +683,11 @@ def so_add():
 
         buyer_id = int(f.get('buyer_id')) if f.get('buyer_id') else (sq.buyer_id if sq else None)
 
+        doc_no = _next_doc_no('SO', SalesOrder)
+        print(f"Generated doc_no: {doc_no}")
+
         so = SalesOrder(
-            doc_no=_next_doc_no('SO', SalesOrder),
+            doc_no=doc_no,
             sales_quotation_id=sq_id,
             buyer_id=buyer_id,
             buyer_ref_no=f.get('buyer_ref_no', '').strip(),
@@ -512,9 +702,9 @@ def so_add():
         db.session.add(so)
         db.session.flush()
 
-        tots = _save_doc_line_items(SalesOrderLineItem, 'sales_order_id', so.sales_order_id, f)
+        tots = _save_doc_line_items(SalesOrderLineItem, 'sales_order_id', so.sales_order_id, f, 'sales')
         for k, v in tots.items():
-            setattr(so, k, v)
+            setattr(so, k, float(v) if isinstance(v, Decimal) else v)
 
         _save_attachments('SO', so.sales_order_id, request.files.getlist('attachments'))
         
@@ -523,10 +713,31 @@ def so_add():
     
     except Exception as e:
         db.session.rollback()
-        print(f"ERROR in so_add: {str(e)}")
+        error_msg = str(e)
+        print(f"ERROR in so_add: {error_msg}")
         import traceback
         traceback.print_exc()
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        
+        if 'UNIQUE constraint failed' in error_msg or 'IntegrityError' in error_msg:
+            try:
+                timestamp = datetime.now().strftime("%H%M%S")
+                fallback_doc_no = f'SO-{date.today().year}-{timestamp}'
+                
+                existing = SalesOrder.query.filter_by(doc_no=fallback_doc_no).first()
+                if existing:
+                    fallback_doc_no = f'SO-{date.today().year}-{timestamp}-{random.randint(100,999)}'
+                
+                so.doc_no = fallback_doc_no
+                db.session.commit()
+                return jsonify({'ok': True, 'id': so.sales_order_id, 'doc_no': so.doc_no, 'retry': True})
+                
+            except Exception as retry_error:
+                db.session.rollback()
+                print(f"Retry failed: {retry_error}")
+                return jsonify({'ok': False, 'error': 'Duplicate document number. Please try again.'}), 500
+        
+        return jsonify({'ok': False, 'error': error_msg}), 500
+
 
 @sale_bp.route('/sales/orders/<int:id>/edit', methods=['POST'])
 @login_required
@@ -547,9 +758,9 @@ def so_edit(id):
         so.delivery_date = pd(f.get('delivery_date'))
         so.document_date = date.today()
 
-        tots = _save_doc_line_items(SalesOrderLineItem, 'sales_order_id', id, f)
+        tots = _save_doc_line_items(SalesOrderLineItem, 'sales_order_id', id, f, 'sales')
         for k, v in tots.items():
-            setattr(so, k, v)
+            setattr(so, k, float(v) if isinstance(v, Decimal) else v)
 
         _save_attachments('SO', id, request.files.getlist('attachments'))
         
@@ -562,6 +773,7 @@ def so_edit(id):
         import traceback
         traceback.print_exc()
         return jsonify({'ok': False, 'error': str(e)}), 500
+
 
 @sale_bp.route('/sales/orders/<int:id>/delete', methods=['POST'])
 @login_required
@@ -579,7 +791,7 @@ def so_delete(id):
 
 
 # ══════════════════════════════════════════════════════════════════
-# GOODS RECEIPT NOTE (GRN)
+# DELIVERY NOTES (DN)
 # ══════════════════════════════════════════════════════════════════
 
 @sale_bp.route('/sales/delivery')
@@ -588,10 +800,12 @@ def dn_list():
     sos = [{'id':p.sales_order_id,'doc_no':p.doc_no} for p in SalesOrder.query.filter_by(status='Approved').order_by(SalesOrder.sales_order_id.desc()).all()]
     return render_template('sales/dn_list.html', buyers=_buyer_list(), sos=sos)
 
+
 @sale_bp.route('/sales/delivery/data')
 @login_required
 def dn_data():
     return jsonify([r.to_dict() for r in DeliveryNote.query.order_by(DeliveryNote.delivery_note_id.desc()).all()])
+
 
 @sale_bp.route('/sales/delivery/<int:id>/json')
 @login_required
@@ -602,6 +816,7 @@ def dn_json(id):
     d['attachments'] = [{'filename':a.filename} for a in SalesAttachment.query.filter_by(doc_type='DN', doc_id=id).all()]
     return jsonify(d)
 
+
 @sale_bp.route('/sales/delivery/<int:id>/view')
 @login_required
 def dn_view(id):
@@ -609,6 +824,7 @@ def dn_view(id):
     return render_template('sales/dn_view.html', doc=doc,
         items=DeliveryLineItem.query.filter_by(delivery_note_id=id).order_by(DeliveryLineItem.line_number).all(),
         attachments=SalesAttachment.query.filter_by(doc_type='DN', doc_id=id).all())
+
 
 @sale_bp.route('/sales/delivery/<int:id>/summary')
 @login_required
@@ -620,6 +836,7 @@ def dn_summary(id):
                   .filter_by(delivery_note_id=id)
                   .order_by(DeliveryLineItem.line_number).all()]
     return jsonify(d)
+
 
 @sale_bp.route('/sales/delivery/add', methods=['POST'])
 @login_required
@@ -644,23 +861,28 @@ def dn_add():
             document_date=date.today(),
             created_by=current_user.id,
         )
-        db.session.add(doc); db.session.flush()
-        tots = _save_doc_line_items(DeliveryLineItem, 'delivery_note_id', doc.delivery_note_id, f)
-        for k,v in tots.items(): setattr(doc, k, v)
+        db.session.add(doc)
+        db.session.flush()
+        tots = _save_doc_line_items(DeliveryLineItem, 'delivery_note_id', doc.delivery_note_id, f, 'sales')
+        for k,v in tots.items(): 
+            setattr(doc, k, float(v) if isinstance(v, Decimal) else v)
         _save_attachments('DN', doc.delivery_note_id, request.files.getlist('attachments'))
         db.session.commit()
         return jsonify({'ok':True,'id':doc.delivery_note_id,'doc_no':doc.doc_no})
     except Exception as e:
         db.session.rollback()
         print(f"ERROR in dn_add: {str(e)}")
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return jsonify({'ok': False, 'error': str(e)}), 500
+
 
 @sale_bp.route('/sales/delivery/<int:id>/edit', methods=['POST'])
 @login_required
 def dn_edit(id):
     try:
-        doc = DeliveryNote.query.get_or_404(id); f = request.form
+        doc = DeliveryNote.query.get_or_404(id)
+        f = request.form
         doc.sales_order_id = int(f.get('so_id')) if f.get('so_id') else None
         doc.buyer_id=int(f.get('buyer_id')) if f.get('buyer_id') else None
         doc.contact_person=f.get('contact_person','').strip()
@@ -670,27 +892,32 @@ def dn_edit(id):
         doc.posting_date  = pd(f.get('posting_date'))
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
-        tots = _save_doc_line_items(DeliveryLineItem, 'delivery_note_id', id, f)
-        for k,v in tots.items(): setattr(doc, k, v)
+        tots = _save_doc_line_items(DeliveryLineItem, 'delivery_note_id', id, f, 'sales')
+        for k,v in tots.items(): 
+            setattr(doc, k, float(v) if isinstance(v, Decimal) else v)
         _save_attachments('DN', id, request.files.getlist('attachments'))
-        db.session.commit(); return jsonify({'ok':True})
+        db.session.commit()
+        return jsonify({'ok':True})
     except Exception as e:
         db.session.rollback()
         print(f"ERROR in dn_edit: {str(e)}")
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return jsonify({'ok': False, 'error': str(e)}), 500
+
 
 @sale_bp.route('/sales/delivery/<int:id>/delete', methods=['POST'])
 @login_required
 def dn_delete(id):
     DeliveryLineItem.query.filter_by(delivery_note_id=id).delete()
     SalesAttachment.query.filter_by(doc_type='DN', doc_id=id).delete()
-    db.session.delete(DeliveryNote.query.get_or_404(id)); db.session.commit()
+    db.session.delete(DeliveryNote.query.get_or_404(id))
+    db.session.commit()
     return jsonify({'ok':True})
 
 
 # ══════════════════════════════════════════════════════════════════
-# PURCHASE INVOICE (PINV)
+# SALES INVOICES (SINV)
 # ══════════════════════════════════════════════════════════════════
 
 @sale_bp.route('/sales/invoices')
@@ -700,17 +927,17 @@ def sinv_list():
     dns = [{'id':g.delivery_note_id,'doc_no':g.doc_no,'sales_order_id':g.sales_order_id} for g in DeliveryNote.query.order_by(DeliveryNote.delivery_note_id.desc()).all()]
     return render_template('sales/sinv_list.html', buyers=_buyer_list(), sos=sos, dns=dns, sellers=Seller.query.order_by(Seller.name).all())
 
+
 @sale_bp.route('/sales/invoices/data')
 @login_required
 def sinv_data():
     return jsonify([r.to_dict() for r in SalesInvoice.query.order_by(SalesInvoice.sales_invoice_id.desc()).all()])
 
+
 @sale_bp.route('/sales/invoices/reference-list')
 @login_required
 def sinv_reference_list():
-    """Previously-saved invoices for the reference-invoice picker.
-    Filtered by category (standard | simplified). ``exclude`` omits the
-    invoice currently being edited so it can't reference itself."""
+    """Previously-saved invoices for the reference-invoice picker."""
     category = (request.args.get('category') or '').strip().lower()
     exclude  = request.args.get('exclude', type=int)
     q = SalesInvoice.query
@@ -729,6 +956,7 @@ def sinv_reference_list():
         'total_incl_vat': float(r.total_incl_vat or 0),
     } for r in rows])
 
+
 @sale_bp.route('/sales/invoices/<int:id>/json')
 @login_required
 def sinv_json(id):
@@ -738,6 +966,7 @@ def sinv_json(id):
     d['attachments'] = [{'filename':a.filename} for a in SalesAttachment.query.filter_by(doc_type='SINV', doc_id=id).all()]
     return jsonify(d)
 
+
 @sale_bp.route('/sales/invoices/<int:id>/view')
 @login_required
 def sinv_view(id):
@@ -746,6 +975,7 @@ def sinv_view(id):
         items=SalesInvoiceLineItem.query.filter_by(sales_invoice_id=id).order_by(SalesInvoiceLineItem.line_number).all(),
         attachments=SalesAttachment.query.filter_by(doc_type='SINV', doc_id=id).all())
 
+
 @sale_bp.route('/sales/invoices/<int:id>/summary')
 @login_required
 def sinv_summary(id):
@@ -753,6 +983,7 @@ def sinv_summary(id):
     d = doc.to_dict()
     d['items'] = [i.to_dict() for i in SalesInvoiceLineItem.query.filter_by(sales_invoice_id=id).order_by(SalesInvoiceLineItem.line_number).all()]
     return jsonify(d)
+
 
 @sale_bp.route('/sales/invoices/add', methods=['POST'])
 @login_required
@@ -791,14 +1022,12 @@ def sinv_add():
         db.session.add(doc)
         db.session.flush()
 
-        tots = _save_doc_line_items(SalesInvoiceLineItem, 'sales_invoice_id', doc.sales_invoice_id, f)
-
+        tots = _save_doc_line_items(SalesInvoiceLineItem, 'sales_invoice_id', doc.sales_invoice_id, f, 'sales')
         for k,v in tots.items():
-            setattr(doc, k, v)
+            setattr(doc, k, float(v) if isinstance(v, Decimal) else v)
         _save_attachments('SINV', doc.sales_invoice_id, request.files.getlist('attachments'))
         
         db.session.commit()
-        
         return jsonify({'ok':True,'id':doc.sales_invoice_id,'doc_no':doc.doc_no})
     
     except Exception as e:
@@ -807,6 +1036,7 @@ def sinv_add():
         import traceback
         traceback.print_exc()
         return jsonify({'ok': False, 'error': str(e)}), 500
+
 
 @sale_bp.route('/sales/invoices/<int:id>/edit', methods=['POST'])
 @login_required
@@ -836,9 +1066,9 @@ def sinv_edit(id):
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
         
-        tots = _save_doc_line_items(SalesInvoiceLineItem, 'sales_invoice_id', id, f)
+        tots = _save_doc_line_items(SalesInvoiceLineItem, 'sales_invoice_id', id, f, 'sales')
         for k,v in tots.items(): 
-            setattr(doc, k, v)
+            setattr(doc, k, float(v) if isinstance(v, Decimal) else v)
         _save_attachments('SINV', id, request.files.getlist('attachments'))
         
         db.session.commit()
@@ -850,6 +1080,7 @@ def sinv_edit(id):
         import traceback
         traceback.print_exc()
         return jsonify({'ok': False, 'error': str(e)}), 500
+
 
 @sale_bp.route('/sales/invoices/<int:id>/delete', methods=['POST'])
 @login_required
@@ -869,7 +1100,7 @@ def sinv_delete(id):
 
 
 # ══════════════════════════════════════════════════════════════════
-# GOODS RETURN REQUEST (GRR)
+# SALES RETURN REQUESTS (SRR)
 # ══════════════════════════════════════════════════════════════════
 
 @sale_bp.route('/sales/returns')
@@ -878,10 +1109,12 @@ def srr_list():
     sins = [{'id':p.sales_invoice_id,'doc_no':p.doc_no} for p in SalesInvoice.query.filter_by(status='Approved').order_by(SalesInvoice.sales_invoice_id.desc()).all()]
     return render_template('sales/srr_list.html', buyers=_buyer_list(), sinvs=sins)
 
+
 @sale_bp.route('/sales/returns/data')
 @login_required
 def srr_data():
     return jsonify([r.to_dict() for r in SalesReturnRequest.query.order_by(SalesReturnRequest.sales_return_request_id.desc()).all()])
+
 
 @sale_bp.route('/sales/returns/<int:id>/json')
 @login_required
@@ -892,6 +1125,7 @@ def srr_json(id):
     d['attachments'] = [{'filename':a.filename} for a in SalesAttachment.query.filter_by(doc_type='SRR', doc_id=id).all()]
     return jsonify(d)
 
+
 @sale_bp.route('/sales/returns/<int:id>/view')
 @login_required
 def srr_view(id):
@@ -900,6 +1134,7 @@ def srr_view(id):
         items=SalesReturnLineItem.query.filter_by(sales_return_request_id=id).order_by(SalesReturnLineItem.line_number).all(),
         attachments=SalesAttachment.query.filter_by(doc_type='SRR', doc_id=id).all())
 
+
 @sale_bp.route('/sales/returns/<int:id>/summary')
 @login_required
 def srr_summary(id):
@@ -907,6 +1142,7 @@ def srr_summary(id):
     d = doc.to_dict()
     d['items'] = [i.to_dict() for i in SalesReturnLineItem.query.filter_by(sales_return_request_id=id).order_by(SalesReturnLineItem.line_number).all()]
     return jsonify(d)
+
 
 def _validate_srr_qty(f, sales_invoice_id):
     """SRR line quantities must not exceed the original Sales Invoice line quantity for that item."""
@@ -966,22 +1202,28 @@ def srr_add():
             document_date=date.today(),
             created_by=current_user.id,
         )
-        db.session.add(doc); db.session.flush()
-        tots = _save_doc_line_items(SalesReturnLineItem, 'sales_return_request_id', doc.sales_return_request_id, f)
-        for k,v in tots.items(): setattr(doc, k, v)
+        db.session.add(doc)
+        db.session.flush()
+        tots = _save_doc_line_items(SalesReturnLineItem, 'sales_return_request_id', doc.sales_return_request_id, f, 'sales')
+        for k,v in tots.items(): 
+            setattr(doc, k, float(v) if isinstance(v, Decimal) else v)
         _save_attachments('SRR', doc.sales_return_request_id, request.files.getlist('attachments'))
-        db.session.commit(); return jsonify({'ok':True,'id':doc.sales_return_request_id,'doc_no':doc.doc_no})
+        db.session.commit()
+        return jsonify({'ok':True,'id':doc.sales_return_request_id,'doc_no':doc.doc_no})
     except Exception as e:
         db.session.rollback()
         print(f"ERROR in srr_add: {str(e)}")
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return jsonify({'ok': False, 'error': str(e)}), 500
+
 
 @sale_bp.route('/sales/returns/<int:id>/edit', methods=['POST'])
 @login_required
 def srr_edit(id):
     try:
-        doc = SalesReturnRequest.query.get_or_404(id); f = request.form
+        doc = SalesReturnRequest.query.get_or_404(id)
+        f = request.form
         si_id = int(f.get('si_id')) if f.get('si_id') else None
 
         err = _validate_srr_qty(f, si_id)
@@ -1001,27 +1243,32 @@ def srr_edit(id):
         doc.posting_date  = pd(f.get('posting_date'))
         doc.delivery_date = delivery_date
         doc.document_date = date.today()
-        tots = _save_doc_line_items(SalesReturnLineItem, 'sales_return_request_id', id, f)
-        for k,v in tots.items(): setattr(doc, k, v)
+        tots = _save_doc_line_items(SalesReturnLineItem, 'sales_return_request_id', id, f, 'sales')
+        for k,v in tots.items(): 
+            setattr(doc, k, float(v) if isinstance(v, Decimal) else v)
         _save_attachments('SRR', id, request.files.getlist('attachments'))
-        db.session.commit(); return jsonify({'ok':True})
+        db.session.commit()
+        return jsonify({'ok':True})
     except Exception as e:
         db.session.rollback()
         print(f"ERROR in srr_edit: {str(e)}")
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return jsonify({'ok': False, 'error': str(e)}), 500
+
 
 @sale_bp.route('/sales/returns/<int:id>/delete', methods=['POST'])
 @login_required
 def srr_delete(id):
     SalesReturnLineItem.query.filter_by(sales_return_request_id=id).delete()
     SalesAttachment.query.filter_by(doc_type='SRR', doc_id=id).delete()
-    db.session.delete(SalesReturnRequest.query.get_or_404(id)); db.session.commit()
+    db.session.delete(SalesReturnRequest.query.get_or_404(id))
+    db.session.commit()
     return jsonify({'ok':True})
 
 
 # ══════════════════════════════════════════════════════════════════
-# PURCHASE DEBIT MEMO (PDM)
+# SALES CREDIT MEMOS (SCM)
 # ══════════════════════════════════════════════════════════════════
 
 @sale_bp.route('/sales/credit-memos')
@@ -1030,10 +1277,12 @@ def scm_list():
     srrs = [{'id':p.sales_return_request_id,'doc_no':p.doc_no} for p in SalesReturnRequest.query.filter_by(status='Approved').order_by(SalesReturnRequest.sales_return_request_id.desc()).all()]
     return render_template('sales/scm_list.html', buyers=_buyer_list(), srrs=srrs, sellers=Seller.query.order_by(Seller.name).all())
 
+
 @sale_bp.route('/sales/credit-memos/data')
 @login_required
 def scm_data():
     return jsonify([r.to_dict() for r in SalesCreditMemo.query.order_by(SalesCreditMemo.sales_credit_memo_id.desc()).all()])
+
 
 @sale_bp.route('/sales/credit-memos/<int:id>/json')
 @login_required
@@ -1044,6 +1293,7 @@ def scm_json(id):
     d['attachments'] = [{'filename':a.filename} for a in SalesAttachment.query.filter_by(doc_type='SCM', doc_id=id).all()]
     return jsonify(d)
 
+
 @sale_bp.route('/sales/credit-memos/<int:id>/view')
 @login_required
 def scm_view(id):
@@ -1051,6 +1301,7 @@ def scm_view(id):
     return render_template('sales/scm_view.html', doc=doc,
         items=SalesCreditMemoLineItem.query.filter_by(sales_credit_memo_id=id).order_by(SalesCreditMemoLineItem.line_number).all(),
         attachments=SalesAttachment.query.filter_by(doc_type='SCM', doc_id=id).all())
+
 
 @sale_bp.route('/sales/credit-memos/add', methods=['POST'])
 @login_required
@@ -1079,22 +1330,28 @@ def scm_add():
             document_date=date.today(),
             created_by=current_user.id,
         )
-        db.session.add(doc); db.session.flush()
-        tots = _save_doc_line_items(SalesCreditMemoLineItem, 'sales_credit_memo_id', doc.sales_credit_memo_id, f)
-        for k,v in tots.items(): setattr(doc, k, v)
+        db.session.add(doc)
+        db.session.flush()
+        tots = _save_doc_line_items(SalesCreditMemoLineItem, 'sales_credit_memo_id', doc.sales_credit_memo_id, f, 'sales')
+        for k,v in tots.items(): 
+            setattr(doc, k, float(v) if isinstance(v, Decimal) else v)
         _save_attachments('SCM', doc.sales_credit_memo_id, request.files.getlist('attachments'))
-        db.session.commit(); return jsonify({'ok':True,'id':doc.sales_credit_memo_id,'doc_no':doc.doc_no})
+        db.session.commit()
+        return jsonify({'ok':True,'id':doc.sales_credit_memo_id,'doc_no':doc.doc_no})
     except Exception as e:
         db.session.rollback()
         print(f"ERROR in scm_add: {str(e)}")
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return jsonify({'ok': False, 'error': str(e)}), 500
+
 
 @sale_bp.route('/sales/credit-memos/<int:id>/edit', methods=['POST'])
 @login_required
 def scm_edit(id):
     try:
-        doc = SalesCreditMemo.query.get_or_404(id); f = request.form
+        doc = SalesCreditMemo.query.get_or_404(id)
+        f = request.form
         srr_id = int(f.get('srr_id')) if f.get('srr_id') else None
         srr = SalesReturnRequest.query.get(srr_id) if srr_id else None
 
@@ -1111,20 +1368,239 @@ def scm_edit(id):
         doc.posting_date  = pd(f.get('posting_date'))
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
-        tots = _save_doc_line_items(SalesCreditMemoLineItem, 'sales_credit_memo_id', id, f)
-        for k,v in tots.items(): setattr(doc, k, v)
+        tots = _save_doc_line_items(SalesCreditMemoLineItem, 'sales_credit_memo_id', id, f, 'sales')
+        for k,v in tots.items(): 
+            setattr(doc, k, float(v) if isinstance(v, Decimal) else v)
         _save_attachments('SCM', id, request.files.getlist('attachments'))
-        db.session.commit(); return jsonify({'ok':True})
+        db.session.commit()
+        return jsonify({'ok':True})
     except Exception as e:
         db.session.rollback()
         print(f"ERROR in scm_edit: {str(e)}")
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return jsonify({'ok': False, 'error': str(e)}), 500
+
 
 @sale_bp.route('/sales/credit-memos/<int:id>/delete', methods=['POST'])
 @login_required
 def scm_delete(id):
     SalesCreditMemoLineItem.query.filter_by(sales_credit_memo_id=id).delete()
     SalesAttachment.query.filter_by(doc_type='SCM', doc_id=id).delete()
-    db.session.delete(SalesCreditMemo.query.get_or_404(id)); db.session.commit()
+    db.session.delete(SalesCreditMemo.query.get_or_404(id))
+    db.session.commit()
     return jsonify({'ok':True})
+
+
+# ══════════════════════════════════════════════════════════════════
+# PURCHASE TAX CODES
+# ══════════════════════════════════════════════════════════════════
+
+@sale_bp.route('/purchase-tax-codes')
+@login_required
+def purchase_tax_list():
+    return render_template('tax_codes/tax_list.html', 
+                         kind='purchase',
+                         title_en='Purchase Tax Codes',
+                         title_ar='رموز الضرائب للمشتريات',
+                         doc_type='purchase')
+
+
+@sale_bp.route('/purchase-tax-codes/data')
+@login_required
+def purchase_tax_data():
+    rows = PurchaseTaxCode.query.order_by(PurchaseTaxCode.id.desc()).all()
+    return jsonify([{
+        'id': r.id,
+        'account_code': r.account_code,
+        'tax_code': r.tax_code,
+        'tax_rate': float(r.tax_rate) if r.tax_rate else 0,
+        'section': r.section,
+        'status': r.status
+    } for r in rows])
+
+
+@sale_bp.route('/purchase-tax-codes/add', methods=['POST'])
+@login_required
+def purchase_tax_add():
+    f = request.form
+    tax_code = f.get('tax_code', '').strip()
+    account_code = f.get('account_code', '').strip()
+    section = f.get('section', '').strip()
+    
+    # Validate: tax_code must be numeric only
+    if not tax_code or not re.match(r'^[\d.]+$', tax_code):
+        return jsonify({'ok': False, 'error': 'Tax Code must contain only numbers'}), 400
+    
+    # Validate tax rate
+    try:
+        tax_rate = Decimal(f.get('tax_rate', '0'))
+    except:
+        return jsonify({'ok': False, 'error': 'Invalid tax rate'}), 400
+    
+    if not account_code or not section:
+        return jsonify({'ok': False, 'error': 'Account Code and Section are required'}), 400
+    
+    # Check for duplicate
+    existing = PurchaseTaxCode.query.filter_by(tax_code=tax_code).first()
+    if existing:
+        return jsonify({'ok': False, 'error': 'Tax Code already exists'}), 400
+    
+    tax = PurchaseTaxCode(
+        account_code=account_code,
+        tax_code=tax_code,
+        tax_rate=tax_rate,
+        section=section,
+        status=f.get('status', 'Active'),
+    )
+    db.session.add(tax)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@sale_bp.route('/purchase-tax-codes/<int:id>/edit', methods=['POST'])
+@login_required
+def purchase_tax_edit(id):
+    tax = PurchaseTaxCode.query.get_or_404(id)
+    f = request.form
+    
+    # If tax_code is being changed, validate it's numeric
+    new_tax_code = f.get('tax_code', '').strip()
+    if new_tax_code != tax.tax_code:
+        if not new_tax_code or not re.match(r'^[\d.]+$', new_tax_code):
+            return jsonify({'ok': False, 'error': 'Tax Code must contain only numbers'}), 400
+        # Check for duplicate
+        existing = PurchaseTaxCode.query.filter_by(tax_code=new_tax_code).first()
+        if existing:
+            return jsonify({'ok': False, 'error': 'Tax Code already exists'}), 400
+        tax.tax_code = new_tax_code
+    
+    # Validate tax rate
+    try:
+        tax.tax_rate = Decimal(f.get('tax_rate', '0'))
+    except:
+        return jsonify({'ok': False, 'error': 'Invalid tax rate'}), 400
+    
+    tax.account_code = f.get('account_code', '').strip()
+    tax.section = f.get('section', '').strip()
+    tax.status = f.get('status', 'Active')
+    tax.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@sale_bp.route('/purchase-tax-codes/<int:id>/delete', methods=['POST'])
+@login_required
+def purchase_tax_delete(id):
+    tax = PurchaseTaxCode.query.get_or_404(id)
+    db.session.delete(tax)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+# ══════════════════════════════════════════════════════════════════
+# SALES TAX CODES
+# ══════════════════════════════════════════════════════════════════
+
+@sale_bp.route('/sales-tax-codes')
+@login_required
+def sales_tax_list():
+    return render_template('tax_codes/tax_list.html', 
+                         kind='sales',
+                         title_en='Sales Tax Codes',
+                         title_ar='رموز الضرائب للمبيعات',
+                         doc_type='sales')
+
+
+@sale_bp.route('/sales-tax-codes/data')
+@login_required
+def sales_tax_data():
+    rows = SalesTaxCode.query.order_by(SalesTaxCode.id.desc()).all()
+    return jsonify([{
+        'id': r.id,
+        'account_code': r.account_code,
+        'tax_code': r.tax_code,
+        'tax_rate': float(r.tax_rate) if r.tax_rate else 0,
+        'section': r.section,
+        'status': r.status
+    } for r in rows])
+
+
+@sale_bp.route('/sales-tax-codes/add', methods=['POST'])
+@login_required
+def sales_tax_add():
+    f = request.form
+    tax_code = f.get('tax_code', '').strip()
+    account_code = f.get('account_code', '').strip()
+    section = f.get('section', '').strip()
+    
+    # Validate: tax_code must be numeric only
+    if not tax_code or not re.match(r'^[\d.]+$', tax_code):
+        return jsonify({'ok': False, 'error': 'Tax Code must contain only numbers'}), 400
+    
+    # Validate tax rate
+    try:
+        tax_rate = Decimal(f.get('tax_rate', '0'))
+    except:
+        return jsonify({'ok': False, 'error': 'Invalid tax rate'}), 400
+    
+    if not account_code or not section:
+        return jsonify({'ok': False, 'error': 'Account Code and Section are required'}), 400
+    
+    # Check for duplicate
+    existing = SalesTaxCode.query.filter_by(tax_code=tax_code).first()
+    if existing:
+        return jsonify({'ok': False, 'error': 'Tax Code already exists'}), 400
+    
+    tax = SalesTaxCode(
+        account_code=account_code,
+        tax_code=tax_code,
+        tax_rate=tax_rate,
+        section=section,
+        status=f.get('status', 'Active'),
+    )
+    db.session.add(tax)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@sale_bp.route('/sales-tax-codes/<int:id>/edit', methods=['POST'])
+@login_required
+def sales_tax_edit(id):
+    tax = SalesTaxCode.query.get_or_404(id)
+    f = request.form
+    
+    # If tax_code is being changed, validate it's numeric
+    new_tax_code = f.get('tax_code', '').strip()
+    if new_tax_code != tax.tax_code:
+        if not new_tax_code or not re.match(r'^[\d.]+$', new_tax_code):
+            return jsonify({'ok': False, 'error': 'Tax Code must contain only numbers'}), 400
+        # Check for duplicate
+        existing = SalesTaxCode.query.filter_by(tax_code=new_tax_code).first()
+        if existing:
+            return jsonify({'ok': False, 'error': 'Tax Code already exists'}), 400
+        tax.tax_code = new_tax_code
+    
+    # Validate tax rate
+    try:
+        tax.tax_rate = Decimal(f.get('tax_rate', '0'))
+    except:
+        return jsonify({'ok': False, 'error': 'Invalid tax rate'}), 400
+    
+    tax.account_code = f.get('account_code', '').strip()
+    tax.section = f.get('section', '').strip()
+    tax.status = f.get('status', 'Active')
+    tax.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@sale_bp.route('/sales-tax-codes/<int:id>/delete', methods=['POST'])
+@login_required
+def sales_tax_delete(id):
+    tax = SalesTaxCode.query.get_or_404(id)
+    db.session.delete(tax)
+    db.session.commit()
+    return jsonify({'ok': True})

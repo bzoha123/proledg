@@ -292,10 +292,6 @@ def level_two_edit(id):
 @admin_required
 def level_two_delete(id):
     l2 = LevelTwo.query.get_or_404(id)
-    if l2.level_threes:
-        flash(_t('Cannot delete: this account has Level 3 children.',
-                 'لا يمكن الحذف: يحتوي على حسابات فرعية.'), 'danger')
-        return redirect(url_for('coa.level_two_list'))
     db.session.delete(l2)
     db.session.commit()
     flash(_t('Level 2 account deleted.', 'تم حذف حساب المستوى الثاني.'), 'success')
@@ -794,3 +790,87 @@ def validate_drawers(level):
         return jsonify({'ok': False, 'msg': f'"{drawers}" already exists{where}'})
 
     return jsonify({'ok': True, 'msg': 'Looks good'})
+
+# ═════════════════════════════════════════════════════════════════
+#  CHART OF ACCOUNTS — combined VIEWS (flat + tree)
+#  Additive, read-only. Builds the full account hierarchy in Python by
+#  joining level_one..level_five on their id columns, so it works with
+#  the real schema (level_one..level_five, `drawers`).
+# ═════════════════════════════════════════════════════════════════
+def _build_coa_maps():
+    l1 = {r.id: r for r in LevelOne.query.all()}
+    l2 = {r.id: r for r in LevelTwo.query.all()}
+    l3 = {r.id: r for r in LevelThree.query.all()}
+    l4 = {r.id: r for r in LevelFour.query.all()}
+    l5 = LevelFive.query.order_by(LevelFive.code).all()
+    return l1, l2, l3, l4, l5
+
+
+@coa_bp.route('/views')
+@login_required
+def coa_views():
+    """Page with two tabs: flat account view and tree view."""
+    return render_template('coa/views.html')
+
+
+@coa_bp.route('/views/flat')
+@login_required
+def coa_views_flat():
+    """Flat rows: account_code + the five drawer names (Level 5 leaves)."""
+    l1, l2, l3, l4, l5 = _build_coa_maps()
+    out = []
+    for r5 in l5:
+        r4 = l4.get(r5.level_four_id)
+        r3 = l3.get(r4.level_three_id) if r4 else None
+        r2 = l2.get(r3.level_two_id) if r3 else None
+        r1 = l1.get(r2.level_one_id) if r2 else None
+        out.append({
+            'account_code': r5.code,
+            'level1_drawer': r1.drawers if r1 else '',
+            'level2_drawer': r2.drawers if r2 else '',
+            'level3_drawer': r3.drawers if r3 else '',
+            'level4_drawer': r4.drawers if r4 else '',
+            'level5_drawer': r5.drawers,
+        })
+    return jsonify(out)
+
+
+@coa_bp.route('/views/tree')
+@login_required
+def coa_views_tree():
+    """Nested tree: L1 -> L2 -> L3 -> L4 -> L5 (leaves show code + drawer)."""
+    l1, l2, l3, l4, l5 = _build_coa_maps()
+
+    # index children by parent id
+    from collections import defaultdict
+    c2 = defaultdict(list)   # level_one_id -> [L2]
+    c3 = defaultdict(list)   # level_two_id -> [L3]
+    c4 = defaultdict(list)   # level_three_id -> [L4]
+    c5 = defaultdict(list)   # level_four_id -> [L5]
+    for r in l2.values():
+        c2[r.level_one_id].append(r)
+    for r in l3.values():
+        c3[r.level_two_id].append(r)
+    for r in l4.values():
+        c4[r.level_three_id].append(r)
+    for r in l5:
+        c5[r.level_four_id].append(r)
+
+    def node(code, name, children):
+        return {'code': code, 'name': name, 'children': children}
+
+    tree = []
+    for r1 in sorted(l1.values(), key=lambda x: x.code):
+        n2 = []
+        for r2 in sorted(c2.get(r1.id, []), key=lambda x: x.code):
+            n3 = []
+            for r3 in sorted(c3.get(r2.id, []), key=lambda x: x.code):
+                n4 = []
+                for r4 in sorted(c4.get(r3.id, []), key=lambda x: x.code):
+                    n5 = [node(r5.code, r5.drawers, [])
+                          for r5 in sorted(c5.get(r4.id, []), key=lambda x: x.code)]
+                    n4.append(node(r4.code, r4.drawers, n5))
+                n3.append(node(r3.code, r3.drawers, n4))
+            n2.append(node(r2.code, r2.drawers, n3))
+        tree.append(node(r1.code, r1.drawers, n2))
+    return jsonify(tree)

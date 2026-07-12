@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% set ar = current_locale == 'ar' %}
 {% block title %}{% if ar %}{{ title_ar }}{% else %}{{ title_en }}{% endif %}{% endblock %}
+
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
-<li class="breadcrumb-item">{% if kind=='purchase' %}{% if ar %}المشتريات{% else %}Purchase{% endif %}{% else %}{% if ar %}المبيعات{% else %}Sales{% endif %}{% endif %}</li>
 <li class="breadcrumb-item active">{% if ar %}{{ title_ar }}{% else %}{{ title_en }}{% endif %}</li>
 {% endblock %}
 
@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
 /* ═══════════════════════════════════════════════════════
-   AG Grid - Enterprise Theme with Proledg styling (EXACTLY LIKE EMPLOYEES)
+   AG Grid - Enterprise Theme with Proledg styling
    ═══════════════════════════════════════════════════════ */
 .ag-theme-alpine {
     --ag-font-family:'Segoe UI',system-ui,sans-serif;
@@ -117,7 +117,7 @@
     border-right:1px solid #f1f5f9 !important;
 }
 
-/* Toolbar (matching Employees/Vendors) */
+/* Toolbar */
 .tx-toolbar {
     display:flex;
     align-items:center;
@@ -194,11 +194,32 @@
 }
 
 /* Modal */
-.modal-header { background:#1e3a5f; color:#fff; border-bottom:none; }
+.pur-hdr{background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:16px 22px;display:flex;justify-content:space-between;align-items:center;}
+.pur-hdr h5{margin:0;color:white;font-weight:700;font-size:15px;}
+.pur-badge{background:rgba(255,255,255,.2);color:white;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;margin-left:8px;}
 .modal-header .btn-close { filter:brightness(0) invert(1); }
 .modal-content { border-radius:12px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.2); }
 .form-label { font-size:12px; font-weight:600; color:#374151; margin-bottom:4px; }
 .form-control:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+.form-text { font-size:11px; color:#6b7280; }
+.pur-footer{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#f8fafc;border-top:2px solid #e2e8f0;}
+.btn-f{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;}
+.btn-save{background:linear-gradient(135deg,#16a34a,#15803d);color:white;box-shadow:0 2px 8px rgba(22,163,74,.3);}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.4);}
+.btn-cancel{background:white;color:#374151;border:1.5px solid #d1d5db;}
+.btn-cancel:hover{background:#f9fafb;}
+
+.proledg-pagination {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 16px;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-top:none;
+    border-radius:0 0 8px 8px;
+}
+.page-count { font-size:12px; color:#6b7280; font-weight:600; }
 </style>
 {% endblock %}
 
@@ -233,43 +254,74 @@
   </div>
 </div>
 
+{# ══ ADD / EDIT MODAL ══ #}
 <div class="modal fade" id="txModal" tabindex="-1">
   <div class="modal-dialog modal-md">
     <div class="modal-content">
-      <div class="modal-header" style="background:#1e3a5f;color:#fff;">
-        <h5 class="modal-title" id="txModalTitle">{% if ar %}رمز ضريبي جديد{% else %}New Tax Code{% endif %}</h5>
+      <div class="pur-hdr">
+        <h5 id="txModalTitle"><i class="fas fa-plus-circle me-2"></i>{% if ar %}رمز ضريبي جديد{% else %}New Tax Code{% endif %}</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="padding:20px;">
+        <form id="txForm" onsubmit="event.preventDefault(); save(false);">
         <input type="hidden" id="tx_id">
+        
         <div class="mb-3">
           <label class="form-label fw-semibold">{% if ar %}رمز الحساب{% else %}Account Code{% endif %}<span class="text-danger">*</span></label>
-          <input type="text" id="tx_account" class="form-control" placeholder="VAT 15%">
+          <input type="text" id="tx_account" class="form-control" placeholder="{% if ar %}مثال: ضريبة القيمة المضافة 15%{% else %}e.g., VAT 15%{% endif %}" required>
         </div>
+        
         <div class="mb-3">
           <label class="form-label fw-semibold">{% if ar %}الرمز الضريبي{% else %}Tax Code{% endif %}<span class="text-danger">*</span></label>
-          <input type="text" id="tx_code" class="form-control" placeholder="{% if kind=='purchase' %}P1{% else %}S1{% endif %}">
-          <div class="form-text" id="tx_code_hint" style="display:none;">{% if ar %}لا يمكن تعديل الرمز بعد الإنشاء{% else %}Tax Code cannot be changed after creation{% endif %}</div>
+          <input type="text" id="tx_code" class="form-control" placeholder="{% if ar %}أرقام فقط (مثال: 15){% else %}Numbers only (e.g., 15){% endif %}" required pattern="[0-9]+" title="{% if ar %}يجب أن يحتوي على أرقام فقط{% else %}Must contain only numbers{% endif %}">
+          <div class="form-text" id="tx_code_hint" style="display:none;">
+            <i class="fas fa-info-circle me-1"></i>
+            {% if ar %}لا يمكن تعديل الرمز بعد الإنشاء{% else %}Tax Code cannot be changed after creation{% endif %}
+          </div>
         </div>
+        
+        <div class="mb-3">
+          <label class="form-label fw-semibold">{% if ar %}معدل الضريبة (%){% else %}Tax Rate (%){% endif %}<span class="text-danger">*</span></label>
+          <input type="number" id="tx_rate" class="form-control" step="0.0001" min="0" max="100" placeholder="15" required>
+          <div class="form-text">{% if ar %}أدخل نسبة الضريبة (مثال: 15.0000){% else %}Enter tax percentage (e.g., 15.0000){% endif %}</div>
+        </div>
+        
         <div class="mb-3">
           <label class="form-label fw-semibold">{% if ar %}الوصف{% else %}Section{% endif %}<span class="text-danger">*</span></label>
-          <textarea id="tx_section" class="form-control" rows="2" placeholder="{% if ar %}وصف القسم الضريبي{% else %}Description of the VAT section{% endif %}"></textarea>
+          <textarea id="tx_section" class="form-control" rows="2" placeholder="{% if ar %}وصف القسم الضريبي{% else %}Description of the tax section{% endif %}" required></textarea>
         </div>
+        
         <div class="mb-2">
           <label class="form-label fw-semibold">{% if ar %}الحالة{% else %}Status{% endif %}</label>
           <select id="tx_status" class="form-select">
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
+            <option value="Active">{% if ar %}نشط{% else %}Active{% endif %}</option>
+            <option value="Inactive">{% if ar %}غير نشط{% else %}Inactive{% endif %}</option>
           </select>
         </div>
+        </form>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button type="button" class="btn btn-outline-primary" onclick="save(true)">{% if ar %}حفظ وجديد{% else %}Save &amp; New{% endif %}</button>
-        <button type="button" class="btn btn-primary" onclick="save(false)">{% if ar %}حفظ{% else %}Save{% endif %}</button>
+      <div class="pur-footer">
+        <button type="button" class="btn-f btn-cancel" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <div>
+          <button type="button" class="btn-f btn-save" onclick="save(true)" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">{% if ar %}حفظ وجديد{% else %}Save &amp; New{% endif %}</button>
+          <button type="button" class="btn-f btn-save" onclick="save(false)">{% if ar %}حفظ{% else %}Save{% endif %}</button>
+        </div>
       </div>
     </div>
   </div>
+</div>
+
+{# Delete Confirm #}
+<div class="modal fade" id="delModal" tabindex="-1">
+  <div class="modal-dialog modal-sm"><div class="modal-content" style="border-radius:10px;overflow:hidden;">
+    <div class="modal-header border-0"><h6 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>{% if ar %}تأكيد الحذف{% else %}Confirm Delete{% endif %}</h6>
+    <button class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body"><p id="delTxt" class="fw-semibold mb-0"></p></div>
+    <div class="modal-footer border-0">
+      <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+      <button class="btn btn-sm btn-danger" id="delBtn">{% if ar %}حذف{% else %}Delete{% endif %}</button>
+    </div>
+  </div></div>
 </div>
 {% endblock %}
 
@@ -282,6 +334,7 @@ const KIND  = '{{ kind }}';
 const DATA_URL = '/' + KIND + '-tax-codes/data';
 let gridApi;
 let _txModal = null;
+let _delModal = null;
 
 /* ══ Status badge renderer ══ */
 function badge(v) {
@@ -358,6 +411,15 @@ const cols = [
     filter: 'agTextColumnFilter'
   },
   {
+    headerName: IS_AR ? 'معدل الضريبة (%)' : 'Tax Rate (%)',
+    field: 'tax_rate',
+    width: 150,
+    filter: 'agNumberColumnFilter',
+    valueFormatter: function(params) {
+      return params.value != null ? params.value.toFixed(4) : '0.0000';
+    }
+  },
+  {
     headerName: IS_AR ? 'الوصف' : 'Section',
     field: 'section',
     minWidth: 320,
@@ -415,7 +477,6 @@ document.addEventListener('DOMContentLoaded', function() {
     rowSelection: 'multiple',
     suppressRowClickSelection: true,
     
-    // ── ENTERPRISE FEATURES (EXACTLY LIKE EMPLOYEES) ──
     sideBar: {
       toolPanels: [
         {
@@ -441,12 +502,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     onGridReady: function(p) {
       gridApi = p.api;
-      // if (window.GridKit) {
-      //   GridKit.enhance(p, 'txGrid', {
-      //     storageKey: KIND + '_tax',
-      //     exportName: KIND + 'TaxCodes'
-      //   });
-      // }
       loadData();
     },
     onFilterChanged: updateStatus,
@@ -463,11 +518,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // Initialize modal
+  // Initialize modals
   const modalEl = document.getElementById('txModal');
   if (modalEl) {
     _txModal = new bootstrap.Modal(modalEl);
   }
+  const delModalEl = document.getElementById('delModal');
+  if (delModalEl) {
+    _delModal = new bootstrap.Modal(delModalEl);
+  }
+  
+  // Tax code validation on input - only numbers allowed
+  document.getElementById('tx_code').addEventListener('input', function(e) {
+    this.value = this.value.replace(/[^0-9.]/g, '');
+  });
 });
 
 /* ══ Update Status ══ */
@@ -502,12 +566,13 @@ function loadData() {
 
 /* ══ Open Add ══ */
 function openAdd() {
-  document.getElementById('txModalTitle').textContent = IS_AR ? 'رمز ضريبي جديد' : 'New Tax Code';
+  document.getElementById('txModalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'رمز ضريبي جديد' : 'New Tax Code');
   document.getElementById('tx_id').value = '';
   document.getElementById('tx_account').value = '';
   document.getElementById('tx_code').value = '';
   document.getElementById('tx_code').readOnly = false;
   document.getElementById('tx_code_hint').style.display = 'none';
+  document.getElementById('tx_rate').value = '';
   document.getElementById('tx_section').value = '';
   document.getElementById('tx_status').value = 'Active';
   
@@ -524,14 +589,15 @@ function openEdit() {
     return;
   }
   
-  document.getElementById('txModalTitle').textContent = IS_AR ? 'تعديل رمز ضريبي' : 'Edit Tax Code';
+  document.getElementById('txModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل رمز ضريبي' : 'Edit Tax Code');
   document.getElementById('tx_id').value = r.id;
-  document.getElementById('tx_account').value = r.account_code;
-  document.getElementById('tx_code').value = r.tax_code;
+  document.getElementById('tx_account').value = r.account_code || '';
+  document.getElementById('tx_code').value = r.tax_code || '';
   document.getElementById('tx_code').readOnly = true;
   document.getElementById('tx_code_hint').style.display = 'block';
-  document.getElementById('tx_section').value = r.section;
-  document.getElementById('tx_status').value = r.status;
+  document.getElementById('tx_rate').value = r.tax_rate || 0;
+  document.getElementById('tx_section').value = r.section || '';
+  document.getElementById('tx_status').value = r.status || 'Active';
   
   if (_txModal) {
     _txModal.show();
@@ -543,6 +609,7 @@ function save(again) {
   const id = document.getElementById('tx_id').value;
   const acc = document.getElementById('tx_account').value.trim();
   const code = document.getElementById('tx_code').value.trim();
+  const rate = document.getElementById('tx_rate').value.trim();
   const section = document.getElementById('tx_section').value.trim();
   
   if (!acc || !code || !section) {
@@ -550,10 +617,23 @@ function save(again) {
     return;
   }
   
+  // Validate: tax_code must be numeric only
+  if (!/^[\d.]+$/.test(code)) {
+    alert(IS_AR ? 'الرمز الضريبي يجب أن يحتوي على أرقام فقط' : 'Tax Code must contain only numbers');
+    return;
+  }
+  
+  // Validate tax rate
+  if (isNaN(rate) || parseFloat(rate) < 0 || parseFloat(rate) > 100) {
+    alert(IS_AR ? 'معدل الضريبة يجب أن يكون بين 0 و 100' : 'Tax Rate must be between 0 and 100');
+    return;
+  }
+  
   const fd = new FormData();
   fd.set('csrf_token', CSRF);
   fd.set('account_code', acc);
   fd.set('tax_code', code);
+  fd.set('tax_rate', rate);
   fd.set('section', section);
   fd.set('status', document.getElementById('tx_status').value);
   
@@ -576,10 +656,12 @@ function save(again) {
       document.getElementById('tx_code').value = '';
       document.getElementById('tx_code').readOnly = false;
       document.getElementById('tx_code_hint').style.display = 'none';
+      document.getElementById('tx_rate').value = '';
       document.getElementById('tx_section').value = '';
       document.getElementById('tx_status').value = 'Active';
       document.getElementById('tx_id').value = '';
-      document.getElementById('txModalTitle').textContent = IS_AR ? 'رمز ضريبي جديد' : 'New Tax Code';
+      document.getElementById('txModalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'رمز ضريبي جديد' : 'New Tax Code');
+      document.getElementById('tx_code').focus();
     } else {
       if (_txModal) {
         _txModal.hide();
@@ -597,24 +679,55 @@ function del() {
     return;
   }
   
-  if (!confirm((IS_AR ? 'حذف ' : 'Delete ') + r.tax_code + '?')) return;
+  document.getElementById('delTxt').textContent = (IS_AR ? 'حذف: ' : 'Delete: ') + r.tax_code + ' (' + r.account_code + ')?';
+  document.getElementById('delBtn').onclick = function() {
+    const fd = new FormData();
+    fd.set('csrf_token', CSRF);
+    
+    fetch('/' + KIND + '-tax-codes/' + r.id + '/delete', {
+      method: 'POST',
+      body: fd
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok) {
+        alert(d.error || 'Error');
+        return;
+      }
+      if (_delModal) _delModal.hide();
+      loadData();
+    })
+    .catch(() => alert(IS_AR ? 'خطأ في الحذف' : 'Delete failed'));
+  };
   
-  const fd = new FormData();
-  fd.set('csrf_token', CSRF);
-  
-  fetch('/' + KIND + '-tax-codes/' + r.id + '/delete', {
-    method: 'POST',
-    body: fd
-  })
-  .then(r => r.json())
-  .then(d => {
-    if (!d.ok) {
-      alert(d.error || 'Error');
-      return;
-    }
-    loadData();
-  })
-  .catch(() => alert(IS_AR ? 'خطأ في الحذف' : 'Delete failed'));
+  if (_delModal) {
+    _delModal.show();
+  }
 }
+
+/* ══ Keyboard shortcuts ══ */
+document.addEventListener('keydown', function(e) {
+  // Ctrl+N = New
+  if (e.ctrlKey && e.key === 'n') {
+    e.preventDefault();
+    openAdd();
+  }
+  // Ctrl+E = Edit
+  if (e.ctrlKey && e.key === 'e') {
+    e.preventDefault();
+    openEdit();
+  }
+  // Delete key = Delete
+  if (e.key === 'Delete') {
+    del();
+  }
+  // Ctrl+S = Save (when modal is open)
+  if (e.ctrlKey && e.key === 's') {
+    e.preventDefault();
+    if (_txModal && _txModal._element && _txModal._element.classList.contains('show')) {
+      save(false);
+    }
+  }
+});
 </script>
 {% endblock %}

@@ -2889,3 +2889,70 @@ def seed_tax_codes():
     if added:
         db.session.commit()
     return added
+
+
+# ═════════════════════════════════════════════════════════════════
+#  JOURNAL ENTRIES  (accounting module)
+#  Single-row-per-entry as specified: each row carries one debit/credit
+#  line plus the auto-filled Chart-of-Accounts drawer hierarchy taken
+#  from the selected Level 5 account.
+# ═════════════════════════════════════════════════════════════════
+class JournalEntry(db.Model):
+    __tablename__ = 'journal_entries'
+
+    id                 = db.Column(db.Integer, primary_key=True)
+    je_no              = db.Column(db.String(30), unique=True, nullable=False)
+    je_date            = db.Column(db.Date, nullable=False)
+    month              = db.Column(db.String(20))
+    level5_code        = db.Column(db.String(20), nullable=False)
+    level1_drawer      = db.Column(db.String(100))
+    level2_drawer      = db.Column(db.String(100))
+    level3_drawer      = db.Column(db.String(100))
+    level4_drawer      = db.Column(db.String(100))
+    level5_drawer      = db.Column(db.String(100))
+    description        = db.Column(db.Text)
+    project_client     = db.Column(db.String(150))
+    debit              = db.Column(db.Numeric(18, 2), default=0)
+    credit             = db.Column(db.Numeric(18, 2), default=0)
+    payment_ref_method = db.Column(db.String(100))
+    je_balance         = db.Column(db.Numeric(18, 2), default=0)
+    status             = db.Column(db.String(20), default='Draft')
+    created_at         = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at         = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        def _f(v):
+            return float(v) if v is not None else 0.0
+        return {
+            'id': self.id,
+            'je_no': self.je_no,
+            'je_date': self.je_date.strftime('%Y-%m-%d') if self.je_date else '',
+            'month': self.month or '',
+            'level5_code': self.level5_code or '',
+            'level1_drawer': self.level1_drawer or '',
+            'level2_drawer': self.level2_drawer or '',
+            'level3_drawer': self.level3_drawer or '',
+            'level4_drawer': self.level4_drawer or '',
+            'level5_drawer': self.level5_drawer or '',
+            'description': self.description or '',
+            'project_client': self.project_client or '',
+            'debit': _f(self.debit),
+            'credit': _f(self.credit),
+            'payment_ref_method': self.payment_ref_method or '',
+            'je_balance': _f(self.je_balance),
+            'status': self.status or 'Draft',
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+        }
+
+
+def next_je_no():
+    """Generate the next unique JE number in the JE-000001 format."""
+    last = JournalEntry.query.order_by(JournalEntry.id.desc()).first()
+    n = 1
+    if last and last.je_no and last.je_no.startswith('JE-'):
+        try:
+            n = int(last.je_no.split('-')[1]) + 1
+        except (ValueError, IndexError):
+            n = (last.id or 0) + 1
+    return f'JE-{n:06d}'
