@@ -394,35 +394,34 @@
    Clearer headings, crisp separators, comfortable rows.
    ══════════════════════════════════════════════════════════════════ */
 
-/* Header: solid dark bar, clear bright labels, subtle column dividers. */
+/* Header: light-grey bar, dark readable labels, subtle column dividers. */
 .ag-theme-alpine .ag-header {
-  background: #1e3a5f !important;
-  border-bottom: 2px solid #16304f !important;
+  background: #e5e7eb !important;
+  border-bottom: 2px solid #d1d5db !important;
 }
 .ag-theme-alpine .ag-header-cell {
-  border-right: 1px solid rgba(255,255,255,.10) !important;
+  border-right: 1px solid rgba(15,23,42,.08) !important;
 }
 .ag-theme-alpine .ag-header-cell-text {
-  color: #ffffff !important;
+  color: #1e293b !important;
   font-weight: 700 !important;
   font-size: 12px !important;
   letter-spacing: .35px !important;
-  text-transform: uppercase !important;
 }
-/* Header icons (sort/filter/menu) readable on the dark bar. */
+/* Header icons (sort/filter/menu) readable on the light bar. */
 .ag-theme-alpine .ag-header-cell .ag-sort-none-icon,
 .ag-theme-alpine .ag-header-cell .ag-icon-none,
 .ag-theme-alpine .ag-header-cell .ag-sort-ascending-icon,
 .ag-theme-alpine .ag-header-cell .ag-sort-descending-icon,
 .ag-theme-alpine .ag-header-cell .ag-icon-filter,
 .ag-theme-alpine .ag-header-cell .ag-header-cell-menu-button .ag-icon {
-  color: #dbe6f5 !important;
+  color: #475569 !important;
 }
 .ag-theme-alpine .ag-header-cell[aria-sort="ascending"]  .ag-sort-ascending-icon,
 .ag-theme-alpine .ag-header-cell[aria-sort="descending"] .ag-sort-descending-icon {
-  color: #ffffff !important;
+  color: #1e293b !important;
 }
-.ag-theme-alpine .ag-header-cell:hover { background: rgba(255,255,255,.06) !important; }
+.ag-theme-alpine .ag-header-cell:hover { background: rgba(15,23,42,.04) !important; }
 
 /* Active sort/filter markers legible on the dark header. */
 .ag-theme-alpine .ag-header-cell[aria-sort="ascending"],
@@ -487,4 +486,74 @@
 .ag-theme-alpine .ag-header-cell[aria-sort="ascending"]  .ag-sort-descending-icon,
 .ag-theme-alpine .ag-header-cell[aria-sort="descending"] .ag-sort-ascending-icon {
   display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   #11 — Fixed (sticky) toolbar
+   Keeps the page toolbar (Add / Refresh / search / grid controls) pinned
+   to the top of the content area while the grid scrolls beneath it.
+   ══════════════════════════════════════════════════════════════════ */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #fff;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #eef2f7;
+}
+/* When a window-modal is open, its own toolbar shouldn't fight the page one. */
+.modal .toolbar { position: static; }
+
+/* ══════════════════════════════════════════════════════════════════
+   Pivot panel (free — PivotTable.js). Additive-only styling; new classes,
+   nothing existing overridden.
+   ══════════════════════════════════════════════════════════════════ */
+.gk-pivot-overlay {
+  position: fixed; inset: 0; z-index: 1200;
+  background: rgba(15, 23, 42, .45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.gk-pivot-box {
+  background: #fff; border-radius: 12px;
+  width: min(1200px, 96vw); height: min(760px, 92vh);
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .35);
+  overflow: hidden;
+}
+.gk-pivot-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: #1e3a5f; color: #fff;
+}
+.gk-pivot-title { font-weight: 700; font-size: 14px; }
+.gk-pivot-title i { margin-inline-end: 6px; }
+.gk-pivot-close {
+  background: rgba(255, 255, 255, .15); color: #fff; border: none;
+  border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+}
+.gk-pivot-close:hover { background: rgba(255, 255, 255, .28); }
+.gk-pivot-hint {
+  padding: 8px 16px; font-size: 12px; color: #64748b;
+  background: #f8fafc; border-bottom: 1px solid #eef2f7;
+}
+.gk-pivot-target {
+  flex: 1; overflow: auto; padding: 14px;
+}
+.gk-pivot-loading { color: #64748b; font-size: 13px; padding: 24px; }
+
+/* Make PivotTable.js controls read consistently with the app. */
+.gk-pivot-target .pvtUi { color: #334155; font-size: 12.5px; }
+.gk-pivot-target .pvtAxisContainer, .gk-pivot-target .pvtVals {
+  border: 1px solid #e2e8f0; background: #f8fafc;
+}
+.gk-pivot-target .pvtAxisContainer li span.pvtAttr {
+  background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a5f;
+  border-radius: 6px;
+}
+.gk-pivot-target table.pvtTable thead tr th,
+.gk-pivot-target table.pvtTable tbody tr th {
+  background: #eef2f7; color: #334155;
 }

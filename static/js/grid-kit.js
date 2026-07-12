@@ -34,7 +34,8 @@
     clearFilters: 'مسح كل الفلاتر', noFilters: 'لا توجد فلاتر',
     csv: 'ملف CSV', excel: 'ملف Excel', pdf: 'طباعة / PDF',
     pinLeft: 'تثبيت لليسار', pinRight: 'تثبيت لليمين', unpin: 'إلغاء التثبيت',
-    visible: 'مرئي', searchAll: 'بحث في كل الأعمدة...', clearOne: 'مسح'
+    visible: 'مرئي', searchAll: 'بحث في كل الأعمدة...', clearOne: 'مسح',
+    pivot: 'محور', pivotTitle: 'جدول محوري', pivotHint: 'اسحب الحقول لإنشاء تجميع/محور', pivotClose: 'إغلاق'
   } : {
     columns: 'Columns', filters: 'Filters', exportLbl: 'Export',
     showAll: 'Show all', hideAll: 'Hide all',
@@ -42,7 +43,8 @@
     clearFilters: 'Clear all filters', noFilters: 'No active filters',
     csv: 'CSV file', excel: 'Excel file', pdf: 'Print / PDF',
     pinLeft: 'Pin left', pinRight: 'Pin right', unpin: 'Unpin',
-    visible: 'Visible', searchAll: 'Search all columns...', clearOne: 'Clear'
+    visible: 'Visible', searchAll: 'Search all columns...', clearOne: 'Clear',
+    pivot: 'Pivot', pivotTitle: 'Pivot Table', pivotHint: 'Drag fields to build groups / pivot / aggregates', pivotClose: 'Close'
   };
 
   /* ── Version bridge ───────────────────────────────────────────
@@ -398,6 +400,120 @@
     setTimeout(function () { w.print(); }, 250);
   }
 
+  /* ══ Pivot panel (free, via PivotTable.js) ═══════════════════
+     Additive-only. Reads the grid's current rows + visible columns and
+     renders them through PivotTable.js in an overlay, giving drag-and-drop
+     grouping, pivoting and aggregation (sum / count / average) without any
+     change to the AG-Grid instance. Library is loaded lazily on first use
+     from cdnjs, matching how the app already loads AG-Grid/Bootstrap.        */
+
+  function loadPivotLib(cb) {
+    if (window.jQuery && window.jQuery.pivotUtilities) { cb(); return; }
+    function addCss(href) {
+      if (document.querySelector('link[href="' + href + '"]')) return;
+      var l = document.createElement('link');
+      l.rel = 'stylesheet'; l.href = href; document.head.appendChild(l);
+    }
+    function addJs(src, done) {
+      var existing = document.querySelector('script[data-gk-src="' + src + '"]');
+      if (existing) { existing.addEventListener('load', done); if (existing._loaded) done(); return; }
+      var s = document.createElement('script');
+      s.src = src; s.setAttribute('data-gk-src', src);
+      s.addEventListener('load', function () { s._loaded = true; done(); });
+      document.head.appendChild(s);
+    }
+    addCss('https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.23.0/pivot.min.css');
+    function afterJq() {
+      addJs('https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.23.0/pivot.min.js', cb);
+    }
+    if (window.jQuery) afterJq();
+    else addJs('https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js', afterJq);
+  }
+
+  function gridRowsForPivot(ctx) {
+    var rows = [];
+    var visible = allColumns(ctx).filter(function (c) {
+      var d = c.getColDef();
+      // Skip action / selection / renderer-only columns.
+      var f = d.field || '';
+      if (!f || f.charAt(0) === '_') return false;
+      if (d.checkboxSelection) return false;
+      if (d.sortable === false && !f) return false;
+      return true;
+    });
+    var api = ctx.api;
+    if (!api || !api.forEachNodeAfterFilterAndSort) {
+      // fallback: use unsorted nodes
+      if (api && api.forEachNode) {
+        api.forEachNode(function (n) { if (n.data) rows.push(rowObj(n.data, visible)); });
+      }
+      return { rows: rows, cols: visible };
+    }
+    api.forEachNodeAfterFilterAndSort(function (n) {
+      if (n.data) rows.push(rowObj(n.data, visible));
+    });
+    return { rows: rows, cols: visible };
+  }
+
+  function rowObj(data, visible) {
+    var o = {};
+    visible.forEach(function (c) {
+      var d = c.getColDef();
+      var label = d.headerName || d.field;
+      var v = data[d.field];
+      o[label] = (v == null) ? '' : v;
+    });
+    return o;
+  }
+
+  function pivotPanel(ctx) {
+    closeMenus();
+    var overlay = el('div', 'gk-pivot-overlay');
+    var box = el('div', 'gk-pivot-box');
+
+    var head = el('div', 'gk-pivot-head');
+    head.appendChild(el('span', 'gk-pivot-title',
+      '<i class="fas fa-table-cells"></i> ' + T.pivotTitle));
+    var closeB = el('button', 'gk-pivot-close', '<i class="fas fa-times"></i> ' + T.pivotClose);
+    closeB.type = 'button';
+    closeB.addEventListener('click', function () { overlay.remove(); });
+    head.appendChild(closeB);
+    box.appendChild(head);
+
+    box.appendChild(el('div', 'gk-pivot-hint', T.pivotHint));
+
+    var target = el('div', 'gk-pivot-target');
+    box.appendChild(target);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    // click outside closes
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) overlay.remove();
+    });
+
+    target.innerHTML = '<div class="gk-pivot-loading">…</div>';
+    loadPivotLib(function () {
+      try {
+        var data = gridRowsForPivot(ctx);
+        var $ = window.jQuery;
+        target.innerHTML = '';
+        var $t = $(target);
+        var opts = {
+          rendererName: 'Table',
+          aggregatorName: 'Count',
+          renderers: $.extend(
+            {}, $.pivotUtilities.renderers
+          )
+        };
+        $t.pivotUI(data.rows, opts, false, IS_AR ? 'ar' : 'en');
+      } catch (err) {
+        target.innerHTML = '<div class="gk-pivot-loading">Pivot unavailable: ' +
+          esc(err && err.message ? err.message : String(err)) + '</div>';
+      }
+    });
+  }
+
   /* ══ enhance ═════════════════════════════════════════════════ */
   function enhance(params, containerId, opts) {
     opts = opts || {};
@@ -478,6 +594,13 @@
       e.stopPropagation();
       if (bExp.classList.contains('gk-open')) { closeMenus(); return; }
       exportPanel(ctx, bExp, name);
+    });
+
+    var bPivot = btn('fa-table-cells', T.pivot, false);
+    bPivot.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeMenus();
+      pivotPanel(ctx);
     });
 
     /* Every list page already renders a `.toolbar` with Add / Refresh / Clear.

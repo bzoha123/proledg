@@ -43,6 +43,10 @@ for t in payment_tables:
     add_col(t, 'payment_method', "payment_method VARCHAR(20) DEFAULT 'Credit'")
     add_col(t, 'bank_account_id', "bank_account_id INTEGER")
 
+print("Adding seller_id to sales invoice/credit-memo tables:")
+for t in ['sales_invoices', 'sales_credit_memos']:
+    add_col(t, 'seller_id', "seller_id INTEGER")
+
 conn.commit()
 conn.close()
 print("Done.")

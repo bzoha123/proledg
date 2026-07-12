@@ -740,6 +740,7 @@ def item_add():
     f = request.form
     item = ItemMaster(
         item_code   = f.get('item_code','').strip(),
+        item_type   = f.get('item_type','Product'),
         article_no  = f.get('article_no','').strip(),
         name_en     = f.get('name_en','').strip(),
         name_ar     = f.get('name_ar','').strip(),
@@ -772,6 +773,7 @@ def item_edit(id):
     item.item_code   = f.get('item_code','').strip()
     item.article_no  = f.get('article_no','').strip()
     item.name_en     = f.get('name_en','').strip()
+    item.item_type   = f.get('item_type','Product')
     item.name_ar     = f.get('name_ar','').strip()
     item.print_name  = f.get('print_name','').strip()
     item.uom         = f.get('uom','unit')

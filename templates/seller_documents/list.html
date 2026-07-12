@@ -18,7 +18,7 @@
 /* ── AG-Grid ── */
 .ag-theme-alpine{
   --ag-font-family:'Segoe UI',system-ui,sans-serif;--ag-font-size:13px;
-  --ag-header-background-color:var(--navy);--ag-header-foreground-color:#fff;
+  --ag-header-background-color:#e5e7eb;--ag-header-foreground-color:#1e293b;
   --ag-border-color:var(--gray-200);--ag-row-border-color:var(--gray-100);
   --ag-row-hover-color:var(--blue-50);--ag-selected-row-background-color:var(--blue-100);
   --ag-header-height:46px;--ag-row-height:46px;--ag-cell-horizontal-padding:12px;
@@ -334,7 +334,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
 
 <script>
 const CSRF    = '{{ csrf_token() }}';
@@ -431,7 +431,7 @@ const setFilter = {
 
 const colDefs = [
   { field:'id', headerName:'ID', width:70, pinned:IS_AR?'right':'left',
-    filter:'agNumberColumnFilter',
+    filter:'agNumberColumnFilter', enableRowGroup:false, enablePivot:false, enableValue:false,
     filterParams:{buttons:['apply','reset','clear'],closeOnApply:true},
     cellStyle:{fontFamily:'monospace',color:'var(--gray-400)',fontSize:'11px'} },
 
@@ -473,6 +473,7 @@ const colDefs = [
     width: IS_ADMIN ? 140 : 80,
     pinned: IS_AR ? 'left' : 'right',
     sortable:false, suppressMenu:true, resizable:false,
+    filter:false, floatingFilter:false, enableRowGroup:false, enablePivot:false, enableValue:false, suppressColumnsToolPanel:true,
     cellRenderer: ActRenderer,
     cellStyle:{overflow:'visible',padding:'0 8px'} },
 ];
@@ -484,21 +485,25 @@ document.addEventListener('DOMContentLoaded', () => {
     rowData: [],
     pagination: true,
     paginationPageSize: 20,
+    alwaysShowHorizontalScroll: true, alwaysShowVerticalScroll: true,
+    sideBar: { toolPanels: [
+      { id:'columns', labelDefault:IS_AR?'الأعمدة':'Columns', labelKey:'columns', iconKey:'columns', toolPanel:'agColumnsToolPanel' },
+      { id:'filters', labelDefault:IS_AR?'الفلاتر':'Filters', labelKey:'filters', iconKey:'filter', toolPanel:'agFiltersToolPanel' }
+    ], defaultToolPanel:'' },
+    rowGroupPanelShow: 'always', pivotPanelShow: 'always', groupDisplayType: 'groupRows',
     rowSelection: 'multiple',
     suppressRowClickSelection: true,
     animateRows: true,
     enableRtl: IS_AR,
     defaultColDef: {
       sortable:true, unSortIcon:true, resizable: true,
-      filter: true, suppressMenu: false,
-      menuTabs: ['filterMenuTab','generalMenuTab'],
+      filter: true, floatingFilter: true, suppressMenu: false,
+      enableRowGroup: true, enablePivot: true, enableValue: true,
+      menuTabs: ['filterMenuTab','columnsMenuTab','generalMenuTab'],
     },
     onGridReady(p){
-      // Pass the whole event: AG-Grid v31 keeps column operations on
-      // p.columnApi, which GridKit needs for show/hide, pin and sizing.
-      if (window.GridKit) {
-        GridKit.enhance(p, 'sdGrid', { storageKey: 'seller_docs', exportName: 'Seller Documents' });
-      }
+      // Enterprise sidebar (Columns + Filters) + row-group/pivot panels replace
+      // the GridKit toolbar here, so GridKit.enhance is intentionally not called.
       loadData();
     },
     onFilterChanged(){ updateBadge(); },
@@ -510,9 +515,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loadData(){
   if(!sdGrid) return;
+  var sf = sdGrid.getFilterModel ? sdGrid.getFilterModel() : null;
   fetch(DATA_URL)
     .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-    .then(d => { sdGrid.setGridOption('rowData', d); updateBadge(); })
+    .then(d => { sdGrid.setGridOption('rowData', d); if(sf && Object.keys(sf).length) sdGrid.setFilterModel(sf); updateBadge(); })
     .catch(e => console.error('loadData error:', e));
 }
 function refreshGrid(){ loadData(); }

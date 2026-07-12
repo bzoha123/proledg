@@ -292,6 +292,10 @@ def level_two_edit(id):
 @admin_required
 def level_two_delete(id):
     l2 = LevelTwo.query.get_or_404(id)
+    if l2.level_threes:
+        flash(_t('Cannot delete: this account has Level 3 children.',
+                 'لا يمكن الحذف: يحتوي على حسابات فرعية.'), 'danger')
+        return redirect(url_for('coa.level_two_list'))
     db.session.delete(l2)
     db.session.commit()
     flash(_t('Level 2 account deleted.', 'تم حذف حساب المستوى الثاني.'), 'success')

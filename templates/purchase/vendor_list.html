@@ -45,14 +45,144 @@
 .bank-add-btn { width:100%;padding:10px;background:#f0f9ff;color:#2563eb;border:1.5px dashed #bfdbfe;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px; }
 .bank-add-btn:hover { background:#eff6ff;border-color:#93c5fd; }
 
-/* AG Grid */
-.ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif;--ag-font-size:13px;--ag-header-background-color:#1e3a5f;--ag-header-foreground-color:#fff;--ag-border-color:#e2e8f0;--ag-row-hover-color:#eff6ff;--ag-header-height:42px;--ag-row-height:42px; }
-.ag-theme-alpine .ag-header-cell-label { font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px; }
-.ag-ab { width:28px;height:28px;border-radius:7px;border:none;display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all .12s; }
-.ag-ab:hover { transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.2); }
+/* ═══════════════════════════════════════════════════════
+   AG Grid - Enterprise Theme with Proledg styling
+   ═══════════════════════════════════════════════════════ */
+.ag-theme-alpine {
+    --ag-font-family:'Segoe UI',system-ui,sans-serif;
+    --ag-font-size:13px;
+    --ag-header-background-color:#1e3a5f;
+    --ag-header-foreground-color:#fff;
+    --ag-border-color:#e2e8f0;
+    --ag-row-hover-color:#eff6ff;
+    --ag-selected-row-background-color:#dbeafe;
+    --ag-header-height:42px;
+    --ag-row-height:42px;
+    --ag-cell-horizontal-padding:12px;
+}
+.ag-theme-alpine .ag-header-cell-label {
+    font-weight:700;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    overflow:visible;
+}
+.ag-theme-alpine .ag-header-cell-text {
+    overflow:visible;
+    text-overflow:clip;
+    white-space:nowrap;
+}
+.ag-theme-alpine .ag-header-cell:hover {
+    background:rgba(255,255,255,.08) !important;
+}
+.ag-theme-alpine .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-sort-descending-icon,
+.ag-theme-alpine .ag-sort-none-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-header-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-filter {
+    border-radius:10px !important;
+    box-shadow:0 8px 30px rgba(0,0,0,.15) !important;
+    border:1px solid #e2e8f0 !important;
+    overflow:hidden;
+    min-width:260px;
+    background:white;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input {
+    border:1.5px solid #d1d5db !important;
+    border-radius:7px !important;
+    padding:6px 10px !important;
+    font-size:12px !important;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+    box-shadow:0 0 0 2px rgba(37,99,235,.12) !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel {
+    padding:8px 10px !important;
+    background:#f8fafc !important;
+    border-top:1px solid #e2e8f0 !important;
+    display:flex !important;
+    gap:6px !important;
+    justify-content:space-between !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button {
+    padding:5px 14px !important;
+    border-radius:7px !important;
+    font-size:12px !important;
+    font-weight:600 !important;
+    border:none !important;
+    cursor:pointer !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"] {
+    background:linear-gradient(135deg,#16a34a,#15803d) !important;
+    color:white !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"] {
+    background:white !important;
+    color:#374151 !important;
+    border:1.5px solid #d1d5db !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input {
+    border:1px solid #e2e8f0 !important;
+    border-radius:5px !important;
+    padding:3px 7px !important;
+    font-size:11px !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+}
+.ag-theme-alpine .ag-row-even {
+    background:white;
+}
+.ag-theme-alpine .ag-row-odd {
+    background:#fafbfc;
+}
+.ag-theme-alpine .ag-row-hover {
+    background:#eff6ff !important;
+}
+.ag-theme-alpine .ag-cell {
+    border-right:1px solid #f1f5f9 !important;
+}
+
+/* Action buttons */
+.ag-ab {
+    width:28px;
+    height:28px;
+    border-radius:7px;
+    border:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    cursor:pointer;
+    transition:all .12s;
+}
+.ag-ab:hover {
+    transform:translateY(-1px);
+    box-shadow:0 2px 6px rgba(0,0,0,.2);
+}
 .ag-ab-view { background:#0ea5e9;color:white; }
 .ag-ab-edit { background:#f59e0b;color:white; }
 .ag-ab-del { background:#ef4444;color:white; }
+
+.status-pill {
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    padding:3px 10px;
+    border-radius:10px;
+    font-size:11px;
+    font-weight:700;
+}
+.status-active { background:#dcfce7;color:#15803d; }
+.status-inactive { background:#f1f5f9;color:#6b7280; }
 </style>
 {% endblock %}
 
@@ -64,27 +194,31 @@
 {% block content %}
 <div class="proledg-page">
   <h2 class="page-heading">{% if ar %}تسجيل الموردين{% else %}Vendor Registration{% endif %}</h2>
+  
   <div class="toolbar">
     <div class="toolbar-left">
       <button class="tool-btn tool-btn-green" onclick="openAdd()"><i class="fas fa-plus"></i></button>
       <button class="tool-btn tool-btn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
       <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null);document.getElementById('qs').value='';gridApi.setGridOption('quickFilterText','')"><i class="fas fa-times-circle"></i></button>
+      <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'vendors.csv'})" title="Export"><i class="fas fa-file-export"></i></button>
     </div>
     <div class="toolbar-right d-flex align-items-center gap-3">
       <span id="selText" style="font-size:12px;font-weight:600;color:#6b7280;">–</span>
-      <div class="search-form"><i class="fas fa-search search-icon"></i>
+      <div class="search-form">
+        <i class="fas fa-search search-icon"></i>
         <input type="text" id="qs" class="search-input" style="width:210px"
                placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"
                oninput="gridApi&&gridApi.setGridOption('quickFilterText',this.value)">
       </div>
     </div>
   </div>
+  
   <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;overflow:hidden;">
-    <div id="vndGrid" class="ag-theme-alpine" style="height:500px;width:100%;"></div>
+    <div id="vndGrid" class="ag-theme-alpine" style="height:520px;width:100%;"></div>
   </div>
 </div>
 
-{# ══ ADD / EDIT MODAL ══ #}
+<!-- ═══ VENDOR MODAL ═══ -->
 <div class="modal fade" id="vndModal" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width:920px;">
     <div class="modal-content" style="border:none;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);">
@@ -237,7 +371,7 @@
   </div>
 </div>
 
-{# ══ BANK POPUP MODAL ══ #}
+{# ═══ BANK POPUP MODAL ═══ #}
 <div class="modal fade" id="bankModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content" style="border:none;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);">
@@ -334,7 +468,7 @@
   </div>
 </div>
 
-{# Delete Confirm #}
+{# ═══ DELETE CONFIRM MODAL ═══ #}
 <div class="modal fade" id="delModal" tabindex="-1">
   <div class="modal-dialog modal-sm"><div class="modal-content" style="border-radius:10px;overflow:hidden;">
     <div class="modal-header border-0"><h6 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>{% if ar %}تأكيد الحذف{% else %}Confirm Delete{% endif %}</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
@@ -348,7 +482,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
 <script>
 const IS_AR = {{ 'true' if ar else 'false' }};
 const CSRF  = '{{ csrf_token() }}';
@@ -360,7 +494,6 @@ const TR    = '{{ url_for("sellers.translate_text") }}';
 let vendorBanks = [];
 let bankGridApi;
 
-// AG-Grid column definitions for bank accounts
 const bankCols = [
   {
     headerName: IS_AR ? '#' : '#',
@@ -444,17 +577,18 @@ const bankCols = [
   }
 ];
 
-// Initialize bank grid
 function initBankGrid() {
   const bankGridEl = document.getElementById('bankGrid');
   if (!bankGridEl) return;
   
   agGrid.createGrid(bankGridEl, {
-    columnDefs: bankCols, multiSortKey:'ctrl',
+    columnDefs: bankCols,
+    multiSortKey:'ctrl',
     rowData: vendorBanks,
     enableRtl: IS_AR,
     defaultColDef: {
-      sortable:true, unSortIcon:true,
+      sortable:true, 
+      unSortIcon:true,
       resizable: true,
       filter: true,
       floatingFilter: true,
@@ -556,7 +690,6 @@ function refreshBankGrid() {
   if (bankGridApi) {
     bankGridApi.setGridOption('rowData', vendorBanks);
   }
-  // Update bank count badge
   const countEl = document.getElementById('bankCount');
   if (countEl) countEl.textContent = vendorBanks.length;
 }
@@ -580,7 +713,7 @@ function loadBanksFromServer(vendorId) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// CORRECTED TRANSLATION LOGIC
+// TRANSLATION LOGIC
 // ═══════════════════════════════════════════════════════════
 const _vTimers = {};
 
@@ -636,7 +769,7 @@ function validateEmail(input) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// GEO
+// GEO DATA
 // ═══════════════════════════════════════════════════════════
 const GEO = {
   'Saudi Arabia': {'Riyadh':['Al Olaya','Al Malaz','Other'],'Jeddah':['Al Hamra','Al Zahraa','Other'],'Dammam':['Al Shatea','Other'],'Makkah':['Al Aziziyah','Other'],'Madinah':['Al Anabarat','Other'],'Other':['Other']},
@@ -647,51 +780,105 @@ const GEO = {
   'Oman': {'Muscat':['Al Khuwair','Other'],'Other':['Other']},
   'Other': {'Other':['Other']},
 };
-function initVCountry(sel) { const s=document.getElementById('v_country');s.innerHTML='<option value="">-- '+(IS_AR?'اختر':'Select')+' --</option>';Object.keys(GEO).forEach(c=>s.innerHTML+=`<option value="${c}"${c===sel?' selected':''}>${c}</option>`);vCountryChange(sel?'':null,sel); }
-function vCountryChange(preCity,preCountry){const c=preCountry||document.getElementById('v_country').value;const cities=GEO[c]||{};const s=document.getElementById('v_city');s.innerHTML='<option value="">-- '+(IS_AR?'اختر':'Select')+' --</option>';Object.keys(cities).forEach(ct=>s.innerHTML+=`<option value="${ct}"${ct===preCity?' selected':''}>${ct}</option>`);vCityChange(null,preCity);}
-function vCityChange(preDistrict,preCity){const country=document.getElementById('v_country').value;const city=preCity||document.getElementById('v_city').value;const districts=(GEO[country]||{})[city]||[];const s=document.getElementById('v_district');s.innerHTML='<option value="">-- '+(IS_AR?'اختر':'Select')+' --</option>';districts.forEach(d=>s.innerHTML+=`<option value="${d}"${d===preDistrict?' selected':''}>${d}</option>`);}
+
+function initVCountry(sel) {
+  const s = document.getElementById('v_country');
+  s.innerHTML = '<option value="">-- ' + (IS_AR ? 'اختر' : 'Select') + ' --</option>';
+  Object.keys(GEO).forEach(c => s.innerHTML += `<option value="${c}"${c===sel?' selected':''}>${c}</option>`);
+  vCountryChange(sel ? '' : null, sel);
+}
+
+function vCountryChange(preCity, preCountry) {
+  const c = preCountry || document.getElementById('v_country').value;
+  const cities = GEO[c] || {};
+  const s = document.getElementById('v_city');
+  s.innerHTML = '<option value="">-- ' + (IS_AR ? 'اختر' : 'Select') + ' --</option>';
+  Object.keys(cities).forEach(ct => s.innerHTML += `<option value="${ct}"${ct===preCity?' selected':''}>${ct}</option>`);
+  vCityChange(null, preCity);
+}
+
+function vCityChange(preDistrict, preCity) {
+  const country = document.getElementById('v_country').value;
+  const city = preCity || document.getElementById('v_city').value;
+  const districts = (GEO[country] || {})[city] || [];
+  const s = document.getElementById('v_district');
+  s.innerHTML = '<option value="">-- ' + (IS_AR ? 'اختر' : 'Select') + ' --</option>';
+  districts.forEach(d => s.innerHTML += `<option value="${d}"${d===preDistrict?' selected':''}>${d}</option>`);
+}
 
 // ═══════════════════════════════════════════════════════════
 // ACCORDION
 // ═══════════════════════════════════════════════════════════
-function togAcc(id){const b=document.getElementById(id),btn=b.previousElementSibling,ch=document.getElementById('ch_'+id);const open=b.classList.contains('show');b.classList.toggle('show',!open);btn.classList.toggle('open',!open);if(ch){ch.className=open?'fas fa-chevron-down':'fas fa-chevron-up';ch.style.cssText=open?'color:#9ca3af;font-size:11px;':'color:#2563eb;font-size:11px;';}}
+function togAcc(id) {
+  const b = document.getElementById(id);
+  const btn = b.previousElementSibling;
+  const ch = document.getElementById('ch_'+id);
+  const open = b.classList.contains('show');
+  b.classList.toggle('show', !open);
+  btn.classList.toggle('open', !open);
+  if (ch) {
+    ch.className = open ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+    ch.style.cssText = open ? 'color:#9ca3af;font-size:11px;' : 'color:#2563eb;font-size:11px;';
+  }
+}
 
-const gv=id=>document.getElementById(id)?.value?.trim()||'';
-const sv=(id,val)=>{const e=document.getElementById(id);if(e)e.value=val||'';};
+const gv = id => document.getElementById(id)?.value?.trim() || '';
+const sv = (id, val) => { const e = document.getElementById(id); if(e) e.value = val || ''; };
 
 // ═══════════════════════════════════════════════════════════
 // OPEN ADD / EDIT
 // ═══════════════════════════════════════════════════════════
-function openAdd(){
+function openAdd() {
   vendorBanks = [];
   refreshBankGrid();
-  document.getElementById('vndTitle').innerHTML='<i class="fas fa-plus-circle me-2"></i>'+(IS_AR?'إضافة مورد':'Add Vendor');
-  sv('v_edit_id','');   // new record
-  ['v_name_en','v_name_ar','v_vat','v_crn','v_contact','v_phone','v_fax','v_email','v_website','v_street_en','v_street_ar','v_bldg','v_addl','v_postal'].forEach(id=>sv(id,''));
-  sv('v_status','active');
+  document.getElementById('vndTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة مورد' : 'Add Vendor');
+  sv('v_edit_id', '');
+  ['v_name_en','v_name_ar','v_vat','v_crn','v_contact','v_phone','v_fax','v_email','v_website','v_street_en','v_street_ar','v_bldg','v_addl','v_postal'].forEach(id => sv(id, ''));
+  sv('v_status', 'active');
   initVCountry('Saudi Arabia');
-  const em=document.getElementById('v_email');if(em){em.classList.remove('is-invalid');document.getElementById('v_email_msg').classList.remove('show');}
-  ['va1','va2','va3'].forEach((id,i)=>{const b=document.getElementById(id),ch=document.getElementById('ch_'+id);b.classList.toggle('show',i===0);b.previousElementSibling.classList.toggle('open',i===0);if(ch){ch.className=i===0?'fas fa-chevron-up':'fas fa-chevron-down';ch.style.cssText=i===0?'color:#2563eb;font-size:11px;':'color:#9ca3af;font-size:11px;';}});
+  const em = document.getElementById('v_email');
+  if(em) { em.classList.remove('is-invalid'); document.getElementById('v_email_msg').classList.remove('show'); }
+  ['va1','va2','va3'].forEach((id, i) => {
+    const b = document.getElementById(id);
+    const ch = document.getElementById('ch_'+id);
+    b.classList.toggle('show', i === 0);
+    b.previousElementSibling.classList.toggle('open', i === 0);
+    if(ch) {
+      ch.className = i === 0 ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+      ch.style.cssText = i === 0 ? 'color:#2563eb;font-size:11px;' : 'color:#9ca3af;font-size:11px;';
+    }
+  });
   new bootstrap.Modal(document.getElementById('vndModal')).show();
 }
 
-function openEdit(id){
+function openEdit(id) {
   vendorBanks = [];
   refreshBankGrid();
-  fetch('/purchase/vendors/'+id+'/json').then(r=>r.json()).then(d=>{
-    document.getElementById('vndTitle').innerHTML='<i class="fas fa-edit me-2"></i>'+(IS_AR?'تعديل المورد':'Edit Vendor');
-    sv('v_edit_id', d.id);   // ensures Save updates this record instead of inserting
-    sv('v_name_en',d.vendor_name_en);sv('v_name_ar',d.vendor_name_ar);
-    sv('v_vat',d.vat_number);sv('v_crn',d.crn);
-    sv('v_contact',d.contact_person);sv('v_phone',d.phone);
-    sv('v_fax',d.fax);sv('v_email',d.email);sv('v_website',d.website);
-    sv('v_status',d.status||'active');
-    sv('v_street_en',d.street_name);sv('v_street_ar',d.street_name_ar);
-    sv('v_bldg',d.building_number);sv('v_addl',d.additional_number);
-    sv('v_postal',d.postal_code);
-    const em=document.getElementById('v_email');if(em){em.classList.remove('is-invalid');document.getElementById('v_email_msg').classList.remove('show');}
-    initVCountry(d.country||'Saudi Arabia');
-    setTimeout(()=>{vCountryChange(d.city||'',d.country||'Saudi Arabia');setTimeout(()=>{vCityChange(d.district||'',d.city||'');},50);},50);
+  fetch('/purchase/vendors/' + id + '/json').then(r => r.json()).then(d => {
+    document.getElementById('vndTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل المورد' : 'Edit Vendor');
+    sv('v_edit_id', d.id);
+    sv('v_name_en', d.vendor_name_en);
+    sv('v_name_ar', d.vendor_name_ar);
+    sv('v_vat', d.vat_number);
+    sv('v_crn', d.crn);
+    sv('v_contact', d.contact_person);
+    sv('v_phone', d.phone);
+    sv('v_fax', d.fax);
+    sv('v_email', d.email);
+    sv('v_website', d.website);
+    sv('v_status', d.status || 'active');
+    sv('v_street_en', d.street_name);
+    sv('v_street_ar', d.street_name_ar);
+    sv('v_bldg', d.building_number);
+    sv('v_addl', d.additional_number);
+    sv('v_postal', d.postal_code);
+    const em = document.getElementById('v_email');
+    if(em) { em.classList.remove('is-invalid'); document.getElementById('v_email_msg').classList.remove('show'); }
+    initVCountry(d.country || 'Saudi Arabia');
+    setTimeout(() => {
+      vCountryChange(d.city || '', d.country || 'Saudi Arabia');
+      setTimeout(() => { vCityChange(d.district || '', d.city || ''); }, 50);
+    }, 50);
     loadBanksFromServer(id);
     new bootstrap.Modal(document.getElementById('vndModal')).show();
   });
@@ -700,18 +887,18 @@ function openEdit(id){
 // ═══════════════════════════════════════════════════════════
 // SAVE VENDOR
 // ═══════════════════════════════════════════════════════════
-function saveVendor(){
-  if(!gv('v_name_en')){alert(IS_AR?'اسم المورد مطلوب':'Vendor name is required');return;}
-  if(!gv('v_vat')){alert(IS_AR?'رقم الضريبة مطلوب':'VAT Number is required');return;}
-  if(!gv('v_crn')){alert(IS_AR?'السجل التجاري مطلوب':'CRN is required');return;}
-  if(!gv('v_phone')){alert(IS_AR?'رقم الهاتف مطلوب':'Phone is required');return;}
-  if(!gv('v_country')){alert(IS_AR?'الدولة مطلوبة':'Country is required');return;}
-  if(!gv('v_city')){alert(IS_AR?'المدينة مطلوبة':'City is required');return;}
-  const emailEl=document.getElementById('v_email');
-  if(emailEl&&emailEl.value.trim()&&!validateEmail(emailEl)){emailEl.focus();return;}
+function saveVendor() {
+  if(!gv('v_name_en')) { alert(IS_AR ? 'اسم المورد مطلوب' : 'Vendor name is required'); return; }
+  if(!gv('v_vat')) { alert(IS_AR ? 'رقم الضريبة مطلوب' : 'VAT Number is required'); return; }
+  if(!gv('v_crn')) { alert(IS_AR ? 'السجل التجاري مطلوب' : 'CRN is required'); return; }
+  if(!gv('v_phone')) { alert(IS_AR ? 'رقم الهاتف مطلوب' : 'Phone is required'); return; }
+  if(!gv('v_country')) { alert(IS_AR ? 'الدولة مطلوبة' : 'Country is required'); return; }
+  if(!gv('v_city')) { alert(IS_AR ? 'المدينة مطلوبة' : 'City is required'); return; }
+  const emailEl = document.getElementById('v_email');
+  if(emailEl && emailEl.value.trim() && !validateEmail(emailEl)) { emailEl.focus(); return; }
 
   const editId = document.getElementById('v_edit_id')?.value || '';
-  const url = editId ? '/purchase/vendors/'+editId+'/edit' : '/purchase/vendors/add';
+  const url = editId ? '/purchase/vendors/' + editId + '/edit' : '/purchase/vendors/add';
   
   const formData = new URLSearchParams();
   formData.append('csrf_token', CSRF);
@@ -746,11 +933,18 @@ function saveVendor(){
   });
 
   const btn = document.getElementById('vndSaveBtn');
-  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>' + (IS_AR?'جاري الحفظ...':'Saving...');
-  fetch(url, { method:'POST', headers:{'X-CSRFToken':CSRF}, body: formData })
+  btn.disabled = true; 
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>' + (IS_AR ? 'جاري الحفظ...' : 'Saving...');
+  
+  fetch(url, { 
+    method: 'POST', 
+    headers: { 'X-CSRFToken': CSRF },
+    body: formData 
+  })
   .then(r => r.json())
-.then(d => {
-    btn.disabled = false; btn.innerHTML = '<i class="fas fa-save me-1"></i>' + (IS_AR?'حفظ':'Save');
+  .then(d => {
+    btn.disabled = false; 
+    btn.innerHTML = '<i class="fas fa-save me-1"></i>' + (IS_AR ? 'حفظ' : 'Save');
     if (d.ok) { 
       bootstrap.Modal.getInstance(document.getElementById('vndModal'))?.hide();
       if (gridApi) {
@@ -761,9 +955,12 @@ function saveVendor(){
       if (qsEl) qsEl.value = '';
       loadData();
     }
-    else { alert(d.error || (IS_AR?'حدث خطأ':'An error occurred')); }
+    else { alert(d.error || (IS_AR ? 'حدث خطأ' : 'An error occurred')); }
   })
-  .catch(() => { btn.disabled=false; btn.innerHTML='<i class="fas fa-save me-1"></i>'+(IS_AR?'حفظ':'Save'); });
+  .catch(() => { 
+    btn.disabled = false; 
+    btn.innerHTML = '<i class="fas fa-save me-1"></i>' + (IS_AR ? 'حفظ' : 'Save'); 
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -772,57 +969,288 @@ function saveVendor(){
 function confDel(id, name) {
   document.getElementById('delTxt').textContent = (IS_AR ? 'حذف المورد: ' : 'Delete vendor: ') + name + '?';
   document.getElementById('delConfirmBtn').onclick = () => {
-    fetch('/purchase/vendors/'+id+'/delete', { method:'POST', headers:{'X-CSRFToken':CSRF}, body: new URLSearchParams({csrf_token:CSRF}) })
-    .then(r=>r.json()).then(d=>{ if(d.ok){bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide();loadData();} });
+    fetch('/purchase/vendors/' + id + '/delete', { 
+      method: 'POST', 
+      headers: { 'X-CSRFToken': CSRF }, 
+      body: new URLSearchParams({ csrf_token: CSRF })
+    })
+    .then(r => r.json())
+    .then(d => { 
+      if (d.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide();
+        loadData(); 
+      }
+    });
   };
   new bootstrap.Modal(document.getElementById('delModal')).show();
 }
 
 // ═══════════════════════════════════════════════════════════
-// AG-GRID
+// ════════════════ AG-GRID ENTERPRISE ═════════════════════
 // ═══════════════════════════════════════════════════════════
-function rStatus(p){const v=p.value||'active';const c={'active':['#dcfce7','#15803d'],'inactive':['#f1f5f9','#6b7280']};const[b,f]=c[v]||c['active'];return`<span style="background:${b};color:${f};padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;">${IS_AR?(v==='active'?'نشيط':'غير نشيط'):v.charAt(0).toUpperCase()+v.slice(1)}</span>`;}
 
-class ActR{init(p){this.g=document.createElement('div');this.g.style.cssText='display:flex;align-items:center;gap:3px;';const d=p.data;this.g.innerHTML=`<button class="ag-ab ag-ab-view" onclick="window.location='/purchase/vendors/${d.id}'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button><button class="ag-ab ag-ab-edit" onclick="openEdit(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button><button class="ag-ab ag-ab-del" onclick="confDel(${d.id},'${(d.vendor_name_en||'').replace(/'/g,"\\'")}')" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;}getGui(){return this.g;}}
+function rStatus(p) {
+  const v = p.value || 'active';
+  const labels = {
+    active: IS_AR ? 'نشيط' : 'Active',
+    inactive: IS_AR ? 'غير نشيط' : 'Inactive'
+  };
+  const classes = {
+    active: 'status-active',
+    inactive: 'status-inactive'
+  };
+  return `<span class="status-pill ${classes[v] || classes.active}">
+      <i class="fas fa-circle" style="font-size:6px;"></i>
+      ${labels[v] || labels.active}
+  </span>`;
+}
 
-const AG_LOCALE = IS_AR ? {filterOoo:'تصفية...',contains:'يحتوي على',notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',blank:'فارغ',notBlank:'غير فارغ',applyFilter:'تطبيق',clearFilter:'مسح',resetFilter:'إعادة تعيين',noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...'} : {filterOoo:'Filter...',applyFilter:'Apply',clearFilter:'Clear',resetFilter:'Reset',noRowsToShow:'No records found'};
+class ActR {
+  init(p) {
+    this.g = document.createElement('div');
+    this.g.style.cssText = 'display:flex;align-items:center;gap:4px;height:100%;';
+    const d = p.data;
+    const name = (d.vendor_name_en || '').replace(/'/g, "\\'");
+    this.g.innerHTML = `
+      <button class="ag-ab ag-ab-view" onclick="window.location='/purchase/vendors/${d.id}'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
+      <button class="ag-ab ag-ab-edit" onclick="openEdit(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+      <button class="ag-ab ag-ab-del" onclick="confDel(${d.id},'${name}')" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
+    `;
+  }
+  getGui() { return this.g; }
+}
 
-const defCol = {sortable:true,resizable:true,filter:true,floatingFilter:true,filterParams:{buttons:['apply','reset','clear'],closeOnApply:true}};
 const cols = [
-  {headerName:'#',field:'id',width:65,floatingFilter:false,suppressMenu:true},
-  {headerName:IS_AR?'الكود':'Code',field:'vendor_code',width:115},
-  {headerName:IS_AR?'اسم المورد':'Vendor Name',field:'vendor_name_en',minWidth:200,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'الاسم بالعربي':'Name (AR)',field:'vendor_name_ar',minWidth:160,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'رقم الضريبة':'VAT',field:'vat_number',width:130},
-  {headerName:IS_AR?'الهاتف':'Phone',field:'phone',width:120},
-  {headerName:IS_AR?'البريد':'Email',field:'email',width:160},
-  {headerName:IS_AR?'المدينة':'City',field:'city',width:110},
-  {headerName:IS_AR?'الحالة':'Status',field:'status',width:90,cellRenderer:rStatus,floatingFilter:false},
-  {headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:105,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 6px'}},
+  {
+    headerName: '#',
+    field: 'id',
+    width: 65,
+    filter: false,
+    floatingFilter: false,
+    suppressMenu: true,
+    checkboxSelection: true,
+    headerCheckboxSelection: true,
+    pinned: IS_AR ? 'right' : 'left',
+    sortable: false,
+    resizable: false,
+  },
+  {
+    headerName: IS_AR ? 'الكود' : 'Code',
+    field: 'vendor_code',
+    width: 125,
+    filter: 'agTextColumnFilter',
+    cellRenderer: function(p) {
+      return p.value ? `<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;font-family:monospace;">${p.value}</span>` : '—';
+    }
+  },
+  {
+    headerName: IS_AR ? 'اسم المورد' : 'Vendor Name',
+    field: 'vendor_name_en',
+    minWidth: 200,
+    flex: 1.2,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: IS_AR ? 'الاسم بالعربي' : 'Name (AR)',
+    field: 'vendor_name_ar',
+    minWidth: 160,
+    flex: 1,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: IS_AR ? 'رقم الضريبة' : 'VAT',
+    field: 'vat_number',
+    width: 120,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: IS_AR ? 'الهاتف' : 'Phone',
+    field: 'phone',
+    width: 120,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: IS_AR ? 'البريد' : 'Email',
+    field: 'email',
+    width: 170,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: IS_AR ? 'المدينة' : 'City',
+    field: 'city',
+    width: 110,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: IS_AR ? 'الحالة' : 'Status',
+    field: 'status',
+    width: 100,
+    cellRenderer: rStatus,
+    filter: 'agSetColumnFilter',
+    floatingFilter: false,
+    filterParams: {
+      values: ['active', 'inactive'],
+      buttons: ['apply', 'reset', 'clear']
+    }
+  },
+  {
+    headerName: IS_AR ? 'إجراءات' : 'Actions',
+    field: '_a',
+    width: 120,
+    pinned: IS_AR ? 'left' : 'right',
+    sortable: false,
+    suppressMenu: true,
+    floatingFilter: false,
+    resizable: false,
+    cellRenderer: ActR,
+    cellStyle: { overflow: 'visible', padding: '0 6px' }
+  },
 ];
 
+const AG_LOCALE = IS_AR ? {
+  filterOoo: 'تصفية...',
+  equals: 'يساوي',
+  notEqual: 'لا يساوي',
+  contains: 'يحتوي على',
+  notContains: 'لا يحتوي على',
+  startsWith: 'يبدأ بـ',
+  endsWith: 'ينتهي بـ',
+  blank: 'فارغ',
+  notBlank: 'غير فارغ',
+  lessThan: 'أقل من',
+  greaterThan: 'أكبر من',
+  applyFilter: 'تطبيق',
+  clearFilter: 'مسح',
+  resetFilter: 'إعادة تعيين',
+  addFilterCondition: '+ إضافة قاعدة',
+  matchAll: 'يطابق الكل',
+  matchAny: 'يطابق أي',
+  andCondition: 'و',
+  orCondition: 'أو',
+  noRowsToShow: 'لا توجد بيانات',
+  loadingOoo: 'جاري التحميل...',
+  searchOoo: 'بحث...',
+  sortAscending: 'تصاعدي',
+  sortDescending: 'تنازلي',
+} : {
+  filterOoo: 'Filter...',
+  applyFilter: 'Apply',
+  clearFilter: 'Clear',
+  resetFilter: 'Reset',
+  addFilterCondition: '+ Add Rule',
+  matchAll: 'Match All',
+  matchAny: 'Match Any',
+  noRowsToShow: 'No records found',
+  searchOoo: 'Search...',
+};
+
+const defaultColDef = {
+  sortable: true,
+  resizable: true,
+  filter: true,
+  floatingFilter: true,
+  suppressMenu: false,
+  unSortIcon: true,
+  enableRowGroup: true,
+  enablePivot: true,
+  enableValue: true,
+  menuTabs: ['filterMenuTab', 'columnsMenuTab', 'generalMenuTab'],
+  filterParams: {
+    buttons: ['apply', 'reset', 'clear'],
+    closeOnApply: true,
+    maxNumConditions: 10
+  }
+};
+
 let gridApi;
-agGrid.createGrid(document.getElementById('vndGrid'),{
-  columnDefs:cols,rowData:[],pagination:true,paginationPageSize:10,animateRows:true,enableRtl:IS_AR,defaultColDef:defCol,localeText:AG_LOCALE,
-  onGridReady(p) {
+
+agGrid.createGrid(document.getElementById('vndGrid'), {
+  columnDefs: cols,
+  rowData: [],
+  pagination: true,
+  paginationPageSize: 20,
+  animateRows: true,
+  enableRtl: IS_AR,
+  defaultColDef: defaultColDef,
+  localeText: AG_LOCALE,
+  multiSortKey: 'ctrl',
+  
+
+  sideBar: {
+    toolPanels: [
+      {
+        id: 'columns',
+        labelDefault: IS_AR ? 'الأعمدة' : 'Columns',
+        labelKey: 'columns',
+        iconKey: 'columns',
+        toolPanel: 'agColumnsToolPanel'
+      },
+      {
+        id: 'filters',
+        labelDefault: IS_AR ? 'الفلاتر' : 'Filters',
+        labelKey: 'filters',
+        iconKey: 'filter',
+        toolPanel: 'agFiltersToolPanel'
+      }
+    ],
+    defaultToolPanel: ''
+  },
+  rowGroupPanelShow: 'always',     
+  pivotPanelShow: 'always',        
+  groupDisplayType: 'groupRows',   
+  
+  rowSelection: 'multiple',
+  suppressRowClickSelection: true,
+  
+  onGridReady: function(p) {
     gridApi = p.api;
-    // Pass the whole event: AG-Grid v31 keeps column operations on
-    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
-    if (window.GridKit) {
-      GridKit.enhance(p, 'vndGrid', { storageKey: 'vendors', exportName: 'Vendors' });
-    }
     loadData();
   },
-  getRowStyle(p){return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'};}
+  
+  onFilterChanged: updateStatus,
+  onPaginationChanged: updateStatus,
+  onSelectionChanged: updateStatus,
+  
+  getRowStyle: function(p) {
+    return p.node.rowIndex % 2 === 0 ? { background: '#fff' } : { background: '#fafbfc' };
+  }
 });
-function loadData(){fetch('/purchase/vendors/data').then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);const c=gridApi.getDisplayedRowCount();document.getElementById('selText').textContent=c+' '+(IS_AR?'مورد':'vendors');});}
 
-// Initialize bank grid on page load
-document.addEventListener('DOMContentLoaded',()=>{
+function loadData() {
+  var savedFilters = gridApi ? gridApi.getFilterModel() : null;
+  
+  fetch('/purchase/vendors/data')
+    .then(r => r.json())
+    .then(d => {
+      gridApi.setGridOption('rowData', d);
+      if (savedFilters && Object.keys(savedFilters).length) {
+        gridApi.setFilterModel(savedFilters);
+      }
+      updateStatus();
+    })
+    .catch(err => console.error('Failed to load vendors:', err));
+}
+
+function updateStatus() {
+  if (!gridApi) return;
+  const total = gridApi.getDisplayedRowCount();
+  const selected = gridApi.getSelectedRows().length;
+  const text = selected > 0 
+    ? `${selected} ${IS_AR ? 'محدد' : 'selected'}`
+    : `${total} ${IS_AR ? 'مورد' : 'vendors'}`;
+  document.getElementById('selText').textContent = text;
+}
+
+// ── Initialize ──
+document.addEventListener('DOMContentLoaded', function() {
   initBankGrid();
-  const p=new URLSearchParams(window.location.search);
-  const eid=p.get('edit');
-  if(eid){setTimeout(()=>openEdit(parseInt(eid)),800);history.replaceState({},'',window.location.pathname);}
+  
+  const p = new URLSearchParams(window.location.search);
+  const eid = p.get('edit');
+  if (eid) {
+    setTimeout(() => openEdit(parseInt(eid)), 800);
+    history.replaceState({}, '', window.location.pathname);
+  }
 });
 </script>
 {% endblock %}

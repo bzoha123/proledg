@@ -368,6 +368,7 @@ class Employee(db.Model):
     company          = db.Column(db.String(200))
     company_ar       = db.Column(db.String(200))
     department       = db.Column(db.String(150))
+    department_id    = db.Column(db.Integer, db.ForeignKey('buyer_departments.id'))
     department_ar    = db.Column(db.String(150))
     section          = db.Column(db.String(150))
     section_ar       = db.Column(db.String(150))
@@ -1488,6 +1489,7 @@ class ItemMaster(db.Model):
     __tablename__ = 'item_master'
     id                 = db.Column(db.Integer, primary_key=True)
     item_code          = db.Column(db.String(50), unique=True, nullable=False)
+    item_type          = db.Column(db.String(20), default='Product')  # Product / Service
     article_no         = db.Column(db.String(50))
     name_en            = db.Column(db.String(200), nullable=False)
     name_ar            = db.Column(db.String(200))
@@ -1518,6 +1520,7 @@ class ItemMaster(db.Model):
     def to_dict(self):
         return {
             'id': self.id, 'item_code': self.item_code,
+            'item_type': self.item_type or 'Product',
             'article_no': self.article_no or '',
             'name_en': self.name_en, 'name_ar': self.name_ar or '',
             'print_name': self.print_name or '',

@@ -84,101 +84,14 @@
     </form>
   </div>
 
-  {# ── Table ─────────────────────────────────────────────────── #}
+  {# ── Table (AG-Grid) ───────────────────────────────────────── #}
   <div class="proledg-table-wrap">
-    <table class="proledg-table">
-      <thead>
-        <tr>
-          <th style="width:40px">#</th>
-          <th style="width:70px">{% if ar %}الطول{% else %}Len{% endif %}</th>
-          <th style="width:130px">{% if ar %}الأب{% else %}Parent{% endif %}</th>
-          <th style="width:150px">{% if ar %}الكود{% else %}Code{% endif %}</th>
-          <th>{% if ar %}المجموعة{% else %}Drawers{% endif %}</th>
-          <th style="width:150px">{% if ar %}الوصف{% else %}Description{% endif %}</th>
-          <th style="width:90px">{% if ar %}الحالة{% else %}Status{% endif %}</th>
-          {% if current_user.is_admin() %}
-          <th style="width:120px" class="text-center">{% if ar %}إجراءات{% else %}Actions{% endif %}</th>
-          {% endif %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in rows %}
-        {% set pcode = r.level_one_code if level_no == 2 else
-                      (r.level_two_code if level_no == 3 else
-                      (r.level_three_code if level_no == 4 else r.level_four_code)) %}
-        {% set pid = r.level_one_id if level_no == 2 else
-                    (r.level_two_id if level_no == 3 else
-                    (r.level_three_id if level_no == 4 else r.level_four_id)) %}
-        <tr>
-          <td>{{ pg.per_page * (pg.page - 1) + loop.index }}</td>
-          <td>{{ r.code_length }}</td>
-          <td><span class="code-badge">{{ pcode }}</span></td>
-          <td><span class="code-badge" style="background:#eff6ff;color:#2563eb;">{{ r.code }}</span></td>
-          <td class="fw-semibold">{{ r.drawers }}</td>
-          <td style="color:#6b7280;font-size:12px">{{ r.description }}</td>
-          <td>
-            {% if (r.status or 'active') == 'active' %}
-            <span style="background:#dcfce7;color:#15803d;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">
-              {% if ar %}نشط{% else %}Active{% endif %}</span>
-            {% else %}
-            <span style="background:#fee2e2;color:#b91c1c;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">
-              {% if ar %}غير نشط{% else %}Inactive{% endif %}</span>
-            {% endif %}
-          </td>
-          {% if current_user.is_admin() %}
-          <td class="text-center">
-            <button type="button" class="action-btn action-btn-edit js-coa-edit"
-                    data-id="{{ r.id }}"
-                    data-code="{{ r.code }}"
-                    data-drawers="{{ r.drawers }}"
-                    data-status="{{ r.status or 'active' }}"
-                    data-parent="{{ pid if pid is not none else '' }}">
-              <i class="fas fa-pencil-alt"></i>
-            </button>
-            <form method="POST" action="{{ url_for(endpoints.delete, id=r.id) }}" class="d-inline"
-                  onsubmit="return confirm('{% if ar %}حذف هذا الحساب؟{% else %}Delete this account?{% endif %}')">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="action-btn action-btn-delete"><i class="fas fa-trash"></i></button>
-            </form>
-          </td>
-          {% endif %}
-        </tr>
-        {% else %}
-        <tr><td colspan="8" class="empty-row">
-          <i class="fas fa-folder-open fa-2x mb-2 d-block"></i>
-          {% if ar %}لا توجد حسابات{% else %}No accounts found{% endif %}</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div id="coaGrid" class="ag-theme-alpine" style="width:100%;height:560px;"></div>
   </div>
 
   {# ── Pagination ────────────────────────────────────────────── #}
-  <div class="proledg-pagination" style="display:flex;justify-content:space-between;align-items:center;">
-    <span class="page-count">
-      {{ pg.total }} {% if ar %}حساب{% else %}account(s){% endif %} ·
-      {% if ar %}صفحة{% else %}page{% endif %} {{ pg.page }}/{{ pg.pages or 1 }}
-    </span>
-    {% if pg.pages and pg.pages > 1 %}
-    <nav>
-      <ul class="pagination pagination-sm mb-0">
-        <li class="page-item {% if not pg.has_prev %}disabled{% endif %}">
-          <a class="page-link" href="{{ url_for(endpoints.list, page=pg.prev_num, q=q or none, parent=parent or none, status=status or none, sort=sort) }}">&laquo;</a>
-        </li>
-        {% for p in pg.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
-          {% if p %}
-          <li class="page-item {% if p == pg.page %}active{% endif %}">
-            <a class="page-link" href="{{ url_for(endpoints.list, page=p, q=q or none, parent=parent or none, status=status or none, sort=sort) }}">{{ p }}</a>
-          </li>
-          {% else %}
-          <li class="page-item disabled"><span class="page-link">…</span></li>
-          {% endif %}
-        {% endfor %}
-        <li class="page-item {% if not pg.has_next %}disabled{% endif %}">
-          <a class="page-link" href="{{ url_for(endpoints.list, page=pg.next_num, q=q or none, parent=parent or none, status=status or none, sort=sort) }}">&raquo;</a>
-        </li>
-      </ul>
-    </nav>
-    {% endif %}
+  <div class="proledg-pagination" style="display:flex;justify-content:flex-start;align-items:center;">
+    <span class="page-count" id="coaCount"></span>
   </div>
 </div>
 
@@ -304,6 +217,94 @@
     </div>
   </div>
 </div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script>
+/* ── Chart of Accounts grid (loads from /level-N/data) ─────────────── */
+(function () {
+  const IS_AR    = {{ 'true' if ar else 'false' }};
+  const LEVEL_NO = {{ level_no }};
+  const LIST_URL = {{ url_for(endpoints.list)|tojson }};
+  const CSRF     = '{{ csrf_token() }}';
+  const IS_ADMIN = {{ 'true' if current_user.is_admin() else 'false' }};
+  const DATA_URL = LIST_URL + '/data';
+
+  const PCODE = LEVEL_NO===2?'level_one_code':LEVEL_NO===3?'level_two_code':LEVEL_NO===4?'level_three_code':'level_four_code';
+  const PID   = LEVEL_NO===2?'level_one_id'  :LEVEL_NO===3?'level_two_id'  :LEVEL_NO===4?'level_three_id'  :'level_four_id';
+
+  function statusBadge(v){
+    const active = (v||'active')==='active';
+    const bg = active?'#dcfce7':'#fee2e2', fg = active?'#15803d':'#b91c1c';
+    const lbl = active ? (IS_AR?'نشط':'Active') : (IS_AR?'غير نشط':'Inactive');
+    return '<span style="background:'+bg+';color:'+fg+';padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">'+lbl+'</span>';
+  }
+  function codeBadge(v,accent){
+    const s = accent?'background:#eff6ff;color:#2563eb;':'';
+    return '<span class="code-badge" style="'+s+'">'+(v==null?'':v)+'</span>';
+  }
+  window.coaDelete = function(id){
+    if(!confirm(IS_AR?'حذف هذا الحساب؟':'Delete this account?')) return;
+    const fd = new FormData(); fd.set('csrf_token', CSRF);
+    fetch(LIST_URL + '/' + id + '/delete', {method:'POST', body:fd})
+      .then(r=> r.ok ? r : Promise.reject())
+      .then(()=> window.coaReload())
+      .catch(()=> alert(IS_AR?'تعذّر الحذف (قد يملك حسابات فرعية)':'Delete failed (may have child accounts)'));
+  };
+  window.coaEdit = function(id, code, drawers, status, parent){
+    if (window.openEdit) window.openEdit(id, code, drawers, status, parent||null);
+  };
+
+  class CoaAct {
+    init(p){
+      const d = p.data;
+      this.el = document.createElement('div');
+      this.el.style.cssText='display:flex;gap:4px;justify-content:center;';
+      const pid = d[PID]==null?'':d[PID];
+      this.el.innerHTML =
+        '<button type="button" class="action-btn action-btn-edit" title="'+(IS_AR?'تعديل':'Edit')+'"><i class="fas fa-pencil-alt"></i></button>'+
+        '<button type="button" class="action-btn action-btn-delete" title="'+(IS_AR?'حذف':'Delete')+'"><i class="fas fa-trash"></i></button>';
+      const btns = this.el.querySelectorAll('button');
+      btns[0].addEventListener('click', ()=> window.coaEdit(d.id, d.code, d.drawers, d.status||'active', pid));
+      btns[1].addEventListener('click', ()=> window.coaDelete(d.id));
+    }
+    getGui(){ return this.el; }
+  }
+
+  const _cf = { filter:'agTextColumnFilter', filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} };
+  const cols = [
+    { headerName:IS_AR?'الطول':'Len', field:'code_length', width:90, filter:'agNumberColumnFilter' },
+    { headerName:IS_AR?'الأب':'Parent', field:PCODE, width:150, cellRenderer:p=>codeBadge(p.value,false), ..._cf },
+    { headerName:IS_AR?'الكود':'Code', field:'code', width:160, cellRenderer:p=>codeBadge(p.value,true), pinned:IS_AR?'right':'left', ..._cf },
+    { headerName:IS_AR?'المجموعة':'Drawers', field:'drawers', minWidth:200, flex:2, cellStyle:{fontWeight:600}, ..._cf },
+    { headerName:IS_AR?'الوصف':'Description', field:'description', minWidth:160, flex:1, cellStyle:{color:'#6b7280',fontSize:'12px'}, ..._cf },
+    { headerName:IS_AR?'الحالة':'Status', field:'status', width:120, cellRenderer:p=>statusBadge(p.value),
+      filter:'agTextColumnFilter', filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} },
+  ];
+  if (IS_ADMIN) cols.push({ headerName:IS_AR?'إجراءات':'Actions', field:'_actions', width:120, pinned:IS_AR?'left':'right',
+      sortable:false, filter:false, suppressMenu:true, resizable:false, cellRenderer:CoaAct, cellStyle:{overflow:'visible'} });
+
+  document.addEventListener('DOMContentLoaded', function(){
+    const el = document.getElementById('coaGrid'); if(!el || !window.agGrid) return;
+    const api = agGrid.createGrid(el, {
+      columnDefs: cols, rowData: [], pagination:true, paginationPageSize:25,
+      rowSelection:'single', animateRows:true, enableRtl:IS_AR,
+      localeText: IS_AR?{noRowsToShow:'لا توجد حسابات',searchOoo:'بحث...'}:{noRowsToShow:'No accounts found',searchOoo:'Search...'},
+      multiSortKey:'ctrl',
+      defaultColDef:{ sortable:true, resizable:true, filter:true, floatingFilter:true, unSortIcon:true,
+        menuTabs:['filterMenuTab','generalMenuTab'], filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} },
+      onGridReady(p){ if(window.GridKit) GridKit.enhance(p,'coaGrid',{storageKey:'coa_l'+LEVEL_NO,exportName:'COA_Level'+LEVEL_NO}); p.api.sizeColumnsToFit(); window.coaReload(); },
+      onGridSizeChanged(p){ p.api.sizeColumnsToFit(); },
+      onModelUpdated(p){ const n=p.api.getDisplayedRowCount(); const c=document.getElementById('coaCount'); if(c) c.textContent = n + ' ' + (IS_AR?'حساب':'account(s)'); },
+    });
+    window.__coaApi = api;
+  });
+  window.coaReload = function(){
+    fetch(DATA_URL).then(r=>r.json()).then(d=>{ if(window.__coaApi) window.__coaApi.setGridOption('rowData', d||[]); });
+  };
+})();
+</script>
 
 <script>
 (function () {

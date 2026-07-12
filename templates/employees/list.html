@@ -119,11 +119,12 @@
 .pf-empty { text-align: center; padding: 28px; color: #9ca3af; font-size: 13px; }
 .pf-empty i { font-size: 32px; margin-bottom: 10px; display: block; opacity: .4; }
 
-.ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif; --ag-font-size:13px; --ag-header-background-color:#1e3a5f; --ag-header-foreground-color:#fff; --ag-border-color:#e2e8f0; --ag-row-border-color:#f1f5f9; --ag-row-hover-color:#eff6ff; --ag-selected-row-background-color:#dbeafe; --ag-header-height:46px; --ag-row-height:46px; --ag-cell-horizontal-padding:12px; }
-.ag-theme-alpine .ag-header-cell-label { font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; }
+.ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif; --ag-font-size:13px; --ag-header-background-color:#e5e7eb; --ag-header-foreground-color:#1e293b; --ag-border-color:#e2e8f0; --ag-row-border-color:#f1f5f9; --ag-row-hover-color:#eff6ff; --ag-selected-row-background-color:#dbeafe; --ag-header-height:46px; --ag-row-height:46px; --ag-cell-horizontal-padding:12px; }
+.ag-theme-alpine .ag-header-cell-label { font-weight:700; font-size:11.5px; letter-spacing:.4px; color:#1e293b; overflow:visible; }
+.ag-theme-alpine .ag-header-cell-text { overflow:visible; text-overflow:clip; white-space:nowrap; }
 .ag-theme-alpine .ag-header-cell:hover { background:rgba(255,255,255,.08) !important; }
-.ag-theme-alpine .ag-sort-ascending-icon, .ag-theme-alpine .ag-sort-descending-icon, .ag-theme-alpine .ag-sort-none-icon { color:rgba(255,255,255,.7); }
-.ag-theme-alpine .ag-header-icon { color:rgba(255,255,255,.6); }
+.ag-theme-alpine .ag-sort-ascending-icon, .ag-theme-alpine .ag-sort-descending-icon, .ag-theme-alpine .ag-sort-none-icon { color:#475569; }
+.ag-theme-alpine .ag-header-icon { color:#64748b; }
 .ag-theme-alpine .ag-filter { border-radius:10px !important; box-shadow:0 8px 30px rgba(0,0,0,.15) !important; border:1px solid #e2e8f0 !important; overflow:hidden; min-width:260px; background:white; }
 .ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input { border:1.5px solid #d1d5db !important; border-radius:7px !important; padding:6px 10px !important; font-size:12px !important; }
 .ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus { outline:none !important; border-color:#2563eb !important; box-shadow:0 0 0 2px rgba(37,99,235,.12) !important; }
@@ -430,6 +431,7 @@
   align-items: center;
   gap: 6px;
   width: 100%;
+  flex: 1;
 }
 
 .emp-photo-container {
@@ -474,19 +476,20 @@
   cursor: pointer;
   background: #eff6ff;
   color: #2563eb;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
-  padding: 7px 10px;
-  font-size: 11px;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
   transition: all 0.15s;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   width: 100%;
-  margin-top: 10px;
+  height: 40px;
+  margin-top: auto;
 }
 
 .photo-upload-btn:hover {
@@ -504,7 +507,7 @@
   display: grid;
   grid-template-columns: minmax(320px, 1fr) 180px minmax(320px, 1fr);
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
   margin-bottom: 14px;
 }
 
@@ -520,7 +523,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  align-self: stretch;
   position: sticky;
   top: 20px;
   width: 180px;
@@ -553,12 +557,12 @@
 
 .view-photo-container .view-avatar {
   display: inline-block;
-  width: 130px;
-  height: 130px;
-  border-radius: 50%;
+  width: 150px;
+  height: 180px;
+  border-radius: 10px;
   overflow: hidden;
-  border: 3px solid #e2e8f0;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  border: 2px dashed #d1d5db;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
   background: #f8fafc;
 }
 
@@ -619,7 +623,7 @@
   </div>
 
   <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;overflow:hidden;">
-    <div id="empGrid" class="ag-theme-alpine" style="width:100%;height:530px;"></div>
+    <div id="empGrid" class="ag-theme-alpine" style="width:100%;height:640px;"></div>
   </div>
   <div class="proledg-pagination">
     <span class="page-count" id="pageInfo">–</span>
@@ -945,7 +949,6 @@
           </div>
 
           {{ sec('docs','upload','Document Upload','تحميل المستندات') }}
-              <div id="existingDocsList"></div>
               <div id="docFilesList"></div>
               <div style="margin-top:8px;">
                 <button type="button" class="btn btn-success btn-sm" onclick="addDocRow()">
@@ -1123,11 +1126,18 @@
                     <div class="field-label">
                       {% if ar %}القسم{% else %}Department{% endif %}
                     </div>
-                    <select name="department_id" id="f_department_id" class="field-input"
+                    <div style="display:flex;gap:6px;align-items:stretch;">
+                      <select name="department_id" id="f_department_id" class="field-input"
                             dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                            onchange="onDepartmentChange()" disabled>
-                      <option value="">-- {% if ar %}اختر الشركة أولاً{% else %}Select a company first{% endif %} --</option>
-                    </select>
+                            onchange="onDepartmentChange()" disabled style="flex:1;">
+                        <option value="">-- {% if ar %}اختر الشركة أولاً{% else %}Select a company first{% endif %} --</option>
+                      </select>
+                      <!-- <button type="button" id="btnAddDept" onclick="openAddDept()"
+                              title="{% if ar %}إضافة قسم{% else %}Add Department{% endif %}"
+                              style="flex:0 0 auto;padding:0 12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                        <i class="fas fa-plus"></i>
+                      </button> -->
+                    </div>
                     <small id="f_dept_hint" style="display:none;font-size:11px;color:#94a3b8;margin-top:3px;"></small>
                   </div>
                   <div class="field-item">
@@ -1268,7 +1278,7 @@
       <div class="modal-footer-bar">
         <button type="button" class="btn-footer btn-footer-reset" onclick="resetEmpForm()"><i class="fas fa-redo me-1"></i>{% if ar %}إعادة تعيين{% else %}Reset{% endif %}</button>
         <button type="button" class="btn-footer btn-footer-cancel" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button type="button" class="btn-footer btn-footer-save" onclick="if(validateForm(document.getElementById('empForm'))){injectEmpBanks();injectProfessionIds();injectAllowances();document.getElementById('empForm').submit();}"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+        <button type="button" class="btn-footer btn-footer-save" onclick="if(validateForm(document.getElementById('empForm'))){injectEmpBanks();injectProfessionIds();document.getElementById('empForm').submit();}"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
       </div>
 
     </div>
@@ -1456,6 +1466,34 @@
   </div>
 </div>
 
+<div class="modal fade" id="addDeptModal" tabindex="-1" style="z-index:1085;">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content" style="border-radius:10px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;">
+        <h6 style="margin:0;color:white;font-weight:700;font-size:13px;"><i class="fas fa-plus-circle me-2"></i>{% if ar %}إضافة قسم{% else %}Add Department{% endif %}</h6>
+        <button type="button" class="btn-close" style="filter:brightness(0) invert(1);" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:10px;">
+          <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;">{% if ar %}اسم القسم (EN){% else %}Department Name (EN){% endif %} *</div>
+          <input type="text" id="qd_name_en" class="field-input" placeholder="e.g. Human Resources">
+        </div>
+        <div>
+          <div class="field-label" style="margin-bottom:4px;font-size:11px;font-weight:600;color:#6b7280;text-align:right;" dir="rtl">{% if ar %}اسم القسم (AR){% else %}Name (AR){% endif %}</div>
+          <input type="text" id="qd_name_ar" class="field-input" dir="rtl" placeholder="">
+        </div>
+        <div id="qd_error" style="color:#dc2626;font-size:11px;margin-top:6px;display:none;"></div>
+      </div>
+      <div class="modal-footer border-0" style="background:#f8fafc;padding:10px 16px;">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+        <button class="btn btn-sm btn-primary fw-bold" onclick="saveQuickDepartment()">
+          <i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="addAllowTypeModal" tabindex="-1" style="z-index:1090;">
   <div class="modal-dialog modal-sm">
     <div class="modal-content" style="border-radius:10px;overflow:hidden;">
@@ -1593,7 +1631,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
 <script>
 const TR    = '{{ url_for("sellers.translate_text") }}';
 const CSRF  = '{{ csrf_token() }}';
@@ -1774,25 +1812,6 @@ function injectProfessionIds() {
   primary.type = 'hidden'; primary.name = 'profession_id'; primary.className = 'prof-hidden';
   primary.value = _selectedProfs.length ? _selectedProfs[0].id : '';
   form.appendChild(primary);
-}
-
-/* Write the current allowance list into the form as hidden fields so the
-   backend's save_allowances() persists them. Required because that route
-   deletes all rows and re-inserts from allow_type_id[]/allow_amount[] on
-   every save — without this, saving an employee wipes their allowances. */
-function injectAllowances() {
-  const form = document.getElementById('empForm');
-  form.querySelectorAll('.pend-allow').forEach(el => el.remove());
-  (_pendingAllows || []).forEach(a => {
-    const t = document.createElement('input');
-    t.type = 'hidden'; t.name = 'allow_type_id[]';
-    t.value = a.allowance_type_id; t.className = 'pend-allow';
-    form.appendChild(t);
-    const m = document.createElement('input');
-    m.type = 'hidden'; m.name = 'allow_amount[]';
-    m.value = a.amount; m.className = 'pend-allow';
-    form.appendChild(m);
-  });
 }
 
 function initBuyer(selectedId) {
@@ -2002,45 +2021,6 @@ const DOC_TYPE_OPTIONS = [
   {en:'Other',ar:'أخرى'},
 ];
 
-function renderExistingDocs(docs) {
-  const box = document.getElementById('existingDocsList');
-  if (!box) return;
-  box.innerHTML = '';
-  if (!docs || !docs.length) return;
-  docs.forEach(doc => {
-    const row = document.createElement('div');
-    row.id = 'existDoc_' + doc.id;
-    row.style.cssText = 'display:flex;gap:10px;align-items:center;margin-bottom:8px;padding:10px;background:#eef6ff;border:1px solid #bfdbfe;border-radius:7px;';
-    const label = (IS_AR ? '' : '') + (doc.document_type || (IS_AR?'مستند':'Document'));
-    const fname = doc.original_name || (IS_AR?'ملف':'file');
-    row.innerHTML = `
-      <i class="fas fa-file-alt" style="color:#2563eb;"></i>
-      <span style="flex:1.5;font-weight:600;font-size:12px;color:#374151;">${label}</span>
-      <a href="/employees/documents/${doc.id}/file" target="_blank"
-         style="flex:2;font-size:12px;color:#2563eb;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
-         title="${fname}"><i class="fas fa-eye me-1"></i>${fname}</a>
-      <button type="button" class="allow-del" title="${IS_AR?'حذف':'Delete'}"
-              onclick="deleteExistingDoc(${doc.id})">
-        <i class="fas fa-times"></i>
-      </button>`;
-    box.appendChild(row);
-  });
-}
-
-function deleteExistingDoc(docId) {
-  if (!confirm(IS_AR ? 'حذف هذا المستند؟' : 'Delete this document?')) return;
-  fetch('/employees/documents/' + docId + '/delete', {
-    method: 'POST', headers: { 'X-CSRFToken': CSRF }
-  }).then(r => r.json()).then(res => {
-    if (res && res.ok) {
-      const row = document.getElementById('existDoc_' + docId);
-      if (row) row.remove();
-    } else {
-      alert(IS_AR ? 'تعذر حذف المستند.' : 'Could not delete the document.');
-    }
-  }).catch(() => alert(IS_AR ? 'تعذر حذف المستند.' : 'Could not delete the document.'));
-}
-
 function addDocRow() {
   _docSerial++;
   const serial = _docSerial;
@@ -2217,8 +2197,6 @@ function resetEmpForm() {
 
   const docList = document.getElementById('docFilesList');
   if (docList) docList.innerHTML = '';
-  const existDocs = document.getElementById('existingDocsList');
-  if (existDocs) existDocs.innerHTML = '';
   _docSerial = 0;
 
   _selectedProfs = [];
@@ -2363,9 +2341,7 @@ function openEditEmp(id) {
   _pendingAllows = [];
   setAllowBtn(true);
 
-  // Photo is set from the /json response below (which returns photo_url).
-  // The old loadEmpPhoto() did a second fetch against the image route and
-  // parsed it as JSON, which failed and could blank the preview — removed.
+  loadEmpPhoto(id);
 
   fetch('/employees/' + id + '/json').then(r => r.json()).then(d => {
     document.getElementById('empCodeDisplay').textContent = d.employee_code;
@@ -2420,17 +2396,9 @@ function openEditEmp(id) {
 
     const inlineBody = document.getElementById('allowInlineBody');
     if (inlineBody) inlineBody.innerHTML = '';
-    // Seed the working array so the Manage popup shows existing rows and a
-    // re-save doesn't drop them. Give each a stable _key for edit/delete.
-    _pendingAllows = (d.allowances || []).map((a, i) => Object.assign({}, a, {
-      _key: (a.id != null ? String(a.id) : 'tmp_' + i)
-    }));
-    _renderRows(_pendingAllows);
+    _renderRows(d.allowances || []);
     calcNet();
     calcOvertimeRate();
-
-    // Render existing saved documents (separate from the add-new widget).
-    renderExistingDocs(d.documents || []);
 
     setEmpPhoto(d.photo_url || '');
 
@@ -2457,10 +2425,7 @@ function calcAgeStr(birthDate) {
 
 function openViewEmp(id) {
   currentViewId = id;
-  fetch('/employees/' + id + '/json').then(r => {
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.json();
-  }).then(d => {
+  fetch('/employees/' + id + '/json').then(r => r.json()).then(d => {
     const na = IS_AR ? 'غير محدد' : 'N/A';
     const yn = v => v ? (IS_AR?'نعم':'Yes') : (IS_AR?'لا':'No');
     const rows = [
@@ -2486,9 +2451,9 @@ function openViewEmp(id) {
     
     let html = '';
     
-    // Photo display in view modal — same 150×180 rounded card as the form.
+    // Photo display in view modal - same rectangular shape as the form
     html += '<div style="text-align:center;margin:16px 0 20px;padding:10px 0;">';
-    html += '<div style="display:inline-block;width:150px;height:180px;border-radius:10px;overflow:hidden;border:2px solid #e2e8f0;box-shadow:0 4px 14px rgba(15,23,42,.12);background:#f8fafc;">';
+    html += '<div style="display:inline-block;width:150px;height:180px;border-radius:10px;overflow:hidden;border:2px dashed #d1d5db;box-shadow:0 4px 14px rgba(0,0,0,.08);background:#f8fafc;">';
     
     if (d.photo_url) {
       let viewUrl = d.photo_url;
@@ -2496,13 +2461,13 @@ function openViewEmp(id) {
         viewUrl = '/uploads/employees/' + viewUrl;
       }
       html += `<img src="${viewUrl}" alt=""
-               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+               onerror="console.log('View: failed to load image:', this.src);this.style.display='none';this.nextElementSibling.style.display='flex';"
                style="width:100%;height:100%;object-fit:cover;display:block;">
-               <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;color:#94a3b8;font-size:52px;background:#f8fafc;">
+               <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;color:#94a3b8;font-size:46px;background:#f8fafc;">
                  <i class="fas fa-user" style="opacity:0.5;"></i>
                </div>`;
     } else {
-      html += `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:52px;background:#f8fafc;">
+      html += `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:46px;background:#f8fafc;">
                 <i class="fas fa-user" style="opacity:0.5;"></i>
               </div>`;
     }
@@ -2519,9 +2484,6 @@ function openViewEmp(id) {
     document.getElementById('viewEmpTitle').textContent = (IS_AR?'بيانات الموظف: ':'Employee: ') + (IS_AR && d.name_ar ? d.name_ar : d.name);
     document.getElementById('viewEmpBody').innerHTML = html;
     new bootstrap.Modal(document.getElementById('viewEmpModal')).show();
-  }).catch(err => {
-    console.error('openViewEmp failed:', err);
-    alert(IS_AR ? 'تعذر تحميل بيانات الموظف.' : 'Could not load employee details.');
   });
 }
 
@@ -2580,15 +2542,7 @@ function _fillTypeDropdown(types, usedTypeIds) {
 function _loadFromDB(empId) {
   fetch(`/employees/${empId}/allowances`)
   .then(r=>r.json())
-  .then(rows=>{
-    _lastRows=rows;
-    // Keep the working array in sync so injectAllowances() submits the
-    // current set (each row keyed by its DB id).
-    _pendingAllows = (rows||[]).map(a => Object.assign({}, a, {
-      _key: (a.id != null ? String(a.id) : a._key)
-    }));
-    _renderRows(rows);
-  })
+  .then(rows=>{ _lastRows=rows; _renderRows(rows); })
   .catch(()=>_renderRows([]));
 }
 
@@ -2896,6 +2850,43 @@ function saveQuickProfession() {
   }).catch(()=>{if(errEl){errEl.textContent='Server error';errEl.style.display='block';}});
 }
 
+function openAddDept() {
+  var comp = document.getElementById('f_buyer_id');
+  var buyerId = comp ? comp.value : '';
+  var errEl = document.getElementById('qd_error');
+  if (errEl) errEl.style.display = 'none';
+  ['qd_name_en','qd_name_ar'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  if (!buyerId && errEl) { errEl.textContent = (IS_AR?'اختر الشركة أولاً.':'Select a company first.'); errEl.style.display='block'; }
+  new bootstrap.Modal(document.getElementById('addDeptModal')).show();
+}
+function saveQuickDepartment() {
+  var comp = document.getElementById('f_buyer_id');
+  var buyerId = comp ? comp.value : '';
+  var en = (document.getElementById('qd_name_en') && document.getElementById('qd_name_en').value || '').trim();
+  var ar_val = (document.getElementById('qd_name_ar') && document.getElementById('qd_name_ar').value || '').trim();
+  var errEl = document.getElementById('qd_error');
+  if (errEl) errEl.style.display='none';
+  if (!buyerId) { if(errEl){errEl.textContent=(IS_AR?'اختر الشركة أولاً.':'Select a company first.');errEl.style.display='block';} return; }
+  if (!en) { if(errEl){errEl.textContent=(IS_AR?'اسم القسم مطلوب.':'Department name is required.');errEl.style.display='block';} return; }
+  var fd = new FormData();
+  fd.set('csrf_token', CSRF);
+  fd.set('buyer_id', buyerId);
+  fd.set('department_name', en);
+  fd.set('department_name_ar', ar_val);
+  fetch('/employees/departments/add', {method:'POST', body:fd})
+    .then(function(r){ return r.json().then(function(d){ return {ok:r.ok, d:d}; }); })
+    .then(function(res){
+      if (res.ok && res.d.ok) {
+        var m = bootstrap.Modal.getInstance(document.getElementById('addDeptModal'));
+        if (m) m.hide();
+        loadDepartments(buyerId, res.d.id);
+      } else if(errEl){
+        errEl.textContent=(res.d && res.d.error) || (IS_AR?'خطأ':'Error');errEl.style.display='block';
+      }
+    })
+    .catch(function(){ if(errEl){errEl.textContent=(IS_AR?'خطأ في الخادم':'Server error');errEl.style.display='block';} });
+}
+
 function openAddAllowTypeModal() {
   ['qat_code','qat_name_en','qat_name_ar'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   const errEl=document.getElementById('qat_error'); if(errEl) errEl.style.display='none';
@@ -2953,7 +2944,7 @@ class ActR {
 }
 
 const cols = [
-  {headerName:'',field:'id',width:46,checkboxSelection:true,headerCheckboxSelection:true,sortable:false,suppressMenu:true,resizable:false,pinned:IS_AR?'right':'left'},
+  {headerName:'',field:'id',width:46,checkboxSelection:true,headerCheckboxSelection:true,sortable:false,suppressMenu:true,resizable:false,filter:false,floatingFilter:false,pinned:IS_AR?'right':'left',enableRowGroup:false,enablePivot:false,enableValue:false,suppressColumnsToolPanel:true},
   {headerName:S.code,field:'employee_code',width:130,pinned:IS_AR?'right':'left',cellRenderer:rCode,filter:'agTextColumnFilter'},
   {headerName:S.name,field:'name',minWidth:160,filter:'agTextColumnFilter'},
   {headerName:S.prof,field:'profession',width:150,filter:'agTextColumnFilter'},
@@ -2971,7 +2962,7 @@ const cols = [
   {headerName:S.net,field:'net_salary',width:120,cellRenderer:rNum,filter:'agNumberColumnFilter'},
   {headerName:S.status,field:'is_active',width:95,cellRenderer:rStatus},
 ];
-if (ADM) cols.push({headerName:S.actions,field:'_a',width:140,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,resizable:false,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 8px'}});
+if (ADM) cols.push({headerName:S.actions,field:'_a',width:140,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,resizable:false,filter:false,floatingFilter:false,enableRowGroup:false,enablePivot:false,enableValue:false,suppressColumnsToolPanel:true,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 8px'}});
 
 let gridApi;
 
@@ -2993,20 +2984,36 @@ const _agLocale = IS_AR ? {
 
 agGrid.createGrid(document.getElementById('empGrid'), {
   columnDefs: cols, rowData: [], pagination: true, paginationPageSize: 20,
+  alwaysShowHorizontalScroll: true, alwaysShowVerticalScroll: true,
   rowSelection: 'multiple', suppressRowClickSelection: true, animateRows: true, enableRtl: IS_AR,
   localeText: _agLocale,
   multiSortKey: 'ctrl',
+  // ── Enterprise: right-hand tool panels (Columns + Filters), drag-to-group
+  //    bar, pivoting and aggregation. Matches the reference video's structure. ──
+  sideBar: {
+    toolPanels: [
+      { id: 'columns', labelDefault: IS_AR ? 'الأعمدة' : 'Columns', labelKey: 'columns',
+        iconKey: 'columns', toolPanel: 'agColumnsToolPanel' },
+      { id: 'filters', labelDefault: IS_AR ? 'الفلاتر' : 'Filters', labelKey: 'filters',
+        iconKey: 'filter', toolPanel: 'agFiltersToolPanel' }
+    ],
+    defaultToolPanel: ''
+  },
+  rowGroupPanelShow: 'always',
+  pivotPanelShow: 'always',
+  groupDisplayType: 'groupRows',
   defaultColDef: {
-    sortable: true, resizable: true, filter: true, suppressMenu: false,
+    sortable: true, resizable: true, filter: true, floatingFilter: true, suppressMenu: false,
     unSortIcon: true,
-    menuTabs: ['filterMenuTab', 'generalMenuTab'],
+    enableRowGroup: true, enablePivot: true, enableValue: true,
+    menuTabs: ['filterMenuTab', 'columnsMenuTab', 'generalMenuTab'],
     filterParams: { buttons: ['apply', 'reset', 'clear'], closeOnApply: true, maxNumConditions: 10 }
   },
   onGridReady(p) {
     gridApi = p.api;
-    if (window.GridKit) {
-      GridKit.enhance(p, 'empGrid', { storageKey: 'employees', exportName: 'Employees' });
-    }
+    // Enterprise sidebar (Columns + Filters) + row-group/pivot panels replace
+    // the GridKit toolbar here, so GridKit.enhance is intentionally not called
+    // on this grid to avoid duplicate Columns/Filters/Pivot controls.
     loadData();
   },
   onFilterChanged() { upd(); }, onPaginationChanged() { upd(); }, onSelectionChanged() { upd(); },
@@ -3014,8 +3021,14 @@ agGrid.createGrid(document.getElementById('empGrid'), {
 });
 
 function loadData() {
+  // Preserve the user's column filters across a data reload so typing in a
+  // column search box is never lost when the grid refreshes.
+  var savedFilters = gridApi ? gridApi.getFilterModel() : null;
   fetch(EDURL).then(r => r.json()).then(d => {
     gridApi.setGridOption('rowData', d);
+    if (savedFilters && Object.keys(savedFilters).length) {
+      gridApi.setFilterModel(savedFilters);
+    }
     upd();
   }).catch(err => console.error('Failed to load employee data:', err));
 }

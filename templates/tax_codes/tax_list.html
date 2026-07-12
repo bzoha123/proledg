@@ -11,28 +11,226 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
-  .ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif; --ag-font-size:13px; --ag-header-background-color:#1e3a5f; --ag-header-foreground-color:#fff; --ag-border-color:#e2e8f0; --ag-row-hover-color:#eff6ff; --ag-selected-row-background-color:#dbeafe; --ag-header-height:44px; --ag-row-height:42px; }
-  .ag-theme-alpine .ag-header-cell-label { font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; }
-  .tx-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
-  .tx-badge-active { background:#dcfce7; color:#15803d; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; }
-  .tx-badge-inactive { background:#fee2e2; color:#b91c1c; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+/* ═══════════════════════════════════════════════════════
+   AG Grid - Enterprise Theme with Proledg styling (EXACTLY LIKE EMPLOYEES)
+   ═══════════════════════════════════════════════════════ */
+.ag-theme-alpine {
+    --ag-font-family:'Segoe UI',system-ui,sans-serif;
+    --ag-font-size:13px;
+    --ag-header-background-color:#1e3a5f;
+    --ag-header-foreground-color:#fff;
+    --ag-border-color:#e2e8f0;
+    --ag-row-hover-color:#eff6ff;
+    --ag-selected-row-background-color:#dbeafe;
+    --ag-header-height:44px;
+    --ag-row-height:42px;
+    --ag-cell-horizontal-padding:12px;
+}
+.ag-theme-alpine .ag-header-cell-label {
+    font-weight:700;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    overflow:visible;
+}
+.ag-theme-alpine .ag-header-cell-text {
+    overflow:visible;
+    text-overflow:clip;
+    white-space:nowrap;
+}
+.ag-theme-alpine .ag-header-cell:hover {
+    background:rgba(255,255,255,.08) !important;
+}
+.ag-theme-alpine .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-sort-descending-icon,
+.ag-theme-alpine .ag-sort-none-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-header-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-filter {
+    border-radius:10px !important;
+    box-shadow:0 8px 30px rgba(0,0,0,.15) !important;
+    border:1px solid #e2e8f0 !important;
+    overflow:hidden;
+    min-width:260px;
+    background:white;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input {
+    border:1.5px solid #d1d5db !important;
+    border-radius:7px !important;
+    padding:6px 10px !important;
+    font-size:12px !important;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+    box-shadow:0 0 0 2px rgba(37,99,235,.12) !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel {
+    padding:8px 10px !important;
+    background:#f8fafc !important;
+    border-top:1px solid #e2e8f0 !important;
+    display:flex !important;
+    gap:6px !important;
+    justify-content:space-between !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button {
+    padding:5px 14px !important;
+    border-radius:7px !important;
+    font-size:12px !important;
+    font-weight:600 !important;
+    border:none !important;
+    cursor:pointer !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"] {
+    background:linear-gradient(135deg,#16a34a,#15803d) !important;
+    color:white !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"] {
+    background:white !important;
+    color:#374151 !important;
+    border:1.5px solid #d1d5db !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input {
+    border:1px solid #e2e8f0 !important;
+    border-radius:5px !important;
+    padding:3px 7px !important;
+    font-size:11px !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+}
+.ag-theme-alpine .ag-row-even {
+    background:white;
+}
+.ag-theme-alpine .ag-row-odd {
+    background:#fafbfc;
+}
+.ag-theme-alpine .ag-row-hover {
+    background:#eff6ff !important;
+}
+.ag-theme-alpine .ag-cell {
+    border-right:1px solid #f1f5f9 !important;
+}
+
+/* Toolbar (matching Employees/Vendors) */
+.tx-toolbar {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+}
+.tool-btn {
+    width:34px;
+    height:34px;
+    border-radius:7px;
+    border:1.5px solid #d1d5db;
+    background:white;
+    color:#6b7280;
+    cursor:pointer;
+    font-size:13px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    transition:all .12s;
+}
+.tool-btn:hover {
+    border-color:#2563eb;
+    color:#2563eb;
+    background:#eff6ff;
+}
+.tool-btn-green { background:#16a34a; color:white; border:none; }
+.tool-btn-green:hover { background:#15803d; }
+.tool-btn-blue { background:#2563eb; color:white; border:none; }
+.tool-btn-blue:hover { background:#1d4ed8; }
+
+.search-form { position:relative; margin-inline-start:auto; }
+.search-icon {
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#9ca3af;
+    font-size:12px;
+    z-index:2;
+}
+.search-input {
+    padding:7px 12px 7px 32px;
+    border:1.5px solid #d1d5db;
+    border-radius:7px;
+    font-size:12px;
+    outline:none;
+}
+.search-input:focus { border-color:#2563eb; }
+
+/* Status badges */
+.tx-badge-active {
+    background:#dcfce7;
+    color:#15803d;
+    padding:2px 10px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:700;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+}
+.tx-badge-inactive {
+    background:#fee2e2;
+    color:#b91c1c;
+    padding:2px 10px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:700;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+}
+
+/* Modal */
+.modal-header { background:#1e3a5f; color:#fff; border-bottom:none; }
+.modal-header .btn-close { filter:brightness(0) invert(1); }
+.modal-content { border-radius:12px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+.form-label { font-size:12px; font-weight:600; color:#374151; margin-bottom:4px; }
+.form-control:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="proledg-page">
   <h2 class="page-heading">{% if ar %}{{ title_ar }}{% else %}{{ title_en }}{% endif %}</h2>
+  
   <div class="tx-toolbar">
     <button class="tool-btn tool-btn-green" onclick="openAdd()" title="{% if ar %}جديد{% else %}New{% endif %}"><i class="fas fa-plus"></i></button>
     <button class="tool-btn" onclick="openEdit()" title="{% if ar %}تعديل{% else %}Edit{% endif %}"><i class="fas fa-pencil-alt"></i></button>
     <button class="tool-btn" onclick="del()" title="{% if ar %}حذف{% else %}Delete{% endif %}"><i class="fas fa-trash"></i></button>
     <button class="tool-btn" onclick="loadData()" title="{% if ar %}تحديث{% else %}Refresh{% endif %}"><i class="fas fa-sync-alt"></i></button>
     <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'{{ kind }}_tax_codes.csv'})" title="Excel/CSV"><i class="fas fa-file-export"></i></button>
-    <div class="search-form" style="margin-inline-start:auto;"><i class="fas fa-search search-icon"></i>
+    <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null);document.querySelector('.search-input').value='';gridApi.setGridOption('quickFilterText','')" title="Clear Filters"><i class="fas fa-times-circle"></i></button>
+    <div class="search-form">
+      <i class="fas fa-search search-icon"></i>
       <input type="text" class="search-input" style="width:220px" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" oninput="gridApi&&gridApi.setGridOption('quickFilterText',this.value)">
     </div>
   </div>
-  <div id="txGrid" class="ag-theme-alpine" style="width:100%;height:520px;"></div>
+
+  <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;overflow:hidden;">
+    <div id="txGrid" class="ag-theme-alpine" style="width:100%;height:520px;"></div>
+  </div>
+  <div class="proledg-pagination">
+    <span class="page-count" id="pageInfo">–</span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="small text-muted">{% if ar %}صفوف:{% else %}Rows:{% endif %}</span>
+      <select class="form-select form-select-sm" style="width:72px" onchange="gridApi&&gridApi.setGridOption('paginationPageSize',+this.value)">
+        <option value="10">10</option><option value="20" selected>20</option><option value="50">50</option>
+      </select>
+    </div>
+  </div>
 </div>
 
 <div class="modal fade" id="txModal" tabindex="-1">
@@ -76,93 +274,347 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
 <script>
 const CSRF  = '{{ csrf_token() }}';
 const IS_AR = {{ 'true' if ar else 'false' }};
 const KIND  = '{{ kind }}';
 const DATA_URL = '/' + KIND + '-tax-codes/data';
 let gridApi;
+let _txModal = null;
 
-function badge(v){ return v==='Active'
-  ? '<span class="tx-badge-active">'+(IS_AR?'نشط':'Active')+'</span>'
-  : '<span class="tx-badge-inactive">'+(IS_AR?'غير نشط':'Inactive')+'</span>'; }
+/* ══ Status badge renderer ══ */
+function badge(v) {
+  if (v === 'Active') {
+    return '<span class="tx-badge-active"><i class="fas fa-circle" style="font-size:6px;"></i> ' + (IS_AR ? 'نشط' : 'Active') + '</span>';
+  }
+  return '<span class="tx-badge-inactive"><i class="fas fa-circle" style="font-size:6px;"></i> ' + (IS_AR ? 'غير نشط' : 'Inactive') + '</span>';
+}
 
-const _locale = IS_AR ? { noRowsToShow:'لا توجد بيانات', searchOoo:'بحث...' }
-                      : { noRowsToShow:'No records found', searchOoo:'Search...' };
+/* ══ AG Grid Locale ══ */
+const _locale = IS_AR ? {
+  filterOoo: 'تصفية...',
+  equals: 'يساوي',
+  notEqual: 'لا يساوي',
+  contains: 'يحتوي على',
+  notContains: 'لا يحتوي على',
+  startsWith: 'يبدأ بـ',
+  endsWith: 'ينتهي بـ',
+  blank: 'فارغ',
+  notBlank: 'غير فارغ',
+  lessThan: 'أقل من',
+  greaterThan: 'أكبر من',
+  applyFilter: 'تطبيق',
+  clearFilter: 'مسح',
+  resetFilter: 'إعادة تعيين',
+  addFilterCondition: '+ إضافة قاعدة',
+  matchAll: 'يطابق الكل',
+  matchAny: 'يطابق أي',
+  andCondition: 'و',
+  orCondition: 'أو',
+  noRowsToShow: 'لا توجد بيانات',
+  loadingOoo: 'جاري التحميل...',
+  searchOoo: 'بحث...',
+  sortAscending: 'تصاعدي',
+  sortDescending: 'تنازلي',
+} : {
+  filterOoo: 'Filter...',
+  applyFilter: 'Apply',
+  clearFilter: 'Clear',
+  resetFilter: 'Reset',
+  addFilterCondition: '+ Add Rule',
+  matchAll: 'Match All',
+  matchAny: 'Match Any',
+  noRowsToShow: 'No records found',
+  searchOoo: 'Search...',
+};
+
+/* ══ Column Definitions ══ */
 const cols = [
-  { headerName: IS_AR?'رمز الحساب':'Account Code', field:'account_code', minWidth:140, pinned:IS_AR?'right':'left', filter:'agTextColumnFilter' },
-  { headerName: IS_AR?'الرمز الضريبي':'Tax Code', field:'tax_code', width:130, filter:'agTextColumnFilter' },
-  { headerName: IS_AR?'الوصف':'Section', field:'section', minWidth:320, flex:2, filter:'agTextColumnFilter' },
-  { headerName: IS_AR?'الحالة':'Status', field:'status', width:130, cellRenderer:p=>badge(p.value) },
+  {
+    headerName: '#',
+    field: 'id',
+    width: 65,
+    filter: false,
+    floatingFilter: false,
+    suppressMenu: true,
+    checkboxSelection: true,
+    headerCheckboxSelection: true,
+    pinned: IS_AR ? 'right' : 'left',
+    sortable: false,
+    resizable: false,
+  },
+  {
+    headerName: IS_AR ? 'رمز الحساب' : 'Account Code',
+    field: 'account_code',
+    minWidth: 140,
+    pinned: IS_AR ? 'right' : 'left',
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: IS_AR ? 'الرمز الضريبي' : 'Tax Code',
+    field: 'tax_code',
+    width: 130,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: IS_AR ? 'الوصف' : 'Section',
+    field: 'section',
+    minWidth: 320,
+    flex: 2,
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: IS_AR ? 'الحالة' : 'Status',
+    field: 'status',
+    width: 130,
+    cellRenderer: function(p) { return badge(p.value); },
+    filter: 'agSetColumnFilter',
+    floatingFilter: false,
+    filterParams: {
+      values: ['Active', 'Inactive'],
+      buttons: ['apply', 'reset', 'clear']
+    }
+  }
 ];
-agGrid.createGrid(document.getElementById('txGrid'), {
-  columnDefs: cols, rowData: [], pagination:true, paginationPageSize:20,
-  rowSelection:'single', animateRows:true, enableRtl:IS_AR, localeText:_locale,
-  multiSortKey:'ctrl',
-  defaultColDef:{ sortable:true, resizable:true, filter:true, floatingFilter:true, unSortIcon:true,
-    menuTabs:['filterMenuTab','generalMenuTab'],
-    filterParams:{ buttons:['apply','reset','clear'], closeOnApply:true } },
-  onGridReady(p){ gridApi=p.api; if(window.GridKit) GridKit.enhance(p,'txGrid',{storageKey:KIND+'_tax',exportName:KIND+'TaxCodes'}); p.api.sizeColumnsToFit(); loadData(); },
-  onGridSizeChanged(p){ p.api.sizeColumnsToFit(); },
-  onRowDoubleClicked(){ openEdit(); },
+
+/* ══ Default Column Definition ══ */
+const defaultColDef = {
+  sortable: true,
+  resizable: true,
+  filter: true,
+  floatingFilter: true,
+  suppressMenu: false,
+  unSortIcon: true,
+  enableRowGroup: true,
+  enablePivot: true,
+  enableValue: true,
+  menuTabs: ['filterMenuTab', 'columnsMenuTab', 'generalMenuTab'],
+  filterParams: {
+    buttons: ['apply', 'reset', 'clear'],
+    closeOnApply: true,
+    maxNumConditions: 10
+  }
+};
+
+/* ══ Initialize Grid ══ */
+document.addEventListener('DOMContentLoaded', function() {
+  const el = document.getElementById('txGrid');
+  if (!el) return;
+  
+  agGrid.createGrid(el, {
+    columnDefs: cols,
+    rowData: [],
+    pagination: true,
+    paginationPageSize: 20,
+    animateRows: true,
+    enableRtl: IS_AR,
+    localeText: _locale,
+    multiSortKey: 'ctrl',
+    defaultColDef: defaultColDef,
+    rowSelection: 'multiple',
+    suppressRowClickSelection: true,
+    
+    // ── ENTERPRISE FEATURES (EXACTLY LIKE EMPLOYEES) ──
+    sideBar: {
+      toolPanels: [
+        {
+          id: 'columns',
+          labelDefault: IS_AR ? 'الأعمدة' : 'Columns',
+          labelKey: 'columns',
+          iconKey: 'columns',
+          toolPanel: 'agColumnsToolPanel'
+        },
+        {
+          id: 'filters',
+          labelDefault: IS_AR ? 'الفلاتر' : 'Filters',
+          labelKey: 'filters',
+          iconKey: 'filter',
+          toolPanel: 'agFiltersToolPanel'
+        }
+      ],
+      defaultToolPanel: ''
+    },
+    rowGroupPanelShow: 'always',
+    pivotPanelShow: 'always',
+    groupDisplayType: 'groupRows',
+    
+    onGridReady: function(p) {
+      gridApi = p.api;
+      // if (window.GridKit) {
+      //   GridKit.enhance(p, 'txGrid', {
+      //     storageKey: KIND + '_tax',
+      //     exportName: KIND + 'TaxCodes'
+      //   });
+      // }
+      loadData();
+    },
+    onFilterChanged: updateStatus,
+    onPaginationChanged: updateStatus,
+    onSelectionChanged: updateStatus,
+    onGridSizeChanged: function(p) {
+      p.api.sizeColumnsToFit();
+    },
+    onRowDoubleClicked: function() {
+      openEdit();
+    },
+    getRowStyle: function(p) {
+      return p.node.rowIndex % 2 === 0 ? { background: '#fff' } : { background: '#fafbfc' };
+    }
+  });
+  
+  // Initialize modal
+  const modalEl = document.getElementById('txModal');
+  if (modalEl) {
+    _txModal = new bootstrap.Modal(modalEl);
+  }
 });
 
-function loadData(){ fetch(DATA_URL).then(r=>r.json()).then(d=>gridApi.setGridOption('rowData',d)); }
+/* ══ Update Status ══ */
+function updateStatus() {
+  if (!gridApi) return;
+  const total = gridApi.getDisplayedRowCount();
+  const selected = gridApi.getSelectedRows().length;
+  const pageInfo = document.getElementById('pageInfo');
+  if (pageInfo) {
+    const text = selected > 0
+      ? `${selected} ${IS_AR ? 'محدد' : 'selected'}`
+      : `${total} ${IS_AR ? 'سجل' : 'records'}`;
+    pageInfo.textContent = text;
+  }
+}
 
-function openAdd(){
-  document.getElementById('txModalTitle').textContent = IS_AR?'رمز ضريبي جديد':'New Tax Code';
-  document.getElementById('tx_id').value='';
-  document.getElementById('tx_account').value='';
-  document.getElementById('tx_code').value='';
-  document.getElementById('tx_code').readOnly=false;
-  document.getElementById('tx_code_hint').style.display='none';
-  document.getElementById('tx_section').value='';
-  document.getElementById('tx_status').value='Active';
-  new bootstrap.Modal(document.getElementById('txModal')).show();
+/* ══ Load Data ══ */
+function loadData() {
+  var savedFilters = gridApi ? gridApi.getFilterModel() : null;
+  
+  fetch(DATA_URL)
+    .then(r => r.json())
+    .then(d => {
+      gridApi.setGridOption('rowData', d);
+      if (savedFilters && Object.keys(savedFilters).length) {
+        gridApi.setFilterModel(savedFilters);
+      }
+      updateStatus();
+    })
+    .catch(err => console.error('Failed to load data:', err));
 }
-function openEdit(){
-  const r=gridApi.getSelectedRows()[0];
-  if(!r){ alert(IS_AR?'اختر سجلاً':'Select a record'); return; }
-  document.getElementById('txModalTitle').textContent = IS_AR?'تعديل رمز ضريبي':'Edit Tax Code';
-  document.getElementById('tx_id').value=r.id;
-  document.getElementById('tx_account').value=r.account_code;
-  document.getElementById('tx_code').value=r.tax_code;
-  document.getElementById('tx_code').readOnly=true;      // tax_code fixed after creation
-  document.getElementById('tx_code_hint').style.display='block';
-  document.getElementById('tx_section').value=r.section;
-  document.getElementById('tx_status').value=r.status;
-  new bootstrap.Modal(document.getElementById('txModal')).show();
+
+/* ══ Open Add ══ */
+function openAdd() {
+  document.getElementById('txModalTitle').textContent = IS_AR ? 'رمز ضريبي جديد' : 'New Tax Code';
+  document.getElementById('tx_id').value = '';
+  document.getElementById('tx_account').value = '';
+  document.getElementById('tx_code').value = '';
+  document.getElementById('tx_code').readOnly = false;
+  document.getElementById('tx_code_hint').style.display = 'none';
+  document.getElementById('tx_section').value = '';
+  document.getElementById('tx_status').value = 'Active';
+  
+  if (_txModal) {
+    _txModal.show();
+  }
 }
-function save(again){
-  const id=document.getElementById('tx_id').value;
-  const acc=document.getElementById('tx_account').value.trim();
-  const code=document.getElementById('tx_code').value.trim();
-  const section=document.getElementById('tx_section').value.trim();
-  if(!acc||!code||!section){ alert(IS_AR?'جميع الحقول مطلوبة':'Account Code, Tax Code and Section are required'); return; }
-  const fd=new FormData();
-  fd.set('csrf_token',CSRF);
-  fd.set('account_code',acc);
-  fd.set('tax_code',code);
-  fd.set('section',section);
-  fd.set('status',document.getElementById('tx_status').value);
-  const url = id ? '/'+KIND+'-tax-codes/'+id+'/edit' : '/'+KIND+'-tax-codes/add';
-  fetch(url,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
-    if(!d.ok){ alert(d.error||'Error'); return; }
+
+/* ══ Open Edit ══ */
+function openEdit() {
+  const r = gridApi.getSelectedRows()[0];
+  if (!r) {
+    alert(IS_AR ? 'اختر سجلاً' : 'Select a record');
+    return;
+  }
+  
+  document.getElementById('txModalTitle').textContent = IS_AR ? 'تعديل رمز ضريبي' : 'Edit Tax Code';
+  document.getElementById('tx_id').value = r.id;
+  document.getElementById('tx_account').value = r.account_code;
+  document.getElementById('tx_code').value = r.tax_code;
+  document.getElementById('tx_code').readOnly = true;
+  document.getElementById('tx_code_hint').style.display = 'block';
+  document.getElementById('tx_section').value = r.section;
+  document.getElementById('tx_status').value = r.status;
+  
+  if (_txModal) {
+    _txModal.show();
+  }
+}
+
+/* ══ Save ══ */
+function save(again) {
+  const id = document.getElementById('tx_id').value;
+  const acc = document.getElementById('tx_account').value.trim();
+  const code = document.getElementById('tx_code').value.trim();
+  const section = document.getElementById('tx_section').value.trim();
+  
+  if (!acc || !code || !section) {
+    alert(IS_AR ? 'جميع الحقول مطلوبة' : 'Account Code, Tax Code and Section are required');
+    return;
+  }
+  
+  const fd = new FormData();
+  fd.set('csrf_token', CSRF);
+  fd.set('account_code', acc);
+  fd.set('tax_code', code);
+  fd.set('section', section);
+  fd.set('status', document.getElementById('tx_status').value);
+  
+  const url = id ? '/' + KIND + '-tax-codes/' + id + '/edit' : '/' + KIND + '-tax-codes/add';
+  
+  fetch(url, {
+    method: 'POST',
+    body: fd
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.ok) {
+      alert(d.error || 'Error');
+      return;
+    }
     loadData();
-    if(again && !id){ openAdd(); }
-    else { bootstrap.Modal.getInstance(document.getElementById('txModal')).hide(); }
-  }).catch(()=>alert(IS_AR?'خطأ في الحفظ':'Save failed'));
+    if (again && !id) {
+      // Save & New: reset form but keep modal open
+      document.getElementById('tx_account').value = '';
+      document.getElementById('tx_code').value = '';
+      document.getElementById('tx_code').readOnly = false;
+      document.getElementById('tx_code_hint').style.display = 'none';
+      document.getElementById('tx_section').value = '';
+      document.getElementById('tx_status').value = 'Active';
+      document.getElementById('tx_id').value = '';
+      document.getElementById('txModalTitle').textContent = IS_AR ? 'رمز ضريبي جديد' : 'New Tax Code';
+    } else {
+      if (_txModal) {
+        _txModal.hide();
+      }
+    }
+  })
+  .catch(() => alert(IS_AR ? 'خطأ في الحفظ' : 'Save failed'));
 }
-function del(){
-  const r=gridApi.getSelectedRows()[0];
-  if(!r){ alert(IS_AR?'اختر سجلاً':'Select a record'); return; }
-  if(!confirm((IS_AR?'حذف ':'Delete ')+r.tax_code+'?')) return;
-  const fd=new FormData(); fd.set('csrf_token',CSRF);
-  fetch('/'+KIND+'-tax-codes/'+r.id+'/delete',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
-    if(!d.ok){ alert(d.error||'Error'); return; }
+
+/* ══ Delete ══ */
+function del() {
+  const r = gridApi.getSelectedRows()[0];
+  if (!r) {
+    alert(IS_AR ? 'اختر سجلاً' : 'Select a record');
+    return;
+  }
+  
+  if (!confirm((IS_AR ? 'حذف ' : 'Delete ') + r.tax_code + '?')) return;
+  
+  const fd = new FormData();
+  fd.set('csrf_token', CSRF);
+  
+  fetch('/' + KIND + '-tax-codes/' + r.id + '/delete', {
+    method: 'POST',
+    body: fd
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.ok) {
+      alert(d.error || 'Error');
+      return;
+    }
     loadData();
-  });
+  })
+  .catch(() => alert(IS_AR ? 'خطأ في الحذف' : 'Delete failed'));
 }
 </script>
 {% endblock %}

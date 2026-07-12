@@ -64,20 +64,28 @@ def fy_add():
     if FinancialYear.query.filter_by(financial_year=fy_str).first():
         return jsonify({'ok': False, 'error': _t(f'{fy_str} already exists.', f'{fy_str} موجود بالفعل')}), 400
 
+    # Continuity guard: years cannot be skipped. The first year can be anything,
+    # but every subsequent year must be exactly (latest existing year + 1).
+    latest = FinancialYear.query.order_by(FinancialYear.year.desc()).first()
+    if latest and latest.year is not None:
+        expected = latest.year + 1
+        if year != expected:
+            return jsonify({'ok': False, 'error': _t(
+                f'You must create FY-{expected} next (years cannot be skipped).',
+                f'يجب إنشاء FY-{expected} التالي (لا يمكن تخطي السنوات).')}), 400
+
     status = f.get('status', 'Open')
     if status not in ('Open', 'Closed'):
         status = 'Open'
 
     try:
-        # Only one Open financial year allowed at a time.
-        if status == 'Open':
-            FinancialYear.query.filter_by(status='Open').update({'status': 'Closed'})
-
+        # A new Financial Year always starts Open — its 12 months are created
+        # Open, and the year's status is derived from them (see fm_edit).
         fy = FinancialYear(
             financial_year=fy_str,
             range=f'01-Jan-{year} → 31-Dec-{year}',
             year=year,
-            status=status,
+            status='Open',
         )
         db.session.add(fy)
         db.session.flush()   # get fy.id
@@ -137,8 +145,19 @@ def fm_edit(id):
         status = fm.status
     try:
         fm.status = status
+        db.session.flush()
+        # Auto-close rule: the Financial Year is Closed only when ALL of its
+        # months are Closed; otherwise it stays Open. Status is derived here,
+        # never set manually.
+        parent = FinancialYear.query.get(fm.financial_year_id)
+        if parent:
+            months = FinancialYearDetail.query.filter_by(
+                financial_year_id=parent.id).all()
+            all_closed = bool(months) and all(
+                (m.status or 'Open') == 'Closed' for m in months)
+            parent.status = 'Closed' if all_closed else 'Open'
         db.session.commit()
-        return jsonify({'ok': True})
+        return jsonify({'ok': True, 'year_status': parent.status if parent else None})
     except Exception as e:
         db.session.rollback()
         return jsonify({'ok': False, 'error': str(e)}), 500

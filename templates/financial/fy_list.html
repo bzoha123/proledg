@@ -78,10 +78,9 @@
         </div>
         <div class="mb-2">
           <label class="form-label fw-semibold">{% if ar %}الحالة{% else %}Status{% endif %}</label>
-          <select id="fy_status" class="form-select">
-            <option value="Open">Open</option>
-            <option value="Closed">Closed</option>
-          </select>
+          <input type="text" id="fy_status" class="form-control" value="Open" readonly
+                 style="background:#f0fdf4;color:#15803d;font-weight:700;">
+          <div class="form-text">{% if ar %}تُغلق السنة تلقائياً عند إغلاق كل أشهرها{% else %}The year closes automatically when all its months are Closed.{% endif %}</div>
         </div>
       </div>
       <div class="modal-footer">

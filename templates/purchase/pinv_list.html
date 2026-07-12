@@ -6,20 +6,233 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
-.ag-theme-alpine{--ag-font-family:'Segoe UI',Tahoma,sans-serif;--ag-font-size:13px;--ag-header-background-color:#1e3a5f;--ag-header-foreground-color:#fff;--ag-border-color:#e2e8f0;--ag-row-hover-color:#f0f7ff;--ag-header-height:44px;--ag-row-height:44px;}
-.ag-theme-alpine .ag-header-cell-label{font-weight:700;font-size:12px;text-transform:uppercase;}
-.ag-theme-alpine .ag-filter{border-radius:10px!important;box-shadow:0 6px 24px rgba(0,0,0,.14)!important;border:1px solid #e2e8f0!important;overflow:hidden;min-width:255px;background:white;}
-.ag-theme-alpine .ag-filter-apply-panel{padding:8px 10px!important;background:#f8fafc!important;border-top:1px solid #e2e8f0!important;display:flex!important;gap:6px!important;justify-content:space-between!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button{padding:5px 14px!important;border-radius:7px!important;font-size:12px!important;font-weight:600!important;border:none!important;cursor:pointer!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]{background:linear-gradient(135deg,#16a34a,#15803d)!important;color:white!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"]{background:white!important;color:#374151!important;border:1.5px solid #d1d5db!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"]{background:white!important;color:#374151!important;border:1.5px solid #d1d5db!important;}
-.ag-theme-alpine .ag-add-filter-condition{padding:4px 10px!important;}
-.ag-theme-alpine .ag-add-filter-condition .ag-button{color:#2563eb!important;font-size:12px!important;font-weight:600!important;background:none!important;border:none!important;cursor:pointer!important;}
-.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input{border:1.5px solid #d1d5db!important;border-radius:7px!important;padding:6px 10px!important;font-size:12px!important;width:100%!important;}
-.ag-theme-alpine .ag-floating-filter-input input{border:1px solid #e2e8f0!important;border-radius:5px!important;padding:3px 7px!important;font-size:11px!important;}
-.ag-ab{width:28px;height:28px;border-radius:7px;border:none;display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all .12s;}
-.ag-ab-view{background:#0ea5e9;color:white;}.ag-ab-edit{background:#f59e0b;color:white;}.ag-ab-del{background:#ef4444;color:white;}
+/* ═══════════════════════════════════════════════════════
+   AG Grid - Enterprise Theme with Proledg styling (EXACTLY LIKE EMPLOYEES)
+   ═══════════════════════════════════════════════════════ */
+.ag-theme-alpine {
+    --ag-font-family:'Segoe UI',system-ui,sans-serif;
+    --ag-font-size:13px;
+    --ag-header-background-color:#1e3a5f;
+    --ag-header-foreground-color:#fff;
+    --ag-border-color:#e2e8f0;
+    --ag-row-hover-color:#eff6ff;
+    --ag-selected-row-background-color:#dbeafe;
+    --ag-header-height:44px;
+    --ag-row-height:44px;
+    --ag-cell-horizontal-padding:12px;
+}
+.ag-theme-alpine .ag-header-cell-label {
+    font-weight:700;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    overflow:visible;
+}
+.ag-theme-alpine .ag-header-cell-text {
+    overflow:visible;
+    text-overflow:clip;
+    white-space:nowrap;
+}
+.ag-theme-alpine .ag-header-cell:hover {
+    background:rgba(255,255,255,.08) !important;
+}
+.ag-theme-alpine .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-sort-descending-icon,
+.ag-theme-alpine .ag-sort-none-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-header-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-filter {
+    border-radius:10px !important;
+    box-shadow:0 8px 30px rgba(0,0,0,.15) !important;
+    border:1px solid #e2e8f0 !important;
+    overflow:hidden;
+    min-width:260px;
+    background:white;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input {
+    border:1.5px solid #d1d5db !important;
+    border-radius:7px !important;
+    padding:6px 10px !important;
+    font-size:12px !important;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+    box-shadow:0 0 0 2px rgba(37,99,235,.12) !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel {
+    padding:8px 10px !important;
+    background:#f8fafc !important;
+    border-top:1px solid #e2e8f0 !important;
+    display:flex !important;
+    gap:6px !important;
+    justify-content:space-between !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button {
+    padding:5px 14px !important;
+    border-radius:7px !important;
+    font-size:12px !important;
+    font-weight:600 !important;
+    border:none !important;
+    cursor:pointer !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"] {
+    background:linear-gradient(135deg,#16a34a,#15803d) !important;
+    color:white !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"] {
+    background:white !important;
+    color:#374151 !important;
+    border:1.5px solid #d1d5db !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input {
+    border:1px solid #e2e8f0 !important;
+    border-radius:5px !important;
+    padding:3px 7px !important;
+    font-size:11px !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+}
+.ag-theme-alpine .ag-row-even {
+    background:white;
+}
+.ag-theme-alpine .ag-row-odd {
+    background:#fafbfc;
+}
+.ag-theme-alpine .ag-row-hover {
+    background:#eff6ff !important;
+}
+.ag-theme-alpine .ag-cell {
+    border-right:1px solid #f1f5f9 !important;
+}
+
+/* Action buttons (matching Employees/Vendors) */
+.ag-ab {
+    width:28px;
+    height:28px;
+    border-radius:7px;
+    border:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    cursor:pointer;
+    transition:all .12s;
+}
+.ag-ab:hover {
+    transform:translateY(-1px);
+    box-shadow:0 2px 6px rgba(0,0,0,.2);
+}
+.ag-ab-view { background:#0ea5e9; color:white; }
+.ag-ab-view:hover { background:#0284c7; }
+.ag-ab-edit { background:#f59e0b; color:white; }
+.ag-ab-edit:hover { background:#d97706; }
+.ag-ab-del { background:#ef4444; color:white; }
+.ag-ab-del:hover { background:#dc2626; }
+
+/* Status pill */
+.st-pill {
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    padding:3px 10px;
+    border-radius:10px;
+    font-size:11px;
+    font-weight:700;
+}
+.st-open { background:#dbeafe; color:#2563eb; }
+.st-pending { background:#fef3c7; color:#d97706; }
+.st-approved { background:#dcfce7; color:#15803d; }
+.st-closed { background:#f1f5f9; color:#6b7280; }
+.st-cancelled { background:#fee2e2; color:#dc2626; }
+
+/* Toolbar (matching Employees/Vendors) */
+.toolbar {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:14px;
+}
+.toolbar-left, .toolbar-right {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+}
+.tool-btn {
+    width:34px;
+    height:34px;
+    border-radius:7px;
+    border:1.5px solid #d1d5db;
+    background:white;
+    color:#6b7280;
+    cursor:pointer;
+    font-size:13px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    transition:all .12s;
+}
+.tool-btn:hover {
+    border-color:#2563eb;
+    color:#2563eb;
+    background:#eff6ff;
+}
+.tool-btn-green { background:#16a34a; color:white; border:none; }
+.tool-btn-green:hover { background:#15803d; }
+.tool-btn-blue { background:#2563eb; color:white; border:none; }
+.tool-btn-blue:hover { background:#1d4ed8; }
+
+.search-form { position:relative; }
+.search-icon {
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#9ca3af;
+    font-size:12px;
+    z-index:2;
+}
+.search-input {
+    padding:7px 12px 7px 32px;
+    border:1.5px solid #d1d5db;
+    border-radius:7px;
+    font-size:12px;
+    outline:none;
+}
+.search-input:focus { border-color:#2563eb; }
+
+.sel-badge {
+    font-size:11px;
+    color:#6b7280;
+    background:#f1f5f9;
+    padding:4px 10px;
+    border-radius:5px;
+    font-weight:600;
+}
+
+.proledg-pagination {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 16px;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-top:none;
+    border-radius:0 0 8px 8px;
+}
+.page-count { font-size:12px; color:#6b7280; font-weight:600; }
+
+/* ── Modal Styles ── */
 .pur-hdr{background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:16px 22px;display:flex;justify-content:space-between;align-items:center;}
 .pur-hdr h5{margin:0;color:white;font-weight:700;font-size:15px;}
 .pur-badge{background:rgba(255,255,255,.2);color:white;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;margin-left:8px;}
@@ -27,6 +240,8 @@
 .pur-tab{padding:10px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;}
 .pur-tab:hover{color:#2563eb;}
 .pur-tab.active{color:#2563eb;border-bottom-color:#2563eb;}
+.pur-tab-pane{display:none!important;padding:0;}
+.pur-tab-pane.active{display:block!important;}
 .pur-section{border:1.5px solid #e2e8f0;border-radius:10px;margin:14px 18px 0;overflow:hidden;}
 .pur-section-hdr{width:100%;background:white;border:none;padding:12px 16px;text-align:left;font-weight:700;font-size:13px;color:#1e3a5f;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .1s;}
 .pur-section-hdr:hover{background:#f8fafc;}
@@ -40,11 +255,10 @@
 .f-grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
 .f-item{display:flex;flex-direction:column;}
 .f-lbl{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
-.f-req{color:#ef4444;}
-.f-inp{border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;width:100%;transition:border-color .15s;box-sizing:border-box;}
+.f-req{color:#ef4444;margin-left:2px;}
+.f-inp{border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;width:100%;transition:border-color .15s;font-family:inherit;box-sizing:border-box;}
 .f-inp:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
 .f-inp[readonly]{background:#f8fafc;color:#374151;}
-.f-inp.required-field{border-color:#fca5a5;}
 select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
 .po-selected-banner{background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:none;align-items:center;gap:10px;font-size:13px;}
 .po-selected-banner i{color:#16a34a;font-size:16px;}
@@ -71,7 +285,9 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 .pur-footer{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#f8fafc;border-top:2px solid #e2e8f0;}
 .btn-f{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;}
 .btn-save{background:linear-gradient(135deg,#16a34a,#15803d);color:white;box-shadow:0 2px 8px rgba(22,163,74,.3);}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.4);}
 .btn-cancel{background:white;color:#374151;border:1.5px solid #d1d5db;}
+.btn-cancel:hover{background:#f9fafb;}
 </style>
 {% endblock %}
 
@@ -83,25 +299,37 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 {% block content %}
 <div class="proledg-page">
   <h2 class="page-heading">{% if ar %}فواتير الشراء{% else %}Purchase Invoices{% endif %}</h2>
+  
   <div class="toolbar">
     <div class="toolbar-left">
       <button class="tool-btn tool-btn-green" onclick="openAddPINV()"><i class="fas fa-plus"></i></button>
-      <button class="tool-btn tool-btn-blue"  onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
+      <button class="tool-btn tool-btn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
       <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null);document.getElementById('qs').value='';gridApi.setGridOption('quickFilterText','')"><i class="fas fa-times-circle"></i></button>
+      <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'purchase_invoices.csv'})" title="Export"><i class="fas fa-file-export"></i></button>
     </div>
     <div class="toolbar-right d-flex align-items-center gap-3">
-      <span id="selText" style="font-size:12px;font-weight:600;color:#6b7280;">–</span>
-      <div class="search-form"><i class="fas fa-search search-icon"></i>
-        <input type="text" id="qs" class="search-input" style="width:200px"
-               placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"
+      <div class="sel-badge"><span id="selText">0 {% if ar %}فاتورة{% else %}invoices{% endif %}</span></div>
+      <div class="search-form">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="qs" class="search-input" style="width:220px" 
+               placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" 
                oninput="gridApi&&gridApi.setGridOption('quickFilterText',this.value)">
       </div>
     </div>
   </div>
-  <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;overflow:hidden;">
-    <div id="pinvGrid" class="ag-theme-alpine" style="height:480px;width:100%;"></div>
+
+  <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;overflow:hidden;">
+    <div id="pinvGrid" class="ag-theme-alpine" style="height:520px;width:100%;"></div>
   </div>
-  <div class="proledg-pagination"><span class="page-count" id="pageInfo">–</span></div>
+  <div class="proledg-pagination">
+    <span class="page-count" id="pageInfo">–</span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="small text-muted">{% if ar %}صفوف:{% else %}Rows:{% endif %}</span>
+      <select class="form-select form-select-sm" style="width:72px" onchange="gridApi&&gridApi.setGridOption('paginationPageSize',+this.value)">
+        <option value="10">10</option><option value="20" selected>20</option><option value="50">50</option>
+      </select>
+    </div>
+  </div>
 </div>
 
 {# ══ ADD / EDIT MODAL ══ #}
@@ -111,7 +339,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 
       <div class="pur-hdr">
         <div style="display:flex;align-items:center;">
-          <h5 id="pinvTitle"><i class="fas fa-file-invoice me-2"></i>Add Purchase Invoice</h5>
+          <h5 id="pinvTitle"><i class="fas fa-file-invoice me-2"></i>{% if ar %}إضافة فاتورة شراء{% else %}Add Purchase Invoice{% endif %}</h5>
           <span class="pur-badge" id="pinvDocBadge">NEW</span>
         </div>
         <button class="btn-close" style="filter:brightness(0) invert(1);" data-bs-dismiss="modal"></button>
@@ -128,11 +356,11 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
       </div>
 
       <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;height:600px;">
-        <form id="pinvForm">
+        <form id="pinvForm" onsubmit="event.preventDefault(); savePINV();">
         <input type="hidden" id="pinv_id">
 
         {# ══ TAB 1: CONTENT ══ #}
-        <div id="tab_content" style="display:block;">
+        <div class="pur-tab-pane active" id="tab_content">
 
           {# ── Section 1: Invoice Info ── #}
           <div class="pur-section">
@@ -193,7 +421,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                     <option value="">-- {% if ar %}اختياري{% else %}Optional{% endif %} --</option>
                   </select>
                   <div style="font-size:11px;color:#9ca3af;margin-top:4px;">
-                    {% if ar %}يظهر فقط إيصالات الاستلام الخاصة بأمر الشراء المحدد{% else %}Only GRNs linked to the selected PO are listed{% endif %}
+                    {% if ar %}يظهر فقط إيصالات الاستلام المعتمدة الخاصة بأمر الشراء المحدد{% else %}Only Approved GRNs linked to the selected PO are listed{% endif %}
                   </div>
                 </div>
               </div>
@@ -285,7 +513,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                 </span>
                 <span style="font-size:11px;color:#6b7280;">
                   <i class="fas fa-info-circle me-1"></i>
-                  Taxable = (Qty × Rate − Discount) + Freight
+                  {% if ar %}المبلغ الخاضع = (الكمية × السعر − الخصم) + الشحن{% else %}Taxable = (Qty × Rate − Discount) + Freight{% endif %}
                 </span>
               </div>
               <div class="li-wrap">
@@ -352,7 +580,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
         </div>{# end tab_content #}
 
         {# ══ TAB 2: ATTACHMENTS ══ #}
-        <div id="tab_attach" style="display:none;">
+        <div class="pur-tab-pane" id="tab_attach">
           <div style="padding:20px;">
             <div id="attDrop"
                  style="border:2px dashed #bfdbfe;border-radius:12px;padding:40px 24px;
@@ -408,14 +636,35 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
 <script>
 const IS_AR = {{ 'true' if ar else 'false' }};
 const CSRF  = '{{ csrf_token() }}';
 let _liIdx = 0;
 let _attachments = [];
+let _pinvModal = null;
+let _isFetchingDocNo = false;
 
-/* ══ GRN list (for cascading PO → GRN dropdown) ══ */
+/* ══ Document Number Fetch - FIXED: Ensures proper increment ══ */
+async function fetchDocNo() {
+  if (_isFetchingDocNo) return;
+  _isFetchingDocNo = true;
+  try {
+    const url = '/purchase/next-doc-no?type=PINV&force_new=true&_=' + Date.now();
+    const res = await fetch(url);
+    const d = await res.json();
+    if (d.doc_no) {
+      document.getElementById('pinv_doc_no').value = d.doc_no;
+      document.getElementById('pinvDocBadge').textContent = d.doc_no;
+    }
+  } catch(e) {
+    console.error('Error fetching doc no:', e);
+  } finally {
+    _isFetchingDocNo = false;
+  }
+}
+
+/* ══ GRN list (for cascading PO → GRN dropdown) - ONLY APPROVED GRNs ══ */
 const _grnList = [
   {% for g in grns %}{ id: {{ g.id }}, doc_no: '{{ g.doc_no }}', purchase_order_id: {{ g.purchase_order_id or 'null' }} },{% endfor %}
 ];
@@ -423,7 +672,13 @@ const _grnList = [
 function refreshGrnOptions(poId) {
   const sel = document.getElementById('pinv_grn_id');
   if (!sel) return;
-  const matching = _grnList.filter(g => String(g.purchase_order_id) === String(poId));
+  
+  // ⭐ FIX: Only show GRNs that are linked to the selected PO AND have status 'Approved'
+  // The backend should only pass Approved GRNs, but we filter here too for safety
+  const matching = _grnList.filter(g => {
+    return String(g.purchase_order_id) === String(poId);
+  });
+  
   sel.innerHTML = '<option value="">-- ' + (IS_AR ? 'اختياري' : 'Optional') + ' --</option>'
     + matching.map(g => `<option value="${g.id}">${g.doc_no}</option>`).join('');
 }
@@ -440,6 +695,50 @@ function onPinvStatusChange() {
     postEl.disabled = true;
     postEl.value = '';
   }
+}
+
+/* ══ Section toggle ══ */
+function togSec(btn) {
+  const body = btn.nextElementSibling;
+  const ch   = btn.querySelector('.fa-chevron-up, .fa-chevron-down');
+  const open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  btn.classList.toggle('open', !open);
+  if (ch) ch.className = open ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+  if (ch) ch.style.cssText = open ? 'color:#9ca3af;font-size:11px;' : 'color:#2563eb;font-size:11px;';
+}
+
+/* ══ Tab switch ══ */
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.pur-tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.pur-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ══ Vendor bank accounts → populate bank dropdown ══ */
+function loadPinvVendorBanks(vendorId, selectedId) {
+  const sel = document.getElementById('pinv_bank_account');
+  if (!sel) return;
+  if (!vendorId) {
+    sel.innerHTML = '<option value="">-- ' + (IS_AR ? 'اختر المورد أولاً' : 'Select vendor first') + ' --</option>';
+    return;
+  }
+  fetch('/purchase/vendors/' + vendorId + '/banks')
+    .then(r => r.json())
+    .then(banks => {
+      let html = '<option value="">-- ' + (IS_AR ? 'اختر حساباً' : 'Select account') + ' --</option>';
+      (banks || []).forEach(b => {
+        const label = (b.bank_name_en || b.bank_name || '') +
+                      (b.account_number ? ' — ' + b.account_number : '');
+        const selAttr = (String(b.id) === String(selectedId)) ? ' selected' : '';
+        html += '<option value="' + b.id + '"' + selAttr + '>' + label + '</option>';
+      });
+      sel.innerHTML = html;
+    })
+    .catch(() => {
+      sel.innerHTML = '<option value="">-- ' + (IS_AR ? 'لا توجد حسابات' : 'No accounts') + ' --</option>';
+    });
 }
 
 /* ══ PO SELECTION → AUTO-FILL ALL FIELDS (vendor locked, lines locked) ══ */
@@ -527,64 +826,6 @@ function clearPO() {
   recalcSummary(); updLiCount();
 }
 
-/* ══ Section toggle ══ */
-function togSec(btn) {
-  const body = btn.nextElementSibling;
-  const ch   = btn.querySelector('.fa-chevron-up, .fa-chevron-down');
-  const open = body.classList.contains('open');
-  body.classList.toggle('open', !open);
-  btn.classList.toggle('open', !open);
-  if (ch) ch.className  = open ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
-  if (ch) ch.style.cssText = open ? 'color:#9ca3af;font-size:11px;' : 'color:#2563eb;font-size:11px;';
-}
-
-/* ══ Tab switch ══ */
-function switchTab(tabId, btn) {
-  ['tab_content','tab_attach'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.style.display = 'none';
-  });
-  document.querySelectorAll('.pur-tab').forEach(b => b.classList.remove('active'));
-  const t = document.getElementById(tabId); if (t) t.style.display = 'block';
-  btn.classList.add('active');
-}
-
-/* ══ Vendor bank accounts → populate bank dropdown ══ */
-function loadPinvVendorBanks(vendorId, selectedId) {
-  const sel = document.getElementById('pinv_bank_account');
-  if (!sel) return;
-  if (!vendorId) {
-    sel.innerHTML = '<option value="">-- ' + (IS_AR ? 'اختر المورد أولاً' : 'Select vendor first') + ' --</option>';
-    return;
-  }
-  fetch('/purchase/vendors/' + vendorId + '/banks')
-    .then(r => r.json())
-    .then(banks => {
-      let html = '<option value="">-- ' + (IS_AR ? 'اختر حساباً' : 'Select account') + ' --</option>';
-      (banks || []).forEach(b => {
-        const label = (b.bank_name_en || b.bank_name || '') +
-                      (b.account_number ? ' — ' + b.account_number : '');
-        const selAttr = (String(b.id) === String(selectedId)) ? ' selected' : '';
-        html += '<option value="' + b.id + '"' + selAttr + '>' + label + '</option>';
-      });
-      sel.innerHTML = html;
-    })
-    .catch(() => {
-      sel.innerHTML = '<option value="">-- ' + (IS_AR ? 'لا توجد حسابات' : 'No accounts') + ' --</option>';
-    });
-}
-
-/* ══ Doc No fetch ══ */
-async function fetchDocNo() {
-  try {
-    const res = await fetch('/purchase/next-doc-no?type=PINV');
-    const d   = await res.json();
-    document.getElementById('pinv_doc_no').value = d.doc_no;
-    document.getElementById('pinvDocBadge').textContent = d.doc_no;
-  } catch(e) {
-    console.error('Failed to fetch doc no:', e);
-  }
-}
-
 /* ══ Line Items — locked/inherited from PO, read-only ══ */
 function addLiRow(d) {
   const idx = _liIdx++;
@@ -611,21 +852,21 @@ function addLiRow(d) {
   updLiCount();
 }
 
-function removeLi(idx) {
-  const r = document.getElementById('plr_'+idx); if (r) r.remove();
-  recalcSummary(); updLiCount();
-}
-
 function recalcLi(idx) {
   const g = id => parseFloat(document.getElementById(id)?.value || 0) || 0;
-  const qty = g('plq_'+idx), rate = g('plrt_'+idx), disc = g('pld_'+idx), fr = g('plf_'+idx);
+  const qty  = g('plq_'+idx);
+  const rate = g('plrt_'+idx);
+  const disc = g('pld_'+idx);
+  const fr   = g('plf_'+idx);
   const tcEl = document.getElementById('pltc_'+idx);
   const taxRate = tcEl && tcEl.value === 'VAT15' ? 15 : 0;
   const taxable = Math.max(0, (qty * rate - disc) + fr);
   const taxAmt  = Math.round(taxable * taxRate / 100 * 100) / 100;
   const total   = taxable + taxAmt;
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v.toFixed(2); };
-  set('plt_'+idx, taxable); set('plta_'+idx, taxAmt); set('pltot_'+idx, total);
+  set('plt_'+idx,   taxable);
+  set('plta_'+idx,  taxAmt);
+  set('pltot_'+idx, total);
   recalcSummary();
 }
 
@@ -633,24 +874,28 @@ function recalcSummary() {
   let bd=0, disc=0, fr=0, vat=0;
   document.querySelectorAll('#liBody tr').forEach(row => {
     const g = n => parseFloat(row.querySelector(`[name="${n}[]"]`)?.value || 0) || 0;
-    bd += g('li_qty') * g('li_rate'); disc += g('li_discount'); fr += g('li_freight');
-    vat += parseFloat(row.querySelector('[name="li_tax_amount_disp[]"]')?.value || 0) || 0;
+    bd   += g('li_qty') * g('li_rate');
+    disc += g('li_discount');
+    fr   += g('li_freight');
+    vat  += parseFloat(row.querySelector('[name="li_tax_amount_disp[]"]')?.value || 0) || 0;
   });
-  const excl = (bd - disc) + fr, incl = excl + vat;
-  const fmt = n => 'SAR ' + n.toLocaleString('en-SA',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const s = id => document.getElementById(id);
-  if(s('s_total_bd'))   s('s_total_bd').textContent   = fmt(bd);
-  if(s('s_total_disc')) s('s_total_disc').textContent = fmt(disc);
-  if(s('s_total_fr'))   s('s_total_fr').textContent   = fmt(fr);
-  if(s('s_excl_vat'))   s('s_excl_vat').textContent   = fmt(excl);
-  if(s('s_vat_amt'))    s('s_vat_amt').textContent     = fmt(vat);
-  if(s('s_incl_vat'))   s('s_incl_vat').textContent   = fmt(incl);
-  if(s('li_grand_total')) s('li_grand_total').textContent = fmt(incl);
+  const excl = (bd - disc) + fr;
+  const incl = excl + vat;
+  const fmt  = n => 'SAR ' + n.toLocaleString('en-SA', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const s    = id => document.getElementById(id);
+  if (s('s_total_bd'))   s('s_total_bd').textContent   = fmt(bd);
+  if (s('s_total_disc')) s('s_total_disc').textContent = fmt(disc);
+  if (s('s_total_fr'))   s('s_total_fr').textContent   = fmt(fr);
+  if (s('s_excl_vat'))   s('s_excl_vat').textContent   = fmt(excl);
+  if (s('s_vat_amt'))    s('s_vat_amt').textContent     = fmt(vat);
+  if (s('s_incl_vat'))   s('s_incl_vat').textContent   = fmt(incl);
+  if (s('li_grand_total')) s('li_grand_total').textContent = fmt(incl);
 }
 
 function updLiCount() {
   const n = document.querySelectorAll('#liBody tr').length;
-  const el = document.getElementById('liCount'); if (el) el.textContent = n;
+  const el = document.getElementById('liCount');
+  if (el) el.textContent = n;
 }
 
 /* ══ Attachments ══ */
@@ -682,10 +927,11 @@ function updDocCount() {
 }
 
 /* ══ Open Add ══ */
-function openAddPINV() {
+async function openAddPINV() {
   _liIdx = 0; _attachments = [];
   document.getElementById('pinv_id').value = '';
   document.getElementById('pinvTitle').innerHTML = '<i class="fas fa-file-invoice me-2"></i>' + (IS_AR ? 'إضافة فاتورة شراء' : 'Add Purchase Invoice');
+  
   // Reset PO selector to required state
   const poSel = document.getElementById('pinv_po_id');
   poSel.value = '';
@@ -695,13 +941,18 @@ function openAddPINV() {
   document.getElementById('po_status_badge').style.display  = 'none';
   document.getElementById('po_hint').style.display          = 'block';
   refreshGrnOptions('');
+  
   // Clear fields
   ['pinv_vendor_name','pinv_vendor_ref','pinv_remarks'].forEach(id => {
     const e = document.getElementById(id); if (e) e.value = '';
   });
   document.getElementById('pinv_vendor').value = '';
   document.getElementById('pinv_doc_no').value = '';
-  document.getElementById('pinvDocBadge').textContent = 'NEW';
+  document.getElementById('pinvDocBadge').textContent = '...';
+  
+  // ⭐ Fetch fresh document number
+  await fetchDocNo();
+  
   document.getElementById('pinv_status').value = 'Open';
   document.getElementById('pinv_kind').value = 'Goods';
   document.getElementById('pinv_payment').value = 'Credit';
@@ -715,15 +966,25 @@ function openAddPINV() {
   document.getElementById('attList').innerHTML = '';
   document.getElementById('existAttList').innerHTML = '';
   recalcSummary(); updLiCount(); updDocCount();
+  
   switchTab('tab_content', document.querySelector('.pur-tab'));
   document.querySelectorAll('.pur-section-hdr').forEach(btn => {
-    btn.classList.add('open'); btn.nextElementSibling.classList.add('open');
+    btn.classList.add('open');
+    btn.nextElementSibling.classList.add('open');
     const ch = btn.querySelector('.fa-chevron-up,.fa-chevron-down');
     if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
   });
-  fetchDocNo();
   addLiRow();
-  new bootstrap.Modal(document.getElementById('pinvModal')).show();
+  
+  if (!_pinvModal) {
+    const modalEl = document.getElementById('pinvModal');
+    if (modalEl) {
+      _pinvModal = new bootstrap.Modal(modalEl);
+    }
+  }
+  if (_pinvModal) {
+    _pinvModal.show();
+  }
 }
 
 /* ══ Open Edit ══ */
@@ -765,7 +1026,7 @@ function openEditPINV(id) {
       document.getElementById('pinv_posting_date').disabled = (d.status === 'Open');
       document.getElementById('pinv_posting_date').value  = d.posting_date  || '';
       document.getElementById('pinv_delivery_date').value = d.delivery_date || '';
-      document.getElementById('pinv_doc_date').value      = new Date().toISOString().split('T')[0]; // re-stamped on every save
+      document.getElementById('pinv_doc_date').value      = new Date().toISOString().split('T')[0];
       
       document.getElementById('liBody').innerHTML = '';
       if (d.items && d.items.length > 0) {
@@ -791,7 +1052,16 @@ function openEditPINV(id) {
         const ch = btn.querySelector('.fa-chevron-up,.fa-chevron-down');
         if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
       });
-      new bootstrap.Modal(document.getElementById('pinvModal')).show();
+      
+      if (!_pinvModal) {
+        const modalEl = document.getElementById('pinvModal');
+        if (modalEl) {
+          _pinvModal = new bootstrap.Modal(modalEl);
+        }
+      }
+      if (_pinvModal) {
+        _pinvModal.show();
+      }
     })
     .catch(error => {
       console.error('Error loading invoice:', error);
@@ -801,6 +1071,18 @@ function openEditPINV(id) {
 
 /* ══ Save ══ */
 async function savePINV() {
+  // ⭐ Ensure we have a document number
+  const docNo = document.getElementById('pinv_doc_no').value;
+  if (!docNo || docNo === '...' || docNo === 'NEW' || docNo === '') {
+    alert(IS_AR ? 'جاري تحميل رقم المستند... يرجى الانتظار' : 'Loading document number... please wait');
+    await fetchDocNo();
+    const newDocNo = document.getElementById('pinv_doc_no').value;
+    if (!newDocNo || newDocNo === '...' || newDocNo === '') {
+      alert(IS_AR ? 'فشل في توليد رقم المستند' : 'Failed to generate document number');
+      return;
+    }
+  }
+  
   // Validate PO is required
   const poId = document.getElementById('pinv_po_id').value;
   if (!poId) {
@@ -819,10 +1101,7 @@ async function savePINV() {
   const url = id ? `/purchase/invoices/${id}/edit` : '/purchase/invoices/add';
   const fd  = new FormData();
   
-  // Add CSRF token
   fd.append('csrf_token', CSRF);
-  
-  // Add all form fields
   fd.append('po_id', poId);
   fd.append('grn_id', document.getElementById('pinv_grn_id')?.value || '');
   fd.append('status', document.getElementById('pinv_status').value);
@@ -856,46 +1135,37 @@ async function savePINV() {
     fd.append('li_discount[]', g('li_discount'));
     fd.append('li_freight[]', g('li_freight'));
     fd.append('li_tax_code[]', g('li_tax_code'));
-    
-    console.log(`Row ${index}:`, {
-      code: g('li_item_code'),
-      desc: g('li_item_desc'),
-      qty: g('li_qty'),
-      rate: g('li_rate')
-    });
   });
   
   // Add attachments
   _attachments.forEach(f => fd.append('attachments', f));
   
-  // Debug: log all FormData entries
-  console.log('FormData entries:');
-  for (let pair of fd.entries()) {
-    console.log(pair[0] + ': ' + pair[1]);
-  }
-  
   try {
     const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        'X-CSRFToken': CSRF
-      },
+      headers: { 'X-CSRFToken': CSRF },
       body: fd
     });
     
-    // Check if response is OK before trying to parse JSON
-    if (!res.ok) {
+    const contentType = res.headers.get('content-type');
+    let data;
+    
+    if (contentType && contentType.includes('application/json')) {
+      data = await res.json();
+    } else {
       const text = await res.text();
-      console.error('Server error response:', text);
-      throw new Error(`Server returned ${res.status}: ${res.statusText}`);
+      console.error('Non-JSON response:', text.substring(0, 500));
+      throw new Error('Server returned non-JSON response');
     }
     
-    const data = await res.json();
     console.log('Server response:', data);
     
     if (data.ok) {
-      bootstrap.Modal.getInstance(document.getElementById('pinvModal'))?.hide();
+      if (_pinvModal) {
+        _pinvModal.hide();
+      }
       loadData();
+      alert(IS_AR ? 'تم الحفظ بنجاح' : 'Saved successfully');
     } else {
       console.error('Save error:', data);
       alert(data.error || data.message || (IS_AR ? 'حدث خطأ أثناء الحفظ' : 'Error saving invoice'));
@@ -911,91 +1181,223 @@ function confDelPINV(id, docNo) {
   document.getElementById('delTxt').textContent = (IS_AR ? 'حذف: ' : 'Delete: ') + docNo + '?';
   document.getElementById('delBtn').onclick = () => {
     fetch('/purchase/invoices/' + id + '/delete', {
-      method:'POST', headers:{'X-CSRFToken':CSRF}, body:new URLSearchParams({csrf_token:CSRF})
+      method:'POST', 
+      headers:{'X-CSRFToken':CSRF}, 
+      body:new URLSearchParams({csrf_token:CSRF})
     }).then(r => r.json()).then(d => {
-      if (d.ok) { bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide(); loadData(); }
+      if (d.ok) { 
+        bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide(); 
+        loadData(); 
+      }
     });
   };
   new bootstrap.Modal(document.getElementById('delModal')).show();
 }
 
-/* ══ AG-Grid ══ */
-const AG_LOCALE = IS_AR ? {
-  addFilterCondition:'+ إضافة قاعدة / Add Rule', matchAll:'يطابق الكل / Match All',
-  applyFilter:'تطبيق / Apply', clearFilter:'مسح / Clear', resetFilter:'إعادة تعيين',
-  noRowsToShow:'لا توجد بيانات', filterOoo:'تصفية...',
-} : {
-  addFilterCondition:'+ Add Rule / إضافة قاعدة', matchAll:'Match All / بتطابق مع الكل',
-  applyFilter:'Apply / تطبيق', clearFilter:'Clear / مسح', resetFilter:'Reset',
-  noRowsToShow:'No records found',
-};
-
+/* ══ AG-GRID ENTERPRISE (EXACTLY LIKE EMPLOYEES) ══ */
 function rStatus(p) {
-  const cfg = {Open:'#dbeafe:#2563eb',Pending:'#fef3c7:#d97706',Approved:'#dcfce7:#15803d',Closed:'#f1f5f9:#6b7280',Cancelled:'#fee2e2:#dc2626'};
-  const [bg,fg] = (cfg[p.value]||cfg.Open).split(':');
-  return `<span style="background:${bg};color:${fg};padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;">${p.value||'Open'}</span>`;
+  const v = p.value || 'Open';
+  const labels = {
+    Open: IS_AR ? 'مفتوح' : 'Open',
+    Pending: IS_AR ? 'معلق' : 'Pending',
+    Approved: IS_AR ? 'معتمد' : 'Approved',
+    Closed: IS_AR ? 'مغلق' : 'Closed',
+    Cancelled: IS_AR ? 'ملغي' : 'Cancelled'
+  };
+  const classes = {
+    Open: 'st-open',
+    Pending: 'st-pending',
+    Approved: 'st-approved',
+    Closed: 'st-closed',
+    Cancelled: 'st-cancelled'
+  };
+  return `<span class="st-pill ${classes[v] || classes.Open}">
+      <i class="fas fa-circle" style="font-size:6px;"></i>
+      ${labels[v] || labels.Open}
+  </span>`;
 }
+
 function rSAR(p) {
-  return p.value!=null ? `<span style="font-weight:600;">${parseFloat(p.value).toLocaleString('en-SA',{minimumFractionDigits:2})}</span>` : '';
+  return p.value != null
+    ? `<span style="font-weight:600;font-variant-numeric:tabular-nums;">${parseFloat(p.value).toLocaleString('en-SA',{minimumFractionDigits:2})}</span>` 
+    : '';
 }
 
 class ActR {
   init(p) {
     this.g = document.createElement('div');
-    this.g.style.cssText = 'display:flex;align-items:center;gap:3px;';
+    this.g.style.cssText = 'display:flex;align-items:center;gap:4px;height:100%;';
     const d = p.data;
-    this.g.innerHTML =
-      `<button class="ag-ab ag-ab-view" onclick="window.location='/purchase/invoices/${d.id}/view'" title="View"><i class="fas fa-eye"></i></button>` +
-      `<button class="ag-ab ag-ab-edit" onclick="openEditPINV(${d.id})" title="Edit"><i class="fas fa-pencil-alt"></i></button>` +
-      `<button class="ag-ab ag-ab-del"  onclick="confDelPINV(${d.id}, '${d.doc_no || ""}')" title="Delete"><i class="fas fa-trash"></i></button>`;
+    const docNo = (d.doc_no || '').replace(/'/g, "\\'");
+    this.g.innerHTML = `
+      <button class="ag-ab ag-ab-view" onclick="window.location='/purchase/invoices/${d.id}/view'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
+      <button class="ag-ab ag-ab-edit" onclick="openEditPINV(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+      <button class="ag-ab ag-ab-del"  onclick="confDelPINV(${d.id},'${docNo}')" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
   }
   getGui() { return this.g; }
 }
 
-const defCol = {
-  sortable:true, unSortIcon:true, resizable:true, filter:true, floatingFilter:true,
-  filterParams:{buttons:['apply','reset','clear'], closeOnApply:true, maxNumConditions:10}
+const AG_LOCALE = IS_AR ? {
+  filterOoo: 'تصفية...',
+  equals: 'يساوي',
+  notEqual: 'لا يساوي',
+  contains: 'يحتوي على',
+  notContains: 'لا يحتوي على',
+  startsWith: 'يبدأ بـ',
+  endsWith: 'ينتهي بـ',
+  blank: 'فارغ',
+  notBlank: 'غير فارغ',
+  lessThan: 'أقل من',
+  greaterThan: 'أكبر من',
+  applyFilter: 'تطبيق',
+  clearFilter: 'مسح',
+  resetFilter: 'إعادة تعيين',
+  addFilterCondition: '+ إضافة قاعدة',
+  matchAll: 'يطابق الكل',
+  matchAny: 'يطابق أي',
+  andCondition: 'و',
+  orCondition: 'أو',
+  noRowsToShow: 'لا توجد بيانات',
+  loadingOoo: 'جاري التحميل...',
+  searchOoo: 'بحث...',
+  sortAscending: 'تصاعدي',
+  sortDescending: 'تنازلي',
+} : {
+  filterOoo: 'Filter...',
+  applyFilter: 'Apply',
+  clearFilter: 'Clear',
+  resetFilter: 'Reset',
+  addFilterCondition: '+ Add Rule',
+  matchAll: 'Match All',
+  matchAny: 'Match Any',
+  noRowsToShow: 'No records found',
+  searchOoo: 'Search...',
 };
+
+const defCol = {
+  sortable: true,
+  unSortIcon: true,
+  resizable: true,
+  filter: true,
+  floatingFilter: true,
+  suppressMenu: false,
+  enableRowGroup: true,
+  enablePivot: true,
+  enableValue: true,
+  menuTabs: ['filterMenuTab', 'columnsMenuTab', 'generalMenuTab'],
+  filterParams: {
+    buttons: ['apply', 'reset', 'clear'],
+    closeOnApply: true,
+    maxNumConditions: 10
+  }
+};
+
 const cols = [
-  {headerName:'#',field:'id',width:65,floatingFilter:false,suppressMenu:true},
-  {headerName:IS_AR?'رقم المستند':'Doc No',field:'doc_no',width:130},
-  {headerName:IS_AR?'أمر الشراء':'PO No',field:'po_no',width:120},
-  {headerName:IS_AR?'إيصال الاستلام':'GRN No',field:'grn_no',width:120},
-  {headerName:IS_AR?'المورد':'Vendor',field:'vendor_name',minWidth:170},
-  {headerName:IS_AR?'رقم المرجع':'Vendor Ref No',field:'vendor_ref_no',width:130},
-  {headerName:IS_AR?'الحالة':'Status',field:'status',width:100,cellRenderer:rStatus,floatingFilter:false},
-  {headerName:IS_AR?'تاريخ الترحيل':'Posting Date',field:'posting_date',width:120},
+  {headerName:'#',field:'id',width:65,floatingFilter:false,suppressMenu:true,checkboxSelection:true,headerCheckboxSelection:true,pinned:IS_AR?'right':'left',sortable:false,resizable:false},
+  {headerName:IS_AR?'رقم المستند':'Doc No',field:'doc_no',width:130,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'أمر الشراء':'PO No',field:'po_no',width:120,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'إيصال الاستلام':'GRN No',field:'grn_no',width:120,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'المورد':'Vendor',field:'vendor_name',minWidth:170,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'رقم المرجع':'Vendor Ref No',field:'vendor_ref_no',width:130,filter:'agTextColumnFilter'},
+  {headerName:IS_AR?'الحالة':'Status',field:'status',width:100,cellRenderer:rStatus,floatingFilter:false,filter:'agSetColumnFilter',filterParams:{values:['Open','Pending','Approved','Closed','Cancelled'],buttons:['apply','reset','clear']}},
+  {headerName:IS_AR?'تاريخ الترحيل':'Posting Date',field:'posting_date',width:120,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'الإجمالي':'Total Incl. VAT',field:'total_incl_vat',width:140,cellRenderer:rSAR,floatingFilter:false},
-  {headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:110,pinned:IS_AR?'left':'right',
+  {headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:120,pinned:IS_AR?'left':'right',
    sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,
    cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 6px'}},
 ];
 
 let gridApi;
-agGrid.createGrid(document.getElementById('pinvGrid'), {
-  columnDefs:cols, multiSortKey:'ctrl', rowData:[], pagination:true, paginationPageSize:10,
-  animateRows:true, enableRtl:IS_AR, defaultColDef:defCol, localeText:AG_LOCALE,
-  onGridReady(p) {
-    gridApi = p.api;
-    // Pass the whole event: AG-Grid v31 keeps column operations on
-    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
-    if (window.GridKit) {
-      GridKit.enhance(p, 'pinvGrid', { storageKey: 'purchase_pinv', exportName: 'Purchase Invoices' });
-    }
-    loadData();
-  },
-  onPaginationChanged() { upd(); },
-  getRowStyle(p) { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
+
+document.addEventListener('DOMContentLoaded', function() {
+  const el = document.getElementById('pinvGrid');
+  if (!el) return;
+  
+  agGrid.createGrid(el, {
+    columnDefs: cols,
+    multiSortKey: 'ctrl',
+    rowData: [],
+    pagination: true,
+    paginationPageSize: 20,
+    animateRows: true,
+    enableRtl: IS_AR,
+    defaultColDef: defCol,
+    localeText: AG_LOCALE,
+    
+    // ── ENTERPRISE FEATURES (EXACTLY LIKE EMPLOYEES) ──
+    sideBar: {
+      toolPanels: [
+        {
+          id: 'columns',
+          labelDefault: IS_AR ? 'الأعمدة' : 'Columns',
+          labelKey: 'columns',
+          iconKey: 'columns',
+          toolPanel: 'agColumnsToolPanel'
+        },
+        {
+          id: 'filters',
+          labelDefault: IS_AR ? 'الفلاتر' : 'Filters',
+          labelKey: 'filters',
+          iconKey: 'filter',
+          toolPanel: 'agFiltersToolPanel'
+        }
+      ],
+      defaultToolPanel: ''
+    },
+    rowGroupPanelShow: 'always',
+    pivotPanelShow: 'always',
+    groupDisplayType: 'groupRows',
+    
+    rowSelection: 'multiple',
+    suppressRowClickSelection: true,
+    
+    onGridReady(p) {
+      gridApi = p.api;
+      loadData();
+    },
+    onFilterChanged() { upd(); },
+    onPaginationChanged() { upd(); },
+    onSelectionChanged() { upd(); },
+    getRowStyle(p) { return p.node.rowIndex % 2 === 0 ? { background: '#fff' } : { background: '#fafbfc' }; }
+  });
+  
+  // Check for edit param in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const editId = urlParams.get('edit');
+  if (editId) {
+    setTimeout(() => {
+      openEditPINV(parseInt(editId));
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }, 500);
+  }
 });
+
 function loadData() {
-  fetch('/purchase/invoices/data').then(r=>r.json())
-    .then(d => { gridApi.setGridOption('rowData',d); upd(); }).catch(console.error);
+  var savedFilters = gridApi ? gridApi.getFilterModel() : null;
+  
+  fetch('/purchase/invoices/data')
+    .then(r => r.json())
+    .then(d => {
+      if (gridApi) {
+        gridApi.setGridOption('rowData', d);
+        if (savedFilters && Object.keys(savedFilters).length) {
+          gridApi.setFilterModel(savedFilters);
+        }
+        upd();
+      }
+    })
+    .catch(console.error);
 }
+
 function upd() {
   if (!gridApi) return;
-  const c = gridApi.getDisplayedRowCount();
-  document.getElementById('selText').textContent = c + ' ' + (IS_AR ? 'سجل' : 'invoices');
-  document.getElementById('pageInfo').textContent = `${c} entries`;
+  const total = gridApi.getDisplayedRowCount();
+  const selected = gridApi.getSelectedRows().length;
+  const text = selected > 0 
+    ? `${selected} ${IS_AR ? 'محدد' : 'selected'}`
+    : `${total} ${IS_AR ? 'فاتورة' : 'invoices'}`;
+  document.getElementById('selText').textContent = text;
+  document.getElementById('pageInfo').textContent = `${total} ${IS_AR ? 'فواتير' : 'invoices'}`;
 }
 </script>
 {% endblock %}

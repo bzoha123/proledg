@@ -6,32 +6,242 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
-.ag-theme-alpine{--ag-font-family:'Segoe UI',Tahoma,sans-serif;--ag-font-size:13px;--ag-header-background-color:#1e3a5f;--ag-header-foreground-color:#fff;--ag-border-color:#e2e8f0;--ag-row-hover-color:#f0f7ff;--ag-header-height:44px;--ag-row-height:44px;}
-.ag-theme-alpine .ag-header-cell-label{font-weight:700;font-size:12px;text-transform:uppercase;}
-.ag-theme-alpine .ag-filter{border-radius:10px!important;box-shadow:0 6px 24px rgba(0,0,0,.14)!important;border:1px solid #e2e8f0!important;overflow:hidden;min-width:255px;background:white;}
-.ag-theme-alpine .ag-filter-apply-panel{padding:8px 10px!important;background:#f8fafc!important;border-top:1px solid #e2e8f0!important;display:flex!important;gap:6px!important;justify-content:space-between!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button{padding:5px 14px!important;border-radius:7px!important;font-size:12px!important;font-weight:600!important;border:none!important;cursor:pointer!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]{background:linear-gradient(135deg,#16a34a,#15803d)!important;color:white!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"]{background:white!important;color:#374151!important;border:1.5px solid #d1d5db!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"]{background:white!important;color:#374151!important;border:1.5px solid #d1d5db!important;}
-.ag-theme-alpine .ag-add-filter-condition{padding:4px 10px!important;}
-.ag-theme-alpine .ag-add-filter-condition .ag-button{color:#2563eb!important;font-size:12px!important;font-weight:600!important;background:none!important;border:none!important;cursor:pointer!important;}
-.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input{border:1.5px solid #d1d5db!important;border-radius:7px!important;padding:6px 10px!important;font-size:12px!important;width:100%!important;}
-.ag-theme-alpine .ag-floating-filter-input input{border:1px solid #e2e8f0!important;border-radius:5px!important;padding:3px 7px!important;font-size:11px!important;}
-.ag-ab{width:28px;height:28px;border-radius:7px;border:none;display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all .12s;}
-.ag-ab-view{background:#0ea5e9;color:white;}.ag-ab-edit{background:#f59e0b;color:white;}.ag-ab-del{background:#ef4444;color:white;}
-/* Modal */
+/* ═══════════════════════════════════════════════════════
+   AG Grid - Enterprise Theme with Proledg styling (EXACTLY LIKE EMPLOYEES)
+   ═══════════════════════════════════════════════════════ */
+.ag-theme-alpine {
+    --ag-font-family:'Segoe UI',system-ui,sans-serif;
+    --ag-font-size:13px;
+    --ag-header-background-color:#1e3a5f;
+    --ag-header-foreground-color:#fff;
+    --ag-border-color:#e2e8f0;
+    --ag-row-hover-color:#eff6ff;
+    --ag-selected-row-background-color:#dbeafe;
+    --ag-header-height:44px;
+    --ag-row-height:44px;
+    --ag-cell-horizontal-padding:12px;
+}
+.ag-theme-alpine .ag-header-cell-label {
+    font-weight:700;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    overflow:visible;
+}
+.ag-theme-alpine .ag-header-cell-text {
+    overflow:visible;
+    text-overflow:clip;
+    white-space:nowrap;
+}
+.ag-theme-alpine .ag-header-cell:hover {
+    background:rgba(255,255,255,.08) !important;
+}
+.ag-theme-alpine .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-sort-descending-icon,
+.ag-theme-alpine .ag-sort-none-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-header-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-filter {
+    border-radius:10px !important;
+    box-shadow:0 8px 30px rgba(0,0,0,.15) !important;
+    border:1px solid #e2e8f0 !important;
+    overflow:hidden;
+    min-width:260px;
+    background:white;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input {
+    border:1.5px solid #d1d5db !important;
+    border-radius:7px !important;
+    padding:6px 10px !important;
+    font-size:12px !important;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+    box-shadow:0 0 0 2px rgba(37,99,235,.12) !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel {
+    padding:8px 10px !important;
+    background:#f8fafc !important;
+    border-top:1px solid #e2e8f0 !important;
+    display:flex !important;
+    gap:6px !important;
+    justify-content:space-between !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button {
+    padding:5px 14px !important;
+    border-radius:7px !important;
+    font-size:12px !important;
+    font-weight:600 !important;
+    border:none !important;
+    cursor:pointer !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"] {
+    background:linear-gradient(135deg,#16a34a,#15803d) !important;
+    color:white !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"] {
+    background:white !important;
+    color:#374151 !important;
+    border:1.5px solid #d1d5db !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input {
+    border:1px solid #e2e8f0 !important;
+    border-radius:5px !important;
+    padding:3px 7px !important;
+    font-size:11px !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+}
+.ag-theme-alpine .ag-row-even {
+    background:white;
+}
+.ag-theme-alpine .ag-row-odd {
+    background:#fafbfc;
+}
+.ag-theme-alpine .ag-row-hover {
+    background:#eff6ff !important;
+}
+.ag-theme-alpine .ag-cell {
+    border-right:1px solid #f1f5f9 !important;
+}
+
+/* Action buttons (matching Employees/Vendors) */
+.ag-ab {
+    width:28px;
+    height:28px;
+    border-radius:7px;
+    border:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    cursor:pointer;
+    transition:all .12s;
+}
+.ag-ab:hover {
+    transform:translateY(-1px);
+    box-shadow:0 2px 6px rgba(0,0,0,.2);
+}
+.ag-ab-view { background:#0ea5e9; color:white; }
+.ag-ab-view:hover { background:#0284c7; }
+.ag-ab-edit { background:#f59e0b; color:white; }
+.ag-ab-edit:hover { background:#d97706; }
+.ag-ab-del { background:#ef4444; color:white; }
+.ag-ab-del:hover { background:#dc2626; }
+
+/* Status pill */
+.st-pill {
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    padding:3px 10px;
+    border-radius:10px;
+    font-size:11px;
+    font-weight:700;
+}
+.st-open { background:#dbeafe; color:#2563eb; }
+.st-pending { background:#fef3c7; color:#d97706; }
+.st-approved { background:#dcfce7; color:#15803d; }
+.st-closed { background:#f1f5f9; color:#6b7280; }
+.st-cancelled { background:#fee2e2; color:#dc2626; }
+
+/* Toolbar (matching Employees/Vendors) */
+.toolbar {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:14px;
+}
+.toolbar-left, .toolbar-right {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+}
+.tool-btn {
+    width:34px;
+    height:34px;
+    border-radius:7px;
+    border:1.5px solid #d1d5db;
+    background:white;
+    color:#6b7280;
+    cursor:pointer;
+    font-size:13px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    transition:all .12s;
+}
+.tool-btn:hover {
+    border-color:#2563eb;
+    color:#2563eb;
+    background:#eff6ff;
+}
+.tool-btn-green { background:#16a34a; color:white; border:none; }
+.tool-btn-green:hover { background:#15803d; }
+.tool-btn-blue { background:#2563eb; color:white; border:none; }
+.tool-btn-blue:hover { background:#1d4ed8; }
+
+.search-form { position:relative; }
+.search-icon {
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#9ca3af;
+    font-size:12px;
+    z-index:2;
+}
+.search-input {
+    padding:7px 12px 7px 32px;
+    border:1.5px solid #d1d5db;
+    border-radius:7px;
+    font-size:12px;
+    outline:none;
+}
+.search-input:focus { border-color:#2563eb; }
+
+.sel-badge {
+    font-size:11px;
+    color:#6b7280;
+    background:#f1f5f9;
+    padding:4px 10px;
+    border-radius:5px;
+    font-weight:600;
+}
+
+.proledg-pagination {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 16px;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-top:none;
+    border-radius:0 0 8px 8px;
+}
+.page-count { font-size:12px; color:#6b7280; font-weight:600; }
+
+/* ── Modal Styles ── */
 .pur-hdr{background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:16px 22px;display:flex;justify-content:space-between;align-items:center;}
 .pur-hdr h5{margin:0;color:white;font-weight:700;font-size:15px;}
 .pur-badge{background:rgba(255,255,255,.2);color:white;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;margin-left:8px;}
-/* Tabs */
 .pur-tabs{display:flex;border-bottom:2px solid #e2e8f0;padding:0 18px;background:white;}
 .pur-tab{padding:10px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;}
 .pur-tab:hover{color:#2563eb;}
 .pur-tab.active{color:#2563eb;border-bottom-color:#2563eb;}
 .pur-tab-pane{display:none!important;padding:0;}
 .pur-tab-pane.active{display:block!important;}
-/* Collapsible sections */
 .pur-section{border:1.5px solid #e2e8f0;border-radius:10px;margin:14px 18px 0;overflow:hidden;}
 .pur-section-hdr{width:100%;background:white;border:none;padding:12px 16px;text-align:left;font-weight:700;font-size:13px;color:#1e3a5f;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .1s;}
 .pur-section-hdr:hover{background:#f8fafc;}
@@ -40,17 +250,16 @@
 .pur-section-hdr.open .pur-sec-icon{background:#2563eb;color:white;}
 .pur-section-body{padding:16px 18px;display:none;background:white;}
 .pur-section-body.open{display:block;}
-/* Field grids */
 .f-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
 .f-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
 .f-grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
 .f-item{display:flex;flex-direction:column;}
 .f-lbl{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
-.f-inp{border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;width:100%;transition:border-color .15s;}
+.f-req{color:#ef4444;margin-left:2px;}
+.f-inp{border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;width:100%;transition:border-color .15s;font-family:inherit;}
 .f-inp:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
 .f-inp[readonly]{background:#f8fafc;color:#374151;}
 select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
-/* Line items table */
 .li-wrap{overflow-x:auto;border-radius:8px;border:1.5px solid #e2e8f0;}
 .li-table{width:100%;border-collapse:collapse;font-size:11.5px;min-width:1150px;}
 .li-table thead tr{background:#1e3a5f;}
@@ -62,25 +271,24 @@ select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .li-inp:focus{outline:none;border-color:#2563eb;}
 .li-inp[readonly]{background:#f3f4f6;color:#374151;}
 select.li-inp{appearance:none;padding-right:16px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center;}
-/* Summary */
 .pur-summary{background:linear-gradient(135deg,#f8fafc,#f0f7ff);border:1.5px solid #bfdbfe;border-radius:10px;padding:16px 18px;}
 .sum-line{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed #e2e8f0;font-size:13px;}
 .sum-line:last-child{border-bottom:none;}
 .sum-total-row{background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;padding:10px 14px;border-radius:8px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;}
 .sum-total-row span{color:white;}
 .sum-doc-row{margin-top:8px;padding-top:8px;border-top:1px dashed #bfdbfe;display:flex;justify-content:space-between;align-items:center;font-size:13px;}
-/* Attachment */
 .att-drop{border:2px dashed #bfdbfe;border-radius:10px;padding:24px;text-align:center;background:#f0f9ff;cursor:pointer;}
 .att-drop:hover{border-color:#2563eb;background:#eff6ff;}
 .att-drop i{font-size:28px;color:#60a5fa;margin-bottom:8px;display:block;}
 .att-list{margin-top:12px;display:flex;flex-direction:column;gap:6px;}
 .att-item{display:flex;justify-content:space-between;align-items:center;background:white;border:1px solid #e2e8f0;border-radius:7px;padding:7px 12px;font-size:12px;}
 .att-rm{cursor:pointer;color:#ef4444;background:none;border:none;padding:0;}
-/* Footer */
 .pur-footer{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#f8fafc;border-top:2px solid #e2e8f0;}
 .btn-f{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;}
 .btn-save{background:linear-gradient(135deg,#16a34a,#15803d);color:white;box-shadow:0 2px 8px rgba(22,163,74,.3);}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.4);}
 .btn-cancel{background:white;color:#374151;border:1.5px solid #d1d5db;}
+.btn-cancel:hover{background:#f9fafb;}
 </style>
 {% endblock %}
 
@@ -92,25 +300,37 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 {% block content %}
 <div class="proledg-page">
   <h2 class="page-heading">{% if ar %}طلبات الشراء{% else %}Purchase Requests{% endif %}</h2>
+  
   <div class="toolbar">
     <div class="toolbar-left">
       <button class="tool-btn tool-btn-green" onclick="openAdd()"><i class="fas fa-plus"></i></button>
       <button class="tool-btn tool-btn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
       <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null);document.getElementById('qs').value='';gridApi.setGridOption('quickFilterText','')"><i class="fas fa-times-circle"></i></button>
+      <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'purchase_requests.csv'})" title="Export"><i class="fas fa-file-export"></i></button>
     </div>
     <div class="toolbar-right d-flex align-items-center gap-3">
-      <span id="selText" style="font-size:12px;font-weight:600;color:#6b7280;">–</span>
-      <div class="search-form"><i class="fas fa-search search-icon"></i>
-        <input type="text" id="qs" class="search-input" style="width:200px"
-               placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"
+      <div class="sel-badge"><span id="selText">0 {% if ar %}طلب{% else %}requests{% endif %}</span></div>
+      <div class="search-form">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="qs" class="search-input" style="width:220px" 
+               placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" 
                oninput="gridApi&&gridApi.setGridOption('quickFilterText',this.value)">
       </div>
     </div>
   </div>
-  <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;overflow:hidden;">
-    <div id="prGrid" class="ag-theme-alpine" style="height:480px;width:100%;"></div>
+
+  <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;overflow:hidden;">
+    <div id="prGrid" class="ag-theme-alpine" style="height:520px;width:100%;"></div>
   </div>
-  <div class="proledg-pagination"><span class="page-count" id="pageInfo">–</span></div>
+  <div class="proledg-pagination">
+    <span class="page-count" id="pageInfo">–</span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="small text-muted">{% if ar %}صفوف:{% else %}Rows:{% endif %}</span>
+      <select class="form-select form-select-sm" style="width:72px" onchange="gridApi&&gridApi.setGridOption('paginationPageSize',+this.value)">
+        <option value="10">10</option><option value="20" selected>20</option><option value="50">50</option>
+      </select>
+    </div>
+  </div>
 </div>
 
 {# ══ ADD / EDIT MODAL ══ #}
@@ -386,15 +606,15 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
 <script>
 const IS_AR = {{ 'true' if ar else 'false' }};
 const CURRENT_USERNAME = {{ current_user.username | tojson }};
 const CSRF  = '{{ csrf_token() }}';
 let _liIdx = 0;
 let _attachments = [];
-let _prModal = null;  // Store modal instance
-let _itemMaster = [];   // Item Master rows, loaded once per modal-open
+let _prModal = null;
+let _itemMaster = [];
 let _itemMasterLoaded = false;
 
 async function loadItemMaster() {
@@ -443,17 +663,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (modalEl) {
         _prModal = new bootstrap.Modal(modalEl);
     }
-const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(window.location.search);
     const editId = urlParams.get('edit');
     if (editId) {
-        // Wait a moment for grid to initialize, then open edit
         setTimeout(() => {
             openEdit(parseInt(editId));
-            // Clean up the URL without reloading
             window.history.replaceState({}, document.title, window.location.pathname);
         }, 500);
     }
 });
+
 /* ══ Section toggle ══ */
 function togSec(btn) {
   const body = btn.nextElementSibling;
@@ -533,7 +752,7 @@ function onLiItemChange(idx, source) {
   if (codeSel && codeSel.value !== code) codeSel.value = code;
   if (nameSel && nameSel.value !== code) nameSel.value = code;
 
-  const descEl = document.getElementById('plid_' + idx); // hidden field, holds the name text actually submitted
+  const descEl = document.getElementById('plid_' + idx);
   const uomEl  = document.getElementById('pluom_' + idx);
   const rateEl = document.getElementById('plrt_' + idx);
   if (item) {
@@ -599,11 +818,8 @@ function recalcLi(idx) {
   const fr   = g('plf_'+idx);
   const tcEl = document.getElementById('pltc_'+idx);
   const taxRate = tcEl && tcEl.value === 'VAT15' ? 15 : 0;
-  // Taxable = (Qty × Rate − Discount) + Freight
   const taxable = Math.max(0, (qty * rate - disc) + fr);
-  // Tax = Taxable × Tax%
   const taxAmt  = Math.round(taxable * taxRate / 100 * 100) / 100;
-  // Total = Taxable + Tax
   const total   = taxable + taxAmt;
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v.toFixed(2); };
   set('plt_'+idx,   taxable);
@@ -674,12 +890,10 @@ function updDocCount() {
 
 /* ══ Open Add ══ */
 async function openAdd() {
-  console.log('openAdd() called');
   _liIdx = 0; _attachments = [];
   document.getElementById('pr_id').value = '';
   document.getElementById('prTitle').innerHTML =
     '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة طلب شراء' : 'Add Purchase Request');
-  // Clear fields (requester / requester name always stay as logged-in username)
   ['pr_approved_by','pr_remarks'].forEach(id => {
     const e = document.getElementById(id); if (e) e.value = '';
   });
@@ -689,7 +903,7 @@ async function openAdd() {
   document.getElementById('pr_posting_date').value = '';
   document.getElementById('pr_posting_date').disabled = true;
   document.getElementById('pr_valid_until').value = today;
-  document.getElementById('pr_doc_date').value = today;   // always today, readonly
+  document.getElementById('pr_doc_date').value = today;
   document.getElementById('pr_req_date').value = today;
   document.getElementById('prDateErr').style.display = 'none';
   document.getElementById('pr_status').value = 'Open';
@@ -701,22 +915,17 @@ async function openAdd() {
   document.getElementById('attList').innerHTML = '';
   document.getElementById('existAttList').innerHTML = '';
   recalcSummary(); updLiCount(); updDocCount();
-  // Switch to content tab, open all sections
   switchTab('tab_content', document.querySelector('.pur-tab'));
-  // Auto-open sections
   document.querySelectorAll('.pur-section-hdr').forEach(btn => {
     btn.classList.add('open');
     btn.nextElementSibling.classList.add('open');
     const ch = btn.querySelector('.fa-chevron-up,.fa-chevron-down');
     if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
   });
-  // Fetch doc no from server
   fetchDocNo();
-  // Load Item Master, then add first empty line item
   await loadItemMaster();
   addLiRow();
   
-  // Show modal
   if (!_prModal) {
     const modalEl = document.getElementById('prModal');
     if (modalEl) {
@@ -730,7 +939,6 @@ async function openAdd() {
 
 /* ══ Open Edit ══ */
 function openEdit(id) {
-  console.log('openEdit() called with id:', id);
   fetch('/purchase/requests/' + id + '/json')
     .then(r => {
       if (!r.ok) throw new Error('Network response was not ok');
@@ -753,17 +961,15 @@ function openEdit(id) {
       document.getElementById('pr_posting_date').disabled = (d.status === 'Open');
       document.getElementById('pr_posting_date').value = d.posting_date || '';
       document.getElementById('pr_valid_until').value  = d.valid_until  || '';
-      document.getElementById('pr_doc_date').value     = new Date().toISOString().split('T')[0]; // re-stamped on every save
+      document.getElementById('pr_doc_date').value     = new Date().toISOString().split('T')[0];
       document.getElementById('pr_req_date').value     = d.required_date || '';
       document.getElementById('prDateErr').style.display = 'none';
-      onPrStatusChange(); // re-apply gating in case status forces an auto-fill
+      onPrStatusChange();
       if (d.posting_date) document.getElementById('pr_posting_date').value = d.posting_date;
-      // Line items
       await loadItemMaster();
       document.getElementById('liBody').innerHTML = '';
       (d.items || []).forEach(li => addLiRow(li));
       if (!d.items?.length) addLiRow();
-      // Existing attachments
       document.getElementById('attList').innerHTML = '';
       document.getElementById('existAttList').innerHTML = '';
       (d.attachments || []).forEach(a => {
@@ -780,7 +986,6 @@ function openEdit(id) {
         if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
       });
       
-      // Show modal
       if (!_prModal) {
         const modalEl = document.getElementById('prModal');
         if (modalEl) {
@@ -799,14 +1004,11 @@ function openEdit(id) {
 
 /* ══ Save ══ */
 async function savePR() {
-  console.log('savePR() called');
   if (!validatePrDates()) { return; }
   
   try {
     const id  = document.getElementById('pr_id').value;
     const url = id ? `/purchase/requests/${id}/edit` : '/purchase/requests/add';
-    console.log('Save URL:', url);
-    console.log('CSRF Token:', CSRF);
     
     const fd  = new FormData();
     fd.set('csrf_token', CSRF);
@@ -822,7 +1024,6 @@ async function savePR() {
     fd.set('document_date',  document.getElementById('pr_doc_date').value);
     fd.set('required_date',  document.getElementById('pr_req_date').value);
     
-    // Line items
     document.querySelectorAll('#liBody tr').forEach(row => {
       const g = n => row.querySelector(`[name="${n}[]"]`)?.value || '';
       fd.append('li_item_code[]',      g('li_item_code'));
@@ -839,30 +1040,20 @@ async function savePR() {
     
     _attachments.forEach(f => fd.append('attachments', f));
     
-    console.log('Sending request to:', url);
-    
     const res = await fetch(url, {
       method: 'POST',
       headers: {
         'X-CSRFToken': CSRF
-        // Don't set Content-Type for FormData - browser sets it automatically with boundary
       },
       body: fd
     });
     
-    console.log('Response status:', res.status);
-    console.log('Response headers:', res.headers);
-    
-    // Check if response is JSON
     const contentType = res.headers.get('content-type');
-    console.log('Content-Type:', contentType);
     
     if (contentType && contentType.includes('application/json')) {
       const data = await res.json();
-      console.log('Response data:', data);
       
       if (data.ok) {
-        // Close modal and refresh grid
         if (_prModal) {
           _prModal.hide();
         }
@@ -899,91 +1090,197 @@ function confDel(id, docNo) {
   new bootstrap.Modal(document.getElementById('delModal')).show();
 }
 
-/* ══ AG-Grid ══ */
-const AG_LOCALE = IS_AR ? {
-  addFilterCondition:'+ إضافة قاعدة / Add Rule', matchAll:'يطابق الكل / Match All',
-  applyFilter:'تطبيق / Apply', clearFilter:'مسح / Clear', resetFilter:'إعادة تعيين',
-  noRowsToShow:'لا توجد بيانات', filterOoo:'تصفية...',
-} : {
-  addFilterCondition:'+ Add Rule / إضافة قاعدة', matchAll:'Match All / بتطابق مع الكل',
-  applyFilter:'Apply / تطبيق', clearFilter:'Clear / مسح', resetFilter:'Reset',
-  noRowsToShow:'No records found',
-};
-
+/* ══ AG-GRID ENTERPRISE (EXACTLY LIKE EMPLOYEES) ══ */
 function rStatus(p) {
-  const cfg = { Open:'#dbeafe:#2563eb', Pending:'#fef3c7:#d97706',
-    Approved:'#dcfce7:#15803d', Closed:'#f1f5f9:#6b7280', Cancelled:'#fee2e2:#dc2626' };
-  const [bg,fg] = (cfg[p.value] || cfg.Open).split(':');
-  return `<span style="background:${bg};color:${fg};padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;">${p.value||'Open'}</span>`;
+  const v = p.value || 'Open';
+  const labels = {
+    Open: IS_AR ? 'مفتوح' : 'Open',
+    Pending: IS_AR ? 'معلق' : 'Pending',
+    Approved: IS_AR ? 'معتمد' : 'Approved',
+    Closed: IS_AR ? 'مغلق' : 'Closed',
+    Cancelled: IS_AR ? 'ملغي' : 'Cancelled'
+  };
+  const classes = {
+    Open: 'st-open',
+    Pending: 'st-pending',
+    Approved: 'st-approved',
+    Closed: 'st-closed',
+    Cancelled: 'st-cancelled'
+  };
+  return `<span class="st-pill ${classes[v] || classes.Open}">
+      <i class="fas fa-circle" style="font-size:6px;"></i>
+      ${labels[v] || labels.Open}
+  </span>`;
 }
+
 function rSAR(p) {
-  return p.value!=null
-    ? `<span style="font-weight:600;font-variant-numeric:tabular-nums;">${parseFloat(p.value).toLocaleString('en-SA',{minimumFractionDigits:2})}</span>` : '';
+  return p.value != null
+    ? `<span style="font-weight:600;font-variant-numeric:tabular-nums;">${parseFloat(p.value).toLocaleString('en-SA',{minimumFractionDigits:2})}</span>` 
+    : '';
 }
 
 class ActR {
   init(p) {
     this.g = document.createElement('div');
-    this.g.style.cssText = 'display:flex;align-items:center;gap:3px;';
+    this.g.style.cssText = 'display:flex;align-items:center;gap:4px;height:100%;';
     const d = p.data;
-    // Use purchase_request_id instead of id
     const docId = d.id || d.purchase_request_id;
+    const docNo = (d.doc_no || '').replace(/'/g, "\\'");
     this.g.innerHTML = `
       <button class="ag-ab ag-ab-view" onclick="window.location.href='/purchase/requests/${docId}/view'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
       <button class="ag-ab ag-ab-edit" onclick="openEdit(${docId})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-      <button class="ag-ab ag-ab-del"  onclick="confDel(${docId},'${(d.doc_no||'').replace(/'/g,"\\'")}') " title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
+      <button class="ag-ab ag-ab-del" onclick="confDel(${docId},'${docNo}')" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
   }
   getGui() { return this.g; }
 }
 
-const defCol = {
-  sortable:true, unSortIcon:true, resizable:true, filter:true, floatingFilter:true,
-  filterParams:{buttons:['apply','reset','clear'], closeOnApply:true, maxNumConditions:10}
+const AG_LOCALE = IS_AR ? {
+  filterOoo: 'تصفية...',
+  equals: 'يساوي',
+  notEqual: 'لا يساوي',
+  contains: 'يحتوي على',
+  notContains: 'لا يحتوي على',
+  startsWith: 'يبدأ بـ',
+  endsWith: 'ينتهي بـ',
+  blank: 'فارغ',
+  notBlank: 'غير فارغ',
+  lessThan: 'أقل من',
+  greaterThan: 'أكبر من',
+  applyFilter: 'تطبيق',
+  clearFilter: 'مسح',
+  resetFilter: 'إعادة تعيين',
+  addFilterCondition: '+ إضافة قاعدة',
+  matchAll: 'يطابق الكل',
+  matchAny: 'يطابق أي',
+  andCondition: 'و',
+  orCondition: 'أو',
+  noRowsToShow: 'لا توجد بيانات',
+  loadingOoo: 'جاري التحميل...',
+  searchOoo: 'بحث...',
+  sortAscending: 'تصاعدي',
+  sortDescending: 'تنازلي',
+} : {
+  filterOoo: 'Filter...',
+  applyFilter: 'Apply',
+  clearFilter: 'Clear',
+  resetFilter: 'Reset',
+  addFilterCondition: '+ Add Rule',
+  matchAll: 'Match All',
+  matchAny: 'Match Any',
+  noRowsToShow: 'No records found',
+  searchOoo: 'Search...',
 };
+
+const defCol = {
+  sortable: true,
+  unSortIcon: true,
+  resizable: true,
+  filter: true,
+  floatingFilter: true,
+  suppressMenu: false,
+  enableRowGroup: true,
+  enablePivot: true,
+  enableValue: true,
+  menuTabs: ['filterMenuTab', 'columnsMenuTab', 'generalMenuTab'],
+  filterParams: {
+    buttons: ['apply', 'reset', 'clear'],
+    closeOnApply: true,
+    maxNumConditions: 10
+  }
+};
+
 const cols = [
-  {headerName:'#',field:'purchase_request_id',width:65,floatingFilter:false,suppressMenu:true},
+  {headerName:'#',field:'purchase_request_id',width:65,floatingFilter:false,suppressMenu:true,checkboxSelection:true,headerCheckboxSelection:true,pinned:IS_AR?'right':'left',sortable:false,resizable:false},
   {headerName:IS_AR?'رقم المستند':'Doc No',field:'doc_no',width:125,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'المستخدم':'Requester',field:'requester',width:120,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'اسم مقدم الطلب':'Requester Name',field:'requester_name',minWidth:160,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'المورد':'Vendor',field:'vendor_name',minWidth:180,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'الحالة':'Status',field:'status',width:105,cellRenderer:rStatus,floatingFilter:false},
+  {headerName:IS_AR?'الحالة':'Status',field:'status',width:105,cellRenderer:rStatus,floatingFilter:false,filter:'agSetColumnFilter',filterParams:{values:['Open','Pending','Approved','Closed','Cancelled'],buttons:['apply','reset','clear']}},
   {headerName:IS_AR?'تاريخ الترحيل':'Posting Date',field:'posting_date',width:125,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'صالح حتى':'Valid Until',field:'valid_until',width:115,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'الإجمالي شامل الضريبة':'Total Incl. VAT',field:'total_incl_vat',width:145,cellRenderer:rSAR,floatingFilter:false},
   {headerName:IS_AR?'اعتمد بواسطة':'Approved By',field:'approved_by',width:130,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'إجراءات':'Actions الإجراءات',field:'_a',width:110,pinned:IS_AR?'left':'right',
+  {headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:120,pinned:IS_AR?'left':'right',
    sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,
    cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 6px'}},
 ];
+
 let gridApi;
+
 agGrid.createGrid(document.getElementById('prGrid'), {
-  columnDefs:cols, multiSortKey:'ctrl', rowData:[], pagination:true, paginationPageSize:10,
-  animateRows:true, enableRtl:IS_AR, defaultColDef:defCol, localeText:AG_LOCALE,
+  columnDefs: cols,
+  multiSortKey: 'ctrl',
+  rowData: [],
+  pagination: true,
+  paginationPageSize: 20,
+  animateRows: true,
+  enableRtl: IS_AR,
+  defaultColDef: defCol,
+  localeText: AG_LOCALE,
+  
+  // ── ENTERPRISE FEATURES (EXACTLY LIKE EMPLOYEES) ──
+  sideBar: {
+    toolPanels: [
+      {
+        id: 'columns',
+        labelDefault: IS_AR ? 'الأعمدة' : 'Columns',
+        labelKey: 'columns',
+        iconKey: 'columns',
+        toolPanel: 'agColumnsToolPanel'
+      },
+      {
+        id: 'filters',
+        labelDefault: IS_AR ? 'الفلاتر' : 'Filters',
+        labelKey: 'filters',
+        iconKey: 'filter',
+        toolPanel: 'agFiltersToolPanel'
+      }
+    ],
+    defaultToolPanel: ''
+  },
+  rowGroupPanelShow: 'always',
+  pivotPanelShow: 'always',
+  groupDisplayType: 'groupRows',
+  
+  rowSelection: 'multiple',
+  suppressRowClickSelection: true,
+  
   onGridReady(p) {
     gridApi = p.api;
-    // Pass the whole event: AG-Grid v31 keeps column operations on
-    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
-    if (window.GridKit) {
-      GridKit.enhance(p, 'prGrid', { storageKey: 'purchase_pr', exportName: 'Purchase Requests' });
-    }
     loadData();
   },
+  onFilterChanged() { upd(); },
   onPaginationChanged() { upd(); },
-  getRowStyle(p) { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
+  onSelectionChanged() { upd(); },
+  getRowStyle(p) {
+    return p.node.rowIndex % 2 === 0 ? { background: '#fff' } : { background: '#fafbfc' };
+  }
 });
 
 function loadData() {
+  var savedFilters = gridApi ? gridApi.getFilterModel() : null;
+  
   fetch('/purchase/requests/data')
-    .then(r=>r.json())
-    .then(d => { gridApi.setGridOption('rowData',d); upd(); })
+    .then(r => r.json())
+    .then(d => {
+      gridApi.setGridOption('rowData', d);
+      if (savedFilters && Object.keys(savedFilters).length) {
+        gridApi.setFilterModel(savedFilters);
+      }
+      upd();
+    })
     .catch(err => console.error('Error loading data:', err));
 }
 
 function upd() {
   if (!gridApi) return;
-  const c = gridApi.getDisplayedRowCount();
-  document.getElementById('selText').textContent = c + ' ' + (IS_AR ? 'طلب' : 'requests');
-  document.getElementById('pageInfo').textContent = `${c} entries`;
+  const total = gridApi.getDisplayedRowCount();
+  const selected = gridApi.getSelectedRows().length;
+  const text = selected > 0 
+    ? `${selected} ${IS_AR ? 'محدد' : 'selected'}`
+    : `${total} ${IS_AR ? 'طلب' : 'requests'}`;
+  document.getElementById('selText').textContent = text;
+  document.getElementById('pageInfo').textContent = `${total} ${IS_AR ? 'طلبات' : 'requests'}`;
 }
 </script>
 {% endblock %}

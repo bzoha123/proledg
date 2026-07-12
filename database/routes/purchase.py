@@ -38,7 +38,9 @@ def _vendor_list():
             for v in VendorMaster.query.filter_by(is_active=True).order_by(VendorMaster.vendor_name_en).all()]
 
 def _next_doc_no(doc_type, model):
-    """Generate unique doc number per type. Format: PR-2026-0001, PQ-2026-0001, PO-2026-0001."""
+    """Generate unique doc number per type. Format: PR-2026-0001, PQ-2026-0001, PO-2026-0001.
+       ⭐ FIX: Always gets MAX number from ALL records to prevent reuse.
+    """
     year = date.today().year
     prefix = doc_type
     like = f'{prefix}-{year}-%'
@@ -63,17 +65,27 @@ def _next_doc_no(doc_type, model):
     
     pk_column = getattr(model, pk_name)
     
-    last = db.session.query(model).filter(
+    # ⭐ FIX: Get ALL records for this year and find the MAX number
+    all_docs = db.session.query(model).filter(
         model.doc_no.like(like)
-    ).order_by(pk_column.desc()).first()
+    ).all()
     
-    if last and last.doc_no:
-        try:
-            n = int(last.doc_no.split('-')[-1]) + 1
-        except:
-            n = 1
-    else:
-        n = 1
+    max_num = 0
+    for doc in all_docs:
+        if doc.doc_no:
+            try:
+                parts = doc.doc_no.split('-')
+                if len(parts) == 3:
+                    num = int(parts[2])
+                    if num > max_num:
+                        max_num = num
+            except (ValueError, IndexError):
+                continue
+    
+    # ⭐ Always increment from max + 1
+    n = max_num + 1
+    
+    # Format with 4 digits
     return f'{prefix}-{year}-{n:04d}'
 
 def _save_attachments(doc_type, doc_id, files):
@@ -162,14 +174,18 @@ def _save_doc_line_items(LIModel, fk_field, fk_value, f):
 
 
 # ══════════════════════════════════════════════════════════════════
-# UNIFIED NEXT-DOC-NO ENDPOINT (ONCE ONLY)
+# UNIFIED NEXT-DOC-NO ENDPOINT (FIXED)
 # ══════════════════════════════════════════════════════════════════
 
 @pur_bp.route('/purchase/next-doc-no')
 @login_required
 def next_doc_no():
-    """Return next document number for AJAX - works for all types."""
+    """Return next document number for AJAX - works for all types.
+       ⭐ FIX: Always returns the next available unique number.
+    """
     doc_type = request.args.get('type', 'PO')
+    force_new = request.args.get('force_new', 'false').lower() == 'true'
+    
     model_map = {
         'PR': PurchaseRequest,
         'PQ': PurchaseQuotation,
@@ -180,14 +196,33 @@ def next_doc_no():
         'PDM': PurchaseDebitMemo,
     }
     model = model_map.get(doc_type, PurchaseOrder)
-    return jsonify({'doc_no': _next_doc_no(doc_type, model)})
+    
+    # ⭐ Always get the next number - never reuse
+    doc_no = _next_doc_no(doc_type, model)
+    
+    return jsonify({
+        'ok': True,
+        'doc_no': doc_no,
+        'force_new': force_new
+    })
 
 @pur_bp.route('/purchase/next-no')
 @login_required
 def purchase_next_no():
     """Legacy endpoint - redirects to next-doc-no."""
-    doc_type = request.args.get('type','PR')
-    return jsonify({'doc_no': _next_doc_no(doc_type, PurchaseRequest)})
+    doc_type = request.args.get('type', 'PR')
+    model_map = {
+        'PR': PurchaseRequest,
+        'PQ': PurchaseQuotation,
+        'PO': PurchaseOrder,
+        'GRN': GoodsReceiptNote,
+        'PINV': PurchaseInvoice,
+        'GRR': GoodsReturnRequest,
+        'PDM': PurchaseDebitMemo,
+    }
+    model = model_map.get(doc_type, PurchaseRequest)
+    doc_no = _next_doc_no(doc_type, model)
+    return jsonify({'doc_no': doc_no})
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -509,23 +544,17 @@ def item_next_code():
 
 # ══════════════════════════════════════════════════════════════════
 # ITEM MASTER — UNIT OF MEASUREMENT (multi-UOM per item)
-# NOTE: these routes were added here (purchase.py) rather than in
-# lookups.py because lookups.py was not provided. The URL paths
-# match what items.html calls, so this works regardless of which
-# blueprint file ends up owning them long-term.
 # ══════════════════════════════════════════════════════════════════
 
 @pur_bp.route('/items/uom/list')
 @login_required
 def uom_master_list():
-    """All global units, for the 'attach existing unit' dropdown."""
     rows = UnitOfMeasurement.query.order_by(UnitOfMeasurement.unit_name).all()
     return jsonify([u.to_dict() for u in rows])
 
 @pur_bp.route('/items/uom/add', methods=['POST'])
 @login_required
 def uom_master_add():
-    """Quick-add a brand new unit to the global master list."""
     f = request.form
     name = f.get('unit_name','').strip()
     if not name:
@@ -541,15 +570,12 @@ def uom_master_add():
 @pur_bp.route('/items/<int:item_id>/uoms')
 @login_required
 def item_uom_list(item_id):
-    """UOMs currently attached to one item."""
     rows = ItemUOM.query.filter_by(item_id=item_id).order_by(ItemUOM.is_default.desc(), ItemUOM.id).all()
     return jsonify([r.to_dict() for r in rows])
 
 @pur_bp.route('/items/<int:item_id>/uoms/add', methods=['POST'])
 @login_required
 def item_uom_add(item_id):
-    """Attach a unit to an item. Pass uom_id to link an existing global unit,
-    or unit_name (+ optional unit_name_ar) to create-and-link a new one."""
     item = ItemMaster.query.get_or_404(item_id)
     f = request.form
     uom_id = f.get('uom_id')
@@ -575,7 +601,7 @@ def item_uom_add(item_id):
     link = ItemUOM(item_id=item_id, uom_id=unit.id, is_default=is_first)
     db.session.add(link)
     if is_first:
-        item.uom = unit.unit_name  # keep legacy single-uom column in sync for grid display
+        item.uom = unit.unit_name
     db.session.commit()
     return jsonify({'ok': True, 'item_uom': link.to_dict()})
 
@@ -646,7 +672,6 @@ def pr_view(id):
 @pur_bp.route('/purchase/requests/<int:id>/summary')
 @login_required
 def pr_summary(id):
-    """Lightweight PR data for auto-filling Purchase Quotation form."""
     pr = PurchaseRequest.query.get_or_404(id)
     d = pr.to_dict()
     d['items'] = [i.to_dict() for i in PurchaseRequestLineItem.query.filter_by(purchase_request_id=id).order_by(PurchaseRequestLineItem.line_number).all()]
@@ -759,7 +784,6 @@ def pq_view(id):
 @pur_bp.route('/purchase/quotations/<int:id>/summary')
 @login_required
 def pq_summary(id):
-    """Lightweight PQ data for auto-filling Purchase Order form."""
     pq = PurchaseQuotation.query.get_or_404(id)
     d = pq.to_dict()
     d['items'] = [i.to_dict() for i in PurchaseQuotationLineItem.query.filter_by(purchase_quotation_id=id).order_by(PurchaseQuotationLineItem.line_number).all()]
@@ -897,7 +921,6 @@ def po_json(id):
 @pur_bp.route('/purchase/orders/<int:id>/summary')
 @login_required
 def po_summary(id):
-    """Lightweight PO data for auto-filling Purchase Invoice form."""
     po = PurchaseOrder.query.get_or_404(id)
     d = po.to_dict()
     d['items'] = [i.to_dict() for i in PurchaseOrderLineItem.query
@@ -1042,7 +1065,6 @@ def grn_view(id):
 @pur_bp.route('/purchase/grn/<int:id>/summary')
 @login_required
 def grn_summary(id):
-    """Lightweight GRN data for auto-filling Purchase Invoice form."""
     doc = GoodsReceiptNote.query.get_or_404(id)
     d = doc.to_dict()
     d['items'] = [i.to_dict() for i in GoodsReceiptLineItem.query
@@ -1121,12 +1143,13 @@ def grn_delete(id):
 # ══════════════════════════════════════════════════════════════════
 # PURCHASE INVOICE (PINV)
 # ══════════════════════════════════════════════════════════════════
-
 @pur_bp.route('/purchase/invoices')
 @login_required
 def pinv_list():
     pos = [{'id':p.purchase_order_id,'doc_no':p.doc_no} for p in PurchaseOrder.query.filter_by(status='Approved').order_by(PurchaseOrder.purchase_order_id.desc()).all()]
-    grns = [{'id':g.goods_receipt_note_id,'doc_no':g.doc_no,'purchase_order_id':g.purchase_order_id} for g in GoodsReceiptNote.query.order_by(GoodsReceiptNote.goods_receipt_note_id.desc()).all()]
+    # ⭐ FIX: Only get Approved GRNs
+    grns = [{'id':g.goods_receipt_note_id,'doc_no':g.doc_no,'purchase_order_id':g.purchase_order_id} 
+            for g in GoodsReceiptNote.query.filter_by(status='Approved').order_by(GoodsReceiptNote.goods_receipt_note_id.desc()).all()]
     return render_template('purchase/pinv_list.html', vendors=_vendor_list(), pos=pos, grns=grns)
 
 @pur_bp.route('/purchase/invoices/data')
@@ -1306,7 +1329,6 @@ def grr_summary(id):
     return jsonify(d)
 
 def _validate_grr_qty(f, purchase_invoice_id):
-    """GRR line quantities must not exceed the original Purchase Invoice line quantity for that item."""
     if not purchase_invoice_id:
         return None
     src_lines = PurchaseInvoiceLineItem.query.filter_by(purchase_invoice_id=purchase_invoice_id).all()

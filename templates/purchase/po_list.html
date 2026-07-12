@@ -6,30 +6,242 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
-.ag-theme-alpine{--ag-font-family:'Segoe UI',Tahoma,sans-serif;--ag-font-size:13px;--ag-header-background-color:#1e3a5f;--ag-header-foreground-color:#fff;--ag-border-color:#e2e8f0;--ag-row-hover-color:#f0f7ff;--ag-header-height:44px;--ag-row-height:44px;}
-.ag-theme-alpine .ag-header-cell-label{font-weight:700;font-size:12px;text-transform:uppercase;}
-.ag-theme-alpine .ag-filter{border-radius:10px!important;box-shadow:0 6px 24px rgba(0,0,0,.14)!important;border:1px solid #e2e8f0!important;overflow:hidden;min-width:255px;background:white;}
-.ag-theme-alpine .ag-filter-apply-panel{padding:8px 10px!important;background:#f8fafc!important;border-top:1px solid #e2e8f0!important;display:flex!important;gap:6px!important;justify-content:space-between!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button{padding:5px 14px!important;border-radius:7px!important;font-size:12px!important;font-weight:600!important;border:none!important;cursor:pointer!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"]{background:linear-gradient(135deg,#16a34a,#15803d)!important;color:white!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"]{background:white!important;color:#374151!important;border:1.5px solid #d1d5db!important;}
-.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"]{background:white!important;color:#374151!important;border:1.5px solid #d1d5db!important;}
-.ag-theme-alpine .ag-add-filter-condition{padding:4px 10px!important;}
-.ag-theme-alpine .ag-add-filter-condition .ag-button{color:#2563eb!important;font-size:12px!important;font-weight:600!important;background:none!important;border:none!important;cursor:pointer!important;}
-.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input{border:1.5px solid #d1d5db!important;border-radius:7px!important;padding:6px 10px!important;font-size:12px!important;width:100%!important;}
-.ag-theme-alpine .ag-floating-filter-input input{border:1px solid #e2e8f0!important;border-radius:5px!important;padding:3px 7px!important;font-size:11px!important;}
-.ag-ab{width:28px;height:28px;border-radius:7px;border:none;display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all .12s;}
-.ag-ab-view{background:#0ea5e9;color:white;}.ag-ab-edit{background:#f59e0b;color:white;}.ag-ab-del{background:#ef4444;color:white;}
-/* Modal */
+/* ═══════════════════════════════════════════════════════
+   AG Grid - Enterprise Theme with Proledg styling (EXACTLY LIKE EMPLOYEES)
+   ═══════════════════════════════════════════════════════ */
+.ag-theme-alpine {
+    --ag-font-family:'Segoe UI',system-ui,sans-serif;
+    --ag-font-size:13px;
+    --ag-header-background-color:#1e3a5f;
+    --ag-header-foreground-color:#fff;
+    --ag-border-color:#e2e8f0;
+    --ag-row-hover-color:#eff6ff;
+    --ag-selected-row-background-color:#dbeafe;
+    --ag-header-height:44px;
+    --ag-row-height:44px;
+    --ag-cell-horizontal-padding:12px;
+}
+.ag-theme-alpine .ag-header-cell-label {
+    font-weight:700;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    overflow:visible;
+}
+.ag-theme-alpine .ag-header-cell-text {
+    overflow:visible;
+    text-overflow:clip;
+    white-space:nowrap;
+}
+.ag-theme-alpine .ag-header-cell:hover {
+    background:rgba(255,255,255,.08) !important;
+}
+.ag-theme-alpine .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-sort-descending-icon,
+.ag-theme-alpine .ag-sort-none-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-header-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-filter {
+    border-radius:10px !important;
+    box-shadow:0 8px 30px rgba(0,0,0,.15) !important;
+    border:1px solid #e2e8f0 !important;
+    overflow:hidden;
+    min-width:260px;
+    background:white;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input {
+    border:1.5px solid #d1d5db !important;
+    border-radius:7px !important;
+    padding:6px 10px !important;
+    font-size:12px !important;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+    box-shadow:0 0 0 2px rgba(37,99,235,.12) !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel {
+    padding:8px 10px !important;
+    background:#f8fafc !important;
+    border-top:1px solid #e2e8f0 !important;
+    display:flex !important;
+    gap:6px !important;
+    justify-content:space-between !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button {
+    padding:5px 14px !important;
+    border-radius:7px !important;
+    font-size:12px !important;
+    font-weight:600 !important;
+    border:none !important;
+    cursor:pointer !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"] {
+    background:linear-gradient(135deg,#16a34a,#15803d) !important;
+    color:white !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"] {
+    background:white !important;
+    color:#374151 !important;
+    border:1.5px solid #d1d5db !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input {
+    border:1px solid #e2e8f0 !important;
+    border-radius:5px !important;
+    padding:3px 7px !important;
+    font-size:11px !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+}
+.ag-theme-alpine .ag-row-even {
+    background:white;
+}
+.ag-theme-alpine .ag-row-odd {
+    background:#fafbfc;
+}
+.ag-theme-alpine .ag-row-hover {
+    background:#eff6ff !important;
+}
+.ag-theme-alpine .ag-cell {
+    border-right:1px solid #f1f5f9 !important;
+}
+
+/* Action buttons (matching Employees/Vendors) */
+.ag-ab {
+    width:28px;
+    height:28px;
+    border-radius:7px;
+    border:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    cursor:pointer;
+    transition:all .12s;
+}
+.ag-ab:hover {
+    transform:translateY(-1px);
+    box-shadow:0 2px 6px rgba(0,0,0,.2);
+}
+.ag-ab-view { background:#0ea5e9; color:white; }
+.ag-ab-view:hover { background:#0284c7; }
+.ag-ab-edit { background:#f59e0b; color:white; }
+.ag-ab-edit:hover { background:#d97706; }
+.ag-ab-del { background:#ef4444; color:white; }
+.ag-ab-del:hover { background:#dc2626; }
+
+/* Status pill */
+.st-pill {
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    padding:3px 10px;
+    border-radius:10px;
+    font-size:11px;
+    font-weight:700;
+}
+.st-open { background:#dbeafe; color:#2563eb; }
+.st-pending { background:#fef3c7; color:#d97706; }
+.st-approved { background:#dcfce7; color:#15803d; }
+.st-closed { background:#f1f5f9; color:#6b7280; }
+.st-cancelled { background:#fee2e2; color:#dc2626; }
+
+/* Toolbar (matching Employees/Vendors) */
+.toolbar {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:14px;
+}
+.toolbar-left, .toolbar-right {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+}
+.tool-btn {
+    width:34px;
+    height:34px;
+    border-radius:7px;
+    border:1.5px solid #d1d5db;
+    background:white;
+    color:#6b7280;
+    cursor:pointer;
+    font-size:13px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    transition:all .12s;
+}
+.tool-btn:hover {
+    border-color:#2563eb;
+    color:#2563eb;
+    background:#eff6ff;
+}
+.tool-btn-green { background:#16a34a; color:white; border:none; }
+.tool-btn-green:hover { background:#15803d; }
+.tool-btn-blue { background:#2563eb; color:white; border:none; }
+.tool-btn-blue:hover { background:#1d4ed8; }
+
+.search-form { position:relative; }
+.search-icon {
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#9ca3af;
+    font-size:12px;
+    z-index:2;
+}
+.search-input {
+    padding:7px 12px 7px 32px;
+    border:1.5px solid #d1d5db;
+    border-radius:7px;
+    font-size:12px;
+    outline:none;
+}
+.search-input:focus { border-color:#2563eb; }
+
+.sel-badge {
+    font-size:11px;
+    color:#6b7280;
+    background:#f1f5f9;
+    padding:4px 10px;
+    border-radius:5px;
+    font-weight:600;
+}
+
+.proledg-pagination {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 16px;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-top:none;
+    border-radius:0 0 8px 8px;
+}
+.page-count { font-size:12px; color:#6b7280; font-weight:600; }
+
+/* ── Modal Styles ── */
 .pur-hdr{background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:16px 22px;display:flex;justify-content:space-between;align-items:center;}
 .pur-hdr h5{margin:0;color:white;font-weight:700;font-size:15px;}
 .pur-badge{background:rgba(255,255,255,.2);color:white;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;margin-left:8px;}
-/* Tabs */
 .pur-tabs{display:flex;border-bottom:2px solid #e2e8f0;padding:0 18px;background:white;}
 .pur-tab{padding:10px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;}
 .pur-tab:hover{color:#2563eb;}
 .pur-tab.active{color:#2563eb;border-bottom-color:#2563eb;}
-/* Collapsible sections */
+.pur-tab-pane{display:none!important;padding:0;}
+.pur-tab-pane.active{display:block!important;}
 .pur-section{border:1.5px solid #e2e8f0;border-radius:10px;margin:14px 18px 0;overflow:hidden;}
 .pur-section-hdr{width:100%;background:white;border:none;padding:12px 16px;text-align:left;font-weight:700;font-size:13px;color:#1e3a5f;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .1s;}
 .pur-section-hdr:hover{background:#f8fafc;}
@@ -38,17 +250,16 @@
 .pur-section-hdr.open .pur-sec-icon{background:#2563eb;color:white;}
 .pur-section-body{padding:16px 18px;display:none;background:white;}
 .pur-section-body.open{display:block;}
-/* Field grids */
 .f-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
 .f-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
 .f-grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
 .f-item{display:flex;flex-direction:column;}
 .f-lbl{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
-.f-inp{border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;width:100%;transition:border-color .15s;}
+.f-req{color:#ef4444;margin-left:2px;}
+.f-inp{border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;width:100%;transition:border-color .15s;font-family:inherit;}
 .f-inp:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
 .f-inp[readonly]{background:#f8fafc;color:#374151;}
 select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;}
-/* Line items table */
 .li-wrap{overflow-x:auto;border-radius:8px;border:1.5px solid #e2e8f0;}
 .li-table{width:100%;border-collapse:collapse;font-size:11.5px;min-width:1150px;}
 .li-table thead tr{background:#1e3a5f;}
@@ -60,25 +271,24 @@ select.f-inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .li-inp:focus{outline:none;border-color:#2563eb;}
 .li-inp[readonly]{background:#f3f4f6;color:#374151;}
 select.li-inp{appearance:none;padding-right:16px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center;}
-/* Summary */
 .pur-summary{background:linear-gradient(135deg,#f8fafc,#f0f7ff);border:1.5px solid #bfdbfe;border-radius:10px;padding:16px 18px;}
 .sum-line{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed #e2e8f0;font-size:13px;}
 .sum-line:last-child{border-bottom:none;}
 .sum-total-row{background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;padding:10px 14px;border-radius:8px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;}
 .sum-total-row span{color:white;}
 .sum-doc-row{margin-top:8px;padding-top:8px;border-top:1px dashed #bfdbfe;display:flex;justify-content:space-between;align-items:center;font-size:13px;}
-/* Attachment */
 .att-drop{border:2px dashed #bfdbfe;border-radius:10px;padding:24px;text-align:center;background:#f0f9ff;cursor:pointer;}
 .att-drop:hover{border-color:#2563eb;background:#eff6ff;}
 .att-drop i{font-size:28px;color:#60a5fa;margin-bottom:8px;display:block;}
 .att-list{margin-top:12px;display:flex;flex-direction:column;gap:6px;}
 .att-item{display:flex;justify-content:space-between;align-items:center;background:white;border:1px solid #e2e8f0;border-radius:7px;padding:7px 12px;font-size:12px;}
 .att-rm{cursor:pointer;color:#ef4444;background:none;border:none;padding:0;}
-/* Footer */
 .pur-footer{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#f8fafc;border-top:2px solid #e2e8f0;}
 .btn-f{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;}
 .btn-save{background:linear-gradient(135deg,#16a34a,#15803d);color:white;box-shadow:0 2px 8px rgba(22,163,74,.3);}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.4);}
 .btn-cancel{background:white;color:#374151;border:1.5px solid #d1d5db;}
+.btn-cancel:hover{background:#f9fafb;}
 </style>
 {% endblock %}
 
@@ -90,25 +300,37 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 {% block content %}
 <div class="proledg-page">
   <h2 class="page-heading">{% if ar %}أوامر الشراء{% else %}Purchase Orders{% endif %}</h2>
+  
   <div class="toolbar">
     <div class="toolbar-left">
       <button class="tool-btn tool-btn-green" onclick="openAddPO()"><i class="fas fa-plus"></i></button>
       <button class="tool-btn tool-btn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
       <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null);document.getElementById('qs').value='';gridApi.setGridOption('quickFilterText','')"><i class="fas fa-times-circle"></i></button>
+      <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'purchase_orders.csv'})" title="Export"><i class="fas fa-file-export"></i></button>
     </div>
     <div class="toolbar-right d-flex align-items-center gap-3">
-      <span id="selText" style="font-size:12px;font-weight:600;color:#6b7280;">–</span>
-      <div class="search-form"><i class="fas fa-search search-icon"></i>
-        <input type="text" id="qs" class="search-input" style="width:200px"
-               placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"
+      <div class="sel-badge"><span id="selText">0 {% if ar %}طلب{% else %}orders{% endif %}</span></div>
+      <div class="search-form">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="qs" class="search-input" style="width:220px" 
+               placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" 
                oninput="gridApi&&gridApi.setGridOption('quickFilterText',this.value)">
       </div>
     </div>
   </div>
-  <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;overflow:hidden;">
-    <div id="poGrid" class="ag-theme-alpine" style="height:480px;width:100%;"></div>
+
+  <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;overflow:hidden;">
+    <div id="poGrid" class="ag-theme-alpine" style="height:520px;width:100%;"></div>
   </div>
-  <div class="proledg-pagination"><span class="page-count" id="pageInfo">–</span></div>
+  <div class="proledg-pagination">
+    <span class="page-count" id="pageInfo">–</span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="small text-muted">{% if ar %}صفوف:{% else %}Rows:{% endif %}</span>
+      <select class="form-select form-select-sm" style="width:72px" onchange="gridApi&&gridApi.setGridOption('paginationPageSize',+this.value)">
+        <option value="10">10</option><option value="20" selected>20</option><option value="50">50</option>
+      </select>
+    </div>
+  </div>
 </div>
 
 {# ══ ADD / EDIT MODAL ══ #}
@@ -136,11 +358,11 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
       </div>
 
       <div class="modal-body p-0" style="overflow-y:auto;background:#f8fafc;height:600px;">
-        <form id="prForm">
+        <form id="poForm" onsubmit="event.preventDefault(); savePO();">
         <input type="hidden" id="po_id">
 
         {# ══ TAB 1: CONTENT ══ #}
-        <div id="tab_content" style="display:block;">
+        <div class="pur-tab-pane active" id="tab_content">
 
           {# ── Section 1: Request Info ── #}
           <div class="pur-section">
@@ -151,7 +373,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               </div>
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
-                        <div class="pur-section-body open">
+            <div class="pur-section-body open">
               <div class="f-item" style="margin-bottom:12px;max-width:260px;">
                 <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
                 <select id="po_kind" class="f-inp">
@@ -163,7 +385,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               {# ── Row 1: PQ reference + Vendor info ── #}
               <div class="f-grid4" style="margin-bottom:12px;">
                 <div class="f-item">
-                  <div class="f-lbl">{% if ar %}رقم عرض السعر{% else %}Purchase Quotation No{% endif %} <span class="f-lbl-req" style="color:#ef4444;">*</span></div>
+                  <div class="f-lbl">{% if ar %}رقم عرض السعر{% else %}Purchase Quotation No{% endif %} <span class="f-req">*</span></div>
                   <select id="po_pq_id" class="f-inp" onchange="onPQChange()">
                     <option value="">-- {% if ar %}اختر عرض سعر معتمد{% else %}Select an Approved PQ{% endif %} --</option>
                     {% for pq in pqs %}<option value="{{ pq.id }}">{{ pq.doc_no }}</option>{% endfor %}
@@ -324,7 +546,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
         </div>{# end tab_content #}
 
         {# ══ TAB 2: ATTACHMENTS ══ #}
-        <div id="tab_attach" style="display:none;">
+        <div class="pur-tab-pane" id="tab_attach">
           <div style="padding:20px;">
             <div id="attDrop"
                  style="border:2px dashed #bfdbfe;border-radius:12px;padding:40px 24px;
@@ -380,12 +602,33 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
 <script>
 const IS_AR = {{ 'true' if ar else 'false' }};
 const CSRF  = '{{ csrf_token() }}';
 let _liIdx = 0;
 let _attachments = [];
+let _poModal = null;
+let _isFetchingDocNo = false;
+
+/* ══ Document Number Fetch - FIXED: Ensures proper increment ══ */
+async function fetchDocNo() {
+  if (_isFetchingDocNo) return;
+  _isFetchingDocNo = true;
+  try {
+    const url = '/purchase/next-doc-no?type=PO&force_new=true&_=' + Date.now();
+    const res = await fetch(url);
+    const d = await res.json();
+    if (d.doc_no) {
+      document.getElementById('po_doc_no').value = d.doc_no;
+      document.getElementById('poDocBadge').textContent = d.doc_no;
+    }
+  } catch(e) {
+    console.error('Error fetching doc no:', e);
+  } finally {
+    _isFetchingDocNo = false;
+  }
+}
 
 /* ══ Section toggle ══ */
 function togSec(btn) {
@@ -400,22 +643,10 @@ function togSec(btn) {
 
 /* ══ Tab switch ══ */
 function switchTab(tabId, btn) {
-  ['tab_content', 'tab_attach'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
+  document.querySelectorAll('.pur-tab-pane').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.pur-tab').forEach(b => b.classList.remove('active'));
-  const target = document.getElementById(tabId);
-  if (target) target.style.display = 'block';
+  document.getElementById(tabId).classList.add('active');
   btn.classList.add('active');
-}
-
-/* ══ Doc No fetch ══ */
-async function fetchDocNo() {
-  const res = await fetch('/purchase/next-doc-no?type=PO');
-  const d   = await res.json();
-  document.getElementById('po_doc_no').value = d.doc_no;
-  document.getElementById('poDocBadge').textContent = d.doc_no;
 }
 
 /* ══ PQ selection → auto-fill vendor + dates + LOCKED line items ══ */
@@ -491,13 +722,6 @@ function addLiRow(d) {
   </tr>`;
   document.getElementById('liBody').insertAdjacentHTML('beforeend', row);
   recalcLi(idx);
-  updLiCount();
-}
-
-function removeLi(idx) {
-  const r = document.getElementById('plr_'+idx);
-  if (r) r.remove();
-  recalcSummary();
   updLiCount();
 }
 
@@ -580,7 +804,7 @@ function updDocCount() {
 }
 
 /* ══ Open Add ══ */
-function openAddPO() {
+async function openAddPO() {
   _liIdx = 0; _attachments = [];
   document.getElementById('po_id').value = '';
   document.getElementById('poTitle').innerHTML =
@@ -598,11 +822,16 @@ function openAddPO() {
   document.getElementById('po_vendor').value = '';
   document.getElementById('po_pq_id').value = '';
   document.getElementById('po_doc_no').value = '';
-  document.getElementById('poDocBadge').textContent = 'NEW';
+  document.getElementById('poDocBadge').textContent = '...';
+  
+  // ⭐ Fetch fresh document number
+  await fetchDocNo();
+  
   document.getElementById('liBody').innerHTML = '';
   document.getElementById('attList').innerHTML = '';
   document.getElementById('existAttList').innerHTML = '';
   recalcSummary(); updLiCount(); updDocCount();
+  
   switchTab('tab_content', document.querySelector('.pur-tab'));
   document.querySelectorAll('.pur-section-hdr').forEach(btn => {
     btn.classList.add('open');
@@ -610,57 +839,97 @@ function openAddPO() {
     const ch = btn.querySelector('.fa-chevron-up,.fa-chevron-down');
     if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
   });
-  fetchDocNo();
   addLiRow();
-  new bootstrap.Modal(document.getElementById('poModal')).show();
+  
+  if (!_poModal) {
+    const modalEl = document.getElementById('poModal');
+    if (modalEl) {
+      _poModal = new bootstrap.Modal(modalEl);
+    }
+  }
+  if (_poModal) {
+    _poModal.show();
+  }
 }
 
 /* ══ Open Edit ══ */
 function openEditPO(id) {
-  fetch('/purchase/orders/' + id + '/json').then(r => r.json()).then(d => {
-    _liIdx = 0; _attachments = [];
-    document.getElementById('po_id').value = id;
-    document.getElementById('poTitle').innerHTML =
-      '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل أمر الشراء' : 'Edit Purchase Order');
-    document.getElementById('po_doc_no').value = d.doc_no || '';
-    document.getElementById('poDocBadge').textContent = d.doc_no || '';
-    document.getElementById('po_status').value = d.status || 'Open';
-    document.getElementById('po_kind').value = d.kind || 'Goods';
-    document.getElementById('po_pq_id').value = d.pq_id || '';
-    document.getElementById('po_vendor').value = d.vendor_id || '';
-    document.getElementById('po_vendor_ref').value = d.vendor_ref_no || '';
-    const vnEl = document.getElementById('po_vendor_name');
-    if (vnEl) vnEl.value = d.vendor_name || '';
-    const rmEl = document.getElementById('po_remarks');
-    if (rmEl) rmEl.value = d.remarks || '';
-    document.getElementById('po_posting_date').disabled = (d.status === 'Open');
-    document.getElementById('po_posting_date').value  = d.posting_date  || '';
-    document.getElementById('po_delivery_date').value = d.delivery_date || '';
-    document.getElementById('po_doc_date').value      = new Date().toISOString().split('T')[0]; // re-stamped on every save
-    document.getElementById('liBody').innerHTML = '';
-    (d.items || []).forEach(li => addLiRow(li));
-    if (!d.items?.length) addLiRow();
-    document.getElementById('attList').innerHTML = '';
-    document.getElementById('existAttList').innerHTML = '';
-    (d.attachments || []).forEach(a => {
-      const div = document.createElement('div'); div.className = 'att-item';
-      div.innerHTML = `<span><i class="fas fa-file me-2" style="color:#60a5fa;"></i><strong>${a.filename}</strong>
-        <span style="color:#9ca3af;margin-left:8px;font-size:11px;">existing</span></span>`;
-      document.getElementById('existAttList').appendChild(div);
+  fetch('/purchase/orders/' + id + '/json')
+    .then(r => {
+      if (!r.ok) throw new Error('Network response was not ok');
+      return r.json();
+    })
+    .then(d => {
+      _liIdx = 0; _attachments = [];
+      document.getElementById('po_id').value = id;
+      document.getElementById('poTitle').innerHTML =
+        '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل أمر الشراء' : 'Edit Purchase Order');
+      document.getElementById('po_doc_no').value = d.doc_no || '';
+      document.getElementById('poDocBadge').textContent = d.doc_no || '';
+      document.getElementById('po_status').value = d.status || 'Open';
+      document.getElementById('po_kind').value = d.kind || 'Goods';
+      document.getElementById('po_pq_id').value = d.pq_id || '';
+      document.getElementById('po_vendor').value = d.vendor_id || '';
+      document.getElementById('po_vendor_ref').value = d.vendor_ref_no || '';
+      const vnEl = document.getElementById('po_vendor_name');
+      if (vnEl) vnEl.value = d.vendor_name || '';
+      const rmEl = document.getElementById('po_remarks');
+      if (rmEl) rmEl.value = d.remarks || '';
+      document.getElementById('po_posting_date').disabled = (d.status === 'Open');
+      document.getElementById('po_posting_date').value  = d.posting_date  || '';
+      document.getElementById('po_delivery_date').value = d.delivery_date || '';
+      document.getElementById('po_doc_date').value      = new Date().toISOString().split('T')[0];
+      
+      document.getElementById('liBody').innerHTML = '';
+      (d.items || []).forEach(li => addLiRow(li));
+      if (!d.items?.length) addLiRow();
+      
+      document.getElementById('attList').innerHTML = '';
+      document.getElementById('existAttList').innerHTML = '';
+      (d.attachments || []).forEach(a => {
+        const div = document.createElement('div'); div.className = 'att-item';
+        div.innerHTML = `<span><i class="fas fa-file me-2" style="color:#60a5fa;"></i><strong>${a.filename}</strong>
+          <span style="color:#9ca3af;margin-left:8px;font-size:11px;">existing</span></span>`;
+        document.getElementById('existAttList').appendChild(div);
+      });
+      recalcSummary(); updLiCount(); updDocCount();
+      switchTab('tab_content', document.querySelector('.pur-tab'));
+      document.querySelectorAll('.pur-section-hdr').forEach(btn => {
+        btn.classList.add('open'); btn.nextElementSibling.classList.add('open');
+        const ch = btn.querySelector('.fa-chevron-up,.fa-chevron-down');
+        if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
+      });
+      
+      if (!_poModal) {
+        const modalEl = document.getElementById('poModal');
+        if (modalEl) {
+          _poModal = new bootstrap.Modal(modalEl);
+        }
+      }
+      if (_poModal) {
+        _poModal.show();
+      }
+    })
+    .catch(err => {
+      console.error('Error loading PO:', err);
+      alert(IS_AR ? 'حدث خطأ في تحميل البيانات' : 'Error loading data');
     });
-    recalcSummary(); updLiCount(); updDocCount();
-    switchTab('tab_content', document.querySelector('.pur-tab'));
-    document.querySelectorAll('.pur-section-hdr').forEach(btn => {
-      btn.classList.add('open'); btn.nextElementSibling.classList.add('open');
-      const ch = btn.querySelector('.fa-chevron-up,.fa-chevron-down');
-      if (ch) { ch.className = 'fas fa-chevron-up'; ch.style.cssText = 'color:#2563eb;font-size:11px;'; }
-    });
-    new bootstrap.Modal(document.getElementById('poModal')).show();
-  });
 }
 
 /* ══ Save ══ */
 async function savePO() {
+  // ⭐ Ensure we have a document number
+  const docNo = document.getElementById('po_doc_no').value;
+  if (!docNo || docNo === '...' || docNo === 'NEW' || docNo === '') {
+    alert(IS_AR ? 'جاري تحميل رقم المستند... يرجى الانتظار' : 'Loading document number... please wait');
+    await fetchDocNo();
+    const newDocNo = document.getElementById('po_doc_no').value;
+    if (!newDocNo || newDocNo === '...' || newDocNo === '') {
+      alert(IS_AR ? 'فشل في توليد رقم المستند' : 'Failed to generate document number');
+      return;
+    }
+  }
+  
   if (!document.getElementById('po_pq_id').value) {
     alert(IS_AR ? 'يجب اختيار عرض سعر معتمد' : 'An Approved Purchase Quotation must be selected');
     return;
@@ -669,6 +938,7 @@ async function savePO() {
     alert(IS_AR ? 'يرجى الانتظار حتى يتم تحميل بيانات عرض السعر' : 'Please wait — still loading data from the Purchase Quotation');
     return;
   }
+  
   const id  = document.getElementById('po_id').value;
   const url = id ? `/purchase/orders/${id}/edit` : '/purchase/orders/add';
   const fd  = new FormData();
@@ -684,7 +954,7 @@ async function savePO() {
   fd.set('delivery_date',  document.getElementById('po_delivery_date').value);
   fd.set('document_date',  document.getElementById('po_doc_date').value);
   
-  // ══ CRITICAL: Add line items to FormData ══
+  // ══ Line items ══
   const rows = document.querySelectorAll('#liBody tr');
   console.log('Saving', rows.length, 'line items');
   
@@ -705,7 +975,7 @@ async function savePO() {
     fd.append('li_tax_code[]',     getVal('li_tax_code[]'));
   });
   
-  // ══ Add attachments ══
+  // ══ Attachments ══
   _attachments.forEach(f => fd.append('attachments', f));
   
   try {
@@ -714,13 +984,26 @@ async function savePO() {
       headers: {'X-CSRFToken': CSRF},
       body: fd
     });
-    const data = await res.json();
+    
+    const contentType = res.headers.get('content-type');
+    let data;
+    
+    if (contentType && contentType.includes('application/json')) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      console.error('Non-JSON response:', text.substring(0, 500));
+      throw new Error('Server returned non-JSON response');
+    }
     
     console.log('Save response:', data);
     
     if (data.ok) {
-      bootstrap.Modal.getInstance(document.getElementById('poModal'))?.hide();
+      if (_poModal) {
+        _poModal.hide();
+      }
       loadData();
+      alert(IS_AR ? 'تم الحفظ بنجاح' : 'Saved successfully');
     } else {
       alert(data.error || (IS_AR ? 'حدث خطأ' : 'An error occurred'));
     }
@@ -735,93 +1018,224 @@ function confDel(id, docNo) {
   document.getElementById('delTxt').textContent = (IS_AR ? 'حذف: ' : 'Delete: ') + docNo + '?';
   document.getElementById('delBtn').onclick = () => {
     fetch('/purchase/orders/' + id + '/delete', {
-      method:'POST', headers:{'X-CSRFToken':CSRF}, body:new URLSearchParams({csrf_token:CSRF})
+      method:'POST', 
+      headers:{'X-CSRFToken':CSRF}, 
+      body:new URLSearchParams({csrf_token:CSRF})
     }).then(r => r.json()).then(d => {
-      if (d.ok) { bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide(); loadData(); }
+      if (d.ok) { 
+        bootstrap.Modal.getInstance(document.getElementById('delModal'))?.hide(); 
+        loadData(); 
+      }
     });
   };
   new bootstrap.Modal(document.getElementById('delModal')).show();
 }
 
-/* ══ AG-Grid ══ */
-const AG_LOCALE = IS_AR ? {
-  addFilterCondition:'+ إضافة قاعدة', matchAll:'يطابق الكل',
-  applyFilter:'تطبيق', clearFilter:'مسح', resetFilter:'إعادة تعيين',
-  noRowsToShow:'لا توجد بيانات', filterOoo:'تصفية...',
-} : {
-  addFilterCondition:'+ Add Rule', matchAll:'Match All',
-  applyFilter:'Apply', clearFilter:'Clear', resetFilter:'Reset',
-  noRowsToShow:'No records found',
-};
-
+/* ══ AG-GRID ENTERPRISE (EXACTLY LIKE EMPLOYEES) ══ */
 function rStatus(p) {
-  const cfg = { Open:'#dbeafe:#2563eb', Pending:'#fef3c7:#d97706',
-    Approved:'#dcfce7:#15803d', Closed:'#f1f5f9:#6b7280', Cancelled:'#fee2e2:#dc2626' };
-  const [bg,fg] = (cfg[p.value] || cfg.Open).split(':');
-  return `<span style="background:${bg};color:${fg};padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;">${p.value||'Open'}</span>`;
+  const v = p.value || 'Open';
+  const labels = {
+    Open: IS_AR ? 'مفتوح' : 'Open',
+    Pending: IS_AR ? 'معلق' : 'Pending',
+    Approved: IS_AR ? 'معتمد' : 'Approved',
+    Closed: IS_AR ? 'مغلق' : 'Closed',
+    Cancelled: IS_AR ? 'ملغي' : 'Cancelled'
+  };
+  const classes = {
+    Open: 'st-open',
+    Pending: 'st-pending',
+    Approved: 'st-approved',
+    Closed: 'st-closed',
+    Cancelled: 'st-cancelled'
+  };
+  return `<span class="st-pill ${classes[v] || classes.Open}">
+      <i class="fas fa-circle" style="font-size:6px;"></i>
+      ${labels[v] || labels.Open}
+  </span>`;
 }
+
 function rSAR(p) {
-  return p.value!=null
-    ? `<span style="font-weight:600;font-variant-numeric:tabular-nums;">${parseFloat(p.value).toLocaleString('en-SA',{minimumFractionDigits:2})}</span>` : '';
+  return p.value != null
+    ? `<span style="font-weight:600;font-variant-numeric:tabular-nums;">${parseFloat(p.value).toLocaleString('en-SA',{minimumFractionDigits:2})}</span>` 
+    : '';
 }
 
 class ActR {
   init(p) {
     this.g = document.createElement('div');
-    this.g.style.cssText = 'display:flex;align-items:center;gap:3px;';
+    this.g.style.cssText = 'display:flex;align-items:center;gap:4px;height:100%;';
     const d = p.data;
+    const docNo = (d.doc_no || '').replace(/'/g, "\\'");
     this.g.innerHTML = `
       <button class="ag-ab ag-ab-view" onclick="window.location='/purchase/orders/${d.id}/view'" title="${IS_AR?'عرض':'View'}"><i class="fas fa-eye"></i></button>
       <button class="ag-ab ag-ab-edit" onclick="openEditPO(${d.id})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-      <button class="ag-ab ag-ab-del"   onclick="confDel(${d.id}, '${d.doc_no || ""}')" title="Delete"><i class="fas fa-trash"></i></button>`
+      <button class="ag-ab ag-ab-del" onclick="confDel(${d.id},'${docNo}')" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>`;
   }
   getGui() { return this.g; }
 }
 
-const defCol = {
-  sortable:true, unSortIcon:true, resizable:true, filter:true, floatingFilter:true,
-  filterParams:{buttons:['apply','reset','clear'], closeOnApply:true, maxNumConditions:10}
+const AG_LOCALE = IS_AR ? {
+  filterOoo: 'تصفية...',
+  equals: 'يساوي',
+  notEqual: 'لا يساوي',
+  contains: 'يحتوي على',
+  notContains: 'لا يحتوي على',
+  startsWith: 'يبدأ بـ',
+  endsWith: 'ينتهي بـ',
+  blank: 'فارغ',
+  notBlank: 'غير فارغ',
+  lessThan: 'أقل من',
+  greaterThan: 'أكبر من',
+  applyFilter: 'تطبيق',
+  clearFilter: 'مسح',
+  resetFilter: 'إعادة تعيين',
+  addFilterCondition: '+ إضافة قاعدة',
+  matchAll: 'يطابق الكل',
+  matchAny: 'يطابق أي',
+  andCondition: 'و',
+  orCondition: 'أو',
+  noRowsToShow: 'لا توجد بيانات',
+  loadingOoo: 'جاري التحميل...',
+  searchOoo: 'بحث...',
+  sortAscending: 'تصاعدي',
+  sortDescending: 'تنازلي',
+} : {
+  filterOoo: 'Filter...',
+  applyFilter: 'Apply',
+  clearFilter: 'Clear',
+  resetFilter: 'Reset',
+  addFilterCondition: '+ Add Rule',
+  matchAll: 'Match All',
+  matchAny: 'Match Any',
+  noRowsToShow: 'No records found',
+  searchOoo: 'Search...',
 };
+
+const defCol = {
+  sortable: true,
+  unSortIcon: true,
+  resizable: true,
+  filter: true,
+  floatingFilter: true,
+  suppressMenu: false,
+  enableRowGroup: true,
+  enablePivot: true,
+  enableValue: true,
+  menuTabs: ['filterMenuTab', 'columnsMenuTab', 'generalMenuTab'],
+  filterParams: {
+    buttons: ['apply', 'reset', 'clear'],
+    closeOnApply: true,
+    maxNumConditions: 10
+  }
+};
+
 const cols = [
-  {headerName:'#',field:'id',width:65,floatingFilter:false,suppressMenu:true},
+  {headerName:'#',field:'id',width:65,floatingFilter:false,suppressMenu:true,checkboxSelection:true,headerCheckboxSelection:true,pinned:IS_AR?'right':'left',sortable:false,resizable:false},
   {headerName:IS_AR?'رقم المستند':'Doc No',field:'doc_no',width:125,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'اسم المورد':'Vendor Name',field:'vendor_name',minWidth:180,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'الحالة':'Status',field:'status',width:105,cellRenderer:rStatus,floatingFilter:false},
+  {headerName:IS_AR?'الحالة':'Status',field:'status',width:105,cellRenderer:rStatus,floatingFilter:false,filter:'agSetColumnFilter',filterParams:{values:['Open','Pending','Approved','Closed','Cancelled'],buttons:['apply','reset','clear']}},
   {headerName:IS_AR?'تاريخ الترحيل':'Posting Date',field:'posting_date',width:125,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'تاريخ التسليم':'Delivery Date',field:'delivery_date',width:115,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'الإجمالي شامل الضريبة':'Total Incl. VAT',field:'total_incl_vat',width:145,cellRenderer:rSAR,floatingFilter:false},
   {headerName:IS_AR?'رقم مرجع المورد':'Vendor Ref No',field:'vendor_ref_no',width:130,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:110,pinned:IS_AR?'left':'right',
+  {headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:120,pinned:IS_AR?'left':'right',
    sortable:false,suppressMenu:true,floatingFilter:false,resizable:false,
    cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 6px'}},
 ];
 
 let gridApi;
-agGrid.createGrid(document.getElementById('poGrid'), {
-  columnDefs:cols, multiSortKey:'ctrl', rowData:[], pagination:true, paginationPageSize:10,
-  animateRows:true, enableRtl:IS_AR, defaultColDef:defCol, localeText:AG_LOCALE,
-  onGridReady(p) {
-    gridApi = p.api;
-    // Pass the whole event: AG-Grid v31 keeps column operations on
-    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
-    if (window.GridKit) {
-      GridKit.enhance(p, 'poGrid', { storageKey: 'purchase_po', exportName: 'Purchase Orders' });
+
+document.addEventListener('DOMContentLoaded', function() {
+  const el = document.getElementById('poGrid');
+  if (!el) return;
+  
+  agGrid.createGrid(el, {
+    columnDefs: cols,
+    multiSortKey: 'ctrl',
+    rowData: [],
+    pagination: true,
+    paginationPageSize: 20,
+    animateRows: true,
+    enableRtl: IS_AR,
+    defaultColDef: defCol,
+    localeText: AG_LOCALE,
+    
+    // ── ENTERPRISE FEATURES (EXACTLY LIKE EMPLOYEES) ──
+    sideBar: {
+      toolPanels: [
+        {
+          id: 'columns',
+          labelDefault: IS_AR ? 'الأعمدة' : 'Columns',
+          labelKey: 'columns',
+          iconKey: 'columns',
+          toolPanel: 'agColumnsToolPanel'
+        },
+        {
+          id: 'filters',
+          labelDefault: IS_AR ? 'الفلاتر' : 'Filters',
+          labelKey: 'filters',
+          iconKey: 'filter',
+          toolPanel: 'agFiltersToolPanel'
+        }
+      ],
+      defaultToolPanel: ''
+    },
+    rowGroupPanelShow: 'always',
+    pivotPanelShow: 'always',
+    groupDisplayType: 'groupRows',
+    
+    rowSelection: 'multiple',
+    suppressRowClickSelection: true,
+    
+    onGridReady(p) {
+      gridApi = p.api;
+      loadData();
+    },
+    onFilterChanged() { upd(); },
+    onPaginationChanged() { upd(); },
+    onSelectionChanged() { upd(); },
+    getRowStyle(p) {
+      return p.node.rowIndex % 2 === 0 ? { background: '#fff' } : { background: '#fafbfc' };
     }
-    loadData();
-  },
-  onPaginationChanged() { upd(); },
-  getRowStyle(p) { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
+  });
+  
+  // Check for edit param in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const editId = urlParams.get('edit');
+  if (editId) {
+    setTimeout(() => {
+      openEditPO(parseInt(editId));
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }, 500);
+  }
 });
+
 function loadData() {
-  fetch('/purchase/orders/data').then(r=>r.json())
-    .then(d => { gridApi.setGridOption('rowData',d); upd(); })
+  var savedFilters = gridApi ? gridApi.getFilterModel() : null;
+  
+  fetch('/purchase/orders/data')
+    .then(r => r.json())
+    .then(d => {
+      if (gridApi) {
+        gridApi.setGridOption('rowData', d);
+        if (savedFilters && Object.keys(savedFilters).length) {
+          gridApi.setFilterModel(savedFilters);
+        }
+        upd();
+      }
+    })
     .catch(console.error);
 }
+
 function upd() {
   if (!gridApi) return;
-  const c = gridApi.getDisplayedRowCount();
-  document.getElementById('selText').textContent = c + ' ' + (IS_AR ? 'طلب' : 'orders');
-  document.getElementById('pageInfo').textContent = `${c} entries`;
+  const total = gridApi.getDisplayedRowCount();
+  const selected = gridApi.getSelectedRows().length;
+  const text = selected > 0 
+    ? `${selected} ${IS_AR ? 'محدد' : 'selected'}`
+    : `${total} ${IS_AR ? 'أمر شراء' : 'orders'}`;
+  document.getElementById('selText').textContent = text;
+  document.getElementById('pageInfo').textContent = `${total} ${IS_AR ? 'أوامر شراء' : 'orders'}`;
 }
 </script>
 {% endblock %}

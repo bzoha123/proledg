@@ -22,7 +22,7 @@
 }
 .ag-theme-alpine{
   --ag-font-family:'Segoe UI',system-ui,sans-serif; --ag-font-size:13px;
-  --ag-header-background-color:var(--navy); --ag-header-foreground-color:#fff;
+  --ag-header-background-color:#e5e7eb; --ag-header-foreground-color:#1e293b;
   --ag-border-color:var(--gray-200); --ag-row-border-color:var(--gray-100);
   --ag-row-hover-color:var(--blue-50); --ag-selected-row-background-color:var(--blue-100);
   --ag-header-height:44px; --ag-row-height:44px; --ag-cell-horizontal-padding:12px;
@@ -614,7 +614,7 @@ const GEO = {
   "Egypt":{ar:"مصر",cities:{"Cairo":{ar:"القاهرة",districts:["Nasr City","Heliopolis","Maadi","Zamalek","Dokki","Mohandessin","New Cairo","6th of October","Ain Shams","Shubra"]}}},
 };
 </script>
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
 <script>
 const TRANSLATE_URL = '{{ url_for("sellers.translate_text") }}';
 const CSRF = '{{ csrf_token() }}';
@@ -724,7 +724,7 @@ let gridApi;
 agGrid.createGrid(document.getElementById('sellerGrid'),{
   multiSortKey:'ctrl',
   columnDefs:[
-    {field:'id',width:48,checkboxSelection:true,headerCheckboxSelection:true,sortable:false,suppressMenu:true,resizable:false,pinned:IS_AR?'right':'left'},
+    {field:'id',width:48,checkboxSelection:true,headerCheckboxSelection:true,sortable:false,suppressMenu:true,resizable:false,filter:false,floatingFilter:false,enableRowGroup:false,enablePivot:false,enableValue:false,suppressColumnsToolPanel:true,pinned:IS_AR?'right':'left'},
     {headerName:IS_AR?'الاسم':'Name',field:'name',minWidth:180,pinned:IS_AR?'right':'left',cellRenderer:renderName,filter:'agTextColumnFilter'},
     {headerName:IS_AR?'الكود':'Code',field:'seller_code',width:125,cellRenderer:renderCode,filter:'agTextColumnFilter'},
     {headerName:IS_AR?'الرقم الضريبي':'VAT',field:'vat_number',width:145,filter:'agTextColumnFilter'},
@@ -735,23 +735,23 @@ agGrid.createGrid(document.getElementById('sellerGrid'),{
     {headerName:IS_AR?'الدولة':'Country',field:'country',width:125,filter:'agTextColumnFilter'},
     {headerName:IS_AR?'الحالة':'Status',field:'status',width:110,cellRenderer:renderStatus,filter:'agSetColumnFilter'},
     {headerName:IS_AR?'تاريخ':'Created',field:'created_at',width:110,filter:'agTextColumnFilter'},
-    ...(IS_ADMIN?[{headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:110,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,resizable:false,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 8px'}}]:[]),
+    ...(IS_ADMIN?[{headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:110,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,resizable:false,filter:false,floatingFilter:false,enableRowGroup:false,enablePivot:false,enableValue:false,suppressColumnsToolPanel:true,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 8px'}}]:[]),
   ],
   rowData:[],pagination:true,paginationPageSize:20,
+  alwaysShowHorizontalScroll:true,alwaysShowVerticalScroll:true,
+  sideBar:{toolPanels:[{id:'columns',labelDefault:IS_AR?'الأعمدة':'Columns',labelKey:'columns',iconKey:'columns',toolPanel:'agColumnsToolPanel'},{id:'filters',labelDefault:IS_AR?'الفلاتر':'Filters',labelKey:'filters',iconKey:'filter',toolPanel:'agFiltersToolPanel'}],defaultToolPanel:''},
+  rowGroupPanelShow:'always',pivotPanelShow:'always',groupDisplayType:'groupRows',
   rowSelection:'multiple',suppressRowClickSelection:true,animateRows:true,enableRtl:IS_AR,
-  defaultColDef:{sortable:true,unSortIcon:true,resizable:true,filter:true,suppressMenu:false,menuTabs:['filterMenuTab','generalMenuTab'],filterParams:{buttons:['apply','reset','clear'],closeOnApply:true}},
+  defaultColDef:{sortable:true,unSortIcon:true,resizable:true,filter:true,floatingFilter:true,suppressMenu:false,enableRowGroup:true,enablePivot:true,enableValue:true,menuTabs:['filterMenuTab','columnsMenuTab','generalMenuTab'],filterParams:{buttons:['apply','reset','clear'],closeOnApply:true}},
   onGridReady(p) {
     gridApi = p.api;
-    // Pass the whole event: AG-Grid v31 keeps column operations on
-    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
-    if (window.GridKit) {
-      GridKit.enhance(p, 'sellerGrid', { storageKey: 'sellers', exportName: 'Sellers' });
-    }
+    // Enterprise sidebar (Columns + Filters) + row-group/pivot panels replace
+    // the GridKit toolbar here, so GridKit.enhance is intentionally not called.
     loadData();
   },
   onFilterChanged(){updateBadge();},onPaginationChanged(){updateBadge();},onSelectionChanged(){updateBadge();},
 });
-function loadData(){fetch(DATA_URL).then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);updateBadge();});}
+function loadData(){var sf=gridApi?gridApi.getFilterModel():null;fetch(DATA_URL).then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);if(sf&&Object.keys(sf).length)gridApi.setFilterModel(sf);updateBadge();});}
 function refreshGrid(){loadData();}
 function exportCSV(){gridApi.exportDataAsCsv({fileName:'sellers.csv'});}
 function clearAllFilters(){gridApi.setFilterModel(null);}

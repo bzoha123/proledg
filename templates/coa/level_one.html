@@ -28,51 +28,10 @@
   </div>
 
   <div class="proledg-table-wrap">
-    <table class="proledg-table">
-      <thead>
-        <tr>
-          <th style="width:40px">#</th>
-          <th style="width:90px">{% if ar %}الطول{% else %}Length{% endif %}</th>
-          <th style="width:90px">{% if ar %}الكود{% else %}Code{% endif %}</th>
-          <th>{% if ar %}المجموعة{% else %}Drawers{% endif %}</th>
-          <th>{% if ar %}الوصف{% else %}Description{% endif %}</th>
-          <th style="width:90px">{% if ar %}الحالة{% else %}Status{% endif %}</th>
-          {% if current_user.is_admin() %}
-          <th style="width:100px" class="text-center">{% if ar %}إجراءات{% else %}Actions{% endif %}</th>
-          {% endif %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in rows %}
-        <tr class="data-row">
-          <td>{{ loop.index }}</td>
-          <td>{{ r.code_length }}</td>
-          <td><span class="code-badge">{{ r.code }}</span></td>
-          <td class="fw-semibold">{{ r.drawers }}</td>
-          <td style="color:#6b7280;font-size:12px">{{ r.description }}</td>
-          <td>{% if (r.status or 'active') == 'active' %}<span style="background:#dcfce7;color:#15803d;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">{% if ar %}نشط{% else %}Active{% endif %}</span>{% else %}<span style="background:#fee2e2;color:#b91c1c;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">{% if ar %}غير نشط{% else %}Inactive{% endif %}</span>{% endif %}</td>
-          {% if current_user.is_admin() %}
-          <td class="text-center">
-            <button class="action-btn action-btn-edit"
-                    onclick="openEdit({{ r.id }},'{{ r.code|e }}','{{ r.drawers|e }}','{{ r.description|e }}')">
-              <i class="fas fa-pencil-alt"></i>
-            </button>
-            <form method="POST" action="{{ url_for('coa.level_one_delete', id=r.id) }}" class="d-inline"
-                  onsubmit="return confirm('{% if ar %}حذف هذا الحساب؟{% else %}Delete this account?{% endif %}')">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="action-btn action-btn-delete"><i class="fas fa-trash"></i></button>
-            </form>
-          </td>
-          {% endif %}
-        </tr>
-        {% else %}
-        <tr><td colspan="7" class="empty-row"><i class="fas fa-sitemap fa-2x mb-2 d-block"></i>{% if ar %}لا توجد حسابات{% else %}No accounts yet{% endif %}</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div id="coaGrid" class="ag-theme-alpine" style="width:100%;height:560px;"></div>
   </div>
   <div class="proledg-pagination">
-    <span class="page-count">{{ pg.total }} {% if ar %}حساب{% else %}account(s){% endif %} · {% if ar %}صفحة{% else %}page{% endif %} {{ pg.page }}/{{ pg.pages or 1 }}</span>
+    <span class="page-count" id="coaCount"></span>
   </div>
 </div>
 
@@ -148,6 +107,60 @@
 {% endblock %}
 
 {% block extra_js %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script>
+/* ── Level 1 AG-Grid (loads from /coa/level-one/data) ── */
+(function(){
+  const IS_AR_G  = {{ 'true' if ar else 'false' }};
+  const CSRF_G   = '{{ csrf_token() }}';
+  const IS_ADMIN = {{ 'true' if current_user.is_admin() else 'false' }};
+  const DATA_URL = {{ url_for('coa.level_one_data')|tojson }};
+  const DEL_BASE = {{ url_for('coa.level_one_list')|tojson }};
+  function statusBadge(v){ const a=(v||'active')==='active'; return '<span style="background:'+(a?'#dcfce7':'#fee2e2')+';color:'+(a?'#15803d':'#b91c1c')+';padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">'+(a?(IS_AR_G?'نشط':'Active'):(IS_AR_G?'غير نشط':'Inactive'))+'</span>'; }
+  function codeBadge(v){ return '<span class="code-badge">'+(v==null?'':v)+'</span>'; }
+  window.coaDelete1 = function(id){
+    if(!confirm(IS_AR_G?'حذف هذا الحساب؟':'Delete this account?')) return;
+    const fd=new FormData(); fd.set('csrf_token',CSRF_G);
+    fetch(DEL_BASE + '/' + id + '/delete',{method:'POST',body:fd})
+      .then(r=> r.ok?r:Promise.reject()).then(()=>window.coaReload1())
+      .catch(()=>alert(IS_AR_G?'تعذّر الحذف (قد يملك حسابات فرعية)':'Delete failed (may have child accounts)'));
+  };
+  class L1Act{
+    init(p){ const d=p.data; this.el=document.createElement('div'); this.el.style.cssText='display:flex;gap:4px;justify-content:center;';
+      this.el.innerHTML='<button type="button" class="action-btn action-btn-edit" title="'+(IS_AR_G?'تعديل':'Edit')+'"><i class="fas fa-pencil-alt"></i></button><button type="button" class="action-btn action-btn-delete" title="'+(IS_AR_G?'حذف':'Delete')+'"><i class="fas fa-trash"></i></button>';
+      const b=this.el.querySelectorAll('button');
+      b[0].addEventListener('click',()=>{ if(window.openEdit) window.openEdit(d.id, d.code, d.drawers, d.description); });
+      b[1].addEventListener('click',()=> window.coaDelete1(d.id));
+    }
+    getGui(){ return this.el; }
+  }
+  const _cf={ filter:'agTextColumnFilter', filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} };
+  const cols=[
+    { headerName:IS_AR_G?'الطول':'Length', field:'code_length', width:100, filter:'agNumberColumnFilter' },
+    { headerName:IS_AR_G?'الكود':'Code', field:'code', width:130, cellRenderer:p=>codeBadge(p.value), pinned:IS_AR_G?'right':'left', ..._cf },
+    { headerName:IS_AR_G?'المجموعة':'Drawers', field:'drawers', minWidth:200, flex:2, cellStyle:{fontWeight:600}, ..._cf },
+    { headerName:IS_AR_G?'الوصف':'Description', field:'description', minWidth:200, flex:1, cellStyle:{color:'#6b7280',fontSize:'12px'}, ..._cf },
+    { headerName:IS_AR_G?'الحالة':'Status', field:'status', width:120, cellRenderer:p=>statusBadge(p.value), filter:'agTextColumnFilter', filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} },
+  ];
+  if(IS_ADMIN) cols.push({ headerName:IS_AR_G?'إجراءات':'Actions', field:'_actions', width:120, pinned:IS_AR_G?'left':'right', sortable:false, filter:false, suppressMenu:true, resizable:false, cellRenderer:L1Act, cellStyle:{overflow:'visible'} });
+  document.addEventListener('DOMContentLoaded',function(){
+    const el=document.getElementById('coaGrid'); if(!el||!window.agGrid) return;
+    const api=agGrid.createGrid(el,{
+      columnDefs:cols, rowData:[], pagination:true, paginationPageSize:25, rowSelection:'single', animateRows:true, enableRtl:IS_AR_G,
+      localeText: IS_AR_G?{noRowsToShow:'لا توجد حسابات',searchOoo:'بحث...'}:{noRowsToShow:'No accounts yet',searchOoo:'Search...'},
+      multiSortKey:'ctrl',
+      defaultColDef:{ sortable:true, resizable:true, filter:true, floatingFilter:true, unSortIcon:true, menuTabs:['filterMenuTab','generalMenuTab'], filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} },
+      onGridReady(p){ if(window.GridKit) GridKit.enhance(p,'coaGrid',{storageKey:'coa_l1',exportName:'COA_Level1'}); p.api.sizeColumnsToFit(); window.coaReload1(); },
+      onGridSizeChanged(p){ p.api.sizeColumnsToFit(); },
+      onModelUpdated(p){ const c=document.getElementById('coaCount'); if(c) c.textContent=p.api.getDisplayedRowCount()+' '+(IS_AR_G?'حساب':'account(s)'); },
+    });
+    window.__coa1Api=api;
+  });
+  window.coaReload1=function(){ fetch(DATA_URL).then(r=>r.json()).then(d=>{ if(window.__coa1Api) window.__coa1Api.setGridOption('rowData',d||[]); }); };
+})();
+</script>
 <script>
 const IS_AR = {{ 'true' if ar else 'false' }};
 const ADD_URL  = '{{ url_for("coa.level_one_add") }}';

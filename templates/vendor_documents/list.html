@@ -7,12 +7,6 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
-  .ag-theme-alpine { --ag-font-family:'Segoe UI',system-ui,sans-serif; --ag-font-size:13px; --ag-header-background-color:#1e3a5f; --ag-header-foreground-color:#fff; --ag-border-color:#e2e8f0; --ag-row-hover-color:#eff6ff; --ag-selected-row-background-color:#dbeafe; --ag-header-height:44px; --ag-row-height:44px; }
-  .ag-theme-alpine .ag-header-cell-label { font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; }
-  .vd-badge { padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; }
-</style>
-
-<style>
 :root {
     --navy: #1e3a5f; --blue: #2563eb; --green: #16a34a; --red: #ef4444;
     --gray-50: #f8fafc; --gray-100: #f1f5f9; --gray-200: #e2e8f0;
@@ -20,7 +14,7 @@
     --amber: #f59e0b; --purple: #7c3aed;
 }
 
-/* ── Header ── */
+/* ── Page Header ── */
 .page-header {
     background: linear-gradient(135deg, #0f2040 0%, var(--navy) 40%, #1a56db 100%);
     border-radius: 16px; padding: 20px 28px; margin-bottom: 20px;
@@ -43,88 +37,221 @@
 .btn-danger { background: #ef4444; color: #fff; }
 .btn-danger:hover { background: #dc2626; }
 
-/* ── Filter Bar ── */
-.filter-bar {
-    background: #fff; border: 1px solid var(--gray-200); border-radius: 12px;
-    padding: 14px 18px; margin-bottom: 16px;
-    display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+/* ── Toolbar (matching Employees/Vendors pages) ── */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
 }
-.filter-bar select, .filter-bar input {
-    padding: 8px 14px; border: 1.5px solid var(--gray-200); border-radius: 8px;
-    font-size: 13px; min-width: 180px;
+.toolbar-left, .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
-.filter-bar select:focus, .filter-bar input:focus {
-    outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.08);
-}
-
-/* ── Table ── */
-.table-card {
-    background: #fff; border: 1px solid var(--gray-200); border-radius: 12px;
-    overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.05);
-}
-
-.table-container table {
-    width: 100%;
-    border-collapse: collapse;
+.tool-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 7px;
+    border: 1.5px solid #d1d5db;
+    background: white;
+    color: #6b7280;
+    cursor: pointer;
     font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all .12s;
+}
+.tool-btn:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #eff6ff;
+}
+.tool-btn-green { background: #16a34a; color: white; border: none; }
+.tool-btn-green:hover { background: #15803d; }
+.tool-btn-blue { background: #2563eb; color: white; border: none; }
+.tool-btn-blue:hover { background: #1d4ed8; }
+
+.search-form { position: relative; }
+.search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 12px;
+    z-index: 2;
+}
+.search-input {
+    padding: 7px 12px 7px 32px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 7px;
+    font-size: 12px;
+    outline: none;
+}
+.search-input:focus { border-color: #2563eb; }
+
+.sel-badge {
+    font-size: 11px;
+    color: #6b7280;
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-weight: 600;
 }
 
-.table-container thead {
-    background: var(--navy);
+/* ═══════════════════════════════════════════════════════
+   AG Grid - Enterprise Theme with Proledg styling (EXACTLY LIKE EMPLOYEES)
+   ═══════════════════════════════════════════════════════ */
+.ag-theme-alpine {
+    --ag-font-family:'Segoe UI',system-ui,sans-serif;
+    --ag-font-size:13px;
+    --ag-header-background-color:#1e3a5f;
+    --ag-header-foreground-color:#fff;
+    --ag-border-color:#e2e8f0;
+    --ag-row-hover-color:#eff6ff;
+    --ag-selected-row-background-color:#dbeafe;
+    --ag-header-height:44px;
+    --ag-row-height:44px;
+    --ag-cell-horizontal-padding:12px;
+}
+.ag-theme-alpine .ag-header-cell-label {
+    font-weight:700;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    overflow:visible;
+}
+.ag-theme-alpine .ag-header-cell-text {
+    overflow:visible;
+    text-overflow:clip;
+    white-space:nowrap;
+}
+.ag-theme-alpine .ag-header-cell:hover {
+    background:rgba(255,255,255,.08) !important;
+}
+.ag-theme-alpine .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-sort-descending-icon,
+.ag-theme-alpine .ag-sort-none-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-header-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-filter {
+    border-radius:10px !important;
+    box-shadow:0 8px 30px rgba(0,0,0,.15) !important;
+    border:1px solid #e2e8f0 !important;
+    overflow:hidden;
+    min-width:260px;
+    background:white;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input {
+    border:1.5px solid #d1d5db !important;
+    border-radius:7px !important;
+    padding:6px 10px !important;
+    font-size:12px !important;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+    box-shadow:0 0 0 2px rgba(37,99,235,.12) !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel {
+    padding:8px 10px !important;
+    background:#f8fafc !important;
+    border-top:1px solid #e2e8f0 !important;
+    display:flex !important;
+    gap:6px !important;
+    justify-content:space-between !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button {
+    padding:5px 14px !important;
+    border-radius:7px !important;
+    font-size:12px !important;
+    font-weight:600 !important;
+    border:none !important;
+    cursor:pointer !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"] {
+    background:linear-gradient(135deg,#16a34a,#15803d) !important;
+    color:white !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"] {
+    background:white !important;
+    color:#374151 !important;
+    border:1.5px solid #d1d5db !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input {
+    border:1px solid #e2e8f0 !important;
+    border-radius:5px !important;
+    padding:3px 7px !important;
+    font-size:11px !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+}
+.ag-theme-alpine .ag-row-even {
+    background:white;
+}
+.ag-theme-alpine .ag-row-odd {
+    background:#fafbfc;
+}
+.ag-theme-alpine .ag-row-hover {
+    background:#eff6ff !important;
+}
+.ag-theme-alpine .ag-cell {
+    border-right:1px solid #f1f5f9 !important;
 }
 
-.table-container thead th {
-    padding: 12px 16px;
-    color: #fff;
+/* ── Badge Styles ── */
+.vd-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 20px;
     font-size: 11px;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
     white-space: nowrap;
-    text-align: left;
 }
-.table-card thead th:first-child { padding-left: 16px; }
-.table-card tbody tr { border-bottom: 1px solid var(--gray-100); transition: background 0.15s; }
-.table-card tbody tr:hover { background: #eff6ff; }
-.table-card tbody tr.selected { background: #dbeafe; }
-.table-card tbody td { padding: 10px 14px; color: var(--gray-600); vertical-align: middle; }
-.table-card tbody td:first-child { padding-left: 16px; }
+.badge-other { background: #f1f5f9; color: #475569; }
+.badge-cr { background: #dbeafe; color: #1d4ed8; }
+.badge-vat { background: #ede9fe; color: #6d28d9; }
+.badge-id { background: #d1fae5; color: #065f46; }
+.badge-contract { background: #fef3c7; color: #92400e; }
+.badge-license { background: #cffafe; color: #0e7490; }
+.badge-insurance { background: #fce7f3; color: #9d174d; }
+.badge-bank { background: #d1fae5; color: #065f46; }
 
-.badge {
-    display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10.5px;
-    font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+/* ── Action Buttons (matching Employees/Vendors) ── */
+.ag-ab {
+    width:28px;
+    height:28px;
+    border-radius:7px;
+    border:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    cursor:pointer;
+    transition:all .12s;
 }
-.badge-other { background: #f9fafb; color: #6b7280; }
-.badge-cr { background: #eff6ff; color: #2563eb; }
-.badge-vat { background: #faf5ff; color: #7c3aed; }
-.badge-id { background: #f0fdf4; color: #16a34a; }
-.badge-contract { background: #fff7ed; color: #ea580c; }
-.badge-license { background: #ecfeff; color: #0891b2; }
-.badge-insurance { background: #fef2f2; color: #dc2626; }
-.badge-bank { background: #f0fdf4; color: #15803d; }
-
-.file-icon { font-size: 20px; margin-right: 6px; }
-.file-icon.pdf { color: #ef4444; }
-.file-icon.image { color: #f59e0b; }
-.file-icon.word { color: #2563eb; }
-.file-icon.excel { color: #16a34a; }
-.file-icon.other { color: #6b7280; }
-
-.btn-action {
-    padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
-    cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex;
-    align-items: center; gap: 4px; border: none;
+.ag-ab:hover {
+    transform:translateY(-1px);
+    box-shadow:0 2px 6px rgba(0,0,0,.2);
 }
-.btn-view { background: #eff6ff; color: var(--blue); }
-.btn-view:hover { background: #dbeafe; }
-.btn-download { background: #f0fdf4; color: var(--green); }
-.btn-download:hover { background: #dcfce7; }
-.btn-delete { background: #fef2f2; color: var(--red); border: 1px solid #fecaca; }
-.btn-delete:hover { background: #fee2e2; color: var(--red); }
-
-.empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; }
-.empty-state i { font-size: 48px; display: block; margin-bottom: 16px; opacity: 0.3; }
-.empty-state p { font-size: 14px; }
+.ag-ab-view { background:#0ea5e9; color:white; }
+.ag-ab-view:hover { background:#0284c7; }
+.ag-ab-download { background:#16a34a; color:white; }
+.ag-ab-download:hover { background:#15803d; }
+.ag-ab-del { background:#ef4444; color:white; }
+.ag-ab-del:hover { background:#dc2626; }
 
 /* ── Modal ── */
 .modal-overlay {
@@ -181,7 +308,6 @@
 .upload-zone p { color: #6b7280; font-size: 13px; margin: 0; }
 .upload-zone .browse { color: var(--blue); font-weight: 700; text-decoration: underline; }
 
-/* ── File List ── */
 .file-list { margin-bottom: 16px; }
 .file-item {
     display: flex; align-items: center; justify-content: space-between;
@@ -197,7 +323,6 @@
 }
 .file-item .file-remove:hover { background: #fef2f2; }
 
-/* ── Progress ── */
 .progress-bar {
     height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; margin: 12px 0;
 }
@@ -205,8 +330,6 @@
     height: 100%; background: var(--blue); border-radius: 3px;
     transition: width 0.3s; width: 0%;
 }
-
-/* ── Spinner ── */
 .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -246,31 +369,38 @@
 </div>
 
 <!-- ════════════════════════════════════════════════════════════ -->
-<!-- FILTER BAR                                                 -->
+<!-- TOOLBAR (matching Employees/Vendors pages)                 -->
 <!-- ════════════════════════════════════════════════════════════ -->
-<div class="filter-bar">
-    <select id="filterVendor" onchange="filterDocuments()">
-        <option value="">{% if ar %}كل الموردين{% else %}All Vendors{% endif %}</option>
-    </select>
-    <select id="filterCategory" onchange="filterDocuments()">
-        <option value="">{% if ar %}كل الفئات{% else %}All Categories{% endif %}</option>
-        <option value="CR / سجل تجاري">{% if ar %}سجل تجاري{% else %}CR{% endif %}</option>
-        <option value="VAT Certificate / شهادة ضريبة">{% if ar %}شهادة ضريبة{% else %}VAT Certificate{% endif %}</option>
-        <option value="ID / هوية">{% if ar %}هوية{% else %}ID{% endif %}</option>
-        <option value="Contract / عقد">{% if ar %}عقد{% else %}Contract{% endif %}</option>
-        <option value="License / رخصة">{% if ar %}رخصة{% else %}License{% endif %}</option>
-        <option value="Insurance / تأمين">{% if ar %}تأمين{% else %}Insurance{% endif %}</option>
-        <option value="Bank Letter / خطاب بنكي">{% if ar %}خطاب بنكي{% else %}Bank Letter{% endif %}</option>
-        <option value="Other / أخرى">{% if ar %}أخرى{% else %}Other{% endif %}</option>
-    </select>
-    <input type="text" id="filterSearch" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" oninput="filterDocuments()">
-    <span id="docCount" style="font-size:12px;color:var(--gray-400);margin-left:auto;"></span>
+<div class="toolbar">
+    <div class="toolbar-left">
+        <button class="tool-btn tool-btn-green" onclick="openUploadModal()" title="{% if ar %}رفع مستند{% else %}Upload Document{% endif %}">
+            <i class="fas fa-upload"></i>
+        </button>
+        <button class="tool-btn tool-btn-blue" onclick="loadDocuments()" title="{% if ar %}تحديث{% else %}Refresh{% endif %}">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+        <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null);document.getElementById('qs').value='';gridApi.setGridOption('quickFilterText','')" title="Clear Filters">
+            <i class="fas fa-times-circle"></i>
+        </button>
+        <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'vendor_documents.csv'})" title="Export">
+            <i class="fas fa-file-export"></i>
+        </button>
+    </div>
+    <div class="toolbar-right d-flex align-items-center gap-3">
+        <div class="sel-badge"><span id="selText">0 {% if ar %}مستند{% else %}documents{% endif %}</span></div>
+        <div class="search-form">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="qs" class="search-input" style="width:220px" 
+                   placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" 
+                   oninput="gridApi&&gridApi.setGridOption('quickFilterText',this.value)">
+        </div>
+    </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════════ -->
-<!-- DOCUMENTS TABLE                                            -->
+<!-- AG-GRID ENTERPRISE (EXACTLY LIKE EMPLOYEES)                -->
 <!-- ════════════════════════════════════════════════════════════ -->
-<div class="table-card">
+<div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;overflow:hidden;">
     <div id="vdGrid" class="ag-theme-alpine" style="width:100%;height:560px;"></div>
 </div>
 
@@ -289,7 +419,7 @@
                 
                 <div class="form-group">
                     <label>{% if ar %}المورد *{% else %}Vendor *{% endif %} <span class="required">*</span></label>
-                    <select name="vendor_id" id="vendorSelect" required onchange="updateUploadUrl()">
+                    <select name="vendor_id" id="vendorSelect" required>
                         <option value="">{% if ar %}اختر المورد...{% else %}Select vendor...{% endif %}</option>
                     </select>
                 </div>
@@ -339,10 +469,10 @@
                 <div id="uploadStatus" style="text-align:center;font-size:12px;color:var(--gray-600);margin-top:6px;"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-action btn-view" onclick="closeUploadModal()" style="font-size:14px; padding:10px 24px;">
+                <button type="button" class="btn btn-outline" onclick="closeUploadModal()" style="color:var(--gray-600);border-color:var(--gray-200);background:transparent;">
                     {% if ar %}إلغاء{% else %}Cancel{% endif %}
                 </button>
-                <button type="submit" class="btn btn-primary" id="uploadBtn" style="font-size:14px;">
+                <button type="submit" class="btn btn-primary" id="uploadBtn">
                     <i class="fas fa-upload"></i>
                     {% if ar %}رفع المستند{% else %}Upload Document{% endif %}
                 </button>
@@ -354,72 +484,293 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
 <script>
-/* ── Vendor Documents AG-Grid (matches buyer documents / standard grids) ── */
-(function(){
-  const IS_AR_G = {{ 'true' if ar else 'false' }};
-  function badge(v){ return '<span class="badge '+getCategoryClass(v)+'">'+getCategoryLabel(v)+'</span>'; }
-  function sizeFmt(p){ const b=p.value||0; return b>1048576?(b/1048576).toFixed(1)+' MB':b?(b/1024).toFixed(0)+' KB':'—'; }
-  function dateFmt(p){ return p.value ? new Date(p.value).toLocaleDateString() : '—'; }
-  class VdAct{
-    init(p){ const d=p.data; this.el=document.createElement('div'); this.el.style.cssText='display:flex;gap:4px;';
-      this.el.innerHTML =
-        '<button class="btn-action btn-view" onclick="viewDocument('+d.id+')" title="'+(IS_AR_G?'عرض':'View')+'"><i class="fas fa-eye"></i></button>'+
-        '<button class="btn-action btn-download" onclick="downloadDocument('+d.id+')" title="'+(IS_AR_G?'تحميل':'Download')+'"><i class="fas fa-download"></i></button>'+
-        '<button class="btn-action btn-delete" onclick="deleteDocument('+d.id+')" title="'+(IS_AR_G?'حذف':'Delete')+'"><i class="fas fa-trash"></i></button>';
-    }
-    getGui(){ return this.el; }
-  }
-  const _cf = { filter:'agTextColumnFilter', filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} };
-  const vdCols = [
-    { field:'document_name', headerName:IS_AR_G?'المستند':'Document', minWidth:220, flex:2, ..._cf },
-    { field:'vendor_name', headerName:IS_AR_G?'المورد':'Vendor', minWidth:180, flex:1, ..._cf },
-    { field:'document_type', headerName:IS_AR_G?'النوع':'Type', width:170, cellRenderer:p=>badge(p.value), filter:'agSetColumnFilter', filterParams:{buttons:['apply','reset','clear']} },
-    { field:'expiry_date', headerName:IS_AR_G?'تاريخ الإنتهاء':'Expiry Date', width:150, valueFormatter:dateFmt, filter:'agDateColumnFilter', filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} },
-    { field:'file_size', headerName:IS_AR_G?'الحجم':'Size', width:110, valueFormatter:sizeFmt, filter:'agNumberColumnFilter', filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} },
-    { field:'uploaded_at', headerName:IS_AR_G?'تاريخ الرفع':'Uploaded', width:160, valueFormatter:dateFmt, ..._cf },
-    { field:'_actions', headerName:IS_AR_G?'الإجراءات':'Actions', width:140, pinned:IS_AR_G?'left':'right', sortable:false, suppressMenu:true, resizable:false, cellRenderer:VdAct, cellStyle:{overflow:'visible'} },
-  ];
-  document.addEventListener('DOMContentLoaded', function(){
-    const el=document.getElementById('vdGrid'); if(!el) return;
-    window.vdGrid = agGrid.createGrid(el, {
-      columnDefs: vdCols, rowData: [], pagination:true, paginationPageSize:20,
-      rowSelection:'multiple', suppressRowClickSelection:true, animateRows:true, enableRtl:IS_AR_G,
-      localeText: IS_AR_G ? {noRowsToShow:'لا توجد مستندات',searchOoo:'بحث...'} : {noRowsToShow:'No documents found',searchOoo:'Search...'},
-      multiSortKey:'ctrl',
-      defaultColDef:{ sortable:true, resizable:true, filter:true, floatingFilter:true, unSortIcon:true,
-        menuTabs:['filterMenuTab','generalMenuTab'], filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} },
-      onGridReady(p){ if(window.GridKit) GridKit.enhance(p,'vdGrid',{storageKey:'vendor_docs',exportName:'VendorDocuments'}); p.api.sizeColumnsToFit(); },
-      onGridSizeChanged(p){ p.api.sizeColumnsToFit(); },
-      getRowStyle(p){ return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; },
-    });
-  });
-})();
-</script>
-<script>
-// ─────────────────────────────────────────────────────────────
-// GLOBAL VARIABLES
-// ─────────────────────────────────────────────────────────────
-let allDocuments = [];
-let allVendors = [];
-const isArabic = {{ 'true' if ar else 'false' }};
+const IS_AR_G = {{ 'true' if ar else 'false' }};
 const CSRF_TOKEN = '{{ csrf_token() }}';
 
 // ─────────────────────────────────────────────────────────────
-// INIT
+// CATEGORY HELPERS
 // ─────────────────────────────────────────────────────────────
+function getCategoryClass(docType) {
+    if (!docType) return 'badge-other';
+    const lower = docType.toLowerCase();
+    if (lower.includes('cr')) return 'badge-cr';
+    if (lower.includes('vat')) return 'badge-vat';
+    if (lower.includes('id')) return 'badge-id';
+    if (lower.includes('contract')) return 'badge-contract';
+    if (lower.includes('license')) return 'badge-license';
+    if (lower.includes('insurance')) return 'badge-insurance';
+    if (lower.includes('bank')) return 'badge-bank';
+    return 'badge-other';
+}
+
+function getCategoryLabel(docType) {
+    if (!docType) return IS_AR_G ? 'أخرى' : 'Other';
+    if (IS_AR_G) {
+        if (docType.includes('سجل تجاري') || docType.includes('CR')) return 'سجل تجاري';
+        if (docType.includes('شهادة ضريبة') || docType.includes('VAT')) return 'شهادة ضريبة';
+        if (docType.includes('هوية') || docType.includes('ID')) return 'هوية';
+        if (docType.includes('عقد') || docType.includes('Contract')) return 'عقد';
+        if (docType.includes('رخصة') || docType.includes('License')) return 'رخصة';
+        if (docType.includes('تأمين') || docType.includes('Insurance')) return 'تأمين';
+        if (docType.includes('خطاب بنكي') || docType.includes('Bank')) return 'خطاب بنكي';
+        return 'أخرى';
+    }
+    return docType;
+}
+
+function formatFileSize(bytes) {
+    if (!bytes) return '—';
+    if (bytes > 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+    if (bytes > 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    return bytes + ' B';
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    try {
+        return new Date(dateStr).toLocaleDateString();
+    } catch(e) { return dateStr; }
+}
+
+// ─────────────────────────────────────────────────────────────
+// ACTION BUTTON RENDERER (matching Employees/Vendors)
+// ─────────────────────────────────────────────────────────────
+class VdAct {
+    init(p) {
+        const d = p.data;
+        this.g = document.createElement('div');
+        this.g.style.cssText = 'display:flex;align-items:center;gap:4px;height:100%;';
+        this.g.innerHTML = `
+            <button class="ag-ab ag-ab-view" onclick="viewDocument(${d.id})" title="${IS_AR_G ? 'عرض' : 'View'}"><i class="fas fa-eye"></i></button>
+            <button class="ag-ab ag-ab-download" onclick="downloadDocument(${d.id})" title="${IS_AR_G ? 'تحميل' : 'Download'}"><i class="fas fa-download"></i></button>
+            <button class="ag-ab ag-ab-del" onclick="deleteDocument(${d.id})" title="${IS_AR_G ? 'حذف' : 'Delete'}"><i class="fas fa-trash"></i></button>
+        `;
+    }
+    getGui() { return this.g; }
+}
+
+// ─────────────────────────────────────────────────────────────
+// AG-GRID COLUMN DEFINITIONS
+// ─────────────────────────────────────────────────────────────
+const vdCols = [
+    {
+        headerName: '#',
+        field: 'id',
+        width: 65,
+        filter: false,
+        floatingFilter: false,
+        suppressMenu: true,
+        checkboxSelection: true,
+        headerCheckboxSelection: true,
+        pinned: IS_AR_G ? 'right' : 'left',
+        sortable: false,
+        resizable: false,
+    },
+    {
+        headerName: IS_AR_G ? 'المستند' : 'Document',
+        field: 'document_name',
+        minWidth: 200,
+        flex: 2,
+        filter: 'agTextColumnFilter',
+        cellRenderer: function(p) {
+            const name = p.value || 'Untitled';
+            return `<i class="fas fa-file" style="color:#6b7280;margin-right:6px;"></i>${name}`;
+        }
+    },
+    {
+        headerName: IS_AR_G ? 'المورد' : 'Vendor',
+        field: 'vendor_name',
+        minWidth: 180,
+        flex: 1.2,
+        filter: 'agTextColumnFilter'
+    },
+    {
+        headerName: IS_AR_G ? 'النوع' : 'Type',
+        field: 'document_type',
+        width: 170,
+        cellRenderer: function(p) {
+            return `<span class="vd-badge ${getCategoryClass(p.value)}">${getCategoryLabel(p.value)}</span>`;
+        },
+        filter: 'agSetColumnFilter',
+        filterParams: { buttons: ['apply', 'reset', 'clear'] }
+    },
+    {
+        headerName: IS_AR_G ? 'تاريخ الإنتهاء' : 'Expiry Date',
+        field: 'expiry_date',
+        width: 150,
+        valueFormatter: function(p) { return formatDate(p.value); },
+        filter: 'agDateColumnFilter',
+        filterParams: { buttons: ['apply', 'reset', 'clear'] }
+    },
+    {
+        headerName: IS_AR_G ? 'الحجم' : 'Size',
+        field: 'file_size',
+        width: 110,
+        valueFormatter: function(p) { return formatFileSize(p.value); },
+        filter: 'agNumberColumnFilter',
+        filterParams: { buttons: ['apply', 'reset', 'clear'] }
+    },
+    {
+        headerName: IS_AR_G ? 'تاريخ الرفع' : 'Uploaded',
+        field: 'uploaded_at',
+        width: 160,
+        valueFormatter: function(p) { return formatDate(p.value); },
+        filter: 'agDateColumnFilter',
+        filterParams: { buttons: ['apply', 'reset', 'clear'] }
+    },
+    {
+        headerName: IS_AR_G ? 'الإجراءات' : 'Actions',
+        field: '_actions',
+        width: 130,
+        pinned: IS_AR_G ? 'left' : 'right',
+        sortable: false,
+        suppressMenu: true,
+        floatingFilter: false,
+        resizable: false,
+        cellRenderer: VdAct,
+        cellStyle: { overflow: 'visible', padding: '0 6px' }
+    }
+];
+
+// ─────────────────────────────────────────────────────────────
+// AG-GRID LOCALE (matching Employees/Vendors)
+// ─────────────────────────────────────────────────────────────
+const AG_LOCALE = IS_AR_G ? {
+    filterOoo: 'تصفية...',
+    equals: 'يساوي',
+    notEqual: 'لا يساوي',
+    contains: 'يحتوي على',
+    notContains: 'لا يحتوي على',
+    startsWith: 'يبدأ بـ',
+    endsWith: 'ينتهي بـ',
+    blank: 'فارغ',
+    notBlank: 'غير فارغ',
+    lessThan: 'أقل من',
+    greaterThan: 'أكبر من',
+    applyFilter: 'تطبيق',
+    clearFilter: 'مسح',
+    resetFilter: 'إعادة تعيين',
+    addFilterCondition: '+ إضافة قاعدة',
+    matchAll: 'يطابق الكل',
+    matchAny: 'يطابق أي',
+    andCondition: 'و',
+    orCondition: 'أو',
+    noRowsToShow: 'لا توجد مستندات',
+    loadingOoo: 'جاري التحميل...',
+    searchOoo: 'بحث...',
+    sortAscending: 'تصاعدي',
+    sortDescending: 'تنازلي',
+} : {
+    filterOoo: 'Filter...',
+    applyFilter: 'Apply',
+    clearFilter: 'Clear',
+    resetFilter: 'Reset',
+    addFilterCondition: '+ Add Rule',
+    matchAll: 'Match All',
+    matchAny: 'Match Any',
+    noRowsToShow: 'No documents found',
+    searchOoo: 'Search...',
+};
+
+// ─────────────────────────────────────────────────────────────
+// DEFAULT COLUMN DEFINITION (EXACTLY LIKE EMPLOYEES)
+// ─────────────────────────────────────────────────────────────
+const defaultColDef = {
+    sortable: true,
+    resizable: true,
+    filter: true,
+    floatingFilter: true,
+    suppressMenu: false,
+    unSortIcon: true,
+    enableRowGroup: true,
+    enablePivot: true,
+    enableValue: true,
+    menuTabs: ['filterMenuTab', 'columnsMenuTab', 'generalMenuTab'],
+    filterParams: {
+        buttons: ['apply', 'reset', 'clear'],
+        closeOnApply: true,
+        maxNumConditions: 10
+    }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GRID INSTANCE (EXACTLY LIKE EMPLOYEES)
+// ─────────────────────────────────────────────────────────────
+let gridApi;
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 Vendor Documents Page Loaded');
+    const el = document.getElementById('vdGrid');
+    if (!el) return;
+    
+    agGrid.createGrid(el, {
+        columnDefs: vdCols,
+        rowData: [],
+        pagination: true,
+        paginationPageSize: 20,
+        animateRows: true,
+        enableRtl: IS_AR_G,
+        defaultColDef: defaultColDef,
+        localeText: AG_LOCALE,
+        multiSortKey: 'ctrl',
+        
+        // ── ENTERPRISE FEATURES (EXACTLY LIKE EMPLOYEES) ──
+        sideBar: {
+            toolPanels: [
+                {
+                    id: 'columns',
+                    labelDefault: IS_AR_G ? 'الأعمدة' : 'Columns',
+                    labelKey: 'columns',
+                    iconKey: 'columns',
+                    toolPanel: 'agColumnsToolPanel'
+                },
+                {
+                    id: 'filters',
+                    labelDefault: IS_AR_G ? 'الفلاتر' : 'Filters',
+                    labelKey: 'filters',
+                    iconKey: 'filter',
+                    toolPanel: 'agFiltersToolPanel'
+                }
+            ],
+            defaultToolPanel: ''
+        },
+        rowGroupPanelShow: 'always',
+        pivotPanelShow: 'always',
+        groupDisplayType: 'groupRows',
+        
+        // ── Selection ──
+        rowSelection: 'multiple',
+        suppressRowClickSelection: true,
+        
+        // ── Grid Ready ──
+        onGridReady: function(p) {
+            gridApi = p.api;
+            loadDocuments();
+        },
+        
+        // ── Event Handlers ──
+        onFilterChanged: updateStatus,
+        onPaginationChanged: updateStatus,
+        onSelectionChanged: updateStatus,
+        
+        // ── Row Styling ──
+        getRowStyle: function(p) {
+            return p.node.rowIndex % 2 === 0 ? { background: '#fff' } : { background: '#fafbfc' };
+        }
+    });
+    
+    // Load vendors dropdown
     loadVendorsDropdown();
-    loadDocuments();
     setupDragDrop();
     
+    // Upload form handler
     const uploadForm = document.getElementById('uploadForm');
     if (uploadForm) {
         uploadForm.addEventListener('submit', handleUpload);
     }
     
+    // Modal close on backdrop click
     const uploadModal = document.getElementById('uploadModal');
     if (uploadModal) {
         uploadModal.addEventListener('click', function(e) {
@@ -429,26 +780,34 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ─────────────────────────────────────────────────────────────
+// UPDATE STATUS (matching Employees)
+// ─────────────────────────────────────────────────────────────
+function updateStatus() {
+    if (!gridApi) return;
+    const total = gridApi.getDisplayedRowCount();
+    const selected = gridApi.getSelectedRows().length;
+    const selText = document.getElementById('selText');
+    if (selText) {
+        selText.textContent = selected > 0 
+            ? `${selected} ${IS_AR_G ? 'محدد' : 'selected'}`
+            : `${total} ${IS_AR_G ? 'مستند' : 'documents'}`;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
 // LOAD VENDORS FOR DROPDOWN
 // ─────────────────────────────────────────────────────────────
 function loadVendorsDropdown() {
-    console.log('🔄 Loading vendors...');
-    
     fetch('/purchase/vendors/data')
         .then(response => {
             if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.json();
         })
         .then(vendors => {
-            console.log('✅ Vendors loaded:', vendors.length);
-            allVendors = vendors;
-            
             // Populate upload modal select
             const vendorSelect = document.getElementById('vendorSelect');
             if (vendorSelect) {
-                while (vendorSelect.options.length > 1) {
-                    vendorSelect.remove(1);
-                }
+                vendorSelect.innerHTML = '<option value="">' + (IS_AR_G ? 'اختر المورد...' : 'Select vendor...') + '</option>';
                 vendors.forEach(vendor => {
                     const option = document.createElement('option');
                     option.value = vendor.id;
@@ -458,22 +817,6 @@ function loadVendorsDropdown() {
                     vendorSelect.appendChild(option);
                 });
             }
-            
-            // Populate filter select
-            const filterVendor = document.getElementById('filterVendor');
-            if (filterVendor) {
-                while (filterVendor.options.length > 1) {
-                    filterVendor.remove(1);
-                }
-                vendors.forEach(vendor => {
-                    const option = document.createElement('option');
-                    option.value = vendor.id;
-                    const name = vendor.vendor_name_en || ('Vendor #' + vendor.id);
-                    const code = vendor.vendor_code || '';
-                    option.textContent = code ? `${name} (${code})` : name;
-                    filterVendor.appendChild(option);
-                });
-            }
         })
         .catch(error => {
             console.error('❌ Error loading vendors:', error);
@@ -481,22 +824,18 @@ function loadVendorsDropdown() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// LOAD ALL DOCUMENTS (across all vendors)
+// LOAD DOCUMENTS
 // ─────────────────────────────────────────────────────────────
 function loadDocuments() {
-    console.log('🔄 Loading documents...');
+    var savedFilters = gridApi ? gridApi.getFilterModel() : null;
     
     // First get all vendors
     fetch('/purchase/vendors/data')
         .then(response => response.json())
         .then(vendors => {
-            allVendors = vendors;
-            console.log('📋 Vendors:', vendors.length);
-            
             if (vendors.length === 0) {
-                allDocuments = [];
-                renderDocumentsTable([]);
-                updateDocCount(0);
+                if (gridApi) gridApi.setGridOption('rowData', []);
+                updateStatus();
                 return;
             }
             
@@ -524,97 +863,20 @@ function loadDocuments() {
             return Promise.all(docPromises);
         })
         .then(results => {
-            allDocuments = results.flat();
-            console.log('✅ All documents loaded:', allDocuments.length);
-            renderDocumentsTable(allDocuments);
-            updateDocCount(allDocuments.length);
+            const allDocs = results ? results.flat() : [];
+            if (gridApi) {
+                gridApi.setGridOption('rowData', allDocs);
+                if (savedFilters && Object.keys(savedFilters).length) {
+                    gridApi.setFilterModel(savedFilters);
+                }
+            }
+            updateStatus();
         })
         .catch(error => {
             console.error('❌ Error loading documents:', error);
-            allDocuments = [];
-            renderDocumentsTable([]);
-            updateDocCount(0);
+            if (gridApi) gridApi.setGridOption('rowData', []);
+            updateStatus();
         });
-}
-
-function updateDocCount(count) {
-    const countEl = document.getElementById('docCount');
-    if (countEl) {
-        countEl.textContent = count + ' ' + (isArabic ? 'مستند' : 'documents');
-    }
-}
-
-// ─────────────────────────────────────────────────────────────
-// RENDER DOCUMENTS TABLE
-// ─────────────────────────────────────────────────────────────
-function renderDocumentsTable(docs) {
-    // Feed the AG-Grid instead of building table rows.
-    if (window.vdGrid) window.vdGrid.setGridOption('rowData', docs || []);
-}
-
-function getCategoryClass(docType) {
-    if (!docType) return 'badge-other';
-    const lower = docType.toLowerCase();
-    if (lower.includes('cr')) return 'badge-cr';
-    if (lower.includes('vat')) return 'badge-vat';
-    if (lower.includes('id')) return 'badge-id';
-    if (lower.includes('contract')) return 'badge-contract';
-    if (lower.includes('license')) return 'badge-license';
-    if (lower.includes('insurance')) return 'badge-insurance';
-    if (lower.includes('bank')) return 'badge-bank';
-    return 'badge-other';
-}
-
-function getCategoryLabel(docType) {
-    if (!docType) return isArabic ? 'أخرى' : 'Other';
-    if (isArabic) {
-        if (docType.includes('سجل تجاري') || docType.includes('CR')) return 'سجل تجاري';
-        if (docType.includes('شهادة ضريبة') || docType.includes('VAT')) return 'شهادة ضريبة';
-        if (docType.includes('هوية') || docType.includes('ID')) return 'هوية';
-        if (docType.includes('عقد') || docType.includes('Contract')) return 'عقد';
-        if (docType.includes('رخصة') || docType.includes('License')) return 'رخصة';
-        if (docType.includes('تأمين') || docType.includes('Insurance')) return 'تأمين';
-        if (docType.includes('خطاب بنكي') || docType.includes('Bank')) return 'خطاب بنكي';
-        return 'أخرى';
-    }
-    return docType;
-}
-
-// ─────────────────────────────────────────────────────────────
-// FILTER
-// ─────────────────────────────────────────────────────────────
-function filterDocuments() {
-    const vendorId = document.getElementById('filterVendor')?.value || '';
-    const category = document.getElementById('filterCategory')?.value || '';
-    const search = (document.getElementById('filterSearch')?.value || '').toLowerCase();
-    
-    let filtered = allDocuments;
-    
-    if (vendorId) {
-        filtered = filtered.filter(d => d.vendor_id == vendorId);
-    }
-    if (category) {
-        filtered = filtered.filter(d => (d.document_type || '').includes(category) || d.document_type === category);
-    }
-    if (search) {
-        filtered = filtered.filter(d => 
-            (d.document_name || '').toLowerCase().includes(search) ||
-            (d.vendor_name || '').toLowerCase().includes(search) ||
-            (d.document_type || '').toLowerCase().includes(search) ||
-            (d.file_path || '').toLowerCase().includes(search)
-        );
-    }
-    
-    renderDocumentsTable(filtered);
-    updateDocCount(filtered.length);
-}
-
-// ─────────────────────────────────────────────────────────────
-// SELECT ALL
-// ─────────────────────────────────────────────────────────────
-function toggleSelectAll() {
-    const checked = document.getElementById('selectAll')?.checked || false;
-    document.querySelectorAll('.doc-checkbox').forEach(cb => cb.checked = checked);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -688,10 +950,6 @@ function clearFileSelection() {
     if (fileList) fileList.innerHTML = '';
 }
 
-function updateUploadUrl() {
-    // URL is set dynamically in handleUpload based on vendor selection
-}
-
 // ─────────────────────────────────────────────────────────────
 // UPLOAD HANDLER
 // ─────────────────────────────────────────────────────────────
@@ -708,24 +966,22 @@ function handleUpload(e) {
     
     // Validate
     if (!vendorSelect || !vendorSelect.value) {
-        alert(isArabic ? 'الرجاء اختيار المورد' : 'Please select a vendor');
+        alert(IS_AR_G ? 'الرجاء اختيار المورد' : 'Please select a vendor');
         return;
     }
     
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-        alert(isArabic ? 'الرجاء اختيار ملف' : 'Please select a file');
+        alert(IS_AR_G ? 'الرجاء اختيار ملف' : 'Please select a file');
         return;
     }
     
     const vendorId = vendorSelect.value;
     const formData = new FormData(form);
-    
-    // Build correct URL with vendor ID
     const uploadUrl = `/purchase/vendors/${vendorId}/documents/upload`;
     
     const originalHtml = uploadBtn.innerHTML;
     uploadBtn.disabled = true;
-    uploadBtn.innerHTML = '<span class="spinner"></span> ' + (isArabic ? 'جاري الرفع...' : 'Uploading...');
+    uploadBtn.innerHTML = '<span class="spinner"></span> ' + (IS_AR_G ? 'جاري الرفع...' : 'Uploading...');
     progressBar.style.display = 'block';
     progressFill.style.width = '0%';
     progressFill.style.background = 'var(--blue)';
@@ -748,9 +1004,6 @@ function handleUpload(e) {
     })
     .then(response => {
         clearInterval(progressInterval);
-        console.log('📥 Upload response status:', response.status);
-        
-        // Check if response is JSON
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
             return response.json().then(data => ({ ok: response.ok, data }));
@@ -762,15 +1015,15 @@ function handleUpload(e) {
         }
     })
     .then(({ ok, data }) => {
-        console.log('✅ Upload response:', data);
         progressFill.style.width = '100%';
         
         if (ok && data.ok) {
-            uploadStatus.textContent = isArabic ? '✅ تم الرفع بنجاح!' : '✅ Upload successful!';
+            uploadStatus.textContent = IS_AR_G ? '✅ تم الرفع بنجاح!' : '✅ Upload successful!';
             uploadStatus.style.color = 'var(--green)';
             setTimeout(() => {
                 closeUploadModal();
                 loadDocuments();
+                loadVendorsDropdown();
             }, 1000);
         } else {
             throw new Error(data.error || 'Upload failed');
@@ -778,14 +1031,13 @@ function handleUpload(e) {
     })
     .catch(error => {
         console.error('❌ Upload error:', error);
-        uploadStatus.textContent = (isArabic ? '❌ فشل الرفع: ' : '❌ Upload failed: ') + error.message;
+        uploadStatus.textContent = (IS_AR_G ? '❌ فشل الرفع: ' : '❌ Upload failed: ') + error.message;
         uploadStatus.style.color = 'var(--red)';
         progressFill.style.background = 'var(--red)';
     })
     .finally(() => {
         uploadBtn.innerHTML = originalHtml;
         uploadBtn.disabled = false;
-        clearFileSelection();
         setTimeout(() => {
             progressBar.style.display = 'none';
             progressFill.style.width = '0%';
@@ -799,7 +1051,6 @@ function handleUpload(e) {
 // MODAL FUNCTIONS
 // ─────────────────────────────────────────────────────────────
 function openUploadModal() {
-    console.log('📂 Opening upload modal');
     const modal = document.getElementById('uploadModal');
     const form = document.getElementById('uploadForm');
     const uploadBtn = document.getElementById('uploadBtn');
@@ -811,7 +1062,7 @@ function openUploadModal() {
     clearFileSelection();
     if (uploadBtn) {
         uploadBtn.disabled = false;
-        uploadBtn.innerHTML = '<i class="fas fa-upload"></i> ' + (isArabic ? 'رفع المستند' : 'Upload Document');
+        uploadBtn.innerHTML = '<i class="fas fa-upload"></i> ' + (IS_AR_G ? 'رفع المستند' : 'Upload Document');
     }
     if (progressBar) progressBar.style.display = 'none';
     if (uploadStatus) {
@@ -821,7 +1072,6 @@ function openUploadModal() {
 }
 
 function closeUploadModal() {
-    console.log('❌ Closing upload modal');
     const modal = document.getElementById('uploadModal');
     if (modal) modal.classList.remove('active');
     clearFileSelection();
@@ -831,23 +1081,17 @@ function closeUploadModal() {
 // DOCUMENT ACTIONS
 // ─────────────────────────────────────────────────────────────
 function viewDocument(docId) {
-    console.log('👁️ Viewing document:', docId);
     window.open(`/purchase/vendors/documents/${docId}/download`, '_blank');
 }
 
 function downloadDocument(docId) {
-    console.log('⬇️ Downloading document:', docId);
     window.location.href = `/purchase/vendors/documents/${docId}/download`;
 }
 
 function deleteDocument(docId) {
-    const confirmMsg = isArabic ? 'هل أنت متأكد من حذف هذا المستند؟' : 'Are you sure you want to delete this document?';
+    const confirmMsg = IS_AR_G ? 'هل أنت متأكد من حذف هذا المستند؟' : 'Are you sure you want to delete this document?';
     
-    if (!confirm(confirmMsg)) {
-        return;
-    }
-    
-    console.log('🗑️ Deleting document:', docId);
+    if (!confirm(confirmMsg)) return;
     
     fetch(`/purchase/vendors/documents/${docId}/delete`, {
         method: 'POST',
@@ -862,12 +1106,12 @@ function deleteDocument(docId) {
         if (data.ok) {
             loadDocuments();
         } else {
-            alert((isArabic ? 'فشل الحذف: ' : 'Delete failed: ') + (data.error || 'Unknown error'));
+            alert((IS_AR_G ? 'فشل الحذف: ' : 'Delete failed: ') + (data.error || 'Unknown error'));
         }
     })
     .catch(error => {
         console.error('❌ Delete error:', error);
-        alert((isArabic ? 'فشل الحذف' : 'Delete failed'));
+        alert(IS_AR_G ? 'فشل الحذف' : 'Delete failed');
     });
 }
 

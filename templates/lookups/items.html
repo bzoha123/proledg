@@ -5,6 +5,21 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.min.css">
 <style>
+
+
+/* Force child modals above parent backdrop */
+.qa-modal.show, #delModal.show { 
+  z-index: 1060 !important; 
+}
+.qa-modal .modal-dialog, #delModal .modal-dialog { 
+  z-index: 1060 !important; 
+  position: relative; 
+  pointer-events: auto !important; 
+}
+.qa-modal .modal-content, #delModal .modal-content { 
+  pointer-events: auto !important; 
+}
+
 .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
 .page-title{font-size:22px;font-weight:800;color:#1e3a5f;}
 .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -16,8 +31,8 @@
 .grid-wrap{border-radius:10px;overflow:hidden;border:1.5px solid #e2e8f0;background:#fff;}
 #itemGrid{width:100%;height:520px;}
 .ag-theme-alpine{--ag-font-family:'Segoe UI',system-ui,sans-serif;--ag-font-size:13px;}
-.ag-theme-alpine .ag-header{background:#1e3a5f!important;}
-.ag-theme-alpine .ag-header-cell-text{color:#fff!important;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;}
+.ag-theme-alpine .ag-header{background:#e5e7eb!important;}
+.ag-theme-alpine .ag-header-cell-text{color:#1e293b!important;font-weight:700;font-size:11px;letter-spacing:.4px;}
 .ag-theme-alpine .ag-header-icon{color:#93c5fd!important;}
 .ag-ab{width:26px;height:26px;border-radius:6px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin:0 2px;transition:all .12s;}
 .ag-ab:hover{transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.2);}
@@ -52,7 +67,7 @@ textarea.f-inp{resize:vertical;min-height:80px;}
 .f-select-row select{flex:1;}
 .f-add-btn{width:36px;flex-shrink:0;border:1.5px solid #2563eb;background:#eff6ff;color:#2563eb;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .12s;}
 .f-add-btn:hover{background:#2563eb;color:#fff;}
-/* Retranslate button - same as vendor page */
+/* Retranslate button */
 .retrans-btn{width:22px;height:22px;border-radius:6px;border:none;background:#eff6ff;color:#2563eb;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0;opacity:.7;}
 .retrans-btn:hover{opacity:1;background:#dbeafe;}
 .field-wrap{position:relative;}
@@ -67,7 +82,10 @@ textarea.f-inp{resize:vertical;min-height:80px;}
 .btn-cancel{background:#fff;color:#374151;border:1.5px solid #d1d5db;padding:9px 20px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
 .btn-cancel:hover{background:#f9fafb;}
 
-/* Small quick-add modals */
+/* Small quick-add modals - FIXED */
+.qa-modal, #delModal { z-index: 1056 !important; }
+.qa-modal .modal-dialog, #delModal .modal-dialog { pointer-events: auto !important; }
+.qa-modal .modal-content, #delModal .modal-content { pointer-events: auto !important; }
 .qa-modal .modal-content{border:none;border-radius:12px;overflow:hidden;}
 .qa-hdr{background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;}
 .qa-hdr h6{color:#fff;font-weight:700;font-size:14px;margin:0;}
@@ -162,11 +180,8 @@ textarea.f-inp{resize:vertical;min-height:80px;}
                 </div>
               </div>
 
-              <!-- ══════════════════════════════════════════════ -->
-              <!-- NAME FIELDS - AUTO TRANSLATE (same as vendor) -->
-              <!-- ══════════════════════════════════════════════ -->
+              <!-- NAME FIELDS - AUTO TRANSLATE -->
               <div class="f-grid2">
-                {# EN field with refresh button for EN portal #}
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}الاسم (EN){% else %}Name (EN){% endif %} <span class="f-lbl-req">*</span></div>
                   <div class="field-wrap" dir="ltr">
@@ -178,7 +193,6 @@ textarea.f-inp{resize:vertical;min-height:80px;}
                     {% endif %}
                   </div>
                 </div>
-                {# AR field with refresh button for AR portal #}
                 <div class="f-item">
                   <div class="f-lbl" style="text-align:right;">{% if ar %}الاسم (AR){% else %}Name (AR){% endif %}</div>
                   <div class="field-wrap" dir="rtl">
@@ -192,9 +206,7 @@ textarea.f-inp{resize:vertical;min-height:80px;}
                 </div>
               </div>
 
-              <!-- ══════════════════════════════════════════════ -->
-              <!-- PRINT NAME - AUTO TRANSLATE (same pattern)     -->
-              <!-- ══════════════════════════════════════════════ -->
+              <!-- PRINT NAME - AUTO TRANSLATE -->
               <div class="f-grid2">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}اسم الطباعة (EN){% else %}Print Name (EN){% endif %}</div>
@@ -220,7 +232,7 @@ textarea.f-inp{resize:vertical;min-height:80px;}
                 </div>
               </div>
 
-              <!-- UOM (multi: one item can have several units of measure) -->
+              <!-- UOM (multi) -->
               <div class="f-grid1">
                 <div class="f-item">
                   <div class="f-lbl">
@@ -253,6 +265,16 @@ textarea.f-inp{resize:vertical;min-height:80px;}
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </div>
             <div class="isec-body">
+              <div class="f-grid2">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}نوع الصنف{% else %}Item Type{% endif %} <span class="f-lbl-req">*</span></div>
+                  <select id="i_item_type" class="f-inp">
+                    <option value="Product">{% if ar %}منتج{% else %}Product{% endif %}</option>
+                    <option value="Service">{% if ar %}خدمة{% else %}Service{% endif %}</option>
+                  </select>
+                </div>
+                <div class="f-item"></div>
+              </div>
               <div class="f-grid2">
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}الفئة{% else %}Category{% endif %}</div>
@@ -329,6 +351,8 @@ textarea.f-inp{resize:vertical;min-height:80px;}
               </div>
               <div class="f-grid2">
                 <div class="f-item"><div class="f-lbl">{% if ar %}سعر الجملة{% else %}Wholesale Rate{% endif %}</div><input type="number" id="i_wholesale_rate" class="f-inp" value="0.00" min="0" step="0.01"></div>
+                <div class="f-item"></div>
+              </div>
               <div class="f-grid2">
                 <div class="f-item"><div class="f-lbl">{% if ar %}السعر الخاص{% else %}Special Rate{% endif %}</div><input type="number" id="i_special_rate" class="f-inp" value="0.00" min="0" step="0.01"></div>
                 <div class="f-item"><div class="f-lbl">MRP</div><input type="number" id="i_mrp" class="f-inp" value="0.00" min="0" step="0.01"></div>
@@ -381,7 +405,7 @@ textarea.f-inp{resize:vertical;min-height:80px;}
           <div class="isec-body">
             <div class="v-row"><div><div class="v-lbl">{% if ar %}السعر الرئيسي{% else %}Main Rate{% endif %}</div><div class="v-val" id="v_main_rate"></div></div><div><div class="v-lbl">{% if ar %}سعر أمر الشراء{% else %}PO Rate{% endif %}</div><div class="v-val" id="v_po_rate"></div></div></div>
             <div class="v-row"><div><div class="v-lbl">{% if ar %}آخر سعر شراء{% else %}Last Purchase Rate{% endif %}</div><div class="v-val" id="v_last_purchase_rate"></div></div><div><div class="v-lbl">{% if ar %}سعر التجزئة{% else %}Retail Rate{% endif %}</div><div class="v-val" id="v_retail_rate"></div></div></div>
-            <div class="v-row"><div><div class="v-lbl">{% if ar %}سعر الجملة{% else %}Wholesale Rate{% endif %}</div><div class="v-val" id="v_wholesale_rate"></div></div>
+            <div class="v-row"><div><div class="v-lbl">{% if ar %}سعر الجملة{% else %}Wholesale Rate{% endif %}</div><div class="v-val" id="v_wholesale_rate"></div></div><div></div></div>
             <div class="v-row"><div><div class="v-lbl">{% if ar %}السعر الخاص{% else %}Special Rate{% endif %}</div><div class="v-val" id="v_special_rate"></div></div><div><div class="v-lbl">MRP</div><div class="v-val" id="v_mrp"></div></div></div>
             <div class="v-row"><div><div class="v-lbl">{% if ar %}الحد الأدنى لسعر البيع{% else %}Minimum SP{% endif %}</div><div class="v-val" id="v_minimum_sp"></div></div></div>
           </div>
@@ -547,15 +571,11 @@ textarea.f-inp{resize:vertical;min-height:80px;}
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
 <script>
 const IS_AR = {{ 'true' if ar else 'false' }};
 const CSRF  = '{{ csrf_token() }}';
 const TR    = '{{ url_for("lookups.item_translate") }}';
-
-console.log('IS_AR:', IS_AR);
-console.log('CSRF:', CSRF ? 'present' : 'missing');
-console.log('TR endpoint:', TR);
 
 /* ══ Auto-generate Item Code ══ */
 async function fetchItemCode() {
@@ -571,11 +591,10 @@ async function fetchItemCode() {
     el.placeholder = '';
   } catch (e) {
     console.error('Error fetching item code:', e);
-    // Fallback so the form isn't stuck: allow manual entry and say why
     el.value = '';
     el.readOnly = false;
     el.style.background = '#fff7ed';
-    el.placeholder = IS_AR ? 'تعذر التوليد التلقائي — أدخل الكود يدوياً' : 'Auto-generate failed (' + e.message + ') — enter manually';
+    el.placeholder = IS_AR ? 'تعذر التوليد التلقائي — أدخل الكود يدوياً' : 'Auto-generate failed — enter manually';
   }
 }
 
@@ -609,16 +628,7 @@ async function loadSubCats(selectedId) {
   } catch(e) { console.error('loadSubCats error:', e); }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   EN ↔ AR TRANSLATION ENGINE
-   Applies to: Item Name, Print Name, and all 3 quick-add
-   modal name fields (Category, Sub-Category, Tax Category).
-   Pattern is identical everywhere it's used:
-     - typing in the "source" field (matching the portal
-       language) debounce-translates into the paired field
-     - a manual re-translate button is shown only on the
-       source-language field for the current portal
-   ═══════════════════════════════════════════════════════════ */
+/* ══ EN ↔ AR TRANSLATION ENGINE ══ */
 const _vTimers = {};
 
 function vTrans(srcId, tgtId, sl) {
@@ -662,9 +672,9 @@ function doRetrans(srcId, tgtId, sl) {
 }
 
 /* ══ UOM (multi) state ══ */
-let _itemUoms = [];          // working list: {id(item_uom_id|null), uom_id, unit_name, unit_name_ar, is_default}
-let _itemUomsOriginal = [];  // snapshot at edit-open time, for diffing on save
-let _uomMasterList = [];     // global unit master list
+let _itemUoms = [];
+let _itemUomsOriginal = [];
+let _uomMasterList = [];
 
 /* ══ Open Add ══ */
 function openAddItem() {
@@ -681,7 +691,6 @@ function openAddItem() {
   document.getElementById('i_is_active').value = '1';
   _itemUoms = []; _itemUomsOriginal = [];
   renderUomChips();
-  // Reset all section bodies to visible
   document.querySelectorAll('.isec-body').forEach(b => b.style.display = 'block');
   document.querySelectorAll('.fa-chevron-up,.fa-chevron-down').forEach(ch => {
     ch.className = 'fas fa-chevron-up'; ch.style.color = '#2563eb';
@@ -700,6 +709,7 @@ async function fillEditForm(d) {
   document.getElementById('i_print_name_en').value = d.print_name_en || d.print_name || '';
   document.getElementById('i_print_name_ar').value = d.print_name_ar || '';
   document.getElementById('i_item_desc').value  = d.item_desc || '';
+  document.getElementById('i_item_type').value = d.item_type || 'Product';
   document.getElementById('i_category').value   = d.category_id || '';
   if (d.category_id) await loadSubCats(d.sub_category_id);
   document.getElementById('i_sub_category').value = d.sub_category_id || '';
@@ -782,6 +792,7 @@ async function saveItem() {
   fd.set('print_name_en',      document.getElementById('i_print_name_en').value.trim());
   fd.set('print_name_ar',      document.getElementById('i_print_name_ar').value.trim());
   fd.set('item_desc',          document.getElementById('i_item_desc').value.trim());
+  fd.set('item_type',          document.getElementById('i_item_type').value);
   fd.set('category_id',        document.getElementById('i_category').value);
   fd.set('sub_category_id',    document.getElementById('i_sub_category').value);
   fd.set('tax_category_id',    document.getElementById('i_tax_category').value);
@@ -953,11 +964,9 @@ async function saveQaCategory() {
   const data = await res.json();
   if (data.ok) {
     const label = data.category.name_en + (data.category.name_ar ? ' / ' + data.category.name_ar : '');
-    // Item form's Category dropdown
     const sel = document.getElementById('i_category');
     const o = document.createElement('option'); o.value = data.category.id; o.textContent = label;
     sel.appendChild(o); sel.value = data.category.id;
-    // Sub-Category quick-add modal's parent Category dropdown — keep it in sync too
     const subCatSel = document.getElementById('qa_subcat_category');
     if (subCatSel) {
       const o2 = document.createElement('option'); o2.value = data.category.id; o2.textContent = label;
@@ -1029,9 +1038,9 @@ class ActR {
   getGui() { return this.g; }
 }
 
-const defCol = { sortable:true, unSortIcon:true, resizable:true, filter:true, floatingFilter:true, filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} };
+const defCol = { sortable:true, unSortIcon:true, resizable:true, filter:true, floatingFilter:true, enableRowGroup:true, enablePivot:true, enableValue:true, menuTabs:['filterMenuTab','columnsMenuTab','generalMenuTab'], filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} };
 const cols = [
-  {headerName:'#', field:'id', width:60, floatingFilter:false, suppressMenu:true},
+  {headerName:'#', field:'id', width:60, floatingFilter:false, filter:false, suppressMenu:true, enableRowGroup:false, enablePivot:false, enableValue:false, suppressColumnsToolPanel:true},
   {headerName:IS_AR?'كود البند':'Item Code', field:'item_code', width:130},
   {headerName:IS_AR?'رقم المقال':'Article No', field:'article_no', width:110},
   {headerName:IS_AR?'الاسم':'Name', field:'name_en', minWidth:180},
@@ -1041,31 +1050,85 @@ const cols = [
   {headerName:IS_AR?'المورد':'Vendor', field:'vendor_name', width:150},
   {headerName:IS_AR?'السعر':'Main Rate', field:'main_rate', width:110, cellRenderer:rSAR, floatingFilter:false},
   {headerName:IS_AR?'الحالة':'Status', field:'is_active', width:90, cellRenderer:rStatus, floatingFilter:false},
-  {headerName:IS_AR?'إجراءات':'Actions', field:'_a', width:115, pinned:IS_AR?'left':'right', sortable:false, suppressMenu:true, floatingFilter:false, resizable:false, cellRenderer:ActR, cellStyle:{overflow:'visible',padding:'0 6px'}},
+  {headerName:IS_AR?'إجراءات':'Actions', field:'_a', width:115, pinned:IS_AR?'left':'right', sortable:false, suppressMenu:true, floatingFilter:false, filter:false, resizable:false, enableRowGroup:false, enablePivot:false, enableValue:false, suppressColumnsToolPanel:true, cellRenderer:ActR, cellStyle:{overflow:'visible',padding:'0 6px'}},
 ];
 
 let gridApi;
 agGrid.createGrid(document.getElementById('itemGrid'), {
   columnDefs:cols, multiSortKey:'ctrl', rowData:[], pagination:true, paginationPageSize:15,
+  alwaysShowHorizontalScroll:true, alwaysShowVerticalScroll:true,
+  sideBar:{toolPanels:[{id:'columns',labelDefault:IS_AR?'الأعمدة':'Columns',labelKey:'columns',iconKey:'columns',toolPanel:'agColumnsToolPanel'},{id:'filters',labelDefault:IS_AR?'الفلاتر':'Filters',labelKey:'filters',iconKey:'filter',toolPanel:'agFiltersToolPanel'}],defaultToolPanel:''},
+  rowGroupPanelShow:'always', pivotPanelShow:'always', groupDisplayType:'groupRows',
   animateRows:true, enableRtl:IS_AR, defaultColDef:defCol,
   localeText: IS_AR ? {filterOoo:'تصفية...',contains:'يحتوي على',notContains:'لا يحتوي على',startsWith:'يبدأ بـ',endsWith:'ينتهي بـ',blank:'فارغ',notBlank:'غير فارغ',applyFilter:'تطبيق',clearFilter:'مسح',resetFilter:'إعادة تعيين',noRowsToShow:'لا توجد بيانات',loadingOoo:'جاري التحميل...'} : {filterOoo:'Filter...',applyFilter:'Apply',clearFilter:'Clear',resetFilter:'Reset',noRowsToShow:'No records found'},
   onGridReady(p) {
     gridApi = p.api;
-    // Pass the whole event: AG-Grid v31 keeps column operations on
-    // p.columnApi, which GridKit needs for show/hide, pin and sizing.
-    if (window.GridKit) {
-      GridKit.enhance(p, 'itemGrid', { storageKey: 'items', exportName: 'Items' });
-    }
     loadData();
   },
   getRowStyle(p) { return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'}; }
 });
 
 function loadData() {
+  var sf = gridApi ? gridApi.getFilterModel() : null;
   fetch('/items/data').then(r=>r.json()).then(d => {
     gridApi.setGridOption('rowData', d);
+    if (sf && Object.keys(sf).length) gridApi.setFilterModel(sf);
     document.getElementById('selText').textContent = d.length + ' ' + (IS_AR ? 'بند' : 'items');
   });
 }
+
+/* ── Sub-modal stacking fix ── */
+(function () {
+  var CHILD_IDS = ['qaCategoryModal','qaSubCategoryModal','qaTaxCategoryModal','qaUomModal','delModal'];
+  var parentBackdrop = null;
+  
+  document.addEventListener('show.bs.modal', function (e) {
+    if (CHILD_IDS.indexOf(e.target.id) === -1) return;
+    
+    // Store reference to parent backdrop before Bootstrap adds a new one
+    parentBackdrop = document.querySelector('.modal-backdrop');
+    
+    // Wait for Bootstrap to finish, then fix things
+    setTimeout(function() {
+      // Remove the extra backdrop Bootstrap just added
+      var backdrops = document.querySelectorAll('.modal-backdrop');
+      if (backdrops.length > 1) {
+        backdrops[backdrops.length - 1].remove();
+      }
+      
+      // Restore parent backdrop
+      if (parentBackdrop && !document.body.contains(parentBackdrop)) {
+        document.body.appendChild(parentBackdrop);
+      }
+      
+      // Force child modal z-index above parent backdrop
+      e.target.style.zIndex = '1060';
+      
+      // Make only the child modal interactive
+      document.querySelectorAll('.modal.show').forEach(function(m) {
+        if (m.id !== e.target.id) {
+          m.style.pointerEvents = 'none';
+        } else {
+          m.style.pointerEvents = 'auto';
+        }
+      });
+    }, 50);
+  });
+  
+  document.addEventListener('hidden.bs.modal', function (e) {
+    if (CHILD_IDS.indexOf(e.target.id) === -1) return;
+    
+    // Re-enable parent modal
+    var parent = document.querySelector('#itemModal.show, #viewModal.show');
+    if (parent) {
+      parent.style.pointerEvents = 'auto';
+    }
+    
+    // Reset child modal z-index
+    e.target.style.zIndex = '';
+  });
+})();
+
+
 </script>
 {% endblock %}
