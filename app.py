@@ -76,6 +76,7 @@ def create_app(config_name='default'):
     from database.routes.sales import sale_bp
     from database.routes.coa import coa_bp
     from database.routes.journal import journal_bp
+    from database.routes.payroll import payroll_bp
     from database.routes.lookups import lookups_bp
     from database.routes.employee_import import emp_import_bp
     from database.routes.tax_codes import tax_bp
@@ -91,6 +92,7 @@ def create_app(config_name='default'):
     app.register_blueprint(sale_bp)
     app.register_blueprint(coa_bp)
     app.register_blueprint(journal_bp)
+    app.register_blueprint(payroll_bp)
     app.register_blueprint(lookups_bp)
     app.register_blueprint(vendor_doc_bp)
     app.register_blueprint(buyer_doc_bp)

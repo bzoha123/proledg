@@ -30,6 +30,33 @@
       html[dir="rtl"] .nav-sub .nav-link { padding-inline-start:0; padding-inline-end:42px; }
       html[dir="rtl"] .nav-parent .nav-caret { transform:scaleX(-1); }
       html[dir="rtl"] .nav-parent[aria-expanded="true"] .nav-caret { transform:rotate(90deg); }
+
+      /* ── Coming Soon Badge ── */
+      .nav-soon {
+        font-size: 0.6rem;
+        padding: 2px 8px;
+        margin-inline-start: auto;
+        background: #ffc107;
+        color: #000;
+        border-radius: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+      .nav-item-coming .nav-link-disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .nav-item-coming .nav-link-disabled:hover {
+        background: transparent;
+      }
+
+      /* ── Payroll Status Badges ── */
+      .status-draft { background: #e9ecef; color: #495057; }
+      .status-processing { background: #fff3cd; color: #856404; }
+      .status-approved { background: #d4edda; color: #155724; }
+      .status-paid { background: #cce5ff; color: #004085; }
+      .status-posted { background: #cce5ff; color: #004085; }
+      .status-cancelled { background: #f8d7da; color: #721c24; }
     </style>
     <!-- Desktop-style modal windows (drag / minimize / maximize / resize) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/window-modal.css') }}">
@@ -228,7 +255,7 @@
             </li>
 
             {# ══ EMPLOYEE ════════════════════════════════════ #}
-            {% set employee_active = request.endpoint and (('employees.' in request.endpoint) or ('work_allocations.' in request.endpoint)) %}
+            {% set employee_active = request.endpoint and (('employees.' in request.endpoint) or ('work_allocations.' in request.endpoint) or ('payroll.' in request.endpoint)) %}
             <li class="nav-item">
                 <a class="nav-link nav-parent {% if employee_active %}has-active{% endif %}" data-bs-toggle="collapse" href="#menuEmployee" role="button" aria-expanded="{{ 'true' if employee_active else 'false' }}" aria-controls="menuEmployee">
                     <i class="fas fa-user-tie"></i>
@@ -238,9 +265,9 @@
                 <div class="collapse {% if employee_active %}show{% endif %}" id="menuEmployee">
                     <ul class="nav-sub">
                         <li class="nav-item">
-                            <a href="{{ url_for('employees.list_employees') }}" class="nav-link {% if request.endpoint and 'employees.' in request.endpoint %}active{% endif %}">
+                            <a href="{{ url_for('employees.list_employees') }}" class="nav-link {% if request.endpoint and 'employees.' in request.endpoint and 'payroll' not in request.endpoint %}active{% endif %}">
                                 <i class="fas fa-user-tie"></i>
-                                <span>{% if current_locale=='ar' %}الموظفون{% else %}Employee{% endif %}</span>
+                                <span>{% if current_locale=='ar' %}الموظفون{% else %}Employees{% endif %}</span>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -249,18 +276,19 @@
                                 <span>{% if current_locale=='ar' %}توزيع العمل{% else %}Work Allocation{% endif %}</span>
                             </a>
                         </li>
-                        {% for icon, en, ar in [
-                            ('hand-holding-usd','Advances','السلف'),
-                            ('money-check-alt','Pay Roll','كشف الرواتب'),
-                        ] %}
+                        <li class="nav-item">
+                            <a href="{{ url_for('payroll.payroll_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('payroll.') %}active{% endif %}">
+                                <i class="fas fa-money-check-alt"></i>
+                                <span>{% if current_locale=='ar' %}توحيد الرواتب{% else %}Salary Consolidation{% endif %}</span>
+                            </a>
+                        </li>
                         <li class="nav-item nav-item-coming">
                             <span class="nav-link nav-link-disabled">
-                                <i class="fas fa-{{ icon }}"></i>
-                                <span>{% if current_locale=='ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</span>
+                                <i class="fas fa-hand-holding-usd"></i>
+                                <span>{% if current_locale=='ar' %}السلف{% else %}Advances{% endif %}</span>
                                 <span class="nav-soon">{% if current_locale=='ar' %}قريباً{% else %}Soon{% endif %}</span>
                             </span>
                         </li>
-                        {% endfor %}
                     </ul>
                 </div>
             </li>

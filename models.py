@@ -2956,3 +2956,107 @@ def next_je_no():
         except (ValueError, IndexError):
             n = (last.id or 0) + 1
     return f'JE-{n:06d}'
+
+
+# ═════════════════════════════════════════════════════════════════
+#  SALARY CONSOLIDATION  (payroll)
+#  One row per employee per payroll run. Most fields are copied from
+#  the Employee record at generation time; day/OT/salary figures are
+#  computed. Editable fields (absent, holidays, bonus, advance) let the
+#  user adjust before finalising.  See SALARY_STATUS.md for the exact
+#  default formulas used.
+# ═════════════════════════════════════════════════════════════════
+class SalaryConsolidation(db.Model):
+    __tablename__ = 'salary_consolidation'
+
+    id               = db.Column(db.Integer, primary_key=True)
+    employee_id      = db.Column(db.Integer, db.ForeignKey('employees.id'))
+    salary_order     = db.Column(db.String(30))          # payroll batch ref (SAL-000001)
+    month_from       = db.Column(db.Date)                # range start (e.g. 20-06-26)
+    month_to         = db.Column(db.Date)                # range end   (e.g. 20-07-26)
+    month            = db.Column(db.String(20))          # derived month name
+    buyer_id         = db.Column(db.Integer)             # company / buyer filter
+    department       = db.Column(db.String(150))
+    kafeel           = db.Column(db.String(200))
+    sheet_no         = db.Column(db.String(30))          # time sheet no
+    name             = db.Column(db.String(200))         # employee name
+    profession       = db.Column(db.String(150))
+    nationality      = db.Column(db.String(100))
+    iqama            = db.Column(db.String(50))
+    day_hour_salary  = db.Column(db.Numeric(12, 2), default=0)
+    allowance        = db.Column(db.Numeric(12, 2), default=0)
+    days             = db.Column(db.Integer, default=0)
+    fridays          = db.Column(db.Integer, default=0)
+    holidays         = db.Column(db.Integer, default=0)
+    absent           = db.Column(db.Integer, default=0)
+    monthly_salary   = db.Column(db.Numeric(12, 2), default=0)
+    total_hours      = db.Column(db.Numeric(10, 2), default=0)
+    working_hour     = db.Column(db.Numeric(10, 2), default=0)
+    ot_hour          = db.Column(db.Numeric(10, 2), default=0)
+    extra_ot_hour    = db.Column(db.Numeric(10, 2), default=0)
+    ot_rate          = db.Column(db.Numeric(12, 2), default=0)
+    ot_amount        = db.Column(db.Numeric(12, 2), default=0)
+    bonus            = db.Column(db.Numeric(12, 2), default=0)
+    total_salary     = db.Column(db.Numeric(12, 2), default=0)
+    advance          = db.Column(db.Numeric(12, 2), default=0)
+    salary_payable   = db.Column(db.Numeric(12, 2), default=0)
+    paid_balance     = db.Column(db.Numeric(12, 2), default=0)
+    iqama_expiry     = db.Column(db.Date)
+    status           = db.Column(db.String(20), default='Draft')
+    bank_code        = db.Column(db.String(60))
+    iban_no          = db.Column(db.String(60))
+    created_at       = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at       = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        def _f(v): return float(v) if v is not None else 0.0
+        return {
+            'id': self.id,
+            'employee_id': self.employee_id,
+            'salary_order': self.salary_order or '',
+            'month_from': self.month_from.strftime('%Y-%m-%d') if self.month_from else '',
+            'month_to': self.month_to.strftime('%Y-%m-%d') if self.month_to else '',
+            'month': self.month or '',
+            'buyer_id': self.buyer_id,
+            'department': self.department or '',
+            'kafeel': self.kafeel or '',
+            'sheet_no': self.sheet_no or '',
+            'name': self.name or '',
+            'profession': self.profession or '',
+            'nationality': self.nationality or '',
+            'iqama': self.iqama or '',
+            'day_hour_salary': _f(self.day_hour_salary),
+            'allowance': _f(self.allowance),
+            'days': self.days or 0,
+            'fridays': self.fridays or 0,
+            'holidays': self.holidays or 0,
+            'absent': self.absent or 0,
+            'monthly_salary': _f(self.monthly_salary),
+            'total_hours': _f(self.total_hours),
+            'working_hour': _f(self.working_hour),
+            'ot_hour': _f(self.ot_hour),
+            'extra_ot_hour': _f(self.extra_ot_hour),
+            'ot_rate': _f(self.ot_rate),
+            'ot_amount': _f(self.ot_amount),
+            'bonus': _f(self.bonus),
+            'total_salary': _f(self.total_salary),
+            'advance': _f(self.advance),
+            'salary_payable': _f(self.salary_payable),
+            'paid_balance': _f(self.paid_balance),
+            'iqama_expiry': self.iqama_expiry.strftime('%Y-%m-%d') if self.iqama_expiry else '',
+            'status': self.status or 'Draft',
+            'bank_code': self.bank_code or '',
+            'iban_no': self.iban_no or '',
+        }
+
+
+def next_salary_order():
+    """Next payroll batch reference in SAL-000001 format."""
+    last = SalaryConsolidation.query.order_by(SalaryConsolidation.id.desc()).first()
+    n = 1
+    if last and last.salary_order and last.salary_order.startswith('SAL-'):
+        try:
+            n = int(last.salary_order.split('-')[1]) + 1
+        except (ValueError, IndexError):
+            n = (last.id or 0) + 1
+    return f'SAL-{n:06d}'
