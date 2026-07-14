@@ -1728,6 +1728,7 @@ def pdm_edit(id):
         import traceback; traceback.print_exc()
         return jsonify({'ok': False, 'error': str(e)}), 500
 
+
 @pur_bp.route('/purchase/debit-memos/<int:id>/delete', methods=['POST'])
 @login_required
 def pdm_delete(id):

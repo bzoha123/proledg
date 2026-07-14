@@ -326,9 +326,6 @@ class Employee(db.Model):
     name_ar          = db.Column(db.String(200))
     nationality      = db.Column(db.String(100))
     nationality_ar   = db.Column(db.String(100))
-    profession       = db.Column(db.String(150))
-    profession_ar    = db.Column(db.String(150))
-    profession_id    = db.Column(db.Integer, db.ForeignKey('profession_master.id'))
     education        = db.Column(db.String(150))
     education_ar     = db.Column(db.String(150))
 
@@ -379,6 +376,7 @@ class Employee(db.Model):
     shift_type       = db.Column(db.String(30), default='day')
 
     # ── Payroll ──
+    salary_category  = db.Column(db.String(20))   # 'Salary' or 'Azad'
     salary_type      = db.Column(db.String(30), default='salary')
     basic_salary     = db.Column(db.Numeric(12, 2), default=0)
     total_allowances = db.Column(db.Numeric(12, 2), default=0)
@@ -414,7 +412,6 @@ class Employee(db.Model):
     created_by       = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     # ── Relationships ──
-    profession_rel = db.relationship('ProfessionMaster', backref=db.backref('employees', lazy=True))
     buyer          = db.relationship('BuyerMaster', backref=db.backref('emp_employees', lazy=True))
 
     # Multi-select professions (junction table)
@@ -450,7 +447,7 @@ class Employee(db.Model):
             'id': self.id, 'employee_code': self.employee_code,
             'name': self.name, 'name_ar': self.name_ar or '',
             'nationality': self.nationality or '',
-            'profession': self.profession or '',
+            'profession': ', '.join([p.name_en for p in self.professions.all()]) if hasattr(self,'professions') else '',
             'basic_salary': float(self.basic_salary or 0),
             'total_allowances': float(self.total_allowances or 0),
             'net_salary': float(self.net_salary or 0),
@@ -2694,6 +2691,8 @@ class BuyerDepartment(db.Model):
                                    nullable=False)
     department_name    = db.Column(db.String(150), nullable=False)
     department_name_ar = db.Column(db.String(150))
+    location_name      = db.Column(db.String(150))
+    location_name_ar   = db.Column(db.String(150))
     location_id        = db.Column(db.Integer, db.ForeignKey('department_locations.id'))
     created_at         = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -3060,3 +3059,50 @@ def next_salary_order():
         except (ValueError, IndexError):
             n = (last.id or 0) + 1
     return f'SAL-{n:06d}'
+
+# ═════════════════════════════════════════════════════════════════
+#  EMPLOYEE WORK ALLOCATION  (replaces the old work_allocations table)
+#  One row per employee assignment. Multiple employees are added on the
+#  work-allocation form (each becomes a row). Fields mirror the employee
+#  plus the assignment specifics (buyer, department, location, shift).
+# ═════════════════════════════════════════════════════════════════
+class EmployeeWorkAllocation(db.Model):
+    __tablename__ = 'employee_work_allocation'
+
+    id                = db.Column(db.Integer, primary_key=True)
+    employee_id       = db.Column(db.Integer, db.ForeignKey('employees.id'))
+    kafeel            = db.Column(db.String(200))
+    name              = db.Column(db.String(200))
+    nationality       = db.Column(db.String(100))
+    profession        = db.Column(db.String(150))
+    iqama             = db.Column(db.String(50))
+    month             = db.Column(db.String(20))
+    joining_date      = db.Column(db.Date)
+    end_date          = db.Column(db.Date)
+    buyer_id          = db.Column(db.Integer, db.ForeignKey('buyers.id'))
+    buyer_department  = db.Column(db.String(150))
+    location          = db.Column(db.String(150))
+    shift             = db.Column(db.String(10))        # 'day' or 'night'
+    created_at        = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by        = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    employee = db.relationship('Employee', foreign_keys=[employee_id], lazy=True)
+    buyer    = db.relationship('BuyerMaster', foreign_keys=[buyer_id], lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'employee_id': self.employee_id,
+            'kafeel': self.kafeel or '',
+            'name': self.name or '',
+            'nationality': self.nationality or '',
+            'profession': self.profession or '',
+            'iqama': self.iqama or '',
+            'month': self.month or '',
+            'joining_date': self.joining_date.strftime('%Y-%m-%d') if self.joining_date else '',
+            'end_date': self.end_date.strftime('%Y-%m-%d') if self.end_date else '',
+            'buyer_id': self.buyer_id,
+            'buyer_department': self.buyer_department or '',
+            'location': self.location or '',
+            'shift': self.shift or '',
+        }

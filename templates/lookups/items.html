@@ -273,7 +273,13 @@ textarea.f-inp{resize:vertical;min-height:80px;}
                     <option value="Service">{% if ar %}خدمة{% else %}Service{% endif %}</option>
                   </select>
                 </div>
-                <div class="f-item"></div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div>
+                  <select id="i_is_active" class="f-inp">
+                    <option value="1">{% if ar %}نشط{% else %}Active{% endif %}</option>
+                    <option value="0">{% if ar %}غير نشط{% else %}Inactive{% endif %}</option>
+                  </select>
+                </div>
               </div>
               <div class="f-grid2">
                 <div class="f-item">
@@ -321,15 +327,6 @@ textarea.f-inp{resize:vertical;min-height:80px;}
                   </select>
                 </div>
               </div>
-              <div class="f-grid2">
-                <div class="f-item">
-                  <div class="f-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div>
-                  <select id="i_is_active" class="f-inp">
-                    <option value="1">{% if ar %}نشط{% else %}Active{% endif %}</option>
-                    <option value="0">{% if ar %}غير نشط{% else %}Inactive{% endif %}</option>
-                  </select>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -351,15 +348,13 @@ textarea.f-inp{resize:vertical;min-height:80px;}
               </div>
               <div class="f-grid2">
                 <div class="f-item"><div class="f-lbl">{% if ar %}سعر الجملة{% else %}Wholesale Rate{% endif %}</div><input type="number" id="i_wholesale_rate" class="f-inp" value="0.00" min="0" step="0.01"></div>
-                <div class="f-item"></div>
+                <div class="f-item"><div class="f-lbl">{% if ar %}الحد الأدنى لسعر البيع{% else %}Minimum SP{% endif %}</div><input type="number" id="i_minimum_sp" class="f-inp" value="0.00" min="0" step="0.01"></div>
               </div>
               <div class="f-grid2">
                 <div class="f-item"><div class="f-lbl">{% if ar %}السعر الخاص{% else %}Special Rate{% endif %}</div><input type="number" id="i_special_rate" class="f-inp" value="0.00" min="0" step="0.01"></div>
                 <div class="f-item"><div class="f-lbl">MRP</div><input type="number" id="i_mrp" class="f-inp" value="0.00" min="0" step="0.01"></div>
               </div>
-              <div class="f-grid2">
-                <div class="f-item"><div class="f-lbl">{% if ar %}الحد الأدنى لسعر البيع{% else %}Minimum SP{% endif %}</div><input type="number" id="i_minimum_sp" class="f-inp" value="0.00" min="0" step="0.01"></div>
-              </div>
+             
             </div>
           </div>
 
@@ -397,7 +392,7 @@ textarea.f-inp{resize:vertical;min-height:80px;}
           <div class="isec-body">
             <div class="v-row"><div><div class="v-lbl">{% if ar %}الفئة{% else %}Category{% endif %}</div><div class="v-val" id="v_category"></div></div><div><div class="v-lbl">{% if ar %}الفئة الفرعية{% else %}Sub-Category{% endif %}</div><div class="v-val" id="v_sub_category"></div></div></div>
             <div class="v-row"><div><div class="v-lbl">{% if ar %}فئة الضريبة{% else %}Tax Category{% endif %}</div><div class="v-val" id="v_tax_category"></div></div><div><div class="v-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div><div class="v-val" id="v_vendor"></div></div></div>
-            <div class="v-row"><div><div class="v-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div><div class="v-val" id="v_is_active"></div></div></div>
+           
           </div>
         </div>
         <div class="isec" style="margin:0;">
@@ -817,7 +812,7 @@ async function saveItem() {
       const itemId = id || data.id;
       if (itemId) await syncItemUoms(itemId);
       bootstrap.Modal.getInstance(document.getElementById('itemModal'))?.hide();
-      loadData();
+      await loadData();
     } else { alert(data.error || 'Error saving item'); }
   } catch (err) { console.error(err); alert('Network error while saving item.'); }
 }
@@ -1070,11 +1065,13 @@ agGrid.createGrid(document.getElementById('itemGrid'), {
 
 function loadData() {
   var sf = gridApi ? gridApi.getFilterModel() : null;
-  fetch('/items/data').then(r=>r.json()).then(d => {
-    gridApi.setGridOption('rowData', d);
-    if (sf && Object.keys(sf).length) gridApi.setFilterModel(sf);
-    document.getElementById('selText').textContent = d.length + ' ' + (IS_AR ? 'بند' : 'items');
-  });
+  // cache-bust so a freshly-added item is never served from browser cache
+  return fetch('/items/data?_=' + Date.now(), { cache: 'no-store' })
+    .then(r=>r.json()).then(d => {
+      gridApi.setGridOption('rowData', d);
+      if (sf && Object.keys(sf).length) gridApi.setFilterModel(sf);
+      document.getElementById('selText').textContent = d.length + ' ' + (IS_AR ? 'بند' : 'items');
+    });
 }
 
 /* ── Sub-modal stacking fix ── */

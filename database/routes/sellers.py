@@ -67,11 +67,7 @@ def log_activity(action, target, target_id, detail=''):
 # ─────────────────────────────────────────────────────────────────────
 
 def _doc_to_dict(doc):
-    """Serialize a SellerDocument for the frontend.
-    Returns both (document_type / doc_type) and (document_name / doc_name)
-    aliases so the JS doesn't need to know which version the server used.
-    issue_date is guarded with hasattr so missing columns don't crash.
-    """
+    """Serialize a SellerDocument for the frontend."""
     uploader = None
     if doc.uploaded_by:
         from models import User
@@ -79,12 +75,10 @@ def _doc_to_dict(doc):
     return {
         'id':               doc.id,
         'seller_id':        doc.seller_id,
-        # both aliases
         'document_type':    doc.document_type or '',
         'doc_type':         doc.document_type or '',
         'document_name':    doc.document_name or '',
         'doc_name':         doc.document_name or '',
-        # issue_date may not exist in DB yet — safe fallback
         'issue_date':       str(getattr(doc, 'issue_date', '') or ''),
         'expiry_date':      str(doc.expiry_date or '') if doc.expiry_date else '',
         'uploaded_at':      doc.uploaded_at.strftime('%Y-%m-%d %H:%M') if doc.uploaded_at else '',
@@ -96,15 +90,10 @@ def _doc_to_dict(doc):
 
 
 # ─────────────────────────────────────────────────────────────────────
-# FORM HELPERS  (called by add_seller / edit_seller after flush)
+# FORM HELPERS
 # ─────────────────────────────────────────────────────────────────────
 
 def _save_docs_from_form(seller_id):
-    """
-    Reads  docs[N][doc_type], docs[N][file] ...  from request.form/files
-    and upserts SellerDocument rows.
-    Also deletes any existing docs that are no longer in the submitted list.
-    """
     from datetime import date as _date
     i = 0
     submitted_ids = set()
@@ -141,7 +130,6 @@ def _save_docs_from_form(seller_id):
                         os.path.join(current_app.config['UPLOAD_FOLDER'], doc.file_path))
                 db.session.add(doc)
         else:
-            # new document — needs at least doc_type and doc_name
             if not doc_type or not doc_name:
                 i += 1; continue
 
@@ -170,7 +158,6 @@ def _save_docs_from_form(seller_id):
             db.session.add(doc)
         i += 1
 
-    # Delete docs that were removed from the form
     if submitted_ids:
         existing_ids = {d.id for d in SellerDocument.query.filter_by(seller_id=seller_id).all()}
         to_delete    = existing_ids - submitted_ids
@@ -186,77 +173,114 @@ def _save_docs_from_form(seller_id):
 
 def _save_banks_from_form(seller_id):
     """
-    Reads  banks[N][field] ...  from request.form and upserts SellerBank rows.
-    Also deletes banks that were removed from the form.
+    Reads bank fields from request.form and saves/updates SellerBank rows.
+    Uses only existing fields: bank_name, account_number, branch, swift_code, iban
     """
-    i = 0
-    submitted_ids = set()
-
-    while True:
-        prefix    = f'banks[{i}]'
-        bank_name = request.form.get(f'{prefix}[bank_name]', '').strip()
-        if not bank_name:
-            break
-
-        db_id_str      = request.form.get(f'{prefix}[_db_id]',        '').strip()
-        is_primary     = request.form.get(f'{prefix}[is_primary]',    '0') == '1'
-        bank_name_ar   = request.form.get(f'{prefix}[bank_name_ar]',  '').strip()
-        branch         = request.form.get(f'{prefix}[branch]',         '').strip()
-        branch_ar      = request.form.get(f'{prefix}[branch_ar]',      '').strip()
-        account_number = request.form.get(f'{prefix}[account_number]', '').strip()
-        swift_code     = request.form.get(f'{prefix}[swift_code]',     '').strip()
-        iban           = request.form.get(f'{prefix}[iban]',           '').strip()
-
-        if db_id_str:
-            submitted_ids.add(int(db_id_str))
-            bank = SellerBank.query.get(int(db_id_str))
-            if bank and bank.seller_id == seller_id:
+    # Check for array format first (banks[0][bank_name])
+    bank_name_array = request.form.get('banks[0][bank_name]', '').strip()
+    
+    if bank_name_array:
+        # Array format - process banks[0] through banks[N]
+        i = 0
+        submitted_ids = set()
+        
+        while True:
+            prefix = f'banks[{i}]'
+            bank_name = request.form.get(f'{prefix}[bank_name]', '').strip()
+            
+            if not bank_name:
+                break
+            
+            db_id_str = request.form.get(f'{prefix}[_db_id]', '').strip()
+            is_primary = request.form.get(f'{prefix}[is_primary]', '0') == '1'
+            account_number = request.form.get(f'{prefix}[account_number]', '').strip()
+            swift_code = request.form.get(f'{prefix}[swift_code]', '').strip()
+            iban = request.form.get(f'{prefix}[iban]', '').strip()
+            branch = request.form.get(f'{prefix}[branch]', '').strip()
+            
+            if db_id_str:
+                # Update existing bank
+                submitted_ids.add(int(db_id_str))
+                bank = SellerBank.query.get(int(db_id_str))
+                if bank and bank.seller_id == seller_id:
+                    if is_primary:
+                        SellerBank.query.filter_by(seller_id=seller_id).update({'is_primary': False})
+                    bank.bank_name = bank_name
+                    bank.account_number = account_number
+                    bank.swift_code = swift_code
+                    bank.iban = iban
+                    bank.branch = branch
+                    bank.is_primary = is_primary
+                    db.session.add(bank)
+            else:
+                # Create new bank
                 if is_primary:
                     SellerBank.query.filter_by(seller_id=seller_id).update({'is_primary': False})
-                bank.bank_name      = bank_name
-                bank.account_number = account_number
-                bank.branch         = branch
-                bank.swift_code     = swift_code
-                bank.iban           = iban
-                bank.is_primary     = is_primary
-                # optional bilingual columns
-                if hasattr(bank, 'bank_name_ar'): bank.bank_name_ar = bank_name_ar
-                if hasattr(bank, 'branch_ar'):    bank.branch_ar    = branch_ar
+                bank = SellerBank(
+                    seller_id=seller_id,
+                    bank_name=bank_name,
+                    account_number=account_number,
+                    swift_code=swift_code,
+                    iban=iban,
+                    branch=branch,
+                    is_primary=is_primary,
+                )
                 db.session.add(bank)
-        else:
-            if is_primary:
-                SellerBank.query.filter_by(seller_id=seller_id).update({'is_primary': False})
-            bank = SellerBank(
-                seller_id      = seller_id,
-                bank_name      = bank_name,
-                account_number = account_number,
-                branch         = branch,
-                swift_code     = swift_code,
-                iban           = iban,
-                is_primary     = is_primary,
-            )
-            if hasattr(bank, 'bank_name_ar'): bank.bank_name_ar = bank_name_ar
-            if hasattr(bank, 'branch_ar'):    bank.branch_ar    = branch_ar
-            db.session.add(bank)
-        i += 1
-
-    # Delete banks removed from form
-    if submitted_ids:
-        existing_ids = {b.id for b in SellerBank.query.filter_by(seller_id=seller_id).all()}
-        to_delete    = existing_ids - submitted_ids
-        if to_delete:
-            SellerBank.query.filter(
-                SellerBank.id.in_(to_delete),
-                SellerBank.seller_id == seller_id,
-            ).delete(synchronize_session='fetch')
+                db.session.flush()
+                submitted_ids.add(bank.id)
+            i += 1
+        
+        # Delete banks removed from form
+        if i > 0:
+            existing_ids = {b.id for b in SellerBank.query.filter_by(seller_id=seller_id).all()}
+            to_delete = existing_ids - submitted_ids
+            if to_delete:
+                SellerBank.query.filter(
+                    SellerBank.id.in_(to_delete),
+                    SellerBank.seller_id == seller_id,
+                ).delete(synchronize_session='fetch')
+                
+    else:
+        # Simple format - single bank using direct field names
+        bank_name = request.form.get('bank_name', '').strip()
+        if bank_name:
+            # Check if there's an existing bank
+            existing_bank = SellerBank.query.filter_by(seller_id=seller_id).first()
+            
+            is_primary = request.form.get('is_primary', '1') == '1'
+            account_number = request.form.get('account_number', '').strip()
+            swift_code = request.form.get('swift_code', '').strip()
+            iban = request.form.get('iban', '').strip()
+            branch = request.form.get('branch', '').strip()
+            
+            if existing_bank:
+                # Update existing bank
+                if is_primary:
+                    SellerBank.query.filter_by(seller_id=seller_id).update({'is_primary': False})
+                existing_bank.bank_name = bank_name
+                existing_bank.account_number = account_number
+                existing_bank.swift_code = swift_code
+                existing_bank.iban = iban
+                existing_bank.branch = branch
+                existing_bank.is_primary = is_primary
+                db.session.add(existing_bank)
+            else:
+                # Create new bank
+                if is_primary:
+                    SellerBank.query.filter_by(seller_id=seller_id).update({'is_primary': False})
+                bank = SellerBank(
+                    seller_id=seller_id,
+                    bank_name=bank_name,
+                    account_number=account_number,
+                    swift_code=swift_code,
+                    iban=iban,
+                    branch=branch,
+                    is_primary=is_primary,
+                )
+                db.session.add(bank)
 
 
 def _save_warehouses_from_form(seller_id):
-    """
-    Reads warehouses[N][field] ... from request.form and upserts Warehouse rows.
-    Fields per row: warehouse_name, warehouse_name_ar, location_id, _db_id.
-    Also deletes warehouses that were removed from the form.
-    """
     i = 0
     submitted_ids = set()
     any_rows = False
@@ -296,7 +320,6 @@ def _save_warehouses_from_form(seller_id):
             submitted_ids.add(wh.id)
         i += 1
 
-    # Delete warehouses removed from the form (only if section was submitted)
     if any_rows or request.form.get('warehouses_submitted') == '1':
         existing_ids = {w.id for w in Warehouse.query.filter_by(seller_id=seller_id).all()}
         to_delete = existing_ids - submitted_ids
@@ -385,36 +408,67 @@ def add_seller():
 def seller_json(id):
     s = Seller.query.get_or_404(id)
     g = lambda f: getattr(s, f, None) or ''
+    
+    # Get primary bank or first bank
+    primary_bank = SellerBank.query.filter_by(seller_id=id, is_primary=True).first()
+    if not primary_bank:
+        primary_bank = SellerBank.query.filter_by(seller_id=id).first()
+    
     try:
         banks_data = [
-            {**b.to_dict(),
-             'bank_name_ar': getattr(b, 'bank_name_ar', '') or '',
-             'branch_ar':    getattr(b, 'branch_ar',    '') or ''}
+            {
+                'id': b.id,
+                'bank_name': b.bank_name or '',
+                'account_number': b.account_number or '',
+                'swift_code': b.swift_code or '',
+                'iban': b.iban or '',
+                'branch': b.branch or '',
+                'is_primary': b.is_primary,
+            }
             for b in s.banks
         ]
     except Exception:
         banks_data = []
+    
     try:
         docs_data = [_doc_to_dict(d) for d in s.documents]
     except Exception:
         docs_data = []
+    
     return jsonify({
         'id':                    s.id,
         'seller_code':           g('seller_code'),
-        'name':                  g('name'),             'name_ar':              g('name_ar'),
-        'vat_number':            g('vat_number'),       'crn':                  g('crn'),
-        'phone':                 g('phone'),             'fax':                  g('fax'),
-        'email':                 g('email'),             'website':              g('website'),
+        'name':                  g('name'),             
+        'name_ar':              g('name_ar'),
+        'vat_number':            g('vat_number'),       
+        'crn':                  g('crn'),
+        'phone':                 g('phone'),             
+        'fax':                  g('fax'),
+        'email':                 g('email'),             
+        'website':              g('website'),
         'report_color':          g('report_color') or '#16a34a',
-        'street_name':           g('street_name'),      'street_name_ar':       g('street_name_ar'),
-        'building_number':       g('building_number'),  'building_number_ar':   g('building_number_ar'),
-        'additional_number':     g('additional_number'),'additional_number_ar': g('additional_number_ar'),
-        'district':              g('district'),          'district_ar':          g('district_ar'),
-        'city':                  g('city'),              'city_ar':              g('city_ar'),
-        'postal_code':           g('postal_code'),       'postal_code_ar':       g('postal_code_ar'),
-        'country':               g('country'),           'country_ar':           g('country_ar'),
+        'street_name':           g('street_name'),      
+        'street_name_ar':       g('street_name_ar'),
+        'building_number':       g('building_number'),  
+        'building_number_ar':   g('building_number_ar'),
+        'additional_number':     g('additional_number'),
+        'additional_number_ar': g('additional_number_ar'),
+        'district':              g('district'),          
+        'district_ar':          g('district_ar'),
+        'city':                  g('city'),              
+        'city_ar':              g('city_ar'),
+        'postal_code':           g('postal_code'),       
+        'postal_code_ar':       g('postal_code_ar'),
+        'country':               g('country'),           
+        'country_ar':           g('country_ar'),
         'status':                g('status'),
         'banks':                 banks_data,
+        # Direct bank fields for the form
+        'bank_name':             getattr(primary_bank, 'bank_name', '') if primary_bank else '',
+        'iban':                  getattr(primary_bank, 'iban', '') if primary_bank else '',
+        'swift_code':            getattr(primary_bank, 'swift_code', '') if primary_bank else '',
+        'account_number':        getattr(primary_bank, 'account_number', '') if primary_bank else '',
+        'branch':                getattr(primary_bank, 'branch', '') if primary_bank else '',
         'documents':             docs_data,
     })
 
@@ -501,70 +555,102 @@ def view_seller(id):
 
 
 # ═════════════════════════════════════════════════════════════════════
-# BANK ROUTES
+# BANK ROUTES - FIXED: Proper routes for bank operations
 # ═════════════════════════════════════════════════════════════════════
 
 @sellers_bp.route('/sellers/<int:id>/banks')
 @login_required
 def list_seller_banks(id):
+    """List all banks for a seller"""
     banks = SellerBank.query.filter_by(seller_id=id).order_by(SellerBank.id).all()
-    return jsonify([b.to_dict() for b in banks])
+    return jsonify([{
+        'id': b.id,
+        'bank_name': b.bank_name or '',
+        'account_number': b.account_number or '',
+        'swift_code': b.swift_code or '',
+        'iban': b.iban or '',
+        'branch': b.branch or '',
+        'is_primary': b.is_primary,
+    } for b in banks])
 
 
 @sellers_bp.route('/sellers/banks/<int:bid>/json')
 @login_required
 def seller_bank_json(bid):
+    """Get single bank details"""
     bank = SellerBank.query.get_or_404(bid)
-    return jsonify(bank.to_dict())
+    return jsonify({
+        'id': bank.id,
+        'bank_name': bank.bank_name or '',
+        'account_number': bank.account_number or '',
+        'swift_code': bank.swift_code or '',
+        'iban': bank.iban or '',
+        'branch': bank.branch or '',
+        'is_primary': bank.is_primary,
+    })
 
 
 @sellers_bp.route('/sellers/<int:id>/banks/add', methods=['POST'])
 @login_required
+@admin_required
 def add_bank(id):
+    """Add a new bank for a seller"""
     Seller.query.get_or_404(id)
     data = request.get_json() or {}
+    
     if data.get('is_primary') in [True, 'true', '1', 'on']:
         SellerBank.query.filter_by(seller_id=id).update({'is_primary': False})
+    
     bank = SellerBank(
         seller_id      = id,
-        bank_name      = data.get('bank_name',      ''),
-        account_number = data.get('account_number', ''),
-        branch         = data.get('branch',         ''),
-        swift_code     = data.get('swift_code',     ''),
-        iban           = data.get('iban',           ''),
+        bank_name      = data.get('bank_name', '').strip(),
+        account_number = data.get('account_number', '').strip(),
+        branch         = data.get('branch', '').strip(),
+        swift_code     = data.get('swift_code', '').strip(),
+        iban           = data.get('iban', '').strip(),
         is_primary     = data.get('is_primary') in [True, 'true', '1', 'on'],
     )
     db.session.add(bank)
     db.session.commit()
-    return jsonify({'ok': True, 'id': bank.id, 'bank': bank.to_dict()})
+    
+    log_activity('ADD_BANK', 'seller', id, f'Added bank: {bank.bank_name}')
+    return jsonify({'ok': True, 'id': bank.id})
 
 
 @sellers_bp.route('/sellers/banks/<int:bid>/edit', methods=['POST'])
 @login_required
+@admin_required
 def edit_seller_bank(bid):
-    b    = SellerBank.query.get_or_404(bid)
+    """Edit an existing bank"""
+    bank = SellerBank.query.get_or_404(bid)
     data = request.get_json() or {}
+    
     if data.get('is_primary') in [True, 'true', '1', 'on']:
-        SellerBank.query.filter_by(seller_id=b.seller_id).update({'is_primary': False})
-    b.bank_name      = data.get('bank_name',      b.bank_name)
-    b.account_number = data.get('account_number', b.account_number or '')
-    b.branch         = data.get('branch',         b.branch         or '')
-    b.swift_code     = data.get('swift_code',     b.swift_code     or '')
-    b.iban           = data.get('iban',            b.iban          or '')
-    b.is_primary     = data.get('is_primary') in [True, 'true', '1', 'on']
-    if hasattr(b, 'bank_name_ar'): b.bank_name_ar = data.get('bank_name_ar', getattr(b, 'bank_name_ar', '') or '')
-    if hasattr(b, 'branch_ar'):    b.branch_ar    = data.get('branch_ar',    getattr(b, 'branch_ar',    '') or '')
+        SellerBank.query.filter_by(seller_id=bank.seller_id).update({'is_primary': False})
+    
+    bank.bank_name = data.get('bank_name', bank.bank_name).strip()
+    bank.account_number = data.get('account_number', bank.account_number or '').strip()
+    bank.branch = data.get('branch', bank.branch or '').strip()
+    bank.swift_code = data.get('swift_code', bank.swift_code or '').strip()
+    bank.iban = data.get('iban', bank.iban or '').strip()
+    bank.is_primary = data.get('is_primary') in [True, 'true', '1', 'on']
+    
     db.session.commit()
-    return jsonify({'ok': True, 'bank': b.to_dict()})
+    log_activity('EDIT_BANK', 'seller', bank.seller_id, f'Edited bank: {bank.bank_name}')
+    return jsonify({'ok': True})
 
 
 @sellers_bp.route('/sellers/banks/<int:bid>/delete', methods=['POST'])
 @login_required
 @admin_required
 def delete_bank(bid):
+    """Delete a bank"""
     bank = SellerBank.query.get_or_404(bid)
+    seller_id = bank.seller_id
+    bank_name = bank.bank_name
     db.session.delete(bank)
     db.session.commit()
+    log_activity('DELETE_BANK', 'seller', seller_id, f'Deleted bank: {bank_name}')
     return jsonify({'ok': True})
 
 
@@ -575,11 +661,6 @@ def delete_bank(bid):
 @sellers_bp.route('/sellers/<int:id>/documents/upload', methods=['POST'])
 @login_required
 def upload_document(id):
-    """
-    Dual-mode:
-    • AJAX (X-CSRFToken header set by fetch())  → JSON {ok, doc}
-    • Plain form POST from view.html            → flash + redirect to view
-    """
     is_ajax = bool(
         request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         or 'application/json' in request.headers.get('Accept', '')
@@ -633,25 +714,18 @@ def upload_document(id):
 @sellers_bp.route('/sellers/<int:id>/documents/json')
 @login_required
 def list_seller_documents(id):
-    """Return all documents for a seller (used by the edit modal docs tab)."""
     docs = (SellerDocument.query.filter_by(seller_id=id)
             .order_by(SellerDocument.id).all())
     return jsonify([_doc_to_dict(d) for d in docs])
 
 
 def _resolve_doc_path(doc):
-    """
-    Safely resolve the absolute filesystem path and filename for a document.
-    file_path is stored as  "seller_id/uuid.ext"  (forward slash on all OS).
-    Returns (abs_folder, filename, abs_filepath).
-    """
-    # Normalise: replace any backslash with forward slash, then split
     rel = (doc.file_path or '').replace('\\', '/')
     parts = rel.split('/')
-    filename = parts[-1]                          # uuid.ext
+    filename = parts[-1]
     abs_folder = os.path.join(
         current_app.config['UPLOAD_FOLDER'],
-        *parts[:-1]                               # seller_id (and any sub-dirs)
+        *parts[:-1]
     )
     abs_filepath = os.path.join(abs_folder, filename)
     return abs_folder, filename, abs_filepath
@@ -660,12 +734,6 @@ def _resolve_doc_path(doc):
 @sellers_bp.route('/sellers/documents/<int:did>/view')
 @login_required
 def view_document(did):
-    """
-    View a document inline.
-    • PDF / images  → served inline (browser renders natively)
-    • Excel (.xlsx/.xls/.xlsm/.ods) → SheetJS HTML viewer
-    • Word / other  → force-download (browsers cannot render these)
-    """
     doc = SellerDocument.query.get_or_404(did)
     abs_folder, fname, abs_filepath = _resolve_doc_path(doc)
 
@@ -675,7 +743,6 @@ def view_document(did):
 
     ext = fname.rsplit('.', 1)[-1].lower() if '.' in fname else ''
 
-    # ── Excel → SheetJS viewer ──────────────────────────────────────
     if ext in ('xlsx', 'xls', 'xlsm', 'xlsb', 'ods'):
         file_url  = url_for('sellers.download_document_alt', did=did, _external=True)
         friendly  = _friendly_name(doc, fname)
@@ -733,7 +800,6 @@ function render(wb,name){{
         from flask import Response
         return Response(html, mimetype='text/html')
 
-    # ── PDF / images → inline ───────────────────────────────────────
     mime_map = {
         'pdf':'application/pdf',
         'jpg':'image/jpeg','jpeg':'image/jpeg','png':'image/png',
@@ -749,16 +815,11 @@ function render(wb,name){{
         )
         return resp
 
-    # ── Everything else → force-download ───────────────────────────
     return send_from_directory(abs_folder, fname, as_attachment=True,
                                download_name=_friendly_name(doc, fname))
 
 
 def _friendly_name(doc, raw_fname):
-    """
-    "Trade License 2025" + "abc123.pdf"  →  "Trade License 2025.pdf"
-    Preserves the original file extension so the OS knows how to open it.
-    """
     ext  = raw_fname.rsplit('.', 1)[-1].lower() if '.' in raw_fname else ''
     base = (doc.document_name or '').strip()
     if not base:
@@ -771,7 +832,6 @@ def _friendly_name(doc, raw_fname):
 @sellers_bp.route('/sellers/documents/<int:did>/download')
 @login_required
 def download_document_alt(did):
-    """Force-download — preserves original extension in the saved filename."""
     doc = SellerDocument.query.get_or_404(did)
     abs_folder, fname, abs_filepath = _resolve_doc_path(doc)
     if not os.path.exists(abs_filepath):
@@ -785,7 +845,6 @@ def download_document_alt(did):
 @sellers_bp.route('/documents/<int:did>/download')
 @login_required
 def download_document(did):
-    """Legacy URL alias — keeps old links working."""
     return download_document_alt(did)
 
 
@@ -804,20 +863,17 @@ def delete_document(did):
 
 # ═════════════════════════════════════════════════════════════════════
 # SELLER DOCUMENTS — STANDALONE AG-GRID PAGE
-# path: /seller-documents
 # ═════════════════════════════════════════════════════════════════════
 
 @sellers_bp.route('/seller-documents')
 @login_required
 def list_seller_documents_page():
-    """Standalone AG-Grid page showing ALL documents across all sellers."""
     return render_template('seller_documents/list.html')
 
 
 @sellers_bp.route('/seller-documents/data')
 @login_required
 def seller_documents_data():
-    """JSON feed for the standalone seller-documents AG-Grid."""
     docs = SellerDocument.query.order_by(SellerDocument.id.desc()).all()
     rows = []
     for d in docs:
@@ -846,7 +902,6 @@ def seller_documents_data():
 @sellers_bp.route('/seller-documents/<int:did>/json')
 @login_required
 def seller_document_json(did):
-    """Single document JSON — used by the edit modal on the standalone grid."""
     doc = SellerDocument.query.get_or_404(did)
     return jsonify(_doc_to_dict(doc))
 
@@ -855,8 +910,6 @@ def seller_document_json(did):
 @login_required
 @admin_required
 def edit_seller_document(did):
-    """Edit document metadata only (type, name, issue_date, expiry_date).
-    File replacement is NOT done here — upload a new doc instead."""
     from datetime import date as _date
     doc  = SellerDocument.query.get_or_404(did)
     data = request.get_json() or {}
@@ -938,7 +991,6 @@ def translate_text():
     if not text:
         return jsonify({'translated': ''})
     src, tgt = direction.split('|')
-    # Google Translate (unofficial, no key)
     try:
         params = urllib.parse.urlencode({'client':'gtx','sl':src,'tl':tgt,'dt':'t','q':text})
         url    = f'https://translate.googleapis.com/translate_a/single?{params}'
@@ -950,7 +1002,6 @@ def translate_text():
             return jsonify({'translated': translated.strip()})
     except Exception:
         pass
-    # Fallback: MyMemory
     try:
         q   = urllib.parse.quote(text)
         url = f'https://api.mymemory.translated.net/get?q={q}&langpair={direction}'
@@ -968,7 +1019,6 @@ def translate_text():
 @sellers_bp.route('/sellers/<int:id>/warehouses')
 @login_required
 def seller_warehouses(id):
-    """Returns warehouses for loading into the JS array on edit."""
     Seller.query.get_or_404(id)
     whs = Warehouse.query.filter_by(seller_id=id).order_by(Warehouse.id).all()
     return jsonify([w.to_dict() for w in whs])
@@ -991,7 +1041,6 @@ def warehouse_locations_data():
 @sellers_bp.route('/warehouse-locations/add-quick', methods=['POST'])
 @login_required
 def add_warehouse_location_quick():
-    """Quick-add popup: create a warehouse location from the seller form."""
     data = request.get_json() or {}
     en = (data.get('location_name') or '').strip()
     ar = (data.get('location_name_ar') or '').strip()

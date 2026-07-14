@@ -18,9 +18,11 @@
     </h1>
 </div>
 
-<form method="POST" action="" novalidate id="sellerForm">
+<form method="POST" action="" novalidate id="sellerForm" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="banks_submitted" value="1">
+    <input type="hidden" name="warehouses_submitted" value="1">
 
     <!-- Tab Navigation -->
     <ul class="nav nav-tabs nav-tabs-modern mb-0" id="sellerTabs" role="tablist">
@@ -257,73 +259,38 @@
                             {% endif %}
                         </span>
                     </div>
-                    <div class="row g-4">
+                    
+                    <!-- Bank List Display -->
+                    <div class="row mb-3">
                         <div class="col-12">
-                            <div class="section-divider">
-                                <span class="section-title">
-                                    {% if current_locale == 'ar' %}
-                                        <i class="fas fa-user-circle me-2"></i>معلومات صاحب الحساب
-                                    {% else %}
-                                        <i class="fas fa-user-circle me-2"></i>Account Holder Information
-                                    {% endif %}
-                                </span>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-university me-2 text-primary"></i>
+                                    {% if current_locale == 'ar' %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
+                                    <span id="bankCount" class="badge bg-primary ms-2" style="display:none;">0</span>
+                                </h5>
+                                <button type="button" class="btn btn-primary" onclick="openBankModal()">
+                                    <i class="fas fa-plus me-1"></i>
+                                    {% if current_locale == 'ar' %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
+                                </button>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label fw-semibold">
-                                    {% if current_locale == 'ar' %}اسم صاحب الحساب{% else %}Account Holder Name{% endif %}
-                                    <span class="text-danger">*</span>
-                                </label>
-                                {{ form.account_holder(class="form-control form-control-lg", placeholder=('أدخل الاسم الكامل' if current_locale == 'ar' else 'Enter full name')) }}
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label fw-semibold">
-                                    {% if current_locale == 'ar' %}اسم البنك{% else %}Bank Name{% endif %}
-                                    <span class="text-danger">*</span>
-                                </label>
-                                {{ form.bank_name(class="form-control form-control-lg", placeholder=('اختر أو اكتب اسم البنك' if current_locale == 'ar' else 'Select or type bank name')) }}
-                            </div>
-                        </div>
+                    </div>
+                    
+                    <div class="row">
                         <div class="col-12">
-                            <div class="section-divider">
-                                <span class="section-title">
-                                    {% if current_locale == 'ar' %}
-                                        <i class="fas fa-code me-2"></i>معلومات التحويل المصرفي
-                                    {% else %}
-                                        <i class="fas fa-code me-2"></i>Banking Transfer Information
-                                    {% endif %}
-                                </span>
+                            <div id="bankList">
+                                <div class="text-center py-5 text-muted">
+                                    <i class="fas fa-university fa-3x mb-3 d-block opacity-50"></i>
+                                    <p>{% if current_locale == 'ar' %}لم يتم إضافة حسابات بنكية بعد{% else %}No bank accounts added yet{% endif %}</p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label fw-semibold">IBAN <span class="text-danger">*</span></label>
-                                {{ form.iban(class="form-control form-control-lg text-uppercase", placeholder=('أدخل رقم IBAN' if current_locale == 'ar' else 'Enter IBAN number')) }}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label fw-semibold">SWIFT/BIC Code <span class="text-danger">*</span></label>
-                                {{ form.swift_code(class="form-control form-control-lg text-uppercase", placeholder=('أدخل كود SWIFT' if current_locale == 'ar' else 'Enter SWIFT code')) }}
-                            </div>
-                        </div>
-                        <div class="col-md-12">
-                            <div class="form-group">
-                                <label class="form-label fw-semibold">
-                                    {% if current_locale == 'ar' %}رقم الحساب{% else %}Account Number{% endif %}
-                                    <span class="text-danger">*</span>
-                                </label>
-                                {{ form.account_number(class="form-control form-control-lg", placeholder=('أدخل رقم الحساب' if current_locale == 'ar' else 'Enter account number')) }}
-                            </div>
+                            <div id="bankHiddenFields"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <!-- Action Buttons -->
@@ -391,6 +358,72 @@
     </div>
 </div>
 
+<!-- Bank Modal -->
+<div class="modal fade" id="bankModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bankModalTitle">
+                    <i class="fas fa-university me-2"></i>
+                    {% if current_locale == 'ar' %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="bankEditIndex" value="">
+                <div class="mb-3">
+                    <label class="form-label">
+                        {% if current_locale == 'ar' %}اسم البنك{% else %}Bank Name{% endif %}
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="bankName" 
+                           placeholder="{% if current_locale == 'ar' %}أدخل اسم البنك{% else %}Enter bank name{% endif %}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">
+                        {% if current_locale == 'ar' %}رقم الحساب{% else %}Account Number{% endif %}
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="bankAccountNumber" 
+                           placeholder="{% if current_locale == 'ar' %}أدخل رقم الحساب{% else %}Enter account number{% endif %}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">IBAN</label>
+                    <input type="text" class="form-control text-uppercase" id="bankIban" 
+                           placeholder="{% if current_locale == 'ar' %}أدخل رقم IBAN{% else %}Enter IBAN number{% endif %}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">SWIFT/BIC</label>
+                    <input type="text" class="form-control text-uppercase" id="bankSwift" 
+                           placeholder="{% if current_locale == 'ar' %}أدخل كود SWIFT{% else %}Enter SWIFT code{% endif %}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">
+                        {% if current_locale == 'ar' %}الفرع{% else %}Branch{% endif %}
+                    </label>
+                    <input type="text" class="form-control" id="bankBranch" 
+                           placeholder="{% if current_locale == 'ar' %}أدخل اسم الفرع{% else %}Enter branch name{% endif %}">
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="bankIsPrimary">
+                    <label class="form-check-label" for="bankIsPrimary">
+                        {% if current_locale == 'ar' %}حساب رئيسي{% else %}Primary Account{% endif %}
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% if current_locale == 'ar' %}إلغاء{% else %}Cancel{% endif %}
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveBank()">
+                    <i class="fas fa-save me-1"></i>
+                    {% if current_locale == 'ar' %}حفظ{% else %}Save{% endif %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Quick Location Modal -->
 <div class="modal fade" id="quickLocationModal" tabindex="-1">
     <div class="modal-dialog modal-sm">
@@ -443,6 +476,7 @@ const WH_LOCS_URL = '{{ url_for("sellers.warehouse_locations_data") }}';
 const WH_LOC_QUICK_URL = '{{ url_for("sellers.add_warehouse_location_quick") }}';
 {% if is_edit and seller %}
 const WH_LOAD_URL = '{{ url_for("sellers.seller_warehouses", seller_id=seller.id) }}';
+const SELLER_JSON_URL = '{{ url_for("sellers.seller_json", id=seller.id) }}';
 {% endif %}
 
 // Translation
@@ -469,6 +503,7 @@ function translateWh(srcId, tgtId, sl) {
 // Warehouse data management
 let warehouses = [];
 let whLocations = [];
+let banks = [];
 
 function loadWhLocations(cb) {
     fetch(WH_LOCS_URL)
@@ -600,9 +635,11 @@ function renderWarehouses() {
             </td>
             <td>${wh.location_name || '<span class="text-muted">—</span>'}</td>
             <td class="text-center">
+                <!-- CRITICAL FIX: Added type="button" -->
                 <button type="button" class="btn btn-sm btn-warning me-1" onclick="openWarehouseModal(${i})" title="${IS_AR ? 'تعديل' : 'Edit'}">
                     <i class="fas fa-pencil-alt"></i>
                 </button>
+                <!-- CRITICAL FIX: Added type="button" -->
                 <button type="button" class="btn btn-sm btn-danger" onclick="deleteWarehouse(${i})" title="${IS_AR ? 'حذف' : 'Delete'}">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -628,12 +665,233 @@ function injectWarehouseFields() {
     });
 }
 
-function submitSellerForm() {
-    injectWarehouseFields();
-    setTimeout(() => document.getElementById('sellerForm').submit(), 50);
+// Bank data management - COMPLETELY REWRITTEN WITH TYPE="BUTTON"
+function editBank(index) {
+    console.log('Edit bank called with index:', index);
+    
+    const title = document.getElementById('bankModalTitle');
+    const editIndexInput = document.getElementById('bankEditIndex');
+    
+    if (banks[index]) {
+        const bank = banks[index];
+        document.getElementById('bankName').value = bank.bank_name || '';
+        document.getElementById('bankAccountNumber').value = bank.account_number || '';
+        document.getElementById('bankIban').value = bank.iban || '';
+        document.getElementById('bankSwift').value = bank.swift_code || '';
+        document.getElementById('bankBranch').value = bank.branch || '';
+        document.getElementById('bankIsPrimary').checked = bank.is_primary || false;
+        title.innerHTML = `<i class="fas fa-edit me-2"></i> ${IS_AR ? 'تعديل حساب بنكي' : 'Edit Bank Account'}`;
+        editIndexInput.value = index;
+    } else {
+        // Clear all fields
+        document.getElementById('bankName').value = '';
+        document.getElementById('bankAccountNumber').value = '';
+        document.getElementById('bankIban').value = '';
+        document.getElementById('bankSwift').value = '';
+        document.getElementById('bankBranch').value = '';
+        document.getElementById('bankIsPrimary').checked = false;
+        title.innerHTML = `<i class="fas fa-university me-2"></i> ${IS_AR ? 'إضافة حساب بنكي' : 'Add Bank Account'}`;
+        editIndexInput.value = '';
+    }
+    
+    // Show the modal
+    const modalElement = document.getElementById('bankModal');
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
 }
 
+function openBankModal() {
+    // This is for adding a new bank
+    const title = document.getElementById('bankModalTitle');
+    document.getElementById('bankEditIndex').value = '';
+    document.getElementById('bankName').value = '';
+    document.getElementById('bankAccountNumber').value = '';
+    document.getElementById('bankIban').value = '';
+    document.getElementById('bankSwift').value = '';
+    document.getElementById('bankBranch').value = '';
+    document.getElementById('bankIsPrimary').checked = false;
+    title.innerHTML = `<i class="fas fa-university me-2"></i> ${IS_AR ? 'إضافة حساب بنكي' : 'Add Bank Account'}`;
+    
+    const modalElement = document.getElementById('bankModal');
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+}
+
+function saveBank() {
+    const indexInput = document.getElementById('bankEditIndex');
+    const index = indexInput.value;
+    const bankName = document.getElementById('bankName').value.trim();
+    const accountNumber = document.getElementById('bankAccountNumber').value.trim();
+    const iban = document.getElementById('bankIban').value.trim();
+    const swiftCode = document.getElementById('bankSwift').value.trim();
+    const branch = document.getElementById('bankBranch').value.trim();
+    const isPrimary = document.getElementById('bankIsPrimary').checked;
+    
+    // Validation
+    if (!bankName) { 
+        alert(IS_AR ? 'اسم البنك مطلوب' : 'Bank name is required'); 
+        return; 
+    }
+    if (!accountNumber) { 
+        alert(IS_AR ? 'رقم الحساب مطلوب' : 'Account number is required'); 
+        return; 
+    }
+    
+    const bank = {
+        bank_name: bankName,
+        account_number: accountNumber,
+        iban: iban,
+        swift_code: swiftCode,
+        branch: branch,
+        is_primary: isPrimary,
+        _dbId: null
+    };
+    
+    // If this is primary, unset others
+    if (isPrimary) {
+        banks.forEach((b, i) => {
+            if (i !== parseInt(index) && index !== '') {
+                b.is_primary = false;
+            }
+        });
+    }
+    
+    // Save or update
+    if (index !== '' && banks[parseInt(index)]) {
+        // Keep the existing _dbId
+        bank._dbId = banks[parseInt(index)]._dbId;
+        banks[parseInt(index)] = bank;
+    } else {
+        banks.push(bank);
+    }
+    
+    // Hide the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('bankModal'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    // Clear the edit index
+    indexInput.value = '';
+    
+    renderBanks();
+}
+
+function deleteBank(index) {
+    if (!confirm(IS_AR ? 'حذف هذا الحساب البنكي؟' : 'Delete this bank account?')) return;
+    banks.splice(index, 1);
+    renderBanks();
+}
+
+function renderBanks() {
+    const container = document.getElementById('bankList');
+    const badge = document.getElementById('bankCount');
+    
+    badge.textContent = banks.length;
+    badge.style.display = banks.length > 0 ? 'inline-block' : 'none';
+    
+    if (!banks.length) {
+        container.innerHTML = `
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-university fa-3x mb-3 d-block opacity-50"></i>
+                <p>${IS_AR ? 'لم يتم إضافة حسابات بنكية بعد' : 'No bank accounts added yet'}</p>
+            </div>`;
+        return;
+    }
+    
+    let html = `<div class="table-responsive"><table class="table table-hover table-bordered"><thead class="table-light"><tr>
+        <th>${IS_AR ? 'اسم البنك' : 'Bank Name'}</th>
+        <th>${IS_AR ? 'رقم الحساب' : 'Account Number'}</th>
+        <th>IBAN</th>
+        <th>${IS_AR ? 'رئيسي' : 'Primary'}</th>
+        <th style="width:120px;text-align:center;">${IS_AR ? 'إجراءات' : 'Actions'}</th>
+    </tr></thead><tbody>`;
+    
+    banks.forEach((bank, i) => {
+        html += `<tr>
+            <td><strong>${bank.bank_name || '—'}</strong></td>
+            <td>${bank.account_number || '—'}</td>
+            <td>${bank.iban || '—'}</td>
+            <td class="text-center">${bank.is_primary ? '<span class="badge bg-success">✓</span>' : ''}</td>
+            <td class="text-center">
+                <!-- CRITICAL FIX: Added type="button" here -->
+                <button type="button" class="btn btn-sm btn-warning me-1" onclick="editBank(${i})" title="${IS_AR ? 'تعديل' : 'Edit'}">
+                    <i class="fas fa-pencil-alt"></i>
+                </button>
+                <!-- CRITICAL FIX: Added type="button" here -->
+                <button type="button" class="btn btn-sm btn-danger" onclick="deleteBank(${i})" title="${IS_AR ? 'حذف' : 'Delete'}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
+
+function injectBankFields() {
+    const container = document.getElementById('bankHiddenFields');
+    container.innerHTML = '';
+    banks.forEach((bank, i) => {
+        const fields = ['bank_name', 'account_number', 'iban', 'swift_code', 'branch', 'is_primary', '_dbId'];
+        fields.forEach(field => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = `banks[${i}][${field}]`;
+            if (field === 'is_primary') {
+                input.value = bank[field] ? '1' : '0';
+            } else {
+                input.value = bank[field] || '';
+            }
+            container.appendChild(input);
+        });
+    });
+}
+
+function submitSellerForm() {
+    injectWarehouseFields();
+    injectBankFields();
+    console.log('Submitting banks:', banks);
+    if (window.__allowSellerSubmit) window.__allowSellerSubmit();
+    document.getElementById('sellerForm').submit();
+}
+
+// Load seller data for editing
 {% if is_edit and seller %}
+function loadSellerData() {
+    fetch(SELLER_JSON_URL)
+        .then(r => r.json())
+        .then(data => {
+            console.log('Seller data loaded:', data);
+            if (data.banks && data.banks.length > 0) {
+                banks = data.banks.map(b => ({
+                    bank_name: b.bank_name || '',
+                    account_number: b.account_number || '',
+                    iban: b.iban || '',
+                    swift_code: b.swift_code || '',
+                    branch: b.branch || '',
+                    is_primary: b.is_primary || false,
+                    _dbId: b.id || null
+                }));
+                console.log('Banks loaded:', banks);
+                renderBanks();
+            } else if (data.bank_name) {
+                banks = [{
+                    bank_name: data.bank_name || '',
+                    account_number: data.account_number || '',
+                    iban: data.iban || '',
+                    swift_code: data.swift_code || '',
+                    branch: data.branch || '',
+                    is_primary: true,
+                    _dbId: null
+                }];
+                renderBanks();
+            }
+        })
+        .catch(err => console.error('Error loading seller data:', err));
+}
+
 function loadExistingWarehouses() {
     fetch(WH_LOAD_URL)
         .then(r => r.json())
@@ -654,8 +912,33 @@ document.addEventListener('DOMContentLoaded', () => {
     loadWhLocations(() => {
         {% if is_edit and seller %}
         loadExistingWarehouses();
+        loadSellerData();
         {% endif %}
     });
 });
 </script>
 {% endblock %}
+
+<script>
+// ── Bank-edit submit guard (diagnostic + fix) ───────────────────────
+(function () {
+  var allowSubmit = false;
+  // Expose a setter the real submit path uses.
+  window.__allowSellerSubmit = function () { allowSubmit = true; };
+  document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('sellerForm');
+    if (!form) return;
+    form.addEventListener('submit', function (e) {
+      if (!allowSubmit) {
+        // Something other than the Save button tried to submit the form.
+        console.warn('[guard] Blocked an unexpected seller-form submit. Trigger:', document.activeElement);
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+      // reset for safety
+      allowSubmit = false;
+    }, true);
+  });
+})();
+</script>

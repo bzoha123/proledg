@@ -7,6 +7,16 @@ from flask_login import login_required, current_user
 from models import (db, Employee, EmployeeAllowance, AllowanceType,
                     EmployeeBank, EmployeeDocument, ProfessionMaster, BuyerMaster,
                     EmployeeProfession)
+
+
+def _emp_profession_str(e, ar=False):
+    """Comma-joined profession names from the employee_professions junction."""
+    try:
+        profs = e.professions.all()
+    except Exception:
+        profs = []
+    names = [((p.name_ar or p.name_en) if ar else p.name_en) for p in profs]
+    return ', '.join([n for n in names if n])
 from functools import wraps
 
 employees_bp = Blueprint('employees', __name__)
@@ -257,25 +267,13 @@ def save_professions(emp_id, req):
             profession_name=(pm.name_en if pm else None),
             profession_name_ar=(pm.name_ar if pm else None),
         ))
-    # mirror primary (first) into single columns for grid/view display
-    emp = Employee.query.get(emp_id)
-    if emp is not None:
-        if clean_ids:
-            primary = ProfessionMaster.query.get(clean_ids[0])
-            if primary:
-                emp.profession_id = primary.id
-                emp.profession    = primary.name_en
-                emp.profession_ar = primary.name_ar or ''
-        else:
-            emp.profession_id = None
-            emp.profession = ''
-            emp.profession_ar = ''
+    # professions are stored only in employee_professions (junction table)
 
 
 TEXT_FIELDS = [
     'name', 'name_ar', 'kafeel_name', 'kafeel_name_ar', 'kafeel_reference', 'kafeel_reference_ar',
     'nationality', 'nationality_ar', 'passport_number', 'entry_number', 'iqama_number',
-    'profession', 'profession_ar', 'education', 'education_ar',
+    'education', 'education_ar',
     'mobile', 'address', 'address_ar', 'email', 'home_city', 'home_city_ar',
     'employee_reference', 'employee_reference_ar',
     'po_number', 'salary_type', 'kafalat_number', 'po_rate_unit',
@@ -442,7 +440,7 @@ def employees_data():
             'id': e.id, 'employee_code': e.employee_code,
             'name': e.name_ar if ar and e.name_ar else e.name,
             'name_en': e.name, 'name_ar': e.name_ar or '',
-            'profession': (e.profession_ar if ar and e.profession_ar else e.profession) or '',
+            'profession': _emp_profession_str(e, ar),
             'kafeel_name': (e.kafeel_name_ar if ar and e.kafeel_name_ar else e.kafeel_name) or '',
             'kafeel_reference': e.kafeel_reference or '',
             'nationality': (e.nationality_ar if ar and e.nationality_ar else e.nationality) or '',
@@ -485,7 +483,7 @@ def employee_json(id):
         'arrival_date': d(e.arrival_date), 'birth_date': d(e.birth_date),
         'passport_number': g('passport_number'), 'passport_expiry': d(e.passport_expiry),
         'entry_number': g('entry_number'), 'iqama_number': g('iqama_number'), 'iqama_expiry': d(e.iqama_expiry),
-        'profession': g('profession'), 'profession_ar': g('profession_ar'),
+        'profession': (profession_list[0]['name_en'] if profession_list else ''), 'profession_ar': (profession_list[0]['name_ar'] if profession_list else ''),
         'professions': profession_list,
         'profession_ids': profession_ids,
         'education': g('education'), 'education_ar': g('education_ar'),

@@ -823,8 +823,8 @@ function renderBankTable(){
       <td class="td-mono">${b.swift_code||'—'}</td>
       <td style="text-align:center;">${b.is_primary?'<span class="primary-check"><i class="fas fa-check-circle"></i>'+(IS_AR?' رئيسي':' Primary')+'</span>':'—'}</td>
       <td><div class="td-acts">
-        <button class="pl-btn pl-edit" onclick="editBankEntry(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-        <button class="pl-btn pl-del" onclick="deleteBankEntry(${i})" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
+        <button type="button" class="pl-btn pl-edit" onclick="editBankEntry(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+        <button type="button" class="pl-btn pl-del" onclick="deleteBankEntry(${i})" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
       </div></td>
     </tr>`).join('');
 }
@@ -928,8 +928,8 @@ function renderWhTable(){
       <td><strong>${w.warehouse_name||'—'}</strong>${w.warehouse_name_ar?`<br><small style="color:var(--gray-400);font-size:11px;">${w.warehouse_name_ar}</small>`:''}</td>
       <td>${w.location_name||'—'}</td>
       <td><div class="td-acts">
-        <button class="pl-btn pl-edit" onclick="openWhModal(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-        <button class="pl-btn pl-del" onclick="deleteWhEntry(${i})" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
+        <button type="button" class="pl-btn pl-edit" onclick="openWhModal(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+        <button type="button" class="pl-btn pl-del" onclick="deleteWhEntry(${i})" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
       </div></td>
     </tr>`).join('');
 }
