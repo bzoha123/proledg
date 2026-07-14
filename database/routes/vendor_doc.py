@@ -16,6 +16,7 @@ from flask import (
     jsonify,
     session,
     abort,
+    send_file,
 )
 from flask_login import login_required, current_user
 
@@ -56,7 +57,6 @@ INLINE_MIMETYPES = {
     'text/plain', 'text/csv',
 }
 
-# Map document types to categories
 DOC_TYPE_CATEGORY = {
     'CR': 'registration',
     'VAT': 'registration',
@@ -109,14 +109,28 @@ def _allowed_file_size(file_storage, max_size_mb=16):
 
 
 def _save_file(file_storage, vendor_id):
+    """Save file and return the relative path."""
+    # Get file extension
     ext = file_storage.filename.rsplit('.', 1)[1].lower() if '.' in file_storage.filename else 'bin'
+    
+    # Generate unique filename
     unique_name = f'{uuid.uuid4().hex}.{ext}'
+    
+    # Create vendor-specific folder
     folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'vendor_documents', str(vendor_id))
     os.makedirs(folder, exist_ok=True)
+    
+    # Save file
     full_path = os.path.join(folder, unique_name)
     file_storage.save(full_path)
-    # Always store with forward slashes for cross-platform compatibility
-    return f'vendor_documents/{vendor_id}/{unique_name}'
+    
+    # Return relative path (for database storage)
+    relative_path = f'vendor_documents/{vendor_id}/{unique_name}'
+    
+    current_app.logger.info(f"File saved: {full_path}")
+    current_app.logger.info(f"Relative path: {relative_path}")
+    
+    return relative_path
 
 
 def _log(action, target_id, detail=''):
@@ -137,14 +151,11 @@ def _doc_to_dict(doc):
     uploader = User.query.get(doc.uploaded_by) if doc.uploaded_by else None
     vendor = VendorMaster.query.get(doc.vendor_id) if doc.vendor_id else None
 
-    # Derive file extension from stored path
     file_path = doc.file_path or ''
     file_ext = file_path.rsplit('.', 1)[-1].lower() if '.' in file_path else ''
 
-    # Derive category from document_type (fall back to model field if it exists)
     doc_type = doc.document_type or 'Other'
     category = DOC_TYPE_CATEGORY.get(doc_type, 'other')
-    # If the model has its own document_category column, prefer it
     if hasattr(doc, 'document_category') and doc.document_category:
         category = doc.document_category
 
@@ -154,8 +165,8 @@ def _doc_to_dict(doc):
         'vendor_name': vendor.vendor_name_en if vendor else '',
         'vendor_code': vendor.vendor_code if vendor else '',
         'document_type': doc_type,
-        'document_category': category,          # ← was missing, caused JS badge render to fail
-        'file_extension': file_ext,             # ← was missing, caused JS icon render to fail
+        'document_category': category,
+        'file_extension': file_ext,
         'document_name': doc.document_name or '',
         'issue_date': str(doc.issue_date) if doc.issue_date else '',
         'expiry_date': str(doc.expiry_date) if doc.expiry_date else '',
@@ -163,7 +174,7 @@ def _doc_to_dict(doc):
         'uploaded_by': doc.uploaded_by,
         'uploaded_by_name': uploader.username if uploader else '',
         'file_path': file_path,
-        'file_size_kb': round((doc.file_size or 0) / 1024, 1),
+        'file_size': doc.file_size or 0,
     }
 
 
@@ -176,27 +187,23 @@ def _can_display_inline(mime_type):
     return mime_type in INLINE_MIMETYPES
 
 
-def _resolve_path(doc):
+def _get_full_file_path(doc):
     """
-    Returns (directory, filename, full_path).
-    Handles both flat filenames and relative paths like
-    'vendor_documents/42/abcdef.pdf'.
+    Get the full file system path for a document.
+    Handles both relative paths and legacy flat filenames.
     """
     rel_path = (doc.file_path or '').replace('\\', '/')
     upload_root = current_app.config['UPLOAD_FOLDER']
-
-    if '/' in rel_path:
-        # Relative path stored — split into dir + file
-        dir_part = os.path.dirname(rel_path)          # e.g. "vendor_documents/42"
-        filename = os.path.basename(rel_path)          # e.g. "abcdef.pdf"
-        folder = os.path.join(upload_root, dir_part)  # absolute dir
+    
+    # If the path already contains 'vendor_documents', it's a relative path
+    if rel_path.startswith('vendor_documents/'):
+        full_path = os.path.join(upload_root, rel_path)
     else:
-        # Flat filename stored directly in upload root
-        filename = rel_path
-        folder = upload_root
-
-    full_path = os.path.join(folder, filename)
-    return folder, filename, full_path
+        # Legacy: flat filename in upload root
+        full_path = os.path.join(upload_root, rel_path)
+    
+    current_app.logger.info(f"Resolved file path: {full_path}")
+    return full_path
 
 
 # ─────────────────────────────────────────────────────────────
@@ -239,6 +246,9 @@ def vendor_documents_data():
 @login_required
 def upload_documents():
     try:
+        current_app.logger.info(f"Files in request: {request.files}")
+        current_app.logger.info(f"Form data: {request.form}")
+        
         vendor_id = request.form.get('vendor_id', '').strip()
         if not vendor_id:
             return jsonify({'ok': False, 'error': 'Vendor is required'})
@@ -247,74 +257,67 @@ def upload_documents():
         if not vendor:
             return jsonify({'ok': False, 'error': 'Vendor not found'})
 
-        files = request.files.getlist('files')
-        if not files or all(not fs.filename for fs in files):
-            return jsonify({'ok': False, 'error': 'No files selected'})
+        # Get the file - support both 'files' and 'file' field names
+        file_storage = None
+        if 'files' in request.files:
+            file_storage = request.files['files']
+        elif 'file' in request.files:
+            file_storage = request.files['file']
+        
+        if not file_storage or not file_storage.filename:
+            return jsonify({'ok': False, 'error': 'No file selected'})
 
-        uploaded = []
-        errors = []
+        if not _allowed_file(file_storage.filename):
+            return jsonify({'ok': False, 'error': 'File type not allowed'})
 
-        for index, file_storage in enumerate(files):
-            if not file_storage or not file_storage.filename:
-                continue
+        ok, size = _allowed_file_size(file_storage)
+        if not ok:
+            size_mb = size / (1024 * 1024)
+            return jsonify({'ok': False, 'error': f'File too large ({size_mb:.1f} MB). Max 16 MB.'})
 
-            if not _allowed_file(file_storage.filename):
-                errors.append({'filename': file_storage.filename, 'error': 'File type not allowed'})
-                continue
+        # Save the file
+        relative_path = _save_file(file_storage, vendor.id)
 
-            ok, size = _allowed_file_size(file_storage)
-            if not ok:
-                size_mb = size / (1024 * 1024)
-                errors.append({'filename': file_storage.filename,
-                               'error': f'File too large ({size_mb:.1f} MB). Max 16 MB.'})
-                continue
+        # Get document metadata
+        doc_type = request.form.get('document_type', 'Other')
+        doc_name = request.form.get('document_name', '').strip()
+        if not doc_name:
+            doc_name = file_storage.filename
 
-            relative_path = _save_file(file_storage, vendor.id)
+        expiry_str = request.form.get('expiry_date', '')
+        category = DOC_TYPE_CATEGORY.get(doc_type, 'other')
 
-            doc_type = request.form.get(f'document_types[{index}]', 'Other')
-            category = DOC_TYPE_CATEGORY.get(doc_type, 'other')
+        # Create document record
+        doc = VendorDocument(
+            vendor_id=vendor.id,
+            document_type=doc_type or 'Other',
+            document_name=doc_name,
+            issue_date=(
+                _date.fromisoformat(request.form.get('issue_date', ''))
+                if request.form.get('issue_date') else None
+            ),
+            expiry_date=(
+                _date.fromisoformat(expiry_str)
+                if expiry_str else None
+            ),
+            file_path=relative_path,
+            file_size=size,
+            uploaded_by=current_user.id,
+            uploaded_at=datetime.utcnow(),
+        )
 
-            doc = VendorDocument(
-                vendor_id=vendor.id,
-                document_type=doc_type,
-                document_name=(
-                    request.form.get(f'document_names[{index}]', '').strip()
-                    or file_storage.filename
-                ),
-                issue_date=(
-                    _date.fromisoformat(request.form.get(f'issue_dates[{index}]', ''))
-                    if request.form.get(f'issue_dates[{index}]') else None
-                ),
-                expiry_date=(
-                    _date.fromisoformat(request.form.get(f'expiry_dates[{index}]', ''))
-                    if request.form.get(f'expiry_dates[{index}]') else None
-                ),
-                file_path=relative_path,
-                file_size=os.path.getsize(
-                    os.path.join(current_app.config['UPLOAD_FOLDER'], relative_path)
-                ),
-                uploaded_by=current_user.id,
-                uploaded_at=datetime.utcnow(),
-            )
+        if hasattr(doc, 'document_category'):
+            doc.document_category = category
 
-            # Set category if the model column exists
-            if hasattr(doc, 'document_category'):
-                doc.document_category = category
-
-            db.session.add(doc)
-            uploaded.append(doc)
-
-        if uploaded:
-            db.session.commit()
-            for doc in uploaded:
-                _log('UPLOAD', doc.id, f'Uploaded "{doc.document_name}" for vendor {vendor.vendor_code}')
+        db.session.add(doc)
+        db.session.commit()
+        
+        _log('UPLOAD', doc.id, f'Uploaded "{doc.document_name}" for vendor {vendor.vendor_code}')
 
         return jsonify({
             'ok': True,
-            'message': f'Successfully uploaded {len(uploaded)} file(s).' if not errors
-                       else f'Uploaded {len(uploaded)} file(s) with {len(errors)} error(s).',
-            'uploaded': [doc.id for doc in uploaded],
-            'errors': errors,
+            'message': 'File uploaded successfully',
+            'document_id': doc.id,
         })
 
     except Exception as e:
@@ -326,27 +329,79 @@ def upload_documents():
 @vendor_doc_bp.route('/vendors/documents/<int:doc_id>/view')
 @login_required
 def view_document(doc_id):
-    doc = VendorDocument.query.get_or_404(doc_id)
-    folder, filename, full_path = _resolve_path(doc)
-    if not os.path.exists(full_path):
-        abort(404)
-    mime_type = _get_mime_type(full_path)
-    if _can_display_inline(mime_type):
-        return send_from_directory(folder, filename, as_attachment=False, mimetype=mime_type)
-    return send_from_directory(folder, filename, as_attachment=True,
-                               download_name=doc.document_name or filename, mimetype=mime_type)
+    """View document inline if possible."""
+    try:
+        doc = VendorDocument.query.get_or_404(doc_id)
+        full_path = _get_full_file_path(doc)
+        
+        current_app.logger.info(f"Viewing document: {full_path}")
+        
+        if not os.path.exists(full_path):
+            current_app.logger.error(f"File not found: {full_path}")
+            abort(404, "File not found on server")
+        
+        # Get the directory and filename
+        directory = os.path.dirname(full_path)
+        filename = os.path.basename(full_path)
+        
+        # Get mime type
+        mime_type = _get_mime_type(full_path)
+        
+        # If it's a PDF or image, display inline, otherwise download
+        if _can_display_inline(mime_type):
+            return send_from_directory(
+                directory, 
+                filename, 
+                as_attachment=False, 
+                mimetype=mime_type
+            )
+        else:
+            # For other files, download
+            return send_from_directory(
+                directory, 
+                filename, 
+                as_attachment=True,
+                download_name=doc.document_name or filename,
+                mimetype=mime_type
+            )
+            
+    except Exception as e:
+        current_app.logger.error(f'view_document error: {e}', exc_info=True)
+        abort(500, f"Error viewing document: {str(e)}")
 
 
 @vendor_doc_bp.route('/vendors/documents/<int:doc_id>/download')
 @login_required
 def download_document(doc_id):
-    doc = VendorDocument.query.get_or_404(doc_id)
-    folder, filename, full_path = _resolve_path(doc)
-    if not os.path.exists(full_path):
-        abort(404)
-    mime_type = _get_mime_type(full_path)
-    return send_from_directory(folder, filename, as_attachment=True,
-                               download_name=doc.document_name or filename, mimetype=mime_type)
+    """Force download the document."""
+    try:
+        doc = VendorDocument.query.get_or_404(doc_id)
+        full_path = _get_full_file_path(doc)
+        
+        current_app.logger.info(f"Downloading document: {full_path}")
+        
+        if not os.path.exists(full_path):
+            current_app.logger.error(f"File not found: {full_path}")
+            abort(404, "File not found on server")
+        
+        # Get the directory and filename
+        directory = os.path.dirname(full_path)
+        filename = os.path.basename(full_path)
+        
+        # Get mime type
+        mime_type = _get_mime_type(full_path)
+        
+        return send_from_directory(
+            directory, 
+            filename, 
+            as_attachment=True,
+            download_name=doc.document_name or filename,
+            mimetype=mime_type
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f'download_document error: {e}', exc_info=True)
+        abort(500, f"Error downloading document: {str(e)}")
 
 
 @vendor_doc_bp.route('/vendor-documents/<int:doc_id>/delete', methods=['POST'])
@@ -355,14 +410,20 @@ def download_document(doc_id):
 def delete_document(doc_id):
     try:
         doc = VendorDocument.query.get_or_404(doc_id)
-        folder, filename, full_path = _resolve_path(doc)
-        doc_name = doc.document_name or filename
+        full_path = _get_full_file_path(doc)
+        doc_name = doc.document_name or os.path.basename(full_path)
+        
+        # Delete the file if it exists
         if os.path.exists(full_path):
             os.remove(full_path)
+            current_app.logger.info(f"Deleted file: {full_path}")
+        
         _log('DELETE', doc.id, f'Deleted "{doc_name}"')
         db.session.delete(doc)
         db.session.commit()
+        
         return jsonify({'ok': True})
+        
     except Exception as e:
         current_app.logger.error(f'delete_document error: {e}', exc_info=True)
         db.session.rollback()

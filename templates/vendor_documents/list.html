@@ -1004,13 +1004,23 @@ function handleUpload(e) {
     })
     .then(response => {
         clearInterval(progressInterval);
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
             return response.json().then(data => ({ ok: response.ok, data }));
         } else {
             return response.text().then(text => {
-                console.error('Non-JSON response:', text.substring(0, 200));
-                throw new Error('Server returned unexpected response');
+                console.error('Non-JSON response (status ' + response.status + '):', text.substring(0, 500));
+                let msg;
+                if (response.status === 413) {
+                    msg = IS_AR_G ? 'الملف كبير جداً (الحد 16 ميجابايت).' : 'File too large (max 16 MB).';
+                } else if (response.status === 400) {
+                    msg = IS_AR_G ? 'انتهت صلاحية الجلسة، حدّث الصفحة وحاول مجدداً (CSRF).' : 'Session/CSRF expired — refresh the page and try again.';
+                } else if (response.status === 401 || response.status === 403) {
+                    msg = IS_AR_G ? 'غير مصرّح. سجّل الدخول مرة أخرى.' : 'Not authorized — please log in again.';
+                } else {
+                    msg = (IS_AR_G ? 'خطأ في الخادم (' : 'Server error (') + response.status + ').';
+                }
+                throw new Error(msg);
             });
         }
     })
