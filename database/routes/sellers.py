@@ -7,7 +7,7 @@ def _t(en, ar):
     return ar if session.get('lang') == 'ar' else en
 
 from flask_login import login_required, current_user
-from models import db, Seller, SellerBank, SellerDocument, ActivityLog, Warehouse, WarehouseLocation
+from models import db, Seller, SellerBank, SellerDocument, ActivityLog, SellerWarehouse
 from forms import SellerForm, BankForm, SearchForm
 from functools import wraps
 
@@ -297,23 +297,25 @@ def _save_warehouses_from_form(seller_id):
 
         db_id_str  = request.form.get(f'{prefix}[_db_id]', '').strip()
         wh_name_ar = request.form.get(f'{prefix}[warehouse_name_ar]', '').strip()
-        loc_id_str = request.form.get(f'{prefix}[location_id]', '').strip()
-        location_id = int(loc_id_str) if loc_id_str.isdigit() else None
+        location   = request.form.get(f'{prefix}[location]', '').strip()
+        location_ar = request.form.get(f'{prefix}[location_ar]', '').strip()
 
         if db_id_str:
             submitted_ids.add(int(db_id_str))
-            wh = Warehouse.query.get(int(db_id_str))
+            wh = SellerWarehouse.query.get(int(db_id_str))
             if wh and wh.seller_id == seller_id:
                 wh.warehouse_name    = wh_name
                 wh.warehouse_name_ar = wh_name_ar
-                wh.location_id       = location_id
+                wh.location          = location
+                wh.location_ar       = location_ar
                 db.session.add(wh)
         else:
-            wh = Warehouse(
+            wh = SellerWarehouse(
                 seller_id         = seller_id,
                 warehouse_name    = wh_name,
                 warehouse_name_ar = wh_name_ar,
-                location_id       = location_id,
+                location           = location,
+                location_ar        = location_ar,
             )
             db.session.add(wh)
             db.session.flush()
@@ -321,12 +323,12 @@ def _save_warehouses_from_form(seller_id):
         i += 1
 
     if any_rows or request.form.get('warehouses_submitted') == '1':
-        existing_ids = {w.id for w in Warehouse.query.filter_by(seller_id=seller_id).all()}
+        existing_ids = {w.id for w in SellerWarehouse.query.filter_by(seller_id=seller_id).all()}
         to_delete = existing_ids - submitted_ids
         if to_delete:
-            Warehouse.query.filter(
-                Warehouse.id.in_(to_delete),
-                Warehouse.seller_id == seller_id,
+            SellerWarehouse.query.filter(
+                SellerWarehouse.id.in_(to_delete),
+                SellerWarehouse.seller_id == seller_id,
             ).delete(synchronize_session='fetch')
 
 
@@ -363,15 +365,12 @@ def add_seller():
         street_name          = request.form.get('street_name',      '').strip(),
         street_name_ar       = request.form.get('street_name_ar',   '').strip(),
         building_number      = request.form.get('building_number',  '').strip(),
-        building_number_ar   = request.form.get('building_number_ar', '').strip(),
         additional_number    = request.form.get('additional_number',  '').strip(),
-        additional_number_ar = request.form.get('additional_number_ar', '').strip(),
         district             = request.form.get('district',         '').strip(),
         district_ar          = request.form.get('district_ar',      '').strip(),
         city                 = request.form.get('city',             '').strip(),
         city_ar              = request.form.get('city_ar',          '').strip(),
         postal_code          = request.form.get('postal_code',      '').strip(),
-        postal_code_ar       = request.form.get('postal_code_ar',   '').strip(),
         country              = request.form.get('country', 'Saudi Arabia').strip(),
         country_ar           = request.form.get('country_ar',       '').strip(),
     )
@@ -450,15 +449,12 @@ def seller_json(id):
         'street_name':           g('street_name'),      
         'street_name_ar':       g('street_name_ar'),
         'building_number':       g('building_number'),  
-        'building_number_ar':   g('building_number_ar'),
         'additional_number':     g('additional_number'),
-        'additional_number_ar': g('additional_number_ar'),
         'district':              g('district'),          
         'district_ar':          g('district_ar'),
         'city':                  g('city'),              
         'city_ar':              g('city_ar'),
         'postal_code':           g('postal_code'),       
-        'postal_code_ar':       g('postal_code_ar'),
         'country':               g('country'),           
         'country_ar':           g('country_ar'),
         'status':                g('status'),
@@ -492,15 +488,12 @@ def edit_seller(id):
     seller.street_name          = request.form.get('street_name',      '').strip()
     seller.street_name_ar       = request.form.get('street_name_ar',   '').strip()
     seller.building_number      = request.form.get('building_number',  '').strip()
-    seller.building_number_ar   = request.form.get('building_number_ar',  '').strip()
     seller.additional_number    = request.form.get('additional_number',   '').strip()
-    seller.additional_number_ar = request.form.get('additional_number_ar','').strip()
     seller.district             = request.form.get('district',         '').strip()
     seller.district_ar          = request.form.get('district_ar',      '').strip()
     seller.city                 = request.form.get('city',             '').strip()
     seller.city_ar              = request.form.get('city_ar',          '').strip()
     seller.postal_code          = request.form.get('postal_code',      '').strip()
-    seller.postal_code_ar       = request.form.get('postal_code_ar',   '').strip()
     seller.country              = request.form.get('country',          '').strip()
     seller.country_ar           = request.form.get('country_ar',       '').strip()
     seller.updated_at           = datetime.utcnow()
@@ -1020,38 +1013,5 @@ def translate_text():
 @login_required
 def seller_warehouses(id):
     Seller.query.get_or_404(id)
-    whs = Warehouse.query.filter_by(seller_id=id).order_by(Warehouse.id).all()
+    whs = SellerWarehouse.query.filter_by(seller_id=id).order_by(SellerWarehouse.id).all()
     return jsonify([w.to_dict() for w in whs])
-
-
-@sellers_bp.route('/warehouse-locations/data')
-@login_required
-def warehouse_locations_data():
-    lang = session.get('lang', 'en')
-    locs = WarehouseLocation.query.filter_by(is_active=True)\
-                                  .order_by(WarehouseLocation.location_name).all()
-    return jsonify([{
-        'id': l.id,
-        'en': l.location_name,
-        'ar': l.location_name_ar or l.location_name,
-        'label': l.location_name_ar if lang == 'ar' and l.location_name_ar else l.location_name,
-    } for l in locs])
-
-
-@sellers_bp.route('/warehouse-locations/add-quick', methods=['POST'])
-@login_required
-def add_warehouse_location_quick():
-    data = request.get_json() or {}
-    en = (data.get('location_name') or '').strip()
-    ar = (data.get('location_name_ar') or '').strip()
-    if not en:
-        return jsonify({'ok': False, 'error': 'Location name required'})
-    existing = WarehouseLocation.query.filter_by(location_name=en).first()
-    if existing:
-        return jsonify({'ok': True, 'id': existing.id, 'exists': True})
-    loc = WarehouseLocation(location_name=en, location_name_ar=ar or en)
-    db.session.add(loc)
-    db.session.commit()
-    return jsonify({'ok': True, 'id': loc.id,
-                    'location_name': loc.location_name,
-                    'location_name_ar': loc.location_name_ar})

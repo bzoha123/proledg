@@ -140,7 +140,18 @@
         <div class="ic-hdr"><i class="fas fa-paperclip"></i><span>{% if ar %}المرفقات{% else %}Attachments{% endif %} ({{ attachments|length }})</span></div>
         <div class="ic-body">
           {% for a in attachments %}
-          <span class="att-chip"><i class="fas fa-file"></i>{{ a.filename }}</span>
+          <span class="att-chip">
+            <i class="fas fa-file"></i>{{ a.filename }}
+            <a href="{{ url_for('purchase.purchase_attachment_view', att_id=a.id) }}" target="_blank"
+               title="{% if ar %}عرض{% else %}View{% endif %}"
+               style="color:#2563eb;margin-left:8px;text-decoration:none;"><i class="fas fa-eye"></i></a>
+            <a href="{{ url_for('purchase.purchase_attachment_download', att_id=a.id) }}"
+               title="{% if ar %}تنزيل{% else %}Download{% endif %}"
+               style="color:#16a34a;margin-left:6px;text-decoration:none;"><i class="fas fa-download"></i></a>
+            <button type="button" onclick="delAttachment({{ a.id }}, '{{ a.filename|e }}')"
+                    title="{% if ar %}حذف{% else %}Delete{% endif %}"
+                    style="background:none;border:none;color:#dc2626;margin-left:6px;cursor:pointer;padding:0;"><i class="fas fa-trash"></i></button>
+          </span>
           {% endfor %}
         </div>
       </div>
@@ -161,4 +172,21 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const IS_AR_ATT = {{ 'true' if ar else 'false' }};
+function delAttachment(attId, name){
+  if(!confirm((IS_AR_ATT ? 'حذف المرفق ' : 'Delete attachment ') + name + ' ?')) return;
+  fetch('/purchase/attachments/' + attId + '/delete', {
+    method: 'POST',
+    headers: {'X-CSRFToken': '{{ csrf_token() }}'},
+    body: new URLSearchParams({csrf_token: '{{ csrf_token() }}'})
+  })
+  .then(r => r.json())
+  .then(d => { if(d.ok){ location.reload(); } else { alert(d.error || 'Error'); } })
+  .catch(() => alert(IS_AR_ATT ? 'خطأ في الشبكة' : 'Network error'));
+}
+</script>
 {% endblock %}

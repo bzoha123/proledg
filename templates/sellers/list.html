@@ -344,21 +344,34 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
               <i class="fas fa-chevron-down acc-chevron" id="chev-address"></i>
             </div>
             <div class="acc-body" id="body-address">
-              <div class="fg-3">
-                <div>
-                  <div class="mono-lbl">{% if ar %}الدولة / Country{% else %}Country / الدولة{% endif %}</div>
-                  <input type="hidden" name="country" id="f_country_val"><input type="hidden" name="country_ar" id="f_country_ar_val">
-                  <select id="f_country_sel" class="sf-inp sf-sel" onchange="onCountryChange()"><option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option></select>
+              <div class="bi-group">
+                <div class="bi-labels">
+                  <div class="bi-lbl-en">{% if ar %}الدولة{% else %}Country{% endif %} <span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span></div>
+                  <div class="bi-lbl-ar"><span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span> {% if ar %}Country{% else %}الدولة{% endif %}</div>
                 </div>
-                <div>
-                  <div class="mono-lbl">{% if ar %}المدينة / City{% else %}City / المدينة{% endif %}</div>
-                  <input type="hidden" name="city" id="f_city_val"><input type="hidden" name="city_ar" id="f_city_ar_val">
-                  <select id="f_city_sel" class="sf-inp sf-sel" disabled onchange="onCityChange()"><option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option></select>
+                <div class="bi-inputs">
+                  <div class="bi-wrap"><input type="text" id="f_country_p" name="{% if ar %}country_ar{% else %}country{% endif %}" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}" oninput="scheduleTrans('country')"><button type="button" class="sf-retrans" onclick="retrans('country')"><i class="fas fa-sync-alt"></i></button></div>
+                  <div class="bi-wrap"><input type="text" id="f_country_s" name="{% if ar %}country{% else %}country_ar{% endif %}" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}"><span class="sf-spin" id="spin_country"></span></div>
                 </div>
-                <div>
-                  <div class="mono-lbl">{% if ar %}المنطقة / District{% else %}District / المنطقة{% endif %}</div>
-                  <input type="hidden" name="district" id="f_district_val"><input type="hidden" name="district_ar" id="f_district_ar_val">
-                  <select id="f_district_sel" class="sf-inp sf-sel" disabled onchange="onDistrictChange()"><option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option></select>
+              </div>
+              <div class="bi-group">
+                <div class="bi-labels">
+                  <div class="bi-lbl-en">{% if ar %}المدينة{% else %}City{% endif %} <span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span></div>
+                  <div class="bi-lbl-ar"><span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span> {% if ar %}City{% else %}المدينة{% endif %}</div>
+                </div>
+                <div class="bi-inputs">
+                  <div class="bi-wrap"><input type="text" id="f_city_p" name="{% if ar %}city_ar{% else %}city{% endif %}" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}" oninput="scheduleTrans('city')"><button type="button" class="sf-retrans" onclick="retrans('city')"><i class="fas fa-sync-alt"></i></button></div>
+                  <div class="bi-wrap"><input type="text" id="f_city_s" name="{% if ar %}city{% else %}city_ar{% endif %}" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}"><span class="sf-spin" id="spin_city"></span></div>
+                </div>
+              </div>
+              <div class="bi-group">
+                <div class="bi-labels">
+                  <div class="bi-lbl-en">{% if ar %}المنطقة{% else %}District{% endif %} <span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span></div>
+                  <div class="bi-lbl-ar"><span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span> {% if ar %}District{% else %}المنطقة{% endif %}</div>
+                </div>
+                <div class="bi-inputs">
+                  <div class="bi-wrap"><input type="text" id="f_district_p" name="{% if ar %}district_ar{% else %}district{% endif %}" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}" oninput="scheduleTrans('district')"><button type="button" class="sf-retrans" onclick="retrans('district')"><i class="fas fa-sync-alt"></i></button></div>
+                  <div class="bi-wrap"><input type="text" id="f_district_s" name="{% if ar %}district{% else %}district_ar{% endif %}" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}"><span class="sf-spin" id="spin_district"></span></div>
                 </div>
               </div>
               <div class="bi-group">
@@ -378,9 +391,6 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
               <div class="fg-2">
                 <div><div class="mono-lbl">{% if ar %}الرمز البريدي / Postal Code{% else %}Postal Code / الرمز البريدي{% endif %}</div><input type="text" name="postal_code" id="f_postal" class="sf-inp" dir="ltr"></div>
               </div>
-              <input type="hidden" name="building_number_ar" id="f_building_ar_val">
-              <input type="hidden" name="additional_number_ar" id="f_additional_ar_val">
-              <input type="hidden" name="postal_code_ar" id="f_postal_ar_val">
             </div><!-- /body-address -->
           </div><!-- /sec-address -->
 
@@ -549,12 +559,15 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
           </div>
           <div class="sf-err" id="err_wh_name"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}اسم المستودع مطلوب{% else %}Warehouse name is required{% endif %}</span></div>
         </div>
-        <div class="mono-group" style="margin-bottom:6px;">
-          <div class="mono-lbl">{% if ar %}الموقع / Location{% else %}Location / الموقع{% endif %}</div>
-          <select id="wh_location" class="sf-inp sf-sel" onchange="onWhLocationChange(this)">
-            <option value="">{% if ar %}— اختر الموقع —{% else %}— Select Location —{% endif %}</option>
-            <option value="__new__">{% if ar %}+ إضافة موقع جديد{% else %}+ Add New Location{% endif %}</option>
-          </select>
+        <div class="bi-group" style="margin-bottom:0;">
+          <div class="bi-labels">
+            <div class="bi-lbl-en">{% if ar %}الموقع{% else %}Location{% endif %}<span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span></div>
+            <div class="bi-lbl-ar"><span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>{% if ar %}Location{% else %}الموقع{% endif %}</div>
+          </div>
+          <div class="bi-inputs">
+            <div class="bi-wrap"><input type="text" id="wh_loc_p" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}" placeholder="{% if ar %}أدخل الموقع{% else %}Enter location{% endif %}" oninput="scheduleBMTrans('wh_loc')"><button type="button" class="sf-retrans" onclick="retransBM('wh_loc')"><i class="fas fa-sync-alt"></i></button></div>
+            <div class="bi-wrap"><input type="text" id="wh_loc_s" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}" placeholder="{% if ar %}Enter location{% else %}أدخل الموقع{% endif %}"><span class="sf-spin" id="wh_loc_spin"></span></div>
+          </div>
         </div>
       </div>
       <div class="bm-footer">
@@ -564,56 +577,9 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
     </div>
   </div>
 </div>
-
-<!-- QUICK-ADD WAREHOUSE LOCATION MODAL -->
-<div class="modal fade bm-modal" id="whLocModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-sm">
-    <div class="modal-content">
-      <div class="bm-hdr" style="background:linear-gradient(135deg,#0e7490 0%,#0891b2 100%);">
-        <h5><i class="fas fa-map-marker-alt"></i>{% if ar %}إضافة موقع / Add Location{% else %}Add Location / إضافة موقع{% endif %}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="bm-body" style="padding:20px 22px 8px;">
-        <div class="bi-group" style="margin-bottom:0;">
-          <div class="bi-labels">
-            <div class="bi-lbl-en">{% if ar %}اسم الموقع{% else %}Location Name{% endif %}<span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span><span class="req">*</span></div>
-            <div class="bi-lbl-ar"><span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>{% if ar %}Location Name{% else %}اسم الموقع{% endif %}</div>
-          </div>
-          <div class="bi-inputs">
-            <div class="bi-wrap"><input type="text" id="whLoc_name_p" class="sf-inp has-btn" dir="{% if ar %}rtl{% else %}ltr{% endif %}" placeholder="{% if ar %}أدخل اسم الموقع{% else %}Enter location name{% endif %}" oninput="scheduleBMTrans('whLoc_name')"><button type="button" class="sf-retrans" onclick="retransBM('whLoc_name')"><i class="fas fa-sync-alt"></i></button></div>
-            <div class="bi-wrap"><input type="text" id="whLoc_name_s" class="sf-inp secondary" dir="{% if ar %}ltr{% else %}rtl{% endif %}" placeholder="{% if ar %}Enter location name{% else %}أدخل اسم الموقع{% endif %}"><span class="sf-spin" id="whLoc_name_spin"></span></div>
-          </div>
-        </div>
-      </div>
-      <div class="bm-footer">
-        <button type="button" class="sf-btn cancel" data-bs-dismiss="modal"><i class="fas fa-times"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button type="button" class="sf-btn save" onclick="saveWhQuickLocation()"><i class="fas fa-save"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
-      </div>
-    </div>
-  </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-const GEO = {
-  "Saudi Arabia":{ar:"المملكة العربية السعودية",cities:{
-    "Riyadh":{ar:"الرياض",districts:["Al Olaya","Al Malaz","Al Murabba","Al Naseem","Al Rawdah","Al Sulaimaniyah","Al Aqiq","Al Maseef","Al Wurud","Al Rabwah","Diplomatic Quarter","Al Nakheel","Al Sahafah","Al Rabi","Al Qirawan","Al Yasmin","Al Narjis","Al Arid","Al Munsiyah","Al Khaleej"]},
-    "Jeddah":{ar:"جدة",districts:["Al Balad","Al Hamra","Al Rawdah","Al Andalus","Al Zahraa","Al Shati","Al Naeem","Al Faisaliyah","Al Aziziyah","Obhur Al Shamaliyah","Al Marwah","Al Safa","Al Rehab","Al Khalidiyah","Al Nuzlah Al Yamaniyah"]},
-    "Mecca":{ar:"مكة المكرمة",districts:["Al Adl","Al Aziziyah","Al Shasha","Al Hujoun","Ajyad","Al Massfalah","Al Nakkasah","Al Rusaifah","Al Zahir","Kudai"]},
-    "Medina":{ar:"المدينة المنورة",districts:["Al Haram","Al Aziziyah","Al Khalidiyah","Al Iskan","Quba","Al Rawdah","Al Manakhah","Al Buda","Al Difa"]},
-    "Dammam":{ar:"الدمام",districts:["Al Faisaliyah","Al Noor","Al Badiyah","Al Shulah","Al Jalawiyah","Al Hamra","Al Aziziyah","Al Rehab","Al Khobar Road","Al Wahah"]},
-    "Al Khobar":{ar:"الخبر",districts:["Al Thuqbah","Al Aqrabiyah","Al Bandariyah","Al Khobar Al Shamaliyah","Al Hamra","Al Olaya","Al Rawdah","Al Muraikabat"]},
-  }},
-  "United Arab Emirates":{ar:"الإمارات العربية المتحدة",cities:{"Dubai":{ar:"دبي",districts:["Downtown Dubai","Deira","Bur Dubai","Jumeirah","Al Quoz","Business Bay","DIFC","Al Barsha","Mirdif","Al Karama","Al Nahda"]},"Abu Dhabi":{ar:"أبوظبي",districts:["Al Khalidiyah","Al Mushrif","Al Zaab","Al Muroor","Al Shamkha","Khalifa City","Mohammed Bin Zayed City","Al Reem Island"]}}},
-  "Kuwait":{ar:"الكويت",cities:{"Kuwait City":{ar:"مدينة الكويت",districts:["Salmiya","Hawalli","Rumaithiya","Mishref","Jabriya","Bayan","Salwa","Fintas","Mangaf","Fahaheel","Ahmadi"]}}},
-  "Bahrain":{ar:"البحرين",cities:{"Manama":{ar:"المنامة",districts:["Adliya","Juffair","Seef","Diplomatic Area","Sanabis","Tubli","Isa Town"]}}},
-  "Qatar":{ar:"قطر",cities:{"Doha":{ar:"الدوحة",districts:["West Bay","Al Sadd","Al Wakrah","Lusail","Al Waab","Al Khor","Msheireb","The Pearl"]}}},
-  "Oman":{ar:"عُمان",cities:{"Muscat":{ar:"مسقط",districts:["Muttrah","Al Qurum","Ruwi","Al Khuwair","Bausher","Al Maabela","Al Ghubra","Azaiba"]}}},
-  "Jordan":{ar:"الأردن",cities:{"Amman":{ar:"عمّان",districts:["Abdali","Shmeisani","Jabal Al Hussain","Al Wehdat","Sweifieh","Khalda","Al Rabiyeh","Mecca Street","7th Circle","Abdoun"]}}},
-  "Egypt":{ar:"مصر",cities:{"Cairo":{ar:"القاهرة",districts:["Nasr City","Heliopolis","Maadi","Zamalek","Dokki","Mohandessin","New Cairo","6th of October","Ain Shams","Shubra"]}}},
-};
-</script>
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
 <script>
 const TRANSLATE_URL = '{{ url_for("sellers.translate_text") }}';
@@ -624,8 +590,6 @@ const IS_AR = {{ 'true' if ar else 'false' }};
 const SRC = IS_AR ? 'ar' : 'en';
 const TGT = IS_AR ? 'en' : 'ar';
 const DIR = SRC+'|'+TGT;
-const WH_LOCS_URL      = '{{ url_for("sellers.warehouse_locations_data") }}';
-const WH_LOC_QUICK_URL = '{{ url_for("sellers.add_warehouse_location_quick") }}';
 
 function toggleSection(key){
   const sec = document.getElementById('sec-'+key);
@@ -768,41 +732,6 @@ function confirmDelete(url,name){
   new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
 
-function geoInit(selC,selCi,selD){
-  selC=selC||'Saudi Arabia';selCi=selCi||'';selD=selD||'';
-  const cs=document.getElementById('f_country_sel');
-  cs.innerHTML=`<option value="">${IS_AR?'-- اختر --':'-- Select --'}</option>`;
-  Object.keys(GEO).sort().forEach(en=>{cs.innerHTML+=`<option value="${en}" data-ar="${GEO[en].ar}"${en===selC?' selected':''}>${IS_AR?GEO[en].ar:en}</option>`;});
-  document.getElementById('f_country_val').value=selC;
-  document.getElementById('f_country_ar_val').value=GEO[selC]?GEO[selC].ar:'';
-  fillCities(selC,selCi,selD);
-}
-function fillCities(cEn,selCi,selD){
-  const cs=document.getElementById('f_city_sel');
-  cs.innerHTML=`<option value="">${IS_AR?'-- اختر --':'-- Select --'}</option>`;cs.disabled=true;
-  clearDistricts();
-  if(!cEn||!GEO[cEn])return;
-  Object.keys(GEO[cEn].cities).sort().forEach(en=>{const ar=GEO[cEn].cities[en].ar;cs.innerHTML+=`<option value="${en}" data-ar="${ar}"${en===selCi?' selected':''}>${IS_AR?ar:en}</option>`;});
-  cs.disabled=false;
-  if(selCi){document.getElementById('f_city_val').value=selCi;document.getElementById('f_city_ar_val').value=GEO[cEn].cities[selCi]?GEO[cEn].cities[selCi].ar:'';fillDistricts(cEn,selCi,selD);}
-}
-function clearDistricts(){
-  const ds=document.getElementById('f_district_sel');
-  ds.innerHTML=`<option value="">${IS_AR?'-- اختر --':'-- Select --'}</option>`;ds.disabled=true;
-  document.getElementById('f_district_val').value='';document.getElementById('f_district_ar_val').value='';
-}
-function fillDistricts(cEn,ciEn,selD){
-  clearDistricts();
-  if(!GEO[cEn]||!GEO[cEn].cities[ciEn])return;
-  const ds=document.getElementById('f_district_sel');
-  GEO[cEn].cities[ciEn].districts.forEach(d=>{ds.innerHTML+=`<option value="${d}"${d===selD?' selected':''}>${d}</option>`;});
-  ds.disabled=false;
-  if(selD){document.getElementById('f_district_val').value=selD;document.getElementById('f_district_ar_val').value=selD;}
-}
-function onCountryChange(){const s=document.getElementById('f_country_sel'),en=s.value,o=s.selectedOptions[0];document.getElementById('f_country_val').value=en;document.getElementById('f_country_ar_val').value=o?o.dataset.ar:'';fillCities(en,'','');}
-function onCityChange(){const s=document.getElementById('f_city_sel'),en=s.value,o=s.selectedOptions[0],c=document.getElementById('f_country_sel').value;document.getElementById('f_city_val').value=en;document.getElementById('f_city_ar_val').value=o?o.dataset.ar:'';fillDistricts(c,en,'');}
-function onDistrictChange(){const v=document.getElementById('f_district_sel').value;document.getElementById('f_district_val').value=v;document.getElementById('f_district_ar_val').value=v;}
-
 /* ══ BANKS ══ */
 let _banks = [];
 let _bankSeq = 0;
@@ -905,16 +834,6 @@ function injectBankFields(){
 
 /* ══ WAREHOUSES ══ */
 let _whs = [];
-let _whLocations = [];
-function loadWhLocations(cb){
-  fetch(WH_LOCS_URL).then(r=>r.json()).then(d=>{_whLocations=d; if(cb)cb();}).catch(()=>{_whLocations=[]; if(cb)cb();});
-}
-function whLocOptions(selId){
-  let h=`<option value="">${IS_AR?'— اختر الموقع —':'— Select Location —'}</option>`;
-  _whLocations.forEach(l=>{h+=`<option value="${l.id}" ${String(l.id)===String(selId)?'selected':''}>${l.label}</option>`;});
-  h+=`<option value="__new__">${IS_AR?'+ إضافة موقع جديد':'+ Add New Location'}</option>`;
-  return h;
-}
 function renderWhTable(){
   const wrap=document.getElementById('whTblWrap');
   const body=document.getElementById('whTblBody');
@@ -926,7 +845,7 @@ function renderWhTable(){
   body.innerHTML=_whs.map((w,i)=>`
     <tr>
       <td><strong>${w.warehouse_name||'—'}</strong>${w.warehouse_name_ar?`<br><small style="color:var(--gray-400);font-size:11px;">${w.warehouse_name_ar}</small>`:''}</td>
-      <td>${w.location_name||'—'}</td>
+      <td>${w.location||'—'}${w.location_ar?`<br><small style="color:var(--gray-400);font-size:11px;">${w.location_ar}</small>`:''}</td>
       <td><div class="td-acts">
         <button type="button" class="pl-btn pl-edit" onclick="openWhModal(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
         <button type="button" class="pl-btn pl-del" onclick="deleteWhEntry(${i})" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
@@ -935,8 +854,6 @@ function renderWhTable(){
 }
 function openWhModal(editIdx){
   document.getElementById('wh_idx').value = (editIdx!=null)?editIdx:'';
-  const selId = (editIdx!=null && _whs[editIdx]) ? _whs[editIdx].location_id : '';
-  document.getElementById('wh_location').innerHTML = whLocOptions(selId);
   document.getElementById('whTitle').innerHTML = editIdx!=null
     ? `<i class="fas fa-edit"></i> ${IS_AR?'تعديل مستودع / Edit Warehouse':'Edit Warehouse / تعديل مستودع'}`
     : `<i class="fas fa-warehouse"></i> ${IS_AR?'إضافة مستودع / Add Warehouse':'Add Warehouse / إضافة مستودع'}`;
@@ -944,9 +861,13 @@ function openWhModal(editIdx){
     const w=_whs[editIdx];
     document.getElementById('wh_name_p').value = IS_AR ? (w.warehouse_name_ar||w.warehouse_name||'') : (w.warehouse_name||'');
     document.getElementById('wh_name_s').value = IS_AR ? (w.warehouse_name||'') : (w.warehouse_name_ar||'');
+    document.getElementById('wh_loc_p').value = IS_AR ? (w.location_ar||w.location||'') : (w.location||'');
+    document.getElementById('wh_loc_s').value = IS_AR ? (w.location||'') : (w.location_ar||'');
   } else {
     document.getElementById('wh_name_p').value='';
     document.getElementById('wh_name_s').value='';
+    document.getElementById('wh_loc_p').value='';
+    document.getElementById('wh_loc_s').value='';
   }
   document.getElementById('err_wh_name')?.classList.remove('show');
   document.getElementById('wh_name_p')?.classList.remove('is-invalid');
@@ -954,41 +875,19 @@ function openWhModal(editIdx){
   if(sec && !sec.classList.contains('open')) toggleSection('warehouse');
   new bootstrap.Modal(document.getElementById('whModal')).show();
 }
-function onWhLocationChange(sel){
-  if(sel.value==='__new__'){
-    sel.value='';
-    document.getElementById('whLoc_name_p').value='';
-    document.getElementById('whLoc_name_s').value='';
-    new bootstrap.Modal(document.getElementById('whLocModal')).show();
-  }
-}
-function saveWhQuickLocation(){
-  const p=(document.getElementById('whLoc_name_p').value||'').trim();
-  const s=(document.getElementById('whLoc_name_s').value||'').trim();
-  const en = IS_AR ? s : p;
-  const ar = IS_AR ? p : s;
-  if(!en){alert(IS_AR?'اسم الموقع مطلوب':'Location name is required');return;}
-  fetch(WH_LOC_QUICK_URL,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-    body:JSON.stringify({location_name:en,location_name_ar:ar})})
-  .then(r=>r.json()).then(d=>{
-    if(!d.ok){alert(d.error||'Error');return;}
-    loadWhLocations(()=>{ document.getElementById('wh_location').innerHTML = whLocOptions(d.id); });
-    bootstrap.Modal.getInstance(document.getElementById('whLocModal'))?.hide();
-  }).catch(()=>alert('Network error'));
-}
 function saveWhEntry(){
   const name_p=(document.getElementById('wh_name_p').value||'').trim();
   if(!name_p){setInv(document.getElementById('wh_name_p'),'err_wh_name');return;}
   const name_s=(document.getElementById('wh_name_s').value||'').trim();
-  const locSel=document.getElementById('wh_location');
-  const locId = locSel.value && locSel.value!=='__new__' ? locSel.value : '';
-  const locName = locId ? locSel.options[locSel.selectedIndex].text : '';
+  const loc_p=(document.getElementById('wh_loc_p').value||'').trim();
+  const loc_s=(document.getElementById('wh_loc_s').value||'').trim();
   const idxStr=document.getElementById('wh_idx').value;
   const editIdx = idxStr!=='' ? parseInt(idxStr) : null;
   const entry={
     warehouse_name:    IS_AR ? name_s : name_p,
     warehouse_name_ar: IS_AR ? name_p : name_s,
-    location_id: locId, location_name: locName,
+    location:    IS_AR ? loc_s : loc_p,
+    location_ar: IS_AR ? loc_p : loc_s,
     _dbId: (editIdx!=null && _whs[editIdx]) ? _whs[editIdx]._dbId : null
   };
   if(editIdx!=null) _whs[editIdx]=entry; else _whs.push(entry);
@@ -1006,7 +905,8 @@ function injectWhFields(){
     const fields={
       [`warehouses[${i}][warehouse_name]`]:w.warehouse_name||'',
       [`warehouses[${i}][warehouse_name_ar]`]:w.warehouse_name_ar||'',
-      [`warehouses[${i}][location_id]`]:w.location_id||'',
+      [`warehouses[${i}][location]`]:w.location||'',
+      [`warehouses[${i}][location_ar]`]:w.location_ar||'',
       [`warehouses[${i}][_db_id]`]:w._dbId||'',
     };
     Object.entries(fields).forEach(([n,v])=>{const h=document.createElement('input');h.type='hidden';h.name=n;h.value=v;h.className='wh-hidden-input';form.appendChild(h);});
@@ -1016,14 +916,15 @@ function injectWhFields(){
 
 let currentSellerId=null;
 function clearAllFields(){
-  const ids=['f_name_p','f_name_s','f_vat','f_crn','f_phone','f_fax','f_email','f_website','f_street_p','f_street_s','f_building','f_additional','f_postal'];
+  const ids=['f_name_p','f_name_s','f_vat','f_crn','f_phone','f_fax','f_email','f_website',
+             'f_country_p','f_country_s','f_city_p','f_city_s','f_district_p','f_district_s',
+             'f_street_p','f_street_s','f_building','f_additional','f_postal'];
   ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.querySelectorAll('#sellerForm .sf-inp').forEach(el=>el.classList.remove('is-invalid'));
   document.querySelectorAll('#sellerForm .sf-err').forEach(el=>el.classList.remove('show'));
   const rc=document.getElementById('f_rcolor');if(rc)rc.value='#16a34a';
   const sw=document.getElementById('f_rswatch');if(sw)sw.value='#16a34a';
   const st=document.getElementById('f_status');if(st)st.value='active';
-  ['f_building_ar_val','f_additional_ar_val','f_postal_ar_val'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   ['logoName','bgLogoName'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=IS_AR?'اختر ملف...':'Choose file...';});
   document.querySelectorAll('.sf-spin').forEach(e=>e.innerHTML='');
   _banks=[];_bankSeq=0;renderBankTable();
@@ -1041,7 +942,6 @@ function openAddModal(){
   document.getElementById('sellerForm').action='{{ url_for("sellers.add_seller") }}';
   document.getElementById('sfSellerId').value='';
   clearAllFields();
-  geoInit();
   new bootstrap.Modal(document.getElementById('sellerModal')).show();
 }
 function openEditModal(id){
@@ -1050,7 +950,6 @@ function openEditModal(id){
   document.getElementById('sellerForm').action='/sellers/'+id+'/edit';
   document.getElementById('sfSellerId').value=id;
   clearAllFields();
-  geoInit();
   fetch('/sellers/'+id+'/json').then(r=>r.json()).then(d=>{
     document.getElementById('f_name_p').value  = IS_AR?(d.name_ar||''):(d.name||'');
     document.getElementById('f_name_s').value  = IS_AR?(d.name||''):(d.name_ar||'');
@@ -1060,36 +959,31 @@ function openEditModal(id){
     const st=document.getElementById('f_status');if(st)st.value=d.status||'active';
     const rc=document.getElementById('f_rcolor');if(rc)rc.value=d.report_color||'#16a34a';
     const sw=document.getElementById('f_rswatch');if(sw)sw.value=d.report_color||'#16a34a';
+    document.getElementById('f_country_p').value = IS_AR?(d.country_ar||''):(d.country||'');
+    document.getElementById('f_country_s').value = IS_AR?(d.country||''):(d.country_ar||'');
+    document.getElementById('f_city_p').value = IS_AR?(d.city_ar||''):(d.city||'');
+    document.getElementById('f_city_s').value = IS_AR?(d.city||''):(d.city_ar||'');
+    document.getElementById('f_district_p').value = IS_AR?(d.district_ar||''):(d.district||'');
+    document.getElementById('f_district_s').value = IS_AR?(d.district||''):(d.district_ar||'');
     document.getElementById('f_street_p').value = IS_AR?(d.street_name_ar||''):(d.street_name||'');
     document.getElementById('f_street_s').value = IS_AR?(d.street_name||''):(d.street_name_ar||'');
     document.getElementById('f_building').value   = d.building_number||'';
     document.getElementById('f_additional').value = d.additional_number||'';
     document.getElementById('f_postal').value     = d.postal_code||'';
-    document.getElementById('f_building_ar_val').value   = d.building_number_ar||d.building_number||'';
-    document.getElementById('f_additional_ar_val').value = d.additional_number_ar||d.additional_number||'';
-    document.getElementById('f_postal_ar_val').value     = d.postal_code_ar||d.postal_code||'';
-    geoInit(d.country||'Saudi Arabia',d.city||'',d.district||'');
     _banks=(d.banks||[]).map(b=>({...b,bank_name_ar:b.bank_name_ar||'',_dbId:b.id}));
     renderBankTable();
     fetch('/sellers/'+id+'/warehouses').then(r=>r.json()).then(list=>{
       _whs=list.map(w=>({
         warehouse_name:w.warehouse_name||'',warehouse_name_ar:w.warehouse_name_ar||'',
-        location_id:w.location_id||'',location_name:w.location_name||'',_dbId:w.id
+        location:w.location||'',location_ar:w.location_ar||'',_dbId:w.id
       }));
       renderWhTable();
     }).catch(()=>{});
   });
   new bootstrap.Modal(document.getElementById('sellerModal')).show();
 }
-function resetForm(){ clearAllFields(); geoInit(); }
+function resetForm(){ clearAllFields(); }
 function setFName(inp,id){const e=document.getElementById(id);if(e)e.textContent=inp.files[0]?inp.files[0].name:(IS_AR?'اختر ملف...':'Choose file...');}
-
-['f_building','f_additional','f_postal'].forEach(id=>{
-  const el=document.getElementById(id);
-  if(!el)return;
-  const arId={'f_building':'f_building_ar_val','f_additional':'f_additional_ar_val','f_postal':'f_postal_ar_val'}[id];
-  el.addEventListener('input',()=>{const arEl=document.getElementById(arId);if(arEl)arEl.value=el.value;});
-});
 
 function submitSellerForm(){
   let ok = true;
@@ -1118,8 +1012,6 @@ function submitSellerForm(){
   document.getElementById('sellerForm').submit();
 }
 
-// preload warehouse locations
-loadWhLocations();
 document.getElementById('sellerForm').addEventListener('submit',()=>setTimeout(loadData,800));
 </script>
 {% endblock %}

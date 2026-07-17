@@ -77,7 +77,7 @@ def create_app(config_name='default'):
     from database.routes.coa import coa_bp
     from database.routes.journal import journal_bp
     from database.routes.payroll import payroll_bp
-    from database.routes.lookups import lookups_bp
+    from database.routes import lookups_bp
     from database.routes.employee_import import emp_import_bp
     from database.routes.tax_codes import tax_bp
     from database.routes.financial import financial_bp  # ✅ ADD THIS
@@ -217,15 +217,6 @@ def init_db(app):
                       f"{deep['level_five']} Level 5 records inserted.")
         except Exception as exc:
             print(f'Chart of Accounts seed skipped: {exc}')
-
-        # Seed department locations (idempotent)
-        try:
-            from models import seed_department_locations
-            n = seed_department_locations()
-            if n:
-                print(f'Department locations seeded: {n} records inserted.')
-        except Exception as exc:
-            print(f'Department location seed skipped: {exc}')
 
         # Seed tax codes (idempotent)
         try:

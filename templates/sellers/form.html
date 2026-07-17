@@ -337,12 +337,19 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label">
-                        {% if current_locale == 'ar' %}الموقع{% else %}Location{% endif %}
+                        {% if current_locale == 'ar' %}الموقع (إنجليزي){% else %}Location (English){% endif %}
                     </label>
-                    <select class="form-select" id="whLocation" onchange="onWhLocationChange(this)">
-                        <option value="">{% if current_locale == 'ar' %}— اختر الموقع —{% else %}— Select Location —{% endif %}</option>
-                        <option value="__new__">{% if current_locale == 'ar' %}+ إضافة موقع جديد{% else %}+ Add New Location{% endif %}</option>
-                    </select>
+                    <input type="text" class="form-control" id="whLocationEn" dir="ltr"
+                           placeholder="e.g. Riyadh Warehouse"
+                           oninput="translateWh('whLocationEn','whLocationAr','en')">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">
+                        {% if current_locale == 'ar' %}الموقع (عربي){% else %}Location (Arabic){% endif %}
+                    </label>
+                    <input type="text" class="form-control" id="whLocationAr" dir="rtl"
+                           placeholder="مثال: مستودع الرياض"
+                           oninput="translateWh('whLocationAr','whLocationEn','ar')">
                 </div>
             </div>
             <div class="modal-footer">
@@ -424,47 +431,6 @@
     </div>
 </div>
 
-<!-- Quick Location Modal -->
-<div class="modal fade" id="quickLocationModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-map-marker-alt me-2"></i>
-                    {% if current_locale == 'ar' %}إضافة موقع جديد{% else %}Add New Location{% endif %}
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">
-                        {% if current_locale == 'ar' %}اسم الموقع (إنجليزي){% else %}Location Name (English){% endif %}
-                        <span class="text-danger">*</span>
-                    </label>
-                    <input type="text" class="form-control" id="quickLocNameEn" dir="ltr" 
-                           placeholder="e.g. Riyadh Warehouse">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">
-                        {% if current_locale == 'ar' %}اسم الموقع (عربي){% else %}Location Name (Arabic){% endif %}
-                    </label>
-                    <input type="text" class="form-control" id="quickLocNameAr" dir="rtl" 
-                           placeholder="مثال: مستودع الرياض">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    {% if current_locale == 'ar' %}إلغاء{% else %}Cancel{% endif %}
-                </button>
-                <button type="button" class="btn btn-primary" onclick="saveQuickLocation()">
-                    <i class="fas fa-save me-1"></i>
-                    {% if current_locale == 'ar' %}حفظ{% else %}Save{% endif %}
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% endblock %}
 
 {% block extra_js %}
@@ -472,8 +438,6 @@
 const TR_URL = '{{ url_for("sellers.translate_text") }}';
 const CSRF_TOKEN = '{{ csrf_token() }}';
 const IS_AR = {{ 'true' if current_locale == 'ar' else 'false' }};
-const WH_LOCS_URL = '{{ url_for("sellers.warehouse_locations_data") }}';
-const WH_LOC_QUICK_URL = '{{ url_for("sellers.add_warehouse_location_quick") }}';
 {% if is_edit and seller %}
 const WH_LOAD_URL = '{{ url_for("sellers.seller_warehouses", seller_id=seller.id) }}';
 const SELLER_JSON_URL = '{{ url_for("sellers.seller_json", id=seller.id) }}';
@@ -502,25 +466,7 @@ function translateWh(srcId, tgtId, sl) {
 
 // Warehouse data management
 let warehouses = [];
-let whLocations = [];
 let banks = [];
-
-function loadWhLocations(cb) {
-    fetch(WH_LOCS_URL)
-        .then(r => r.json())
-        .then(d => { whLocations = d; if(cb) cb(); })
-        .catch(() => { whLocations = []; if(cb) cb(); });
-}
-
-function buildLocOptions(selectedId) {
-    let html = `<option value="">${IS_AR ? '— اختر الموقع —' : '— Select Location —'}</option>`;
-    whLocations.forEach(loc => {
-        const sel = String(loc.id) === String(selectedId) ? ' selected' : '';
-        html += `<option value="${loc.id}"${sel}>${loc.label}</option>`;
-    });
-    html += `<option value="__new__">${IS_AR ? '+ إضافة موقع جديد' : '+ Add New Location'}</option>`;
-    return html;
-}
 
 function openWarehouseModal(index) {
     const title = document.getElementById('warehouseModalTitle');
@@ -530,62 +476,34 @@ function openWarehouseModal(index) {
         const wh = warehouses[index];
         document.getElementById('whNameEn').value = wh.warehouse_name || '';
         document.getElementById('whNameAr').value = wh.warehouse_name_ar || '';
-        document.getElementById('whLocation').innerHTML = buildLocOptions(wh.location_id);
+        document.getElementById('whLocationEn').value = wh.location || '';
+        document.getElementById('whLocationAr').value = wh.location_ar || '';
         title.innerHTML = `<i class="fas fa-edit me-2"></i> ${IS_AR ? 'تعديل مستودع' : 'Edit Warehouse'}`;
     } else {
         document.getElementById('whNameEn').value = '';
         document.getElementById('whNameAr').value = '';
-        document.getElementById('whLocation').innerHTML = buildLocOptions('');
+        document.getElementById('whLocationEn').value = '';
+        document.getElementById('whLocationAr').value = '';
         title.innerHTML = `<i class="fas fa-warehouse me-2"></i> ${IS_AR ? 'إضافة مستودع' : 'Add Warehouse'}`;
     }
     
     new bootstrap.Modal(document.getElementById('warehouseModal')).show();
 }
 
-function onWhLocationChange(sel) {
-    if (sel.value === '__new__') {
-        sel.value = '';
-        document.getElementById('quickLocNameEn').value = '';
-        document.getElementById('quickLocNameAr').value = '';
-        new bootstrap.Modal(document.getElementById('quickLocationModal')).show();
-    }
-}
-
-function saveQuickLocation() {
-    const en = document.getElementById('quickLocNameEn').value.trim();
-    const ar = document.getElementById('quickLocNameAr').value.trim();
-    if (!en) { alert(IS_AR ? 'اسم الموقع مطلوب' : 'Location name is required'); return; }
-    
-    fetch(WH_LOC_QUICK_URL, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN},
-        body: JSON.stringify({location_name: en, location_name_ar: ar})
-    })
-    .then(r => r.json())
-    .then(d => {
-        if (!d.ok) { alert(d.error || 'Error'); return; }
-        loadWhLocations(() => {
-            document.getElementById('whLocation').innerHTML = buildLocOptions(d.id);
-        });
-        bootstrap.Modal.getInstance(document.getElementById('quickLocationModal')).hide();
-    });
-}
-
 function saveWarehouse() {
     const index = document.getElementById('whEditIndex').value;
     const nameEn = document.getElementById('whNameEn').value.trim();
     const nameAr = document.getElementById('whNameAr').value.trim();
-    const locSel = document.getElementById('whLocation');
-    const locId = locSel.value;
-    const locName = locSel.options[locSel.selectedIndex]?.text || '';
+    const locEn = document.getElementById('whLocationEn').value.trim();
+    const locAr = document.getElementById('whLocationAr').value.trim();
     
     if (!nameEn) { alert(IS_AR ? 'اسم المستودع مطلوب' : 'Warehouse name is required'); return; }
     
     const wh = {
         warehouse_name: nameEn,
         warehouse_name_ar: nameAr,
-        location_id: locId,
-        location_name: locName,
+        location: locEn,
+        location_ar: locAr,
         _dbId: (index !== '' && warehouses[index]) ? warehouses[index]._dbId : null
     };
     
@@ -633,7 +551,7 @@ function renderWarehouses() {
                 <strong>${wh.warehouse_name || '—'}</strong>
                 ${wh.warehouse_name_ar ? `<br><small class="text-muted">${wh.warehouse_name_ar}</small>` : ''}
             </td>
-            <td>${wh.location_name || '<span class="text-muted">—</span>'}</td>
+            <td>${wh.location || '<span class="text-muted">—</span>'}${wh.location_ar ? `<br><small class="text-muted">${wh.location_ar}</small>` : ''}</td>
             <td class="text-center">
                 <!-- CRITICAL FIX: Added type="button" -->
                 <button type="button" class="btn btn-sm btn-warning me-1" onclick="openWarehouseModal(${i})" title="${IS_AR ? 'تعديل' : 'Edit'}">
@@ -655,7 +573,7 @@ function injectWarehouseFields() {
     const container = document.getElementById('warehouseHiddenFields');
     container.innerHTML = '';
     warehouses.forEach((wh, i) => {
-        ['warehouse_name', 'warehouse_name_ar', 'location_id', '_dbId'].forEach(field => {
+        ['warehouse_name', 'warehouse_name_ar', 'location', 'location_ar', '_dbId'].forEach(field => {
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = `warehouses[${i}][${field}]`;
@@ -899,8 +817,8 @@ function loadExistingWarehouses() {
             warehouses = data.map(w => ({
                 warehouse_name: w.warehouse_name || '',
                 warehouse_name_ar: w.warehouse_name_ar || '',
-                location_id: w.location_id || '',
-                location_name: w.location_name || '',
+                location: w.location || '',
+                location_ar: w.location_ar || '',
                 _dbId: w.id
             }));
             renderWarehouses();
@@ -909,12 +827,10 @@ function loadExistingWarehouses() {
 {% endif %}
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadWhLocations(() => {
-        {% if is_edit and seller %}
-        loadExistingWarehouses();
-        loadSellerData();
-        {% endif %}
-    });
+    {% if is_edit and seller %}
+    loadExistingWarehouses();
+    loadSellerData();
+    {% endif %}
 });
 </script>
 {% endblock %}

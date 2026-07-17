@@ -1066,7 +1066,7 @@ function openEditPQ(id) {
       (d.attachments || []).forEach(a => {
         const div = document.createElement('div'); div.className = 'att-item';
         div.innerHTML = `<span><i class="fas fa-file me-2" style="color:#60a5fa;"></i><strong>${a.filename}</strong>
-          <span style="color:#9ca3af;margin-left:8px;font-size:11px;">existing</span></span>`;
+          <span style="color:#9ca3af;margin-left:8px;font-size:11px;">existing</span></span><span style="margin-left:auto;display:inline-flex;gap:8px;"><a href="/purchase/attachments/${a.id}/view" target="_blank" title="View" style="color:#2563eb;text-decoration:none;"><i class="fas fa-eye"></i></a><a href="/purchase/attachments/${a.id}/download" title="Download" style="color:#16a34a;text-decoration:none;"><i class="fas fa-download"></i></a><button type="button" onclick="delExistAtt(${a.id}, this)" title="Delete" style="background:none;border:none;color:#dc2626;cursor:pointer;padding:0;"><i class="fas fa-trash"></i></button></span>`;
         document.getElementById('existAttList').appendChild(div);
       });
       recalcSummary(); updLiCount(); updDocCount();
@@ -1432,5 +1432,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 500);
   }
 });
+
+function delExistAtt(attId, btn){
+  if(!confirm("Delete this attachment?")) return;
+  fetch("/purchase/attachments/" + attId + "/delete", {
+    method: "POST",
+    headers: {"X-CSRFToken": CSRF},
+    body: new URLSearchParams({csrf_token: CSRF})
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.ok) { btn.closest(".att-item")?.remove(); if (typeof updDocCount === "function") updDocCount(); }
+    else alert(d.error || "Error");
+  })
+  .catch(() => alert("Network error"));
+}
 </script>
 {% endblock %}

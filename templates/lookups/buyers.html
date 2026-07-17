@@ -519,20 +519,6 @@
                 </div>
               </div>
 
-              <div class="field-row">
-                <div class="field-item">
-                  <div class="field-label">{% if ar %}القسم (EN){% else %}Department (EN){% endif %}</div>
-                  <input type="text" name="department" id="b_department" class="field-input" dir="ltr"
-                         placeholder="{% if ar %}مثال: العمليات{% else %}e.g. Operations{% endif %}">
-                  <small style="font-size:11px;color:#94a3b8;">{% if ar %}يُملأ تلقائياً في نموذج الموظف{% else %}Auto-fills on the employee form{% endif %}</small>
-                </div>
-                <div class="field-item">
-                  <div class="field-label" dir="rtl" style="text-align:right;">{% if ar %}القسم{% else %}Department (AR){% endif %}</div>
-                  <input type="text" name="department_ar" id="b_department_ar" class="field-input" dir="rtl"
-                         placeholder="مثال: العمليات">
-                </div>
-              </div>
-
               <div class="section-label"><i class="fas fa-phone-alt"></i> {% if ar %}معلومات الاتصال{% else %}Contact{% endif %}</div>
               <div class="field-row">
                 <div class="field-item">
@@ -641,19 +627,56 @@
               <div class="section-label"><i class="fas fa-globe"></i> {% if ar %}الموقع{% else %}Location{% endif %}</div>
               <div class="field-row">
                 <div class="field-item">
-                  <div class="field-label">{% if ar %}البلد{% else %}Country{% endif %} <span class="field-req">*</span></div>
-                  <select name="country" id="b_country" class="field-input" onchange="onCountryChange()" required></select>
+                  <div class="field-label" dir="ltr">{% if ar %}البلد (English){% else %}Country{% endif %} <span class="field-req">*</span></div>
+                  <div class="field-wrap" dir="ltr">
+                    <input type="text" name="country" id="b_country" class="field-input" dir="ltr" required placeholder="e.g. Saudi Arabia" oninput="bTrans('b_country','b_country_ar','en')">
+                    {% if not ar %}<button type="button" class="retrans-btn" onclick="bRetrans('b_country_ar','b_country','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                  </div>
                 </div>
                 <div class="field-item">
-                  <div class="field-label">{% if ar %}المدينة{% else %}City{% endif %} <span class="field-req">*</span></div>
-                  <select name="city" id="b_city" class="field-input" onchange="onCityChange()" required></select>
+                  <div class="field-label" dir="rtl" style="text-align:right;">{% if ar %}البلد <span class="field-req">*</span>{% else %}البلد (Arabic){% endif %}</div>
+                  <div class="field-wrap" dir="rtl">
+                    <input type="text" name="country_ar" id="b_country_ar" class="field-input" dir="rtl" placeholder="مثال: المملكة العربية السعودية" oninput="bTrans('b_country_ar','b_country','ar')">
+                    <span class="field-spin" id="spin_country"></span>
+                    {% if ar %}<button type="button" class="retrans-btn" style="right:auto;left:6px;background:#f0fdf4;border-color:#bbf7d0;color:#16a34a;" onclick="bRetrans('b_country','b_country_ar','en')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                  </div>
                 </div>
               </div>
               <div class="field-row">
                 <div class="field-item">
-                  <div class="field-label">{% if ar %}الحي{% else %}District{% endif %} <span class="field-req">*</span></div>
-                  <select name="district" id="b_district" class="field-input" required></select>
+                  <div class="field-label" dir="ltr">{% if ar %}المدينة (English){% else %}City{% endif %} <span class="field-req">*</span></div>
+                  <div class="field-wrap" dir="ltr">
+                    <input type="text" name="city" id="b_city" class="field-input" dir="ltr" required placeholder="e.g. Riyadh" oninput="bTrans('b_city','b_city_ar','en')">
+                    {% if not ar %}<button type="button" class="retrans-btn" onclick="bRetrans('b_city_ar','b_city','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                  </div>
                 </div>
+                <div class="field-item">
+                  <div class="field-label" dir="rtl" style="text-align:right;">{% if ar %}المدينة <span class="field-req">*</span>{% else %}المدينة (Arabic){% endif %}</div>
+                  <div class="field-wrap" dir="rtl">
+                    <input type="text" name="city_ar" id="b_city_ar" class="field-input" dir="rtl" placeholder="مثال: الرياض" oninput="bTrans('b_city_ar','b_city','ar')">
+                    <span class="field-spin" id="spin_city"></span>
+                    {% if ar %}<button type="button" class="retrans-btn" style="right:auto;left:6px;background:#f0fdf4;border-color:#bbf7d0;color:#16a34a;" onclick="bRetrans('b_city','b_city_ar','en')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field-item">
+                  <div class="field-label" dir="ltr">{% if ar %}الحي (English){% else %}District{% endif %} <span class="field-req">*</span></div>
+                  <div class="field-wrap" dir="ltr">
+                    <input type="text" name="district" id="b_district" class="field-input" dir="ltr" required placeholder="e.g. Al Olaya" oninput="bTrans('b_district','b_district_ar','en')">
+                    {% if not ar %}<button type="button" class="retrans-btn" onclick="bRetrans('b_district_ar','b_district','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                  </div>
+                </div>
+                <div class="field-item">
+                  <div class="field-label" dir="rtl" style="text-align:right;">{% if ar %}الحي <span class="field-req">*</span>{% else %}الحي (Arabic){% endif %}</div>
+                  <div class="field-wrap" dir="rtl">
+                    <input type="text" name="district_ar" id="b_district_ar" class="field-input" dir="rtl" placeholder="مثال: العليا" oninput="bTrans('b_district_ar','b_district','ar')">
+                    <span class="field-spin" id="spin_district"></span>
+                    {% if ar %}<button type="button" class="retrans-btn" style="right:auto;left:6px;background:#f0fdf4;border-color:#bbf7d0;color:#16a34a;" onclick="bRetrans('b_district','b_district_ar','en')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="field-row">
                 <div class="field-item">
                   <div class="field-label">{% if ar %}الرمز البريدي{% else %}Postal Code{% endif %} <span class="field-req">*</span></div>
                   <input type="text" name="postal_code" id="b_postal" class="field-input" dir="ltr" required placeholder="e.g. 32653">
@@ -825,54 +848,26 @@
 
         <div class="bm-row c2">
           <div class="bm-field">
-            <div class="bm-label">{% if ar %}الموقع{% else %}Location{% endif %}</div>
-            <select id="deptModal_buyer_location" class="bm-input" onchange="deptOnLocationChange(this)"></select>
+            <div class="bm-label">{% if ar %}الموقع (EN){% else %}Location{% endif %}</div>
+            <div class="bm-input-wrap">
+              <input type="text" id="deptModal_buyer_loc" class="bm-input" dir="ltr" placeholder="e.g. Head Office"
+                     oninput="bTrans('deptModal_buyer_loc','deptModal_buyer_loc_ar','en')">
+              <button type="button" class="bm-retrans" onclick="bRetrans('deptModal_buyer_loc_ar','deptModal_buyer_loc','ar')"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
+          <div class="bm-field">
+            <div class="bm-label" dir="rtl">{% if ar %}الموقع{% else %}الموقع (AR){% endif %}</div>
+            <div class="bm-input-wrap" dir="rtl">
+              <input type="text" id="deptModal_buyer_loc_ar" class="bm-input" dir="rtl" placeholder="مثال: المكتب الرئيسي"
+                     oninput="bTrans('deptModal_buyer_loc_ar','deptModal_buyer_loc','ar')">
+              <button type="button" class="bm-retrans ar" onclick="bRetrans('deptModal_buyer_loc','deptModal_buyer_loc_ar','en')"><i class="fas fa-sync-alt"></i></button>
+            </div>
           </div>
         </div>
       </div>
       <div class="pf-footer">
         <button type="button" class="pf-btn secondary" data-bs-dismiss="modal"><i class="fas fa-times"></i> {% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
         <button type="button" class="pf-btn primary" onclick="saveBuyerDeptToArray()"><i class="fas fa-save"></i> {% if ar %}حفظ{% else %}Save Department{% endif %}</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-{# ══ QUICK-ADD DEPARTMENT LOCATION MODAL ════════════════════ #}
-<div class="modal fade pf-bank-modal" id="deptLocModal" tabindex="-1" data-bs-backdrop="static">
-  <div class="modal-dialog modal-dialog-centered modal-sm">
-    <div class="modal-content">
-      <div class="pf-hdr">
-        <h5><i class="fas fa-map-marker-alt"></i> {% if ar %}إضافة موقع{% else %}Add Location{% endif %}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="bm-body">
-        <div class="bm-row">
-          <div class="bm-field">
-            <div class="bm-label">{% if ar %}اسم الموقع (EN){% else %}Location Name{% endif %} <span class="req">*</span></div>
-            <div class="bm-input-wrap">
-              <input type="text" id="deptLocNameEn" class="bm-input" dir="ltr" placeholder="e.g. Riyadh Industrial Area"
-                     oninput="bTrans('deptLocNameEn','deptLocNameAr','en')">
-              <button type="button" class="bm-retrans" onclick="bRetrans('deptLocNameAr','deptLocNameEn','ar')"><i class="fas fa-sync-alt"></i></button>
-            </div>
-          </div>
-        </div>
-        <div class="bm-row">
-          <div class="bm-field">
-            <div class="bm-label" dir="rtl">{% if ar %}اسم الموقع{% else %}اسم الموقع (AR){% endif %}</div>
-            <div class="bm-input-wrap" dir="rtl">
-              <input type="text" id="deptLocNameAr" class="bm-input" dir="rtl" placeholder="مثال: المنطقة الصناعية بالرياض"
-                     oninput="bTrans('deptLocNameAr','deptLocNameEn','ar')">
-              <span class="field-spin" id="spin_deptLocNameAr"></span>
-              <button type="button" class="bm-retrans ar" onclick="bRetrans('deptLocNameEn','deptLocNameAr','en')"><i class="fas fa-sync-alt"></i></button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="pf-footer">
-        <button type="button" class="pf-btn secondary" data-bs-dismiss="modal"><i class="fas fa-times"></i> {% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button type="button" class="pf-btn primary" onclick="deptSaveQuickLocation()"><i class="fas fa-save"></i> {% if ar %}حفظ{% else %}Save{% endif %}</button>
       </div>
     </div>
   </div>
@@ -909,49 +904,6 @@ const CSRF    = '{{ csrf_token() }}';
 const IS_AR   = {{ 'true' if ar else 'false' }};
 const ADM     = {{ 'true' if current_user.is_admin() else 'false' }};
 const DATA_URL= '{{ url_for("lookups.buyers_data") }}';
-const DEPT_LOCS_URL      = '{{ url_for("lookups.department_locations_data") }}';
-const DEPT_LOC_QUICK_URL = '{{ url_for("lookups.add_department_location_quick") }}';
-
-/* ══ COUNTRY / CITY / DISTRICT DATA ══ */
-const GEO = {
-  'Saudi Arabia': {
-    'Riyadh': ['Al Olaya','Al Malaz','Al Murabba','Al Naseem','Al Rawdah','Other'],
-    'Jeddah': ['Al Hamra','Al Zahraa','Al Rawdah','Al Andalus','Al Corniche','Other'],
-    'Dammam': ['Al Shatea','Al Faisaliah','Al Nuzha','Al Badiyah','Other'],
-    'Al Khobar': ['Al Thuqbah','Al Corniche','Al Ulaya','Other'],
-    'Makkah': ['Al Aziziyah','Al Massaer','Ajyad','Other'],
-    'Madinah': ['Al Anabarat','Al Aziziyah','Al Manakhah','Other'],
-    'Other': ['Other'],
-  },
-  'UAE': { 'Dubai': ['Deira','Bur Dubai','Jumeirah','Marina','Other'], 'Abu Dhabi': ['Al Khalidiyah','Al Mushrif','Other'], 'Other': ['Other'] },
-  'Kuwait': { 'Kuwait City': ['Salmiya','Hawalli','Rumaithiya','Other'], 'Other': ['Other'] },
-  'Bahrain': { 'Manama': ['Seef','Juffair','Adliya','Other'], 'Other': ['Other'] },
-  'Qatar': { 'Doha': ['West Bay','Lusail','Al Sadd','Other'], 'Other': ['Other'] },
-  'Other': { 'Other': ['Other'] },
-};
-
-function initCountryDropdown(selected) {
-  const sel = document.getElementById('b_country');
-  sel.innerHTML = `<option value="">-- ${IS_AR?'اختر':'Select'} --</option>`;
-  Object.keys(GEO).forEach(c => sel.innerHTML += `<option value="${c}"${c===selected?' selected':''}>${c}</option>`);
-  onCountryChange(selected ? '' : null, selected);
-}
-function onCountryChange(preCity, preCountry) {
-  const country = preCountry || document.getElementById('b_country').value;
-  const cities = GEO[country] || {};
-  const sel = document.getElementById('b_city');
-  sel.innerHTML = `<option value="">-- ${IS_AR?'اختر':'Select'} --</option>`;
-  Object.keys(cities).forEach(c => sel.innerHTML += `<option value="${c}"${c===preCity?' selected':''}>${c}</option>`);
-  onCityChange(null, preCity);
-}
-function onCityChange(preDistrict, preCity) {
-  const country = document.getElementById('b_country').value;
-  const city = preCity || document.getElementById('b_city').value;
-  const districts = (GEO[country] || {})[city] || [];
-  const sel = document.getElementById('b_district');
-  sel.innerHTML = `<option value="">-- ${IS_AR?'اختر':'Select'} --</option>`;
-  districts.forEach(d => sel.innerHTML += `<option value="${d}"${d===preDistrict?' selected':''}>${d}</option>`);
-}
 
 /* ══ TRANSLATION ══ */
 const _bTimers = {};
@@ -997,19 +949,19 @@ let _currentBuyerId = null;
 
 /* ══ DEPARTMENT ARRAY STORAGE ══ */
 let _depts = [];
-let _deptLocations = [];
 let _deptPendingIdx = null;   // index of dept row awaiting quick-add location
 
 /* ══ RESET FORM ══ */
 function resetBuyerForm() {
-  ['b_name_en','b_name_ar','b_vat','b_crn','b_department','b_department_ar','b_phone','b_fax','b_email','b_website','b_postal',
-   'b_street_en','b_street_ar','b_building','b_additional'].forEach(id=>{
+  ['b_name_en','b_name_ar','b_vat','b_crn','b_phone','b_fax','b_email','b_website','b_postal',
+   'b_street_en','b_street_ar','b_building','b_additional',
+   'b_country','b_country_ar','b_city','b_city_ar','b_district','b_district_ar'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   document.getElementById('b_status').value='active';
   const so=document.getElementById('b_salary_order'); if(so) so.value='1';
   document.getElementById('buyerFormId').value='';
-  initCountryDropdown('Saudi Arabia');
+  document.getElementById('b_country').value = 'Saudi Arabia';
   _banks = [];
   renderBankTable();
   _depts = [];
@@ -1039,8 +991,6 @@ function openEditBuyer(id) {
     document.getElementById('b_name_ar').value=d.buyer_name_ar||'';
     document.getElementById('b_vat').value=d.vat_number||'';
     document.getElementById('b_crn').value=d.crn||'';
-    document.getElementById('b_department').value=d.department||'';
-    document.getElementById('b_department_ar').value=d.department_ar||'';
     document.getElementById('b_phone').value=d.phone||'';
     document.getElementById('b_fax').value=d.fax||'';
     document.getElementById('b_email').value=d.email||'';
@@ -1052,16 +1002,13 @@ function openEditBuyer(id) {
     document.getElementById('b_street_ar').value=d.street_name_ar||'';
     document.getElementById('b_building').value=d.building_number||'';
     document.getElementById('b_additional').value=d.additional_number||'';
-    initCountryDropdown(d.country||'Saudi Arabia');
-    setTimeout(()=>{
-      document.getElementById('b_country').value=d.country||'Saudi Arabia';
-      onCountryChange(d.city||'', d.country||'Saudi Arabia');
-      setTimeout(()=>{
-        document.getElementById('b_city').value=d.city||'';
-        onCityChange(d.district||'',d.city||'');
-        setTimeout(()=>{ document.getElementById('b_district').value=d.district||''; },50);
-      },50);
-    },100);
+    // plain text fields now — no cascading dropdowns to rebuild
+    document.getElementById('b_country').value     = d.country || '';
+    document.getElementById('b_country_ar').value  = d.country_ar || '';
+    document.getElementById('b_city').value        = d.city || '';
+    document.getElementById('b_city_ar').value     = d.city_ar || '';
+    document.getElementById('b_district').value    = d.district || '';
+    document.getElementById('b_district_ar').value = d.district_ar || '';
   });
 
   fetch(`/buyers/${id}/banks`).then(r=>r.json()).then(banks=>{
@@ -1083,7 +1030,7 @@ function openEditBuyer(id) {
     _depts = depts.map(d => ({
       department_name: d.department_name || '',
       department_name_ar: d.department_name_ar || '',
-      location_id: d.location_id || '',
+      location_name_ar: d.location_name_ar || '',
       location_name: d.location_name || '',
       _dbId: d.id
     }));
@@ -1143,7 +1090,8 @@ function injectDeptFields() {
     const fields = [
       ['department_name', dept.department_name || ''],
       ['department_name_ar', dept.department_name_ar || ''],
-      ['location_id', dept.location_id || ''],
+      ['location_name', dept.location_name || ''],
+      ['location_name_ar', dept.location_name_ar || ''],
       ['_dbId', dept._dbId || '']
     ];
     fields.forEach(([field, value]) => {
@@ -1427,88 +1375,36 @@ function renderBankTable() {
 /* ════════════════════════════════════════════════
    DEPARTMENT — JS ARRAY PATTERN
 ════════════════════════════════════════════════ */
-function loadDeptLocations(cb) {
-  fetch(DEPT_LOCS_URL).then(r=>r.json())
-    .then(d=>{ _deptLocations = d; if(cb) cb(); })
-    .catch(()=>{ _deptLocations = []; if(cb) cb(); });
-}
-
-function deptLocationOptions(selectedId) {
-  let html = `<option value="">${IS_AR?'— اختر الموقع —':'— Select Location —'}</option>`;
-  _deptLocations.forEach(l => {
-    html += `<option value="${l.id}" ${String(l.id)===String(selectedId)?'selected':''}>${l.label}</option>`;
-  });
-  html += `<option value="__new__">${IS_AR?'+ إضافة موقع جديد':'+ Add New Location'}</option>`;
-  return html;
-}
-
 function openBuyerDept(idx) {
   const mid = 'deptModal_buyer';
   document.getElementById(mid+'_idx').value = idx !== undefined ? idx : '';
-
-  const locSel = document.getElementById(mid+'_location');
-  const preLoc = (idx !== undefined && _depts[idx]) ? _depts[idx].location_id : '';
-  locSel.innerHTML = deptLocationOptions(preLoc);
 
   if (idx !== undefined && _depts[idx]) {
     const d = _depts[idx];
     document.getElementById(mid+'_name').value    = d.department_name || '';
     document.getElementById(mid+'_name_ar').value = d.department_name_ar || '';
+    document.getElementById(mid+'_loc').value     = d.location_name || '';
+    document.getElementById(mid+'_loc_ar').value  = d.location_name_ar || '';
     document.getElementById(mid+'_title').innerHTML = '<i class="fas fa-edit me-2"></i>'+(IS_AR?'تعديل قسم':'Edit Department');
   } else {
     document.getElementById(mid+'_name').value = '';
     document.getElementById(mid+'_name_ar').value = '';
+    document.getElementById(mid+'_loc').value = '';
+    document.getElementById(mid+'_loc_ar').value = '';
     document.getElementById(mid+'_title').innerHTML = '<i class="fas fa-sitemap me-2"></i>'+(IS_AR?'إضافة قسم':'Add Department');
   }
   new bootstrap.Modal(document.getElementById(mid)).show();
-}
-
-function deptOnLocationChange(sel) {
-  if (sel.value === '__new__') {
-    _deptPendingIdx = sel;          // remember which select triggered it
-    sel.value = '';
-    document.getElementById('deptLocNameEn').value = '';
-    document.getElementById('deptLocNameAr').value = '';
-    new bootstrap.Modal(document.getElementById('deptLocModal')).show();
-  }
-}
-
-function deptSaveQuickLocation() {
-  const en = document.getElementById('deptLocNameEn').value.trim();
-  const ar = document.getElementById('deptLocNameAr').value.trim();
-  if (!en) { alert(IS_AR?'اسم الموقع مطلوب':'Location name is required'); return; }
-  fetch(DEPT_LOC_QUICK_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-    body:JSON.stringify({location_name:en, location_name_ar:ar})
-  })
-  .then(r=>r.json())
-  .then(d=>{
-    if(!d.ok){ alert(d.error||'Error'); return; }
-    loadDeptLocations(()=>{
-      const locSel = document.getElementById('deptModal_buyer_location');
-      locSel.innerHTML = deptLocationOptions(d.id);   // select the newly added
-      _deptPendingIdx = null;
-    });
-    bootstrap.Modal.getInstance(document.getElementById('deptLocModal')).hide();
-  })
-  .catch(()=>alert('Network error'));
 }
 
 function saveBuyerDeptToArray() {
   const mid = 'deptModal_buyer';
   const idx = document.getElementById(mid+'_idx').value;
 
-  const locSel = document.getElementById(mid+'_location');
-  const locId  = locSel.value && locSel.value !== '__new__' ? locSel.value : '';
-  const locName= locSel.value && locSel.value !== '__new__'
-                 ? locSel.options[locSel.selectedIndex].text : '';
-
   const deptData = {
     department_name:    document.getElementById(mid+'_name').value.trim(),
     department_name_ar: document.getElementById(mid+'_name_ar').value.trim(),
-    location_id:        locId,
-    location_name:      locName,
+    location_name:      document.getElementById(mid+'_loc').value.trim(),
+    location_name_ar:   document.getElementById(mid+'_loc_ar').value.trim(),
     _dbId:              (idx !== '' && _depts[idx]) ? _depts[idx]._dbId : null
   };
 
@@ -1581,6 +1477,5 @@ function renderDeptTable() {
 }
 
 // Load department locations once on page load
-document.addEventListener('DOMContentLoaded', () => loadDeptLocations());
 </script>
 {% endblock %}

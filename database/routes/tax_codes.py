@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, session
 from flask_login import login_required
 from models import db, PurchaseTaxCode, SalesTaxCode
+import re
 
 tax_bp = Blueprint('tax_codes', __name__)
 
@@ -56,9 +57,21 @@ def tax_add(kind):
     if status not in ('Active', 'Inactive'):
         status = 'Active'
 
+    # Validation
     if not account_code or not tax_code or not section:
         return jsonify({'ok': False, 'error': _t('Account Code, Tax Code and Section are required.',
                                                   'رمز الحساب والرمز الضريبي والوصف مطلوبة')}), 400
+    
+    # Store the account code as a percentage. The edit route does the same,
+    # so append % rather than rejecting a value that arrives without it.
+    if account_code and not account_code.endswith('%'):
+        account_code = account_code + '%'
+    
+    # Tax code must be alphanumeric
+    if not re.match(r'^[A-Za-z0-9]+$', tax_code):
+        return jsonify({'ok': False, 'error': _t('Tax Code must contain only letters and numbers (e.g., P1)',
+                                                  'الرمز الضريبي يجب أن يحتوي على حروف وأرقام فقط (مثال: P1)')}), 400
+    
     if M.query.filter_by(tax_code=tax_code).first():
         return jsonify({'ok': False, 'error': _t(f'Tax Code "{tax_code}" already exists.',
                                                   f'الرمز الضريبي "{tax_code}" موجود بالفعل')}), 400
@@ -80,9 +93,16 @@ def tax_edit(kind, id):
         return jsonify({'ok': False, 'error': 'bad kind'}), 404
     row = _model(kind).query.get_or_404(id)
     f = request.form
-    row.account_code = f.get('account_code', row.account_code).strip()
-    row.section      = f.get('section', row.section).strip()
+    account_code = f.get('account_code', '').strip()
+    section      = f.get('section', '').strip()
     status = f.get('status', row.status)
+    
+    # Account code must end with %
+    if account_code and not account_code.endswith('%'):
+        account_code = account_code + '%'
+    
+    row.account_code = account_code
+    row.section      = section
     row.status = status if status in ('Active', 'Inactive') else row.status
     try:
         db.session.commit()

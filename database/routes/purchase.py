@@ -1,9 +1,9 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, session, abort
 from flask_login import login_required, current_user
 from decimal import Decimal
 from datetime import datetime, date
 from sqlalchemy import text
-import os, re
+import os, re, uuid
 from werkzeug.utils import secure_filename
 
 # ✅ FIX: Complete imports - ItemMaster is in models.py
@@ -595,6 +595,72 @@ def vendor_doc_download(doc_id):
     fname  = os.path.basename(doc.file_path)
     return send_from_directory(os.path.abspath(folder), fname, as_attachment=True, download_name=doc.document_name)
 
+# ─────────────────────────────────────────────────────────────
+# PURCHASE ATTACHMENTS — view / download
+# Attachments are saved by _save_attachments() under
+#   static/uploads/purchase/<doc_type>/<doc_id>/<filename>
+# and that relative path is stored in PurchaseAttachment.filepath.
+# These routes serve them behind @login_required.
+# ─────────────────────────────────────────────────────────────
+def _attachment_dir_and_name(att):
+    """Return (absolute_dir, filename) for a stored attachment."""
+    rel = (att.filepath or '').replace('\\', '/')
+    directory = os.path.abspath(os.path.dirname(rel))
+    fname = os.path.basename(rel)
+    return directory, fname
+
+
+@pur_bp.route('/purchase/attachments/<int:att_id>/view')
+@login_required
+def purchase_attachment_view(att_id):
+    """Open the attachment inline when the browser can show it."""
+    from flask import send_from_directory
+    import mimetypes
+    att = PurchaseAttachment.query.get_or_404(att_id)
+    directory, fname = _attachment_dir_and_name(att)
+    full = os.path.join(directory, fname)
+    if not os.path.exists(full):
+        abort(404)
+    mime = mimetypes.guess_type(fname)[0] or 'application/octet-stream'
+    inline_ok = mime in ('application/pdf', 'text/plain', 'text/csv') or mime.startswith('image/')
+    return send_from_directory(directory, fname, as_attachment=not inline_ok,
+                               download_name=att.filename or fname, mimetype=mime)
+
+
+@pur_bp.route('/purchase/attachments/<int:att_id>/download')
+@login_required
+def purchase_attachment_download(att_id):
+    """Always download the attachment."""
+    from flask import send_from_directory
+    import mimetypes
+    att = PurchaseAttachment.query.get_or_404(att_id)
+    directory, fname = _attachment_dir_and_name(att)
+    full = os.path.join(directory, fname)
+    if not os.path.exists(full):
+        abort(404)
+    mime = mimetypes.guess_type(fname)[0] or 'application/octet-stream'
+    return send_from_directory(directory, fname, as_attachment=True,
+                               download_name=att.filename or fname, mimetype=mime)
+
+
+@pur_bp.route('/purchase/attachments/<int:att_id>/delete', methods=['POST'])
+@login_required
+def purchase_attachment_delete(att_id):
+    """Delete a single attachment: remove the file from disk, then the row."""
+    att = PurchaseAttachment.query.get_or_404(att_id)
+    try:
+        directory, fname = _attachment_dir_and_name(att)
+        full = os.path.join(directory, fname)
+        if os.path.exists(full):
+            os.remove(full)
+        db.session.delete(att)
+        db.session.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
 @pur_bp.route('/purchase/vendors/documents/<int:doc_id>/delete', methods=['POST'])
 @login_required
 def vendor_doc_delete(doc_id):
@@ -845,7 +911,7 @@ def pr_json(id):
     pr = PurchaseRequest.query.get_or_404(id)
     d = pr.to_dict()
     d['items'] = [i.to_dict() for i in PurchaseRequestLineItem.query.filter_by(purchase_request_id=id).order_by(PurchaseRequestLineItem.line_number).all()]
-    d['attachments'] = [{'filename':a.filename,'filepath':a.filepath} for a in
+    d['attachments'] = [{'id':a.id,'filename':a.filename,'filepath':a.filepath} for a in
                         PurchaseAttachment.query.filter_by(doc_type='PR', doc_id=id).all()]
     return jsonify(d)
 
@@ -958,7 +1024,7 @@ def pq_json(id):
     pq = PurchaseQuotation.query.get_or_404(id)
     d = pq.to_dict()
     d['items'] = [i.to_dict() for i in PurchaseQuotationLineItem.query.filter_by(purchase_quotation_id=id).order_by(PurchaseQuotationLineItem.line_number).all()]
-    d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='PQ', doc_id=id).all()]
+    d['attachments'] = [{'id':a.id,'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='PQ', doc_id=id).all()]
     return jsonify(d)
 
 @pur_bp.route('/purchase/quotations/<int:id>/view')
@@ -1104,7 +1170,7 @@ def po_json(id):
     d['items'] = [i.to_dict() for i in PurchaseOrderLineItem.query
                   .filter_by(purchase_order_id=id)
                   .order_by(PurchaseOrderLineItem.line_number).all()]
-    d['attachments'] = [{'filename': a.filename} 
+    d['attachments'] = [{'id': a.id, 'filename': a.filename} 
                         for a in PurchaseAttachment.query.filter_by(doc_type='PO', doc_id=id).all()]
     return jsonify(d)
 
@@ -1241,7 +1307,7 @@ def grn_json(id):
     doc = GoodsReceiptNote.query.get_or_404(id)
     d = doc.to_dict()
     d['items'] = [i.to_dict() for i in GoodsReceiptLineItem.query.filter_by(goods_receipt_note_id=id).order_by(GoodsReceiptLineItem.line_number).all()]
-    d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='GRN', doc_id=id).all()]
+    d['attachments'] = [{'id':a.id,'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='GRN', doc_id=id).all()]
     return jsonify(d)
 
 @pur_bp.route('/purchase/grn/<int:id>/view')
@@ -1353,7 +1419,7 @@ def pinv_json(id):
     doc = PurchaseInvoice.query.get_or_404(id)
     d = doc.to_dict()
     d['items'] = [i.to_dict() for i in PurchaseInvoiceLineItem.query.filter_by(purchase_invoice_id=id).order_by(PurchaseInvoiceLineItem.line_number).all()]
-    d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='PINV', doc_id=id).all()]
+    d['attachments'] = [{'id':a.id,'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='PINV', doc_id=id).all()]
     return jsonify(d)
 
 @pur_bp.route('/purchase/invoices/<int:id>/view')
@@ -1499,7 +1565,7 @@ def grr_json(id):
     doc = GoodsReturnRequest.query.get_or_404(id)
     d = doc.to_dict()
     d['items'] = [i.to_dict() for i in GoodsReturnLineItem.query.filter_by(goods_return_request_id=id).order_by(GoodsReturnLineItem.line_number).all()]
-    d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='GRR', doc_id=id).all()]
+    d['attachments'] = [{'id':a.id,'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='GRR', doc_id=id).all()]
     return jsonify(d)
 
 @pur_bp.route('/purchase/returns/<int:id>/view')
@@ -1650,7 +1716,7 @@ def pdm_json(id):
     doc = PurchaseDebitMemo.query.get_or_404(id)
     d = doc.to_dict()
     d['items'] = [i.to_dict() for i in PurchaseDebitMemoLineItem.query.filter_by(purchase_debit_memo_id=id).order_by(PurchaseDebitMemoLineItem.line_number).all()]
-    d['attachments'] = [{'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='PDM', doc_id=id).all()]
+    d['attachments'] = [{'id':a.id,'filename':a.filename} for a in PurchaseAttachment.query.filter_by(doc_type='PDM', doc_id=id).all()]
     return jsonify(d)
 
 @pur_bp.route('/purchase/debit-memos/<int:id>/view')

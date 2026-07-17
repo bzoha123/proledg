@@ -275,11 +275,11 @@
       </div>
       <div class="sv-info-row" style="direction:rtl;">
         <span class="sv-info-label" style="text-align:right;">{% if ar %}رقم المبنى{% else %}Building No.{% endif %}</span>
-        <span class="sv-info-value">{{ seller.building_number_ar or '—' }}</span>
+        <span class="sv-info-value">{{ seller.building_number or '—' }}</span>
       </div>
       <div class="sv-info-row" style="direction:rtl;">
         <span class="sv-info-label" style="text-align:right;">{% if ar %}رقم إضافي{% else %}Additional No.{% endif %}</span>
-        <span class="sv-info-value">{{ seller.additional_number_ar or '—' }}</span>
+        <span class="sv-info-value">{{ seller.additional_number or '—' }}</span>
       </div>
       <div class="sv-info-row" style="direction:rtl;">
         <span class="sv-info-label" style="text-align:right;">{% if ar %}المنطقة{% else %}District{% endif %}</span>
@@ -291,7 +291,7 @@
       </div>
       <div class="sv-info-row" style="direction:rtl;">
         <span class="sv-info-label" style="text-align:right;">{% if ar %}الرمز البريدي{% else %}Postal Code{% endif %}</span>
-        <span class="sv-info-value">{{ seller.postal_code_ar or '—' }}</span>
+        <span class="sv-info-value">{{ seller.postal_code or '—' }}</span>
       </div>
       <div class="sv-info-row" style="direction:rtl;">
         <span class="sv-info-label" style="text-align:right;">{% if ar %}الدولة{% else %}Country{% endif %}</span>
@@ -400,7 +400,10 @@
               <strong>{{ w.warehouse_name or '—' }}</strong>
               {% if w.warehouse_name_ar %}<small>{{ w.warehouse_name_ar }}</small>{% endif %}
             </td>
-            <td>{{ w.location.location_name if w.location else '—' }}</td>
+            <td>
+              {{ w.location or '—' }}
+              {% if w.location_ar %}<br><small>{{ w.location_ar }}</small>{% endif %}
+            </td>
           </tr>
           {% endfor %}
         </tbody>

@@ -8,7 +8,12 @@ class Config:
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'database', 'sellers.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = True
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max upload
+    # Total request size cap (form + line items + ALL attachments in one POST).
+    # Must be comfortably larger than the per-file limit (16MB in the upload
+    # routes), otherwise a single max-size file can never be saved: the form
+    # data pushes the request over the cap and Flask returns a 413 before the
+    # route runs.
+    MAX_CONTENT_LENGTH = 64 * 1024 * 1024  # 64MB max per request
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
     ALLOWED_MIMETYPES = {
     'application/pdf',

@@ -53,11 +53,8 @@ class Seller(db.Model):
     postal_code         = db.Column(db.String(20))
     country             = db.Column(db.String(100), default='Saudi Arabia')
     street_name_ar      = db.Column(db.String(200))
-    building_number_ar  = db.Column(db.String(50))
-    additional_number_ar= db.Column(db.String(50))
     district_ar         = db.Column(db.String(100))
     city_ar             = db.Column(db.String(100))
-    postal_code_ar      = db.Column(db.String(20))
     country_ar          = db.Column(db.String(100))
     status              = db.Column(db.String(20), default='active')
     created_at          = db.Column(db.DateTime, default=datetime.utcnow)
@@ -147,39 +144,19 @@ class ActivityLog(db.Model):
 
 
 # ─────────────────────────────────────────────────────────────────
-# WAREHOUSE LOCATION MASTER  (lookup)
-# ─────────────────────────────────────────────────────────────────
-class WarehouseLocation(db.Model):
-    __tablename__ = 'warehouse_locations'
-    id               = db.Column(db.Integer, primary_key=True)
-    location_name    = db.Column(db.String(150), nullable=False)
-    location_name_ar = db.Column(db.String(150))
-    is_active        = db.Column(db.Boolean, default=True)
-    created_at       = db.Column(db.DateTime, default=datetime.utcnow)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'location_name': self.location_name,
-            'location_name_ar': self.location_name_ar or '',
-            'is_active': self.is_active,
-        }
-
-
-# ─────────────────────────────────────────────────────────────────
 # SELLER WAREHOUSE  (one seller -> many warehouses)
 # ─────────────────────────────────────────────────────────────────
-class Warehouse(db.Model):
-    __tablename__ = 'warehouses'
+class SellerWarehouse(db.Model):
+    __tablename__ = 'seller_warehouses'
     id                = db.Column(db.Integer, primary_key=True)
     seller_id         = db.Column(db.Integer, db.ForeignKey('sellers.id', ondelete='CASCADE'), nullable=False)
     warehouse_name    = db.Column(db.String(200), nullable=False)
     warehouse_name_ar = db.Column(db.String(200))
-    location_id       = db.Column(db.Integer, db.ForeignKey('warehouse_locations.id'))
+    location          = db.Column(db.String(200))
+    location_ar       = db.Column(db.String(200))
     created_at        = db.Column(db.DateTime, default=datetime.utcnow)
 
-    seller   = db.relationship('Seller', backref=db.backref('warehouses', cascade='all, delete-orphan', lazy='dynamic'))
-    location = db.relationship('WarehouseLocation', lazy=True)
+    seller = db.relationship('Seller', backref=db.backref('warehouses', cascade='all, delete-orphan', lazy='dynamic'))
 
     def to_dict(self):
         return {
@@ -187,8 +164,8 @@ class Warehouse(db.Model):
             'seller_id': self.seller_id,
             'warehouse_name': self.warehouse_name,
             'warehouse_name_ar': self.warehouse_name_ar or '',
-            'location_id': self.location_id or '',
-            'location_name': self.location.location_name if self.location else '',
+            'location': self.location or '',
+            'location_ar': self.location_ar or '',
         }
 
 # BUYER MASTER
@@ -201,8 +178,7 @@ class BuyerMaster(db.Model):
     buyer_name_ar        = db.Column(db.String(200))
     vat_number           = db.Column(db.String(50))
     crn                  = db.Column(db.String(50))
-    department           = db.Column(db.String(150))
-    department_ar        = db.Column(db.String(150))
+    salary_order         = db.Column(db.Integer, default=1)
     phone                = db.Column(db.String(30))
     fax                  = db.Column(db.String(30))
     email                = db.Column(db.String(120))
@@ -211,11 +187,8 @@ class BuyerMaster(db.Model):
     street_name          = db.Column(db.String(200))
     street_name_ar       = db.Column(db.String(200))
     building_number      = db.Column(db.String(50))
-    building_number_ar   = db.Column(db.String(50))
     additional_number    = db.Column(db.String(50))
-    additional_number_ar = db.Column(db.String(50))
     postal_code          = db.Column(db.String(20))
-    postal_code_ar       = db.Column(db.String(20))
     country              = db.Column(db.String(100), default='Saudi Arabia')
     country_ar           = db.Column(db.String(100))
     city                 = db.Column(db.String(100))
@@ -233,12 +206,12 @@ class BuyerMaster(db.Model):
             'id': self.id, 'buyer_code': self.buyer_code or '',
             'buyer_name_en': self.buyer_name_en, 'buyer_name_ar': self.buyer_name_ar or '',
             'vat_number': self.vat_number or '', 'crn': self.crn or '',
-            'department': self.department or '', 'department_ar': self.department_ar or '',
+            # department and department_ar removed from to_dict
             'phone': self.phone or '', 'email': self.email or '',
             'city': self.city or '', 'is_active': self.is_active,
+            'salary_order': self.salary_order or 1,
         }
-
-
+    
 # ─────────────────────────────────────────────────────────────────
 # BUYER BANK   (stored in buyer_banks)
 # ─────────────────────────────────────────────────────────────────
@@ -455,9 +428,8 @@ class Employee(db.Model):
             'is_active': self.is_active,
         }
 
-
 class AllowanceType(db.Model):
-    __tablename__ = 'allowance_types'
+    __tablename__ = 'employee_allowance_types'   
     id                = db.Column(db.Integer, primary_key=True)
     allowance_code    = db.Column(db.String(20))
     allowance_name_en = db.Column(db.String(150), nullable=False)
@@ -472,12 +444,11 @@ class AllowanceType(db.Model):
                 'allowance_name_ar': self.allowance_name_ar or '',
                 'is_active': self.is_active}
 
-
 class EmployeeAllowance(db.Model):
     __tablename__ = 'employee_allowances'
     id                = db.Column(db.Integer, primary_key=True)
     employee_id       = db.Column(db.Integer, db.ForeignKey('employees.id', ondelete='CASCADE'), nullable=False)
-    allowance_type_id = db.Column(db.Integer, db.ForeignKey('allowance_types.id'))
+    allowance_type_id = db.Column(db.Integer, db.ForeignKey('employee_allowance_types.id'))   
     allowance_code    = db.Column(db.String(20))
     name              = db.Column(db.String(150))
     name_ar           = db.Column(db.String(150))
@@ -486,6 +457,7 @@ class EmployeeAllowance(db.Model):
 
     allowance_type = db.relationship('AllowanceType', backref=db.backref('employee_allowances', lazy=True))
 
+   
     def to_dict(self):
         return {
             'id': self.id, 'employee_id': self.employee_id,
@@ -2660,30 +2632,9 @@ def seed_coa_levels_3_4_5():
 #  at one location. Locations are a shared lookup with quick-add.
 # ═════════════════════════════════════════════════════════════════
 
-class DepartmentLocation(db.Model):
-    """Shared lookup of physical locations a department can belong to."""
-    __tablename__ = 'department_locations'
-
-    id               = db.Column(db.Integer, primary_key=True)
-    location_name    = db.Column(db.String(150), nullable=False, unique=True)
-    location_name_ar = db.Column(db.String(150))
-    is_active        = db.Column(db.Boolean, default=True)
-    created_at       = db.Column(db.DateTime, default=datetime.utcnow)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'location_name': self.location_name,
-            'location_name_ar': self.location_name_ar or '',
-            'label': self.location_name,
-            'en': self.location_name,
-            'ar': self.location_name_ar or '',
-            'is_active': self.is_active,
-        }
-
-
 class BuyerDepartment(db.Model):
-    """A department belonging to a buyer, optionally tied to a location."""
+    """A department belonging to a buyer. The location is entered manually
+    on the buyer form and stored here (no lookup table)."""
     __tablename__ = 'buyer_departments'
 
     id                 = db.Column(db.Integer, primary_key=True)
@@ -2693,14 +2644,11 @@ class BuyerDepartment(db.Model):
     department_name_ar = db.Column(db.String(150))
     location_name      = db.Column(db.String(150))
     location_name_ar   = db.Column(db.String(150))
-    location_id        = db.Column(db.Integer, db.ForeignKey('department_locations.id'))
     created_at         = db.Column(db.DateTime, default=datetime.utcnow)
 
     buyer    = db.relationship('BuyerMaster',
                                backref=db.backref('departments', lazy=True,
                                                   cascade='all, delete-orphan'))
-    location = db.relationship('DepartmentLocation',
-                               backref=db.backref('buyer_departments', lazy=True))
 
     def to_dict(self):
         return {
@@ -2708,33 +2656,10 @@ class BuyerDepartment(db.Model):
             'buyer_id': self.buyer_id,
             'department_name': self.department_name or '',
             'department_name_ar': self.department_name_ar or '',
-            'location_id': self.location_id or '',
-            'location_name': self.location.location_name if self.location else '',
-            'location_name_ar': (self.location.location_name_ar or '') if self.location else '',
+            'location_name': self.location_name or '',
+            'location_name_ar': self.location_name_ar or '',
         }
 
-
-DEFAULT_DEPARTMENT_LOCATIONS = [
-    ('Head Office',   'المكتب الرئيسي'),
-    ('Branch Office', 'مكتب الفرع'),
-    ('Warehouse',     'المستودع'),
-    ('Site Office',   'مكتب الموقع'),
-    ('Factory',       'المصنع'),
-]
-
-
-def seed_department_locations():
-    """Idempotently insert a few sensible default locations."""
-    added = 0
-    for en, ar in DEFAULT_DEPARTMENT_LOCATIONS:
-        if not DepartmentLocation.query.filter(
-                db.func.lower(DepartmentLocation.location_name) == en.lower()).first():
-            db.session.add(DepartmentLocation(location_name=en, location_name_ar=ar,
-                                              is_active=True))
-            added += 1
-    if added:
-        db.session.commit()
-    return added
 
 # ═════════════════════════════════════════════════════════════════
 # FINANCIAL YEAR (Master) + FINANCIAL YEAR DETAIL (Financial Months)
