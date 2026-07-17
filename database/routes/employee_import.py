@@ -70,7 +70,6 @@ COLUMNS = [
     ('Net Salary', 'net_salary'),
     ('PO Number', 'po_number'),
     ('PO Rate', 'po_rate'),
-    ('PO Rate Unit', 'po_rate_unit'),
     ('Working Hours', 'working_hours'),
     ('Overtime Ratio', 'overtime_ratio'),
     ('Overtime Rate', 'overtime_rate'),

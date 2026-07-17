@@ -276,10 +276,9 @@ TEXT_FIELDS = [
     'education', 'education_ar',
     'mobile', 'address', 'address_ar', 'email', 'home_city', 'home_city_ar',
     'employee_reference', 'employee_reference_ar',
-    'po_number', 'salary_type', 'kafalat_number', 'po_rate_unit',
-    'department', 'department_ar', 'section', 'section_ar',
-    'company', 'company_ar', 'work_month', 'work_status', 'shift_type',
-    'forman', 'forman_ar', 'hostel_name', 'hostel_name_ar', 'room_number',
+    'po_number', 'salary_type', 'salary_category', 'kafalat_number',
+    'work_status',
+    'hostel_name', 'hostel_name_ar', 'room_number',
     'hostel_location', 'hostel_location_ar',
     'crn', 'crn_ar', 'insurance_company', 'insurance_company_ar', 'labour_office',
     'passport_location', 'document_type',
@@ -287,6 +286,69 @@ TEXT_FIELDS = [
 FLOAT_FIELDS = ['po_rate', 'basic_salary', 'working_hours', 'overtime_ratio']
 DATE_FIELDS  = ['arrival_date', 'birth_date', 'passport_expiry', 'iqama_expiry',
                 'joining_date', 'insurance_expiry', 'end_date_work']
+
+def save_work_allocation(emp, f):
+    """Create a NEW employee_work_allocation row on every save (a history).
+
+    The employee form posts shift / location / location_ar and the department +
+    buyer selections; everything else is copied from the employee record so each
+    allocation row is a self-contained snapshot.
+    """
+    from models import EmployeeWorkAllocation, BuyerMaster
+
+    shift = (f.get('shift') or 'day').strip().lower()
+    if shift not in ('day', 'night'):
+        shift = 'day'
+
+    buyer = BuyerMaster.query.get(emp.buyer_id) if emp.buyer_id else None
+
+    # department name comes from the hidden fields the cascade fills
+    dept_en = (f.get('department') or '').strip()
+    dept_ar = (f.get('department_ar') or '').strip()
+
+    wa = EmployeeWorkAllocation(
+        employee_id         = emp.id,
+        kafeel              = emp.kafeel_name,
+        name                = emp.name,
+        nationality         = emp.nationality,
+        profession          = _emp_profession_str(emp),
+        iqama               = emp.iqama_number,
+        month               = (f.get('work_month') or '').strip() or None,
+        joining_date        = emp.joining_date,
+        end_date            = emp.end_date_work,
+        buyer_id            = emp.buyer_id,
+        buyer_name          = buyer.buyer_name_en if buyer else '',
+        buyer_name_ar       = (buyer.buyer_name_ar or '') if buyer else '',
+        buyer_department    = dept_en,
+        buyer_department_ar = dept_ar,
+        location            = (f.get('location') or '').strip(),
+        location_ar         = (f.get('location_ar') or '').strip(),
+        shift               = shift,
+        created_by          = current_user.id,
+    )
+    db.session.add(wa)
+    return wa
+
+
+def latest_work_allocation(emp_id):
+    """The employee's most recent allocation row (for edit-mode display)."""
+    from models import EmployeeWorkAllocation
+    return (EmployeeWorkAllocation.query
+            .filter_by(employee_id=emp_id)
+            .order_by(EmployeeWorkAllocation.id.desc())
+            .first())
+
+def _wa_department(e, ar=False):
+    """Department name for the grid, taken from the employee's latest allocation.
+
+    The department columns were removed from `employees`; department/company/
+    location now live on employee_work_allocation only.
+    """
+    wa = latest_work_allocation(e.id)
+    if not wa:
+        return ''
+    return (wa.buyer_department_ar if ar and wa.buyer_department_ar
+            else wa.buyer_department) or ''
 
 def _to_float(v):
     try: return float(v or 0)
@@ -307,20 +369,7 @@ def bind_employee(emp, f):
     buyer_id = f.get('buyer_id')
     emp.buyer_id = int(buyer_id) if buyer_id else None
 
-    # Department must belong to the selected buyer, otherwise it is rejected.
-    # This mirrors the cascading dropdown so a crafted POST cannot save an
-    # unrelated department.
-    from models import BuyerDepartment
-    dept_id = f.get('department_id')
-    emp.department_id = None
-    if dept_id and str(dept_id).isdigit() and emp.buyer_id:
-        dep = BuyerDepartment.query.filter_by(id=int(dept_id),
-                                              buyer_id=emp.buyer_id).first()
-        if dep:
-            emp.department_id = dep.id
-            # Keep the legacy free-text columns in sync for reporting.
-            emp.department = dep.department_name
-            emp.department_ar = dep.department_name_ar or ''
+    # Department/company/location now live only on employee_work_allocation.
 
     emp.overtime_rate = _calc_overtime_rate(emp)
     emp.net_salary = _to_decimal(emp.basic_salary) + _to_decimal(emp.total_allowances)
@@ -449,7 +498,7 @@ def employees_data():
             'iqama_number': e.iqama_number or '',
             'iqama_expiry': e.iqama_expiry.strftime('%Y-%m-%d') if e.iqama_expiry else '',
             'passport_number': e.passport_number or '',
-            'department': (e.department_ar if ar and e.department_ar else e.department) or '',
+            'department': _wa_department(e, ar),
             'salary_type': e.salary_type or '',
             'basic_salary': float(e.basic_salary or 0),
             'total_allowances': float(e.total_allowances or 0),
@@ -474,6 +523,7 @@ def employee_json(id):
     } for p in e.professions.all()]
     profession_ids = [p.id for p in e.professions.all()]
 
+    wa = latest_work_allocation(e.id)   # most recent allocation (may be None)
     return jsonify({
         'id': e.id, 'employee_code': e.employee_code, 'is_active': e.is_active, 'is_muslim': e.is_muslim,
         'name': g('name'), 'name_ar': g('name_ar'),
@@ -490,9 +540,10 @@ def employee_json(id):
         'mobile': g('mobile'), 'address': g('address'), 'address_ar': g('address_ar'), 'email': g('email'),
         'home_city': g('home_city'), 'home_city_ar': g('home_city_ar'),
         'employee_reference': g('employee_reference'), 'employee_reference_ar': g('employee_reference_ar'),
-        'po_rate': float(e.po_rate or 0), 'po_rate_unit': e.po_rate_unit or 'hour',
+        'po_rate': float(e.po_rate or 0),
         'po_number': g('po_number'), 'kafalat_number': g('kafalat_number'),
-        'salary_type': g('salary_type') or 'salary',
+        'salary_type': g('salary_type') or 'month',
+        'salary_category': g('salary_category') or 'salary',
         'basic_salary': float(e.basic_salary or 0),
         'total_allowances': float(e.total_allowances or 0),
         'net_salary': float(e.net_salary or 0),
@@ -500,11 +551,7 @@ def employee_json(id):
         'overtime_ratio': float(e.overtime_ratio or 1.5),
         'overtime_rate': float(e.overtime_rate or 0),
         'joining_date': d(e.joining_date), 'end_date_work': d(e.end_date_work),
-        'work_month': g('work_month'), 'work_status': g('work_status') or 'active',
-        'company': g('company'), 'company_ar': g('company_ar'),
-        'section': g('section'), 'section_ar': g('section_ar'),
-        'department': g('department'), 'department_ar': g('department_ar'),
-        'shift_type': g('shift_type') or 'day', 'forman': g('forman'), 'forman_ar': g('forman_ar'),
+        'work_status': g('work_status') or 'active',
         'hostel_name': g('hostel_name'), 'hostel_name_ar': g('hostel_name_ar'),
         'room_number': g('room_number'), 'hostel_location': g('hostel_location'), 'hostel_location_ar': g('hostel_location_ar'),
         'crn': g('crn'), 'crn_ar': g('crn_ar'),
@@ -512,12 +559,22 @@ def employee_json(id):
         'insurance_expiry': d(e.insurance_expiry), 'labour_office': g('labour_office'),
         'passport_location': g('passport_location') or 'IN',
         'document_type': g('document_type'), 'buyer_id': e.buyer_id or '',
-        'department_id': e.department_id or '',
+        # department/company/location come from the latest allocation (wa_* below)
         'photo_path': e.photo_path or '',
         'photo_url': _photo_url(e),
         'allowances': allowance_rows,
         'banks': [b.to_dict() for b in e.banks.order_by(EmployeeBank.id).all()],
         'documents': [d.to_dict() for d in e.documents.order_by(EmployeeDocument.id).all()],
+        # last work-allocation entry -> the form shows these in edit mode
+        'wa_shift': (wa.shift if wa else 'day'),
+        'company': (wa.buyer_name if wa else ''),
+        'company_ar': (wa.buyer_name_ar if wa else ''),
+        'department': (wa.buyer_department if wa else ''),
+        'department_ar': (wa.buyer_department_ar if wa else ''),
+        'work_month': (wa.month if wa else ''),
+        'wa_location': (wa.location if wa else ''),
+        'wa_location_ar': (wa.location_ar if wa else ''),
+        'wa_month': (wa.month if wa else ''),
     })
 
 @employees_bp.route('/employees/add', methods=['POST'])
@@ -534,6 +591,7 @@ def add_employee():
     save_documents(emp.id, request)
     save_photo(emp.id, request)
     save_professions(emp.id, request)
+    save_work_allocation(emp, request.form)   # new history row
     _recalc_totals(emp.id)
     db.session.commit()
     flash(_t(f'Employee {emp.employee_code} added.', f'تم إضافة الموظف {emp.employee_code}'), 'success')
@@ -551,6 +609,7 @@ def edit_employee(id):
     save_documents(emp.id, request)
     save_photo(emp.id, request)
     save_professions(emp.id, request)
+    save_work_allocation(emp, request.form)   # new history row on every save
     _recalc_totals(emp.id)
     db.session.commit()
     flash(_t('Employee updated.', 'تم تحديث الموظف'), 'success')
@@ -719,7 +778,8 @@ def departments_by_buyer():
         'name': r.department_name,
         'name_ar': r.department_name_ar or '',
         'label': r.department_name,
-        'location_name': r.location.location_name if r.location else '',
+        'location_name': r.location_name or '',
+        'location_name_ar': r.location_name_ar or '',
     } for r in rows])
 
 
@@ -810,9 +870,9 @@ def export_employees():
     w.writerow(['Code', 'Name', 'Nationality', 'Profession', 'Iqama', 'Birth Date',
                 'Mobile', 'Dept', 'Salary Type', 'Basic', 'Total Allow', 'Net Salary', 'Status'])
     for e in emps:
-        w.writerow([e.employee_code, e.name, e.nationality or '', e.profession or '',
+        w.writerow([e.employee_code, e.name, e.nationality or '', _emp_profession_str(e),
                     e.iqama_number or '', e.birth_date or '', e.mobile or '',
-                    e.department or '', e.salary_type or '', e.basic_salary or '',
+                    _wa_department(e), e.salary_type or '', e.basic_salary or '',
                     e.total_allowances or 0, e.net_salary or '',
                     'Active' if e.is_active else 'Inactive'])
     resp = make_response(out.getvalue())

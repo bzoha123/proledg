@@ -979,32 +979,32 @@
           </div>
 
           {{ sec('salary','money-bill-wave','Salary Information','معلومات الراتب') }}
-              <div style="margin-bottom:18px;">
-                <div class="field-label" style="margin-bottom:8px;">{% if ar %}نوع الراتب{% else %}Salary Type{% endif %}</div>
-                <div class="mcq-wrap" id="salTypeGrp">
-                  <label class="mcq-opt chosen" onclick="pickMCQ('salTypeGrp',this,'f_salary_type','salary')"><input type="radio">{% if ar %}راتب{% else %}Salary{% endif %}</label>
-                  <label class="mcq-opt" onclick="pickMCQ('salTypeGrp',this,'f_salary_type','azad')"><input type="radio">{% if ar %}أزاد{% else %}Azad{% endif %}</label>
+              {# Salary Category | Salary Type | PO Rate | PO Number — one row (item 6) #}
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
+                <div>
+                  <div class="field-label">{% if ar %}فئة الراتب{% else %}Salary Category{% endif %}</div>
+                  <select name="salary_category" id="f_salary_category" class="field-input">
+                    <option value="salary" selected>{% if ar %}راتب{% else %}Salary{% endif %}</option>
+                    <option value="azad">{% if ar %}أزاد{% else %}Azad{% endif %}</option>
+                  </select>
                 </div>
-                <input type="hidden" name="salary_type" id="f_salary_type" value="salary">
-              </div>
-
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;">
+                <div>
+                  <div class="field-label">{% if ar %}نوع الراتب{% else %}Salary Type{% endif %}</div>
+                  <select name="salary_type" id="f_salary_type" class="field-input">
+                    <option value="month" selected>{% if ar %}شهري{% else %}Per Month{% endif %}</option>
+                    <option value="hour">{% if ar %}بالساعة{% else %}Per Hour{% endif %}</option>
+                  </select>
+                </div>
                 <div>
                   <div class="field-label">{% if ar %}معدل طلب الشراء{% else %}PO Rate{% endif %}</div>
-                  <div style="display:flex;gap:6px;">
-                    <input type="number" name="po_rate" id="f_po_rate"
-                           class="field-input" dir="ltr" step="0.01" min="0" placeholder="0.00" style="flex:1;">
-                    <select name="po_rate_unit" id="f_po_rate_unit" class="field-input" style="width:120px;">
-                      <option value="hour">{% if ar %}/ ساعة{% else %}Per Hour{% endif %}</option>
-                      <option value="month">{% if ar %}/ شهر{% else %}Per Month{% endif %}</option>
-                    </select>
-                  </div>
+                  <input type="number" name="po_rate" id="f_po_rate"
+                         class="field-input" dir="ltr" step="0.01" min="0" placeholder="0.00">
                 </div>
                 <div>
                   <div class="field-label">{% if ar %}رقم طلب الشراء{% else %}PO Number{% endif %}</div>
                   <input type="text" name="po_number" id="f_po_number"
                          class="field-input" dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                         placeholder="{% if ar %}PO-001{% else %}PO-001{% endif %}">
+                         placeholder="PO-001">
                 </div>
                 <div>
                   <div class="field-label">{% if ar %}رقم الكفالة{% else %}Kafalat Number{% endif %}</div>
@@ -1104,9 +1104,10 @@
                   <span>{% if ar %}جهة العمل{% else %}Employer &amp; Assignment{% endif %}</span>
                 </div>
 
+                {# Company: pick a buyer -> the EN/AR name fields fill (items 11 + 12) #}
                 <div class="field-row">
                   <div class="field-item" style="flex:2;">
-                    <div class="field-label">{% if ar %}الشركة / الموارد البشرية{% else %}Company / HR{% endif %}</div>
+                    <div class="field-label">{% if ar %}الشركة{% else %}Company{% endif %}</div>
                     <select name="buyer_id" id="f_buyer_id" class="field-input"
                             dir="{% if ar %}rtl{% else %}ltr{% endif %}"
                             onchange="onCompanyChange()"></select>
@@ -1114,10 +1115,20 @@
                       <i class="fas fa-magic me-1"></i>{% if ar %}تم ملء القسم تلقائياً{% else %}Department auto-filled{% endif %}
                     </small>
                   </div>
+                </div>
+
+                <div class="field-row" style="margin-bottom:10px;">
                   <div class="field-item">
-                    <div class="field-label">{% if ar %}الشهر{% else %}Work Month{% endif %}</div>
-                    <input type="text" name="work_month" id="f_work_month" class="field-input"
-                           placeholder="{% if ar %}مثال: يناير/26{% else %}e.g. Jan/26{% endif %}">
+                    <div class="field-label">{% if ar %}اسم الشركة (EN){% else %}Company Name (EN){% endif %}</div>
+                    <input type="text" name="company" id="f_company_en" class="field-input" dir="ltr"
+                           readonly style="background:#f8fafc;"
+                           title="{% if ar %}يُملأ تلقائياً من الشركة المختارة{% else %}Filled from the selected company{% endif %}">
+                  </div>
+                  <div class="field-item">
+                    <div class="field-label" dir="rtl" style="text-align:right;">{% if ar %}اسم الشركة{% else %}Company Name (AR){% endif %}</div>
+                    <input type="text" name="company_ar" id="f_company_ar" class="field-input" dir="rtl"
+                           readonly style="background:#f8fafc;"
+                           title="{% if ar %}يُملأ تلقائياً من الشركة المختارة{% else %}Filled from the selected company{% endif %}">
                   </div>
                 </div>
 
@@ -1151,7 +1162,7 @@
                 </div>
                 <input type="hidden" name="department" id="f_department_en">
 
-                {% for fid, en_lbl, ar_lbl in [('section','Section','القطاع')] %}
+                {% for fid, en_lbl, ar_lbl in [('location','Location','الموقع')] %}
                 <div class="field-row" style="margin-bottom:10px;">
                   <div class="field-item">
                     <div class="field-label">{{ en_lbl }}{% if ar %} (EN){% endif %}</div>
@@ -1173,45 +1184,32 @@
                 {% endfor %}
               </div>
 
-              <div class="fs-group">
+              {# item 13: Joining Date | End Date | Month | Shift — the last row #}
+              <div class="fs-group" style="margin-bottom:0;">
                 <div class="fs-group-title">
                   <i class="fas fa-calendar-alt"></i>
-                  <span>{% if ar %}فترة العقد{% else %}Contract Period{% endif %}</span>
+                  <span>{% if ar %}فترة العقد والوردية{% else %}Contract Period &amp; Shift{% endif %}</span>
                 </div>
-                <div class="field-row">
-                  <div class="field-item">
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
+                  <div>
                     <div class="field-label">{% if ar %}تاريخ الانضمام{% else %}Joining Date{% endif %}</div>
                     <input type="date" name="joining_date" id="f_joining_date" class="field-input" dir="ltr">
                   </div>
-                  <div class="field-item">
+                  <div>
                     <div class="field-label">{% if ar %}تاريخ الانتهاء{% else %}End Date{% endif %}</div>
                     <input type="date" name="end_date_work" id="f_end_date_work" class="field-input" dir="ltr">
                   </div>
-                </div>
-              </div>
-
-              <div class="fs-group" style="margin-bottom:0;">
-                <div class="fs-group-title">
-                  <i class="fas fa-user-clock"></i>
-                  <span>{% if ar %}الحالة والوردية{% else %}Status &amp; Shift{% endif %}</span>
-                </div>
-                <div class="field-row">
-                  <div class="field-item">
-                    <div class="field-label">{% if ar %}حالة العمل{% else %}Work Status{% endif %}</div>
-                    <div class="mcq-wrap" id="workStatusGrp">
-                      <label class="mcq-opt chosen" onclick="pickMCQ('workStatusGrp',this,'f_work_status','active')"><input type="radio">{% if ar %}نشيط{% else %}Active{% endif %}</label>
-                      <label class="mcq-opt" onclick="pickMCQ('workStatusGrp',this,'f_work_status','inactive')"><input type="radio">{% if ar %}غير نشيط{% else %}Inactive{% endif %}</label>
-                    </div>
-                    <input type="hidden" name="work_status" id="f_work_status" value="active">
+                  <div>
+                    <div class="field-label">{% if ar %}الشهر{% else %}Month{% endif %}</div>
+                    <input type="text" name="work_month" id="f_work_month" class="field-input"
+                           placeholder="{% if ar %}مثال: يناير/26{% else %}e.g. Jan/26{% endif %}">
                   </div>
-                  <div class="field-item">
-                    <div class="field-label">{% if ar %}نوع الوردية{% else %}Shift Type{% endif %}</div>
-                    <div class="mcq-wrap" id="shiftGrp">
-                      <label class="mcq-opt chosen" onclick="pickMCQ('shiftGrp',this,'f_shift_type','day')"><input type="radio">{% if ar %}نهاري{% else %}Day{% endif %}</label>
-                      <label class="mcq-opt" onclick="pickMCQ('shiftGrp',this,'f_shift_type','night')"><input type="radio">{% if ar %}ليلي{% else %}Night{% endif %}</label>
-                      <label class="mcq-opt" onclick="pickMCQ('shiftGrp',this,'f_shift_type','rotating')"><input type="radio">{% if ar %}متناوب{% else %}Rotating{% endif %}</label>
-                    </div>
-                    <input type="hidden" name="shift_type" id="f_shift_type" value="day">
+                  <div>
+                    <div class="field-label">{% if ar %}الوردية{% else %}Shift{% endif %}</div>
+                    <select name="shift" id="f_shift" class="field-input">
+                      <option value="day" selected>{% if ar %}نهاري{% else %}Day{% endif %}</option>
+                      <option value="night">{% if ar %}ليلي{% else %}Night{% endif %}</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -1707,7 +1705,7 @@ function loadAsyncDropdown(url, cacheSetter, cacheGetter, selectId, hiddenArId, 
       const val = useId ? item.id : item.en;
       const label = item.label;
       const isSel = String(val) === String(selectedVal) ? ' selected' : '';
-      sel.innerHTML += `<option value="${val}" data-ar="${item.ar||''}"${isSel}>${label}</option>`;
+      sel.innerHTML += `<option value="${val}" data-ar="${item.ar||''}" data-en="${item.en||''}"${isSel}>${label}</option>`;
     });
     sel.onchange = function() {
       const opt = sel.options[sel.selectedIndex];
@@ -1879,7 +1877,7 @@ function loadDepartments(buyerId, preselectId) {
       let html = '<option value="">' + (IS_AR ? '-- اختر القسم --' : '-- Select a department --') + '</option>';
       list.forEach(d => {
         const selAttr = (String(d.id) === String(preselectId || '')) ? ' selected' : '';
-        html += `<option value="${d.id}" data-ar="${d.name_ar || ''}" data-en="${d.name}"${selAttr}>${d.label}</option>`;
+        html += `<option value="${d.id}" data-ar="${d.name_ar || ''}" data-en="${d.name}" data-loc="${d.location_name || ''}" data-loc-ar="${d.location_name_ar || ''}"${selAttr}>${d.label}</option>`;
       });
       sel.innerHTML = html;
       sel.disabled = false;
@@ -1901,10 +1899,25 @@ function onDepartmentChange() {
   const isReal = opt && opt.value;
   if (ar) ar.value = isReal ? (opt.dataset.ar || '') : '';
   if (en) en.value = isReal ? (opt.dataset.en || opt.textContent.trim()) : '';
+
+  // Location auto-fills from the selected department (item 2)
+  const locEn = document.getElementById('f_location_en');
+  const locAr = document.getElementById('f_location_ar');
+  if (locEn) locEn.value = isReal ? (opt.dataset.loc || '') : '';
+  if (locAr) locAr.value = isReal ? (opt.dataset.locAr || '') : '';
 }
 
 function onCompanyChange() {
   const sel = document.getElementById('f_buyer_id');
+
+  // Company Name EN/AR auto-fill from the selected company (item 12)
+  const opt   = sel ? sel.options[sel.selectedIndex] : null;
+  const isReal = opt && opt.value;
+  const cEn = document.getElementById('f_company_en');
+  const cAr = document.getElementById('f_company_ar');
+  if (cEn) cEn.value = isReal ? (opt.dataset.en || opt.textContent.trim()) : '';
+  if (cAr) cAr.value = isReal ? (opt.dataset.ar || '') : '';
+
   _clearDeptSelection();
   loadDepartments(sel ? sel.value : '', null);
 }
@@ -2210,10 +2223,10 @@ function resetEmpForm() {
   if (bankBadge) bankBadge.textContent = '0';
 
   document.querySelectorAll('.mcq-opt').forEach(b => b.classList.remove('chosen'));
-  setMCQ('shiftGrp',   'day',     'f_shift_type');
+  document.getElementById('f_shift').value = 'day';   // default
   setMCQ('passLocGrp', 'IN',      'f_passport_location');
-  setMCQ('salTypeGrp', 'salary',  'f_salary_type');
-  setMCQ('workStatusGrp', 'active', 'f_work_status');
+  document.getElementById('f_salary_category').value = 'salary';   // default
+  document.getElementById('f_salary_type').value     = 'month';    // default
   document.querySelectorAll('.hijri-badge').forEach(b => b.style.display='none');
 
   const pf = document.getElementById('f_photo'); if (pf) pf.value = '';
@@ -2379,13 +2392,17 @@ function openEditEmp(id) {
     if (nd) nd.value = d.net_salary ? Number(d.net_salary).toFixed(2) : '0.00';
     document.getElementById('f_total_allowances').value = (d.total_allowances || 0).toFixed(2);
 
-    setMCQ('salTypeGrp', d.salary_type || 'salary', 'f_salary_type');
-    setMCQ('shiftGrp', d.shift_type || 'day', 'f_shift_type');
-    setMCQ('workStatusGrp', d.work_status || 'active', 'f_work_status');
+    document.getElementById('f_salary_category').value = d.salary_category || 'salary';
+    document.getElementById('f_salary_type').value     = d.salary_type || 'month';
+    document.getElementById('f_shift').value = d.wa_shift || 'day';
+    // Location from the last allocation; the department cascade overwrites it
+    // once the dropdown loads, so this is the fallback for an unchanged dept.
+    const _le = document.getElementById('f_location_en');
+    const _la = document.getElementById('f_location_ar');
+    if (_le) _le.value = d.wa_location || '';
+    if (_la) _la.value = d.wa_location_ar || '';
     setMCQ('passLocGrp', d.passport_location || 'IN', 'f_passport_location');
 
-    const puEl = document.getElementById('f_po_rate_unit');
-    if (puEl && d.po_rate_unit) puEl.value = d.po_rate_unit;
 
     initNationality(d.nationality || '');
     initProfession(d.profession_ids || []);

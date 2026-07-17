@@ -585,18 +585,18 @@ select.f-inp {
           <div id="selectedEmpInputs"></div>
           <div style="padding:16px 20px;">
 
-            {# ── Section 1: Employee & Buyer ── #}
+            {# ── One panel: Work Information (multi-employee) ── #}
             <div class="wa-section">
-              <button type="button" class="wa-section-hdr open" onclick="togSec('sec_emp')">
+              <button type="button" class="wa-section-hdr open" onclick="togSec('sec_work')">
                 <div style="display:flex;align-items:center;">
-                  <div class="sec-icon"><i class="fas fa-user-friends"></i></div>
-                  {% if ar %}اختيار الموظف والمشتري / Employee & Buyer Selection{% else %}Employee & Buyer Selection / اختيار الموظف والمشتري{% endif %}
+                  <div class="sec-icon"><i class="fas fa-briefcase"></i></div>
+                  {% if ar %}معلومات العمل / Work Information{% else %}Work Information / معلومات العمل{% endif %}
                 </div>
-                <i class="fas fa-chevron-up" id="chevron_sec_emp" style="color:#2563eb;font-size:12px;"></i>
+                <i class="fas fa-chevron-up" id="chevron_sec_work" style="color:#2563eb;font-size:12px;"></i>
               </button>
-              <div class="wa-section-body show" id="sec_emp">
+              <div class="wa-section-body show" id="sec_work">
 
-                {# Selected Employees field #}
+                {# Employees — multiple, saved in one go #}
                 <div style="margin-bottom:14px;">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                     <div class="f-lbl">{% if ar %}الموظفون المحددون (يمكن اختيار أكثر من موظف){% else %}Selected Employees (multiple allowed){% endif %} <span class="f-req">*</span></div>
@@ -617,28 +617,38 @@ select.f-inp {
                   </div>
                 </div>
 
-                {# Buyer / HR #}
-                <div class="f-item">
-                  <div class="f-lbl">{% if ar %}المشتري / HR{% else %}Buyer / HR{% endif %} <span class="f-req">*</span></div>
-                  <select name="buyer_id" id="wa_buyer" class="f-inp" required
-                          onchange="this.style.borderColor='';this.style.boxShadow='';">
-                    <option value="">{% if ar %}-- اختر المشتري --{% else %}-- Select Buyer / HR --{% endif %}</option>
-                  </select>
+                {# Company -> Department -> Location, the same cascade as the employee form #}
+                <div class="f-row">
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}الشركة{% else %}Company{% endif %} <span class="f-req">*</span></div>
+                    <select name="buyer_id" id="wa_buyer" class="f-inp" required onchange="waCompanyChange()">
+                      <option value="">{% if ar %}-- اختر الشركة --{% else %}-- Select Company --{% endif %}</option>
+                    </select>
+                  </div>
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}القسم{% else %}Department{% endif %}</div>
+                    <select id="wa_department_id" class="f-inp" onchange="waDeptChange()" disabled>
+                      <option value="">-- {% if ar %}اختر الشركة أولاً{% else %}Select a company first{% endif %} --</option>
+                    </select>
+                    <input type="hidden" name="department" id="wa_department_en">
+                    <input type="hidden" name="department_ar" id="wa_department_ar">
+                  </div>
                 </div>
 
-              </div>
-            </div>
-
-            {# ── Section 2: Work Information ── #}
-            <div class="wa-section">
-              <button type="button" class="wa-section-hdr" onclick="togSec('sec_work')">
-                <div style="display:flex;align-items:center;">
-                  <div class="sec-icon"><i class="fas fa-briefcase"></i></div>
-                  {% if ar %}معلومات العمل / Work Information{% else %}Work Information / معلومات العمل{% endif %}
+                <div class="f-row">
+                  <div class="f-item">
+                    <div class="f-lbl">{% if ar %}الموقع (EN){% else %}Location{% endif %}</div>
+                    <input type="text" name="section" id="wa_location_en" class="f-inp" dir="ltr"
+                           readonly style="background:#f8fafc;"
+                           title="{% if ar %}يُملأ تلقائياً من القسم{% else %}Filled from the selected department{% endif %}">
+                  </div>
+                  <div class="f-item">
+                    <div class="f-lbl" dir="rtl" style="text-align:right">{% if ar %}الموقع{% else %}الموقع (AR){% endif %}</div>
+                    <input type="text" name="section_ar" id="wa_location_ar" class="f-inp" dir="rtl"
+                           readonly style="background:#f8fafc;"
+                           title="{% if ar %}يُملأ تلقائياً من القسم{% else %}Filled from the selected department{% endif %}">
+                  </div>
                 </div>
-                <i class="fas fa-chevron-down" id="chevron_sec_work" style="color:#9ca3af;font-size:12px;"></i>
-              </button>
-              <div class="wa-section-body" id="sec_work">
 
                 <div class="f-row3">
                   <div class="f-item">
@@ -659,43 +669,19 @@ select.f-inp {
                 <div class="f-row">
                   <div class="f-item">
                     <div class="f-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div>
-                    <div class="mcq-grp" id="wa_statusGrp">
-                      <label class="mcq-opt on" onclick="pickMCQ('wa_statusGrp',this,'wa_status','active')">{% if ar %}نشيط{% else %}Active{% endif %}</label>
-                      <label class="mcq-opt" onclick="pickMCQ('wa_statusGrp',this,'wa_status','inactive')">{% if ar %}غير نشيط{% else %}Inactive{% endif %}</label>
-                    </div>
-                    <input type="hidden" name="status" id="wa_status" value="active">
+                    <select name="status" id="wa_status" class="f-inp">
+                      <option value="active" selected>{% if ar %}نشيط{% else %}Active{% endif %}</option>
+                      <option value="inactive">{% if ar %}غير نشيط{% else %}Inactive{% endif %}</option>
+                    </select>
                   </div>
                   <div class="f-item">
-                    <div class="f-lbl">{% if ar %}نوع الوردية{% else %}Shift Type{% endif %}</div>
-                    <div class="mcq-grp" id="wa_shiftGrp">
-                      <label class="mcq-opt on" onclick="pickMCQ('wa_shiftGrp',this,'wa_shift','day')">{% if ar %}نهاري{% else %}Day{% endif %}</label>
-                      <label class="mcq-opt" onclick="pickMCQ('wa_shiftGrp',this,'wa_shift','night')">{% if ar %}ليلي{% else %}Night{% endif %}</label>
-                      <label class="mcq-opt" onclick="pickMCQ('wa_shiftGrp',this,'wa_shift','rotating')">{% if ar %}متناوب{% else %}Rotating{% endif %}</label>
-                    </div>
-                    <input type="hidden" name="shift_type" id="wa_shift" value="day">
+                    <div class="f-lbl">{% if ar %}الوردية{% else %}Shift{% endif %}</div>
+                    <select name="shift_type" id="wa_shift" class="f-inp">
+                      <option value="day" selected>{% if ar %}نهاري{% else %}Day{% endif %}</option>
+                      <option value="night">{% if ar %}ليلي{% else %}Night{% endif %}</option>
+                    </select>
                   </div>
                 </div>
-
-                {% for fid, en_lbl, ar_lbl in [('company','Company','الشركة'),('department','Department','القسم'),('section','Section','القطاع')] %}
-                <div class="f-row" style="margin-bottom:10px;">
-                  <div class="f-item">
-                    <div class="f-lbl" dir="ltr" style="text-align:left">{% if ar %}{{ ar_lbl }} (EN){% else %}{{ en_lbl }}{% endif %}</div>
-                    <div class="bi-wrap" dir="ltr">
-                      <input type="text" name="{{ fid }}" id="wa_{{ fid }}_en" class="bi-inp" dir="ltr"
-                             oninput="waTrans('wa_{{ fid }}_en','wa_{{ fid }}_ar','en')">
-                      {% if not ar %}<button type="button" class="bi-btn" onclick="waRetrans('wa_{{ fid }}_ar','wa_{{ fid }}_en','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
-                    </div>
-                  </div>
-                  <div class="f-item">
-                    <div class="f-lbl" dir="rtl" style="text-align:right">{% if ar %}{{ ar_lbl }}{% else %}{{ ar_lbl }} (AR){% endif %}</div>
-                    <div class="bi-wrap" dir="rtl">
-                      <input type="text" name="{{ fid }}_ar" id="wa_{{ fid }}_ar" class="bi-inp bi-inp-ar" dir="rtl"
-                             oninput="waTrans('wa_{{ fid }}_ar','wa_{{ fid }}_en','ar')">
-                      {% if ar %}<button type="button" class="bi-btn bi-btn-ar" onclick="waRetrans('wa_{{ fid }}_en','wa_{{ fid }}_ar','en')"><i class="fas fa-sync-alt"></i></button>{% endif %}
-                    </div>
-                  </div>
-                </div>
-                {% endfor %}
 
               </div>
             </div>
@@ -974,16 +960,81 @@ function confirmPickedEmps() {
   bootstrap.Modal.getInstance(document.getElementById('pickerModal')).hide();
 }
 
+/* ══ Company -> Department -> Location cascade (same as the employee form) ══ */
+function waCompanyChange() {
+  const b = document.getElementById('wa_buyer');
+  waLoadDepartments(b ? b.value : '', null);
+}
+
+function waLoadDepartments(buyerId, _unused, preDeptEn, preDeptAr, preLoc, preLocAr) {
+  const sel = document.getElementById('wa_department_id');
+  if (!sel) return;
+  // clear the dependent fields
+  ['wa_department_en','wa_department_ar','wa_location_en','wa_location_ar']
+    .forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+
+  if (!buyerId) {
+    sel.innerHTML = '<option value="">-- ' + (IS_AR ? 'اختر الشركة أولاً' : 'Select a company first') + ' --</option>';
+    sel.disabled = true;
+    return;
+  }
+  sel.innerHTML = '<option value="">' + (IS_AR ? '-- جارٍ التحميل --' : '-- Loading --') + '</option>';
+  sel.disabled = true;
+
+  fetch('/employees/departments-by-buyer?buyer_id=' + encodeURIComponent(buyerId))
+    .then(r => r.json())
+    .then(list => {
+      if (!list.length) {
+        sel.innerHTML = '<option value="">-- ' + (IS_AR ? 'لا توجد أقسام لهذه الشركة' : 'No departments for this company') + ' --</option>';
+        sel.disabled = true;
+        return;
+      }
+      let html = '<option value="">' + (IS_AR ? '-- اختر القسم --' : '-- Select a department --') + '</option>';
+      list.forEach(d => {
+        const isSel = (preDeptEn && d.name === preDeptEn) ? ' selected' : '';
+        html += `<option value="${d.id}" data-en="${d.name}" data-ar="${d.name_ar || ''}"`
+              + ` data-loc="${d.location_name || ''}" data-loc-ar="${d.location_name_ar || ''}"${isSel}>${d.label}</option>`;
+      });
+      sel.innerHTML = html;
+      sel.disabled = false;
+      waDeptChange();
+      // in edit mode, fall back to the saved values if the dept no longer matches
+      if (preDeptEn && !sel.value) {
+        document.getElementById('wa_department_en').value = preDeptEn || '';
+        document.getElementById('wa_department_ar').value = preDeptAr || '';
+        document.getElementById('wa_location_en').value   = preLoc || '';
+        document.getElementById('wa_location_ar').value   = preLocAr || '';
+      }
+    })
+    .catch(() => {
+      sel.innerHTML = '<option value="">-- ' + (IS_AR ? 'تعذر التحميل' : 'Could not load') + ' --</option>';
+      sel.disabled = true;
+    });
+}
+
+function waDeptChange() {
+  const sel = document.getElementById('wa_department_id');
+  if (!sel) return;
+  const opt = sel.options[sel.selectedIndex];
+  const real = opt && opt.value;
+  document.getElementById('wa_department_en').value = real ? (opt.dataset.en || '') : '';
+  document.getElementById('wa_department_ar').value = real ? (opt.dataset.ar || '') : '';
+  // Location auto-fills from the department
+  document.getElementById('wa_location_en').value   = real ? (opt.dataset.loc || '') : '';
+  document.getElementById('wa_location_ar').value   = real ? (opt.dataset.locAr || '') : '';
+}
+
 /* ══ Reset WA form ══ */
 function resetWAForm() {
   _selEmps.clear(); renderChips();
-  ['wa_month_raw','wa_joining','wa_end',
-   'wa_company_en','wa_company_ar','wa_department_en','wa_department_ar',
-   'wa_section_en','wa_section_ar'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['wa_month_raw','wa_joining','wa_end','wa_department_en','wa_department_ar',
+   'wa_location_en','wa_location_ar'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('wa_month').value='';
   document.getElementById('wa_buyer').value='';
-  pickMCQ('wa_statusGrp',document.querySelector('#wa_statusGrp .mcq-opt'),'wa_status','active');
-  pickMCQ('wa_shiftGrp',document.querySelector('#wa_shiftGrp .mcq-opt'),'wa_shift','day');
+  const ds=document.getElementById('wa_department_id');
+  if(ds){ ds.innerHTML='<option value="">-- '+(IS_AR?'اختر الشركة أولاً':'Select a company first')+' --</option>'; ds.disabled=true; }
+  document.getElementById('wa_status').value='active';
+  document.getElementById('wa_shift').value='day';
   document.getElementById('empRequired').style.display='none';
 }
 
@@ -995,7 +1046,6 @@ function openAddWA() {
   resetWAForm();
   fillBuyerDropdown(null);
   // Open Employee section, close Work section
-  document.getElementById('sec_emp').classList.add('show');
   document.getElementById('sec_work').classList.remove('show');
   new bootstrap.Modal(document.getElementById('waModal')).show();
 }
@@ -1030,20 +1080,12 @@ function openEditWA(id) {
       if(p.length===2&&mn[p[0]]) document.getElementById('wa_month_raw').value=`20${p[1]}-${mn[p[0]]}`;
       document.getElementById('wa_month').value=d.month;
     }
-    // Status MCQ
-    const sOpts=document.querySelectorAll('#wa_statusGrp .mcq-opt');
-    document.querySelectorAll('#wa_statusGrp .mcq-opt').forEach(o=>o.classList.remove('on'));
-    if(d.status==='active'&&sOpts[0]) sOpts[0].classList.add('on');
-    else if(sOpts[1]) sOpts[1].classList.add('on');
-    document.getElementById('wa_status').value=d.status||'active';
-    // Shift MCQ
-    const si={day:0,night:1,rotating:2}[d.shift_type]??0;
-    document.querySelectorAll('#wa_shiftGrp .mcq-opt').forEach(o=>o.classList.remove('on'));
-    const shiftOpts=document.querySelectorAll('#wa_shiftGrp .mcq-opt');
-    if(shiftOpts[si]) shiftOpts[si].classList.add('on');
-    document.getElementById('wa_shift').value=d.shift_type||'day';
-    // Open both sections
-    document.getElementById('sec_emp').classList.add('show');
+    document.getElementById('wa_status').value = d.status || 'active';
+    const _sh = (d.shift_type === 'night') ? 'night' : 'day';   // rotating is gone
+    document.getElementById('wa_shift').value = _sh;
+    // rebuild the department cascade for this buyer, preselecting the saved one
+    waLoadDepartments(d.buyer_id || '', null, d.department || '', d.department_ar || '',
+                      d.section || '', d.section_ar || '');
     document.getElementById('sec_work').classList.add('show');
     new bootstrap.Modal(document.getElementById('waModal')).show();
   });
@@ -1054,7 +1096,6 @@ function submitWA() {
   // Validate employees
   if (_selEmps.size===0) {
     document.getElementById('empRequired').style.display='block';
-    document.getElementById('sec_emp').classList.add('show');
     return;
   }
   document.getElementById('empRequired').style.display='none';
@@ -1065,7 +1106,6 @@ function submitWA() {
     buyer.style.borderColor='#dc2626';
     buyer.style.boxShadow='0 0 0 3px rgba(220,38,38,.1)';
     buyer.scrollIntoView({behavior:'smooth', block:'center'});
-    document.getElementById('sec_emp').classList.add('show');
     buyer.focus();
     return;
   }

@@ -335,18 +335,7 @@ class Employee(db.Model):
     # ── Employment / references ──
     employee_reference    = db.Column(db.String(120))
     employee_reference_ar = db.Column(db.String(120))
-    company          = db.Column(db.String(200))
-    company_ar       = db.Column(db.String(200))
-    department       = db.Column(db.String(150))
-    department_id    = db.Column(db.Integer, db.ForeignKey('buyer_departments.id'))
-    department_ar    = db.Column(db.String(150))
-    section          = db.Column(db.String(150))
-    section_ar       = db.Column(db.String(150))
-    forman           = db.Column(db.String(150))
-    forman_ar        = db.Column(db.String(150))
-    work_month       = db.Column(db.String(30))
     work_status      = db.Column(db.String(30), default='active')
-    shift_type       = db.Column(db.String(30), default='day')
 
     # ── Payroll ──
     salary_category  = db.Column(db.String(20))   # 'Salary' or 'Azad'
@@ -356,7 +345,6 @@ class Employee(db.Model):
     net_salary       = db.Column(db.Numeric(12, 2), default=0)
     po_number        = db.Column(db.String(80))
     po_rate          = db.Column(db.Numeric(12, 2), default=0)
-    po_rate_unit     = db.Column(db.String(20), default='hour')
     working_hours    = db.Column(db.Numeric(6, 2), default=8)
     overtime_ratio   = db.Column(db.Numeric(6, 2), default=1.5)
     overtime_rate    = db.Column(db.Numeric(12, 2), default=0)
@@ -513,35 +501,6 @@ class EmployeeDocument(db.Model):
         }
 
 
-class WorkAllocation(db.Model):
-    __tablename__ = 'work_allocations'
-    id          = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
-    seller_id   = db.Column(db.Integer, db.ForeignKey('sellers.id'),   nullable=False)
-    start_date  = db.Column(db.Date)
-    end_date    = db.Column(db.Date)
-    notes       = db.Column(db.Text)
-    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
-    created_by  = db.Column(db.Integer, db.ForeignKey('users.id'))
-
-    employee = db.relationship('Employee', backref=db.backref('allocations', lazy=True))
-    seller   = db.relationship('Seller',   backref=db.backref('allocations', lazy=True))
-
-    def to_dict(self):
-        e = self.employee
-        return {
-            'id': self.id, 'employee_id': self.employee_id,
-            'employee_name': e.name_en if e else '',
-            'employee_code': e.employee_code if e else '',
-            'seller_id': self.seller_id,
-            'seller_name': self.seller.name if self.seller else '',
-            'start_date': str(self.start_date) if self.start_date else '',
-            'end_date':   str(self.end_date)   if self.end_date   else '',
-            'notes': self.notes or '',
-        }
-
-# ─────────────────────────────────────────────────────────────────
-# VENDOR REGISTRATION
 # ─────────────────────────────────────────────────────────────────
 class VendorMaster(db.Model):
     __tablename__ = 'vendors'
@@ -3004,10 +2963,15 @@ class EmployeeWorkAllocation(db.Model):
     month             = db.Column(db.String(20))
     joining_date      = db.Column(db.Date)
     end_date          = db.Column(db.Date)
-    buyer_id          = db.Column(db.Integer, db.ForeignKey('buyers.id'))
-    buyer_department  = db.Column(db.String(150))
-    location          = db.Column(db.String(150))
+    buyer_id            = db.Column(db.Integer, db.ForeignKey('buyers.id'))
+    buyer_name          = db.Column(db.String(200))
+    buyer_name_ar       = db.Column(db.String(200))
+    buyer_department    = db.Column(db.String(150))
+    buyer_department_ar = db.Column(db.String(150))
+    location            = db.Column(db.String(150))
+    location_ar         = db.Column(db.String(150))
     shift             = db.Column(db.String(10))        # 'day' or 'night'
+    status            = db.Column(db.String(20), default='active')
     created_at        = db.Column(db.DateTime, default=datetime.utcnow)
     created_by        = db.Column(db.Integer, db.ForeignKey('users.id'))
 
@@ -3027,7 +2991,26 @@ class EmployeeWorkAllocation(db.Model):
             'joining_date': self.joining_date.strftime('%Y-%m-%d') if self.joining_date else '',
             'end_date': self.end_date.strftime('%Y-%m-%d') if self.end_date else '',
             'buyer_id': self.buyer_id,
+            'buyer_name': self.buyer_name or '',
+            'buyer_name_ar': self.buyer_name_ar or '',
             'buyer_department': self.buyer_department or '',
+            'buyer_department_ar': self.buyer_department_ar or '',
             'location': self.location or '',
+            'location_ar': self.location_ar or '',
             'shift': self.shift or '',
+            'status': self.status or 'active',
+            # ── aliases so the existing Work Allocation grid keeps working ──
+            'company': self.buyer_name or '',
+            'company_ar': self.buyer_name_ar or '',
+            'department': self.buyer_department or '',
+            'department_ar': self.buyer_department_ar or '',
+            'section': self.location or '',
+            'section_ar': self.location_ar or '',
+            'shift_type': self.shift or '',
+            # employee details the grid shows
+            'employee_code': (self.employee.employee_code if self.employee else ''),
+            'name_ar': (self.employee.name_ar if self.employee else ''),
+            'passport_number': (self.employee.passport_number if self.employee else ''),
+            'kafeel_name': self.kafeel or '',
+            'iqama_number': self.iqama or '',
         }

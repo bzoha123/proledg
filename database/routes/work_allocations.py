@@ -1,12 +1,18 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, session
 from flask_login import login_required, current_user
-from models import db, WorkAllocation, Employee
+from models import db, EmployeeWorkAllocation as WorkAllocation, Employee
 from datetime import datetime, date
 import calendar
 
 wa_bp = Blueprint('work_allocations', __name__)
 
 def _t(en, ar): return ar if session.get('lang') == 'ar' else en
+def _last_wa(emp_id):
+    """The employee's most recent allocation (department/company now live here)."""
+    return (WorkAllocation.query
+            .filter_by(employee_id=emp_id)
+            .order_by(WorkAllocation.id.desc())
+            .first())
 def admin_required(f):
     from functools import wraps
     @wraps(f)
@@ -43,12 +49,13 @@ def wa_employees():
         'nationality': e.nationality or '',
         'passport_number': e.passport_number or '',
         'iqama_number': e.iqama_number or '',
-        'profession': e.profession or '',
+        'profession': ', '.join([p.name_en for p in e.professions.all()]),
         'kafeel_name': e.kafeel_name or '',
         'kafeel_name_ar': e.kafeel_name_ar or '',
         'joining_date': e.joining_date.strftime('%Y-%m-%d') if e.joining_date else '',
-        'department': e.department or '',
-        'department_ar': e.department_ar or '',
+        # department now lives on employee_work_allocation (latest entry)
+        'department': (_last_wa(e.id).buyer_department if _last_wa(e.id) else ''),
+        'department_ar': (_last_wa(e.id).buyer_department_ar if _last_wa(e.id) else ''),
         'label': f"{e.employee_code} — {e.name_ar if lang=='ar' and e.name_ar else e.name}",
     } for e in emps])
 
@@ -67,22 +74,36 @@ def add_wa():
         if not val: return None
         try: return datetime.strptime(val, '%Y-%m-%d').date()
         except: return None
+    from models import BuyerMaster
+    _bid = f.get('buyer_id', type=int)
+    _buyer = BuyerMaster.query.get(_bid) if _bid else None
     added = 0
     for emp_id in employee_ids:
+        emp = Employee.query.get(emp_id)
+        shift = (f.get('shift_type') or f.get('shift') or 'day').strip().lower()
+        if shift not in ('day', 'night'):
+            shift = 'day'
         wa = WorkAllocation(
             employee_id=emp_id,
             buyer_id=f.get('buyer_id', type=int),
             status=f.get('status','active'),
             month=f.get('month','').strip(),
-            company=f.get('company','').strip(),
-            company_ar=f.get('company_ar','').strip(),
-            department=f.get('department','').strip(),
-            department_ar=f.get('department_ar','').strip(),
-            section=f.get('section','').strip(),
-            section_ar=f.get('section_ar','').strip(),
-            shift_type=f.get('shift_type','').strip(),
+            # company -> buyer_name, section -> location, shift_type -> shift
+            buyer_name=(f.get('company','').strip() or (_buyer.buyer_name_en if _buyer else '')),
+            buyer_name_ar=(f.get('company_ar','').strip() or ((_buyer.buyer_name_ar or '') if _buyer else '')),
+            buyer_department=f.get('department','').strip(),
+            buyer_department_ar=f.get('department_ar','').strip(),
+            location=f.get('section','').strip() or f.get('location','').strip(),
+            location_ar=f.get('section_ar','').strip() or f.get('location_ar','').strip(),
+            shift=shift,
             joining_date=parse_date(f.get('joining_date')),
             end_date=parse_date(f.get('end_date')),
+            # snapshot the employee details, as the employee form does
+            name=emp.name if emp else '',
+            nationality=emp.nationality if emp else '',
+            profession=(', '.join([p.name_en for p in emp.professions.all()]) if emp else ''),
+            iqama=emp.iqama_number if emp else '',
+            kafeel=emp.kafeel_name if emp else '',
             created_by=current_user.id,
         )
         db.session.add(wa)
@@ -101,31 +122,38 @@ def edit_wa(id):
         if not val: return None
         try: return datetime.strptime(val, '%Y-%m-%d').date()
         except: return None
-    wa.status      = f.get('status', wa.status)
-    wa.month       = f.get('month', wa.month or '').strip()
-    wa.company     = f.get('company', wa.company or '').strip()
-    wa.company_ar  = f.get('company_ar', wa.company_ar or '').strip()
-    wa.department  = f.get('department', wa.department or '').strip()
-    wa.department_ar = f.get('department_ar', wa.department_ar or '').strip()
-    wa.section     = f.get('section', wa.section or '').strip()
-    wa.section_ar  = f.get('section_ar', wa.section_ar or '').strip()
-    wa.shift_type  = f.get('shift_type', wa.shift_type or '').strip()
-    wa.joining_date= parse_date(f.get('joining_date'))
-    wa.end_date    = parse_date(f.get('end_date'))
+    wa.status              = f.get('status', wa.status)
+    wa.month               = f.get('month', wa.month or '').strip()
+    wa.buyer_name          = f.get('company', wa.buyer_name or '').strip()
+    wa.buyer_name_ar       = f.get('company_ar', wa.buyer_name_ar or '').strip()
+    wa.buyer_department    = f.get('department', wa.buyer_department or '').strip()
+    wa.buyer_department_ar = f.get('department_ar', wa.buyer_department_ar or '').strip()
+    wa.location            = f.get('section', wa.location or '').strip()
+    wa.location_ar         = f.get('section_ar', wa.location_ar or '').strip()
+    _sh = (f.get('shift_type') or wa.shift or 'day').strip().lower()
+    wa.shift               = _sh if _sh in ('day', 'night') else 'day'
+    wa.joining_date        = parse_date(f.get('joining_date'))
+    wa.end_date            = parse_date(f.get('end_date'))
     buyer_id = f.get('buyer_id', type=int)
     if buyer_id: wa.buyer_id = buyer_id
     # Batch edit extra employees with same details
     extra_ids = [int(x) for x in f.getlist('extra_employee_id[]') if x and str(x).isdigit()]
     for eid in extra_ids:
+        _e = Employee.query.get(eid)
         extra = WorkAllocation(
             employee_id=eid,
             buyer_id=buyer_id,
             status=wa.status, month=wa.month,
-            company=wa.company, company_ar=wa.company_ar,
-            department=wa.department, department_ar=wa.department_ar,
-            section=wa.section, section_ar=wa.section_ar,
-            shift_type=wa.shift_type,
+            buyer_name=wa.buyer_name, buyer_name_ar=wa.buyer_name_ar,
+            buyer_department=wa.buyer_department,
+            buyer_department_ar=wa.buyer_department_ar,
+            location=wa.location, location_ar=wa.location_ar,
+            shift=wa.shift,
             joining_date=wa.joining_date, end_date=wa.end_date,
+            name=_e.name if _e else '',
+            nationality=_e.nationality if _e else '',
+            iqama=_e.iqama_number if _e else '',
+            kafeel=_e.kafeel_name if _e else '',
             created_by=current_user.id,
         )
         db.session.add(extra)
