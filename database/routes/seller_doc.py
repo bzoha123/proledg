@@ -481,7 +481,7 @@ def edit_seller_document(did):
 @login_required
 def list_seller_documents_page():
     """Renders the full standalone AG-Grid page for all seller documents."""
-    return render_template('seller_documents/list.html')
+    return render_template('sellers/seller_doc.html')
 
 
 # ─────────────────────────────────────────────────────────────────────

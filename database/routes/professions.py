@@ -16,7 +16,7 @@ from .lookups import lookups_bp, admin_required, _t
 @login_required
 def list_professions():
     items = ProfessionMaster.query.order_by(ProfessionMaster.name_en).all()
-    return render_template('lookups/professions.html', items=items)
+    return render_template('employees/professions.html', items=items)
 
 @lookups_bp.route('/professions/add', methods=['POST'])
 @login_required

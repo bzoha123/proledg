@@ -26,7 +26,7 @@ def admin_required(f):
 @wa_bp.route('/work-allocations')
 @login_required
 def list_wa():
-    return render_template('work_allocations/list.html')
+    return render_template('employees/work_allocation.html')
 
 @wa_bp.route('/work-allocations/data')
 @login_required

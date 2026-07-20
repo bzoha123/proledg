@@ -354,10 +354,43 @@
               <i class="fas fa-chevron-down" id="ch_va3" style="color:#9ca3af;font-size:11px;"></i>
             </button>
             <div class="acc-body" id="va3">
-              <div id="bankGrid" class="ag-theme-alpine" style="height:200px;width:100%;margin-bottom:10px;"></div>
-              <button type="button" class="bank-add-btn" onclick="openBankPopup()">
-                <i class="fas fa-plus-circle"></i>{% if ar %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
-              </button>
+              <!-- Bank Information — Seller-styled -->
+              <div class="alert alert-info d-flex align-items-center mb-4">
+                <i class="fas fa-shield-alt me-2"></i>
+                <span>
+                  {% if ar %}
+                    يتم تخزين بيانات البنك بشكل آمن ومشفر.
+                  {% else %}
+                    Bank details are stored securely and encrypted.
+                  {% endif %}
+                </span>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-12">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                      <i class="fas fa-university me-2 text-primary"></i>
+                      {% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
+                    </h5>
+                    <button type="button" class="btn btn-primary" onclick="openBankPopup()">
+                      <i class="fas fa-plus me-1"></i>
+                      {% if ar %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-12">
+                  <div id="bankList">
+                    <div class="text-center py-5 text-muted">
+                      <i class="fas fa-university fa-3x mb-3 d-block opacity-50"></i>
+                      <p>{% if ar %}لم يتم إضافة حسابات بنكية بعد{% else %}No bank accounts added yet{% endif %}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -371,98 +404,84 @@
   </div>
 </div>
 
-{# ═══ BANK POPUP MODAL ═══ #}
+{# ═══ BANK POPUP MODAL — Seller-styled ═══ #}
 <div class="modal fade" id="bankModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content" style="border:none;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);">
-      <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;">
-        <h6 id="bankModalTitle" style="margin:0;color:white;font-weight:700;font-size:14px;">
-          <i class="fas fa-university me-2"></i>{% if ar %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
-        </h6>
-        <button class="btn-close" style="filter:brightness(0)invert(1);" data-bs-dismiss="modal"></button>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="bankModalTitle">
+          <i class="fas fa-university me-2"></i>
+          {% if ar %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div style="padding:20px;background:#f8fafc;">
+      <div class="modal-body">
         <input type="hidden" id="bank_edit_idx" value="">
-        
-        {# Bank Name bilingual #}
-        <div class="f-grid2" style="margin-bottom:12px;">
-          <div class="f-item">
-            <div class="f-lbl">Bank Name (EN) <span class="f-req">*</span></div>
-            <div class="field-wrap" dir="ltr">
-              <input type="text" id="bank_name_en" class="f-inp" dir="ltr"
-                     placeholder="e.g. Al Rajhi Bank"
-                     oninput="vTrans('bank_name_en','bank_name_ar','en')">
-              {% if not ar %}
-              <button type="button" class="retrans-btn" onclick="doRetrans('bank_name_en','bank_name_ar','en')"><i class="fas fa-sync-alt"></i></button>
-              {% endif %}
-            </div>
-          </div>
-          <div class="f-item">
-            <div class="f-lbl" dir="rtl" style="text-align:right;">اسم البنك (AR)</div>
-            <div class="field-wrap" dir="rtl">
-              <input type="text" id="bank_name_ar" class="f-inp" dir="rtl"
-                     placeholder="مثال: بنك الراجحي"
-                     oninput="vTrans('bank_name_ar','bank_name_en','ar')">
-              {% if ar %}
-              <button type="button" class="retrans-btn" onclick="doRetrans('bank_name_ar','bank_name_en','ar')"><i class="fas fa-sync-alt"></i></button>
-              {% endif %}
-            </div>
-          </div>
+        <div class="mb-3">
+          <label class="form-label">
+            {% if ar %}اسم البنك{% else %}Bank Name{% endif %}
+            <span class="text-danger">*</span>
+          </label>
+          <input type="text" class="form-control" id="bank_name_en" dir="ltr"
+                 placeholder="{% if ar %}أدخل اسم البنك{% else %}Enter bank name{% endif %}"
+                 oninput="vTrans('bank_name_en','bank_name_ar','en')">
         </div>
-
-        {# Branch bilingual #}
-        <div class="f-grid2" style="margin-bottom:12px;">
-          <div class="f-item">
-            <div class="f-lbl">Branch (EN)</div>
-            <div class="field-wrap" dir="ltr">
-              <input type="text" id="bank_branch_en" class="f-inp" dir="ltr"
-                     placeholder="Branch name"
-                     oninput="vTrans('bank_branch_en','bank_branch_ar','en')">
-              {% if not ar %}
-              <button type="button" class="retrans-btn" onclick="doRetrans('bank_branch_en','bank_branch_ar','en')"><i class="fas fa-sync-alt"></i></button>
-              {% endif %}
-            </div>
-          </div>
-          <div class="f-item">
-            <div class="f-lbl" dir="rtl" style="text-align:right;">الفرع (AR)</div>
-            <div class="field-wrap" dir="rtl">
-              <input type="text" id="bank_branch_ar" class="f-inp" dir="rtl"
-                     placeholder="اسم الفرع"
-                     oninput="vTrans('bank_branch_ar','bank_branch_en','ar')">
-              {% if ar %}
-              <button type="button" class="retrans-btn" onclick="doRetrans('bank_branch_ar','bank_branch_en','ar')"><i class="fas fa-sync-alt"></i></button>
-              {% endif %}
-            </div>
-          </div>
+        <div class="mb-3">
+          <label class="form-label" dir="rtl">
+            {% if ar %}اسم البنك (EN){% else %}Bank Name (AR){% endif %}
+          </label>
+          <input type="text" class="form-control" id="bank_name_ar" dir="rtl"
+                 placeholder="مثال: بنك الراجحي"
+                 oninput="vTrans('bank_name_ar','bank_name_en','ar')">
         </div>
-
-        <div class="f-grid2" style="margin-bottom:12px;">
-          <div class="f-item">
-            <div class="f-lbl">Account Number</div>
-            <input type="text" id="bank_account_number" class="f-inp" placeholder="Account number">
-          </div>
-          <div class="f-item">
-            <div class="f-lbl">SWIFT Code</div>
-            <input type="text" id="bank_swift" class="f-inp" placeholder="e.g. RJHISARI" style="text-transform:uppercase;">
-          </div>
+        <div class="mb-3">
+          <label class="form-label">
+            {% if ar %}رقم الحساب{% else %}Account Number{% endif %}
+          </label>
+          <input type="text" class="form-control" id="bank_account_number" dir="ltr"
+                 placeholder="{% if ar %}أدخل رقم الحساب{% else %}Enter account number{% endif %}">
         </div>
-        <div class="f-grid2" style="margin-bottom:12px;">
-          <div class="f-item">
-            <div class="f-lbl">IBAN</div>
-            <input type="text" id="bank_iban" class="f-inp" placeholder="e.g. SA1234567890123456789012">
-          </div>
-          <div class="f-item">
-            <div class="f-lbl">Primary Account</div>
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;margin-top:8px;">
-              <input type="checkbox" id="bank_is_primary" value="1" style="width:16px;height:16px;cursor:pointer;accent-color:#2563eb;">
-              <span>{% if ar %}تعيين كحساب أساسي{% else %}Set as primary account{% endif %}</span>
-            </label>
-          </div>
+        <div class="mb-3">
+          <label class="form-label">IBAN</label>
+          <input type="text" class="form-control text-uppercase" id="bank_iban" dir="ltr"
+                 placeholder="{% if ar %}أدخل رقم IBAN{% else %}Enter IBAN number{% endif %}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">SWIFT/BIC</label>
+          <input type="text" class="form-control text-uppercase" id="bank_swift" dir="ltr"
+                 placeholder="{% if ar %}أدخل كود SWIFT{% else %}Enter SWIFT code{% endif %}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">
+            {% if ar %}الفرع{% else %}Branch{% endif %}
+          </label>
+          <input type="text" class="form-control" id="bank_branch_en" dir="ltr"
+                 placeholder="{% if ar %}أدخل اسم الفرع{% else %}Enter branch name{% endif %}"
+                 oninput="vTrans('bank_branch_en','bank_branch_ar','en')">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" dir="rtl">
+            {% if ar %}الفرع (EN){% else %}Branch (AR){% endif %}
+          </label>
+          <input type="text" class="form-control" id="bank_branch_ar" dir="rtl"
+                 placeholder="اسم الفرع"
+                 oninput="vTrans('bank_branch_ar','bank_branch_en','ar')">
+        </div>
+        <div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="bank_is_primary" value="1">
+          <label class="form-check-label" for="bank_is_primary">
+            {% if ar %}حساب رئيسي{% else %}Primary Account{% endif %}
+          </label>
         </div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#f8fafc;border-top:2px solid #e2e8f0;">
-        <button class="btn-f btn-cancel" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button class="btn-f btn-save" onclick="saveBankFromPopup()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save Bank{% endif %}</button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          {% if ar %}إلغاء{% else %}Cancel{% endif %}
+        </button>
+        <button type="button" class="btn btn-primary" onclick="saveBankFromPopup()">
+          <i class="fas fa-save me-1"></i>
+          {% if ar %}حفظ{% else %}Save{% endif %}
+        </button>
       </div>
     </div>
   </div>
@@ -494,136 +513,51 @@ const TR    = '{{ url_for("sellers.translate_text") }}';
 let vendorBanks = [];
 let bankGridApi;
 
-const bankCols = [
-  {
-    headerName: IS_AR ? '#' : '#',
-    field: '_index',
-    width: 50,
-    valueGetter: 'node.rowIndex + 1',
-    filter: false,
-    floatingFilter: false,
-    suppressMenu: true,
-    cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center' }
-  },
-  {
-    headerName: IS_AR ? 'اسم البنك' : 'Bank Name',
-    field: 'bank_name_en',
-    minWidth: 150,
-    filter: 'agTextColumnFilter'
-  },
-  {
-    headerName: IS_AR ? 'اسم البنك (عربي)' : 'Bank Name (AR)',
-    field: 'bank_name_ar',
-    minWidth: 150,
-    filter: 'agTextColumnFilter'
-  },
-  {
-    headerName: IS_AR ? 'رقم الحساب' : 'Account Number',
-    field: 'account_number',
-    width: 140,
-    filter: 'agTextColumnFilter'
-  },
-  {
-    headerName: IS_AR ? 'الفرع' : 'Branch',
-    field: 'branch_en',
-    width: 120,
-    filter: 'agTextColumnFilter'
-  },
-  {
-    headerName: 'SWIFT',
-    field: 'swift_code',
-    width: 110,
-    filter: 'agTextColumnFilter'
-  },
-  {
-    headerName: 'IBAN',
-    field: 'iban',
-    width: 160,
-    filter: 'agTextColumnFilter'
-  },
-  {
-    headerName: IS_AR ? 'أساسي' : 'Primary',
-    field: 'is_primary',
-    width: 80,
-    filter: false,
-    floatingFilter: false,
-    cellRenderer: function(params) {
-      return params.value 
-        ? '<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;">✓</span>' 
-        : '';
-    },
-    cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center' }
-  },
-  {
-    headerName: IS_AR ? 'إجراءات' : 'Actions',
-    field: '_actions',
-    width: 80,
-    pinned: IS_AR ? 'left' : 'right',
-    sortable: false,
-    filter: false,
-    floatingFilter: false,
-    suppressMenu: true,
-    resizable: false,
-    cellRenderer: function(params) {
-      const div = document.createElement('div');
-      div.style.cssText = 'display:flex;align-items:center;gap:4px;';
-      div.innerHTML = `
-        <button class="btn-xs btn-xs-edit" onclick="event.stopPropagation(); openBankPopup(${params.node.rowIndex})" title="${IS_AR ? 'تعديل' : 'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-        <button class="btn-xs btn-xs-del" onclick="event.stopPropagation(); deleteBankFromGrid(${params.node.rowIndex})" title="${IS_AR ? 'حذف' : 'Delete'}"><i class="fas fa-trash"></i></button>
-      `;
-      return div;
-    },
-    cellStyle: { overflow: 'visible', padding: '0 4px' }
-  }
-];
+// ═══════════════════════════════════════════════════════════
+// BANKS LIST — Seller-styled HTML table (replaces AG-Grid)
+// ═══════════════════════════════════════════════════════════
+function renderVendorBanks() {
+  const wrap = document.getElementById('bankList');
+  const countEl = document.getElementById('bankCount');
+  if (countEl) countEl.textContent = vendorBanks.length;
+  if (!wrap) return;
 
-function initBankGrid() {
-  const bankGridEl = document.getElementById('bankGrid');
-  if (!bankGridEl) return;
-  
-  agGrid.createGrid(bankGridEl, {
-    columnDefs: bankCols,
-    multiSortKey:'ctrl',
-    rowData: vendorBanks,
-    enableRtl: IS_AR,
-    defaultColDef: {
-      sortable:true, 
-      unSortIcon:true,
-      resizable: true,
-      filter: true,
-      floatingFilter: true,
-      filterParams: {
-        buttons: ['apply', 'reset', 'clear'],
-        closeOnApply: true
-      }
-    },
-    localeText: IS_AR ? {
-      filterOoo: 'تصفية...',
-      contains: 'يحتوي على',
-      notContains: 'لا يحتوي على',
-      startsWith: 'يبدأ بـ',
-      endsWith: 'ينتهي بـ',
-      blank: 'فارغ',
-      notBlank: 'غير فارغ',
-      applyFilter: 'تطبيق',
-      clearFilter: 'مسح',
-      resetFilter: 'إعادة تعيين',
-      noRowsToShow: 'لا توجد حسابات',
-      loadingOoo: 'جاري التحميل...'
-    } : {
-      filterOoo: 'Filter...',
-      applyFilter: 'Apply',
-      clearFilter: 'Clear',
-      resetFilter: 'Reset',
-      noRowsToShow: 'No bank accounts'
-    },
-    getRowStyle: function(params) {
-      return params.node.rowIndex % 2 === 0 ? { background: '#fff' } : { background: '#fafbfc' };
-    },
-    onGridReady: function(params) {
-      bankGridApi = params.api;
-    }
+  if (!vendorBanks.length) {
+    wrap.innerHTML = `
+      <div class="text-center py-5 text-muted">
+        <i class="fas fa-university fa-3x mb-3 d-block opacity-50"></i>
+        <p>${IS_AR ? 'لم يتم إضافة حسابات بنكية بعد' : 'No bank accounts added yet'}</p>
+      </div>`;
+    return;
+  }
+
+  let html = `<div class="table-responsive"><table class="table table-hover table-bordered"><thead class="table-light"><tr>
+      <th>${IS_AR ? 'اسم البنك' : 'Bank Name'}</th>
+      <th>${IS_AR ? 'رقم الحساب' : 'Account Number'}</th>
+      <th>IBAN</th>
+      <th>${IS_AR ? 'رئيسي' : 'Primary'}</th>
+      <th style="width:120px;text-align:center;">${IS_AR ? 'إجراءات' : 'Actions'}</th>
+  </tr></thead><tbody>`;
+
+  vendorBanks.forEach((b, i) => {
+    html += `<tr>
+        <td><strong>${b.bank_name_en || '—'}</strong>${b.bank_name_ar ? `<br><small class="text-muted">${b.bank_name_ar}</small>` : ''}</td>
+        <td>${b.account_number || '—'}</td>
+        <td>${b.iban || '—'}</td>
+        <td class="text-center">${b.is_primary ? '<span class="badge bg-success">✓</span>' : ''}</td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-warning me-1" onclick="openBankPopup(${i})" title="${IS_AR ? 'تعديل' : 'Edit'}">
+                <i class="fas fa-pencil-alt"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="deleteBankFromGrid(${i})" title="${IS_AR ? 'حذف' : 'Delete'}">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    </tr>`;
   });
+
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
 }
 
 function clearBankPopup() {
@@ -687,11 +621,7 @@ function deleteBankFromGrid(idx) {
 }
 
 function refreshBankGrid() {
-  if (bankGridApi) {
-    bankGridApi.setGridOption('rowData', vendorBanks);
-  }
-  const countEl = document.getElementById('bankCount');
-  if (countEl) countEl.textContent = vendorBanks.length;
+  renderVendorBanks();
 }
 
 function loadBanksFromServer(vendorId) {
@@ -1243,7 +1173,7 @@ function updateStatus() {
 
 // ── Initialize ──
 document.addEventListener('DOMContentLoaded', function() {
-  initBankGrid();
+  renderVendorBanks();
   
   const p = new URLSearchParams(window.location.search);
   const eid = p.get('edit');

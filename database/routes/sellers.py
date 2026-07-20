@@ -861,7 +861,7 @@ def delete_document(did):
 @sellers_bp.route('/seller-documents')
 @login_required
 def list_seller_documents_page():
-    return render_template('seller_documents/list.html')
+    return render_template('sellers/seller_doc.html')
 
 
 @sellers_bp.route('/seller-documents/data')

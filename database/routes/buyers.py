@@ -84,7 +84,7 @@ def _save_departments_from_form(buyer_id):
 @login_required
 def list_buyers():
     buyers = BuyerMaster.query.order_by(BuyerMaster.buyer_name_en).all()
-    return render_template('lookups/buyers.html', buyers=buyers)
+    return render_template('buyers/buyers.html', buyers=buyers)
 
 @lookups_bp.route('/buyers/add', methods=['POST'])
 @login_required

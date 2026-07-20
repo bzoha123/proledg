@@ -241,7 +241,7 @@ def edit_buyer_document(did):
 @buyer_doc_bp.route('/buyer-documents')
 @login_required
 def list_buyer_documents_page():
-    return render_template('buyer_documents/list.html')
+    return render_template('buyers/buyer_doc.html')
 
 # ── 9. AG-GRID DATA FEED ─────────────────────────────────────────────
 @buyer_doc_bp.route('/buyer-documents/data')

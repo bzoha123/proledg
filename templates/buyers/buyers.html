@@ -695,18 +695,44 @@
               <i class="fas fa-chevron-down acc-arrow" id="arr-bbank"></i>
             </button>
             <div class="acc-body hidden" id="body-bbank">
-              <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
-                <button type="button" onclick="openBuyerBank()" class="bank-add-btn">
-                  <i class="fas fa-plus"></i> {% if ar %}إضافة بنك{% else %}Add Bank{% endif %}
-                </button>
+              <!-- Bank Information — Seller-styled -->
+              <div class="alert alert-info d-flex align-items-center mb-4">
+                <i class="fas fa-shield-alt me-2"></i>
+                <span>
+                  {% if ar %}
+                    يتم تخزين بيانات البنك بشكل آمن ومشفر.
+                  {% else %}
+                    Bank details are stored securely and encrypted.
+                  {% endif %}
+                </span>
               </div>
-              <div id="bankList_buyer">
-                <div class="bank-empty">
-                  <i class="fas fa-university"></i>
-                  <div class="bank-empty-text">{% if ar %}لم يتم إضافة بيانات بنك بعد{% else %}No bank accounts added yet{% endif %}</div>
+
+              <div class="row mb-3">
+                <div class="col-12">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                      <i class="fas fa-university me-2 text-primary"></i>
+                      {% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
+                    </h5>
+                    <button type="button" class="btn btn-primary" onclick="openBuyerBank()">
+                      <i class="fas fa-plus me-1"></i>
+                      {% if ar %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div id="bankHiddenFields"></div>
+
+              <div class="row">
+                <div class="col-12">
+                  <div id="bankList_buyer">
+                    <div class="text-center py-5 text-muted">
+                      <i class="fas fa-university fa-3x mb-3 d-block opacity-50"></i>
+                      <p>{% if ar %}لم يتم إضافة حسابات بنكية بعد{% else %}No bank accounts added yet{% endif %}</p>
+                    </div>
+                  </div>
+                  <div id="bankHiddenFields"></div>
+                </div>
+              </div>
             </div>
 
           </div>{# /accordion wrapper #}
@@ -734,82 +760,85 @@
 
 
 {# ══ BANK POPUP MODAL ═══════════════════════════════════════ #}
-<div class="modal fade pf-bank-modal" id="bankModal_buyer" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
+<!-- Bank Modal — Seller-styled -->
+<div class="modal fade" id="bankModal_buyer" tabindex="-1">
+  <div class="modal-dialog">
     <div class="modal-content">
-      <div class="pf-hdr">
-        <h5 id="bankModal_buyer_title"><i class="fas fa-university"></i> {% if ar %}حساب بنكي{% else %}Bank Account{% endif %}</h5>
+      <div class="modal-header">
+        <h5 class="modal-title" id="bankModal_buyer_title">
+          <i class="fas fa-university me-2"></i>
+          {% if ar %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="bm-body">
+      <div class="modal-body">
         <input type="hidden" id="bankModal_buyer_bank_id">
-
-        <div class="bm-row c2">
-          <div class="bm-field">
-            <div class="bm-label">{% if ar %}اسم البنك (EN){% else %}Bank Name{% endif %} <span class="req">*</span></div>
-            <div class="bm-input-wrap">
-              <input type="text" id="bankModal_buyer_name" class="bm-input" dir="ltr" placeholder="e.g. Al Rajhi Bank"
-                     oninput="bTrans('bankModal_buyer_name','bankModal_buyer_name_ar','en')">
-              <button type="button" class="bm-retrans" onclick="bRetrans('bankModal_buyer_name_ar','bankModal_buyer_name','ar')"><i class="fas fa-sync-alt"></i></button>
-            </div>
-          </div>
-          <div class="bm-field">
-            <div class="bm-label" dir="rtl">{% if ar %}اسم البنك{% else %}اسم البنك (AR){% endif %} <span class="req">*</span></div>
-            <div class="bm-input-wrap" dir="rtl">
-              <input type="text" id="bankModal_buyer_name_ar" class="bm-input" dir="rtl" placeholder="مثال: مصرف الراجحي"
-                     oninput="bTrans('bankModal_buyer_name_ar','bankModal_buyer_name','ar')">
-              <button type="button" class="bm-retrans ar" onclick="bRetrans('bankModal_buyer_name','bankModal_buyer_name_ar','en')"><i class="fas fa-sync-alt"></i></button>
-            </div>
-          </div>
+        <div class="mb-3">
+          <label class="form-label">
+            {% if ar %}اسم البنك{% else %}Bank Name{% endif %}
+            <span class="text-danger">*</span>
+          </label>
+          <input type="text" class="form-control" id="bankModal_buyer_name" dir="ltr"
+                 placeholder="{% if ar %}أدخل اسم البنك{% else %}Enter bank name{% endif %}"
+                 oninput="bTrans('bankModal_buyer_name','bankModal_buyer_name_ar','en')">
         </div>
-
-        <div class="bm-row c2">
-          <div class="bm-field">
-            <div class="bm-label">{% if ar %}الفرع (EN){% else %}Branch{% endif %} <span class="req">*</span></div>
-            <div class="bm-input-wrap">
-              <input type="text" id="bankModal_buyer_branch" class="bm-input" dir="ltr" placeholder="e.g. Main Branch"
-                     oninput="bTrans('bankModal_buyer_branch','bankModal_buyer_branch_ar','en')">
-              <button type="button" class="bm-retrans" onclick="bRetrans('bankModal_buyer_branch_ar','bankModal_buyer_branch','ar')"><i class="fas fa-sync-alt"></i></button>
-            </div>
-          </div>
-          <div class="bm-field">
-            <div class="bm-label" dir="rtl">{% if ar %}الفرع{% else %}الفرع (AR){% endif %} <span class="req">*</span></div>
-            <div class="bm-input-wrap" dir="rtl">
-              <input type="text" id="bankModal_buyer_branch_ar" class="bm-input" dir="rtl" placeholder="مثال: الفرع الرئيسي"
-                     oninput="bTrans('bankModal_buyer_branch_ar','bankModal_buyer_branch','ar')">
-              <button type="button" class="bm-retrans ar" onclick="bRetrans('bankModal_buyer_branch','bankModal_buyer_branch_ar','en')"><i class="fas fa-sync-alt"></i></button>
-            </div>
-          </div>
+        <div class="mb-3">
+          <label class="form-label" dir="rtl">
+            {% if ar %}اسم البنك (EN){% else %}Bank Name (AR){% endif %}
+          </label>
+          <input type="text" class="form-control" id="bankModal_buyer_name_ar" dir="rtl"
+                 placeholder="مثال: مصرف الراجحي"
+                 oninput="bTrans('bankModal_buyer_name_ar','bankModal_buyer_name','ar')">
         </div>
-
-        <div class="bm-divider"></div>
-
-        <div class="bm-row c3">
-          <div class="bm-field">
-            <div class="bm-label">{% if ar %}رقم الحساب{% else %}Account No.{% endif %} <span class="req">*</span></div>
-            <input type="text" id="bankModal_buyer_account" class="bm-input mono" dir="ltr" placeholder="001234567890">
-          </div>
-          <div class="bm-field">
-            <div class="bm-label">IBAN <span class="req">*</span></div>
-            <input type="text" id="bankModal_buyer_iban" class="bm-input mono" dir="ltr" placeholder="SA0380000000608010167519">
-          </div>
-          <div class="bm-field">
-            <div class="bm-label">SWIFT <span class="req">*</span></div>
-            <input type="text" id="bankModal_buyer_swift" class="bm-input mono" dir="ltr" placeholder="RJHISARI" style="text-transform:uppercase;">
-          </div>
+        <div class="mb-3">
+          <label class="form-label">
+            {% if ar %}رقم الحساب{% else %}Account Number{% endif %}
+            <span class="text-danger">*</span>
+          </label>
+          <input type="text" class="form-control" id="bankModal_buyer_account" dir="ltr"
+                 placeholder="{% if ar %}أدخل رقم الحساب{% else %}Enter account number{% endif %}">
         </div>
-
-        <label class="bm-primary-wrap">
-          <input type="checkbox" id="bankModal_buyer_primary">
-          <div>
-            <div class="bm-primary-label">{% if ar %}تعيين كحساب رئيسي{% else %}Set as primary account{% endif %}</div>
-            <div style="font-size:11px;color:#9ca3af;margin-top:1px;">{% if ar %}سيظهر هذا الحساب أولاً في القوائم{% else %}This account will appear first in listings{% endif %}</div>
-          </div>
-        </label>
+        <div class="mb-3">
+          <label class="form-label">IBAN</label>
+          <input type="text" class="form-control text-uppercase" id="bankModal_buyer_iban" dir="ltr"
+                 placeholder="{% if ar %}أدخل رقم IBAN{% else %}Enter IBAN number{% endif %}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">SWIFT/BIC</label>
+          <input type="text" class="form-control text-uppercase" id="bankModal_buyer_swift" dir="ltr"
+                 placeholder="{% if ar %}أدخل كود SWIFT{% else %}Enter SWIFT code{% endif %}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">
+            {% if ar %}الفرع{% else %}Branch{% endif %}
+          </label>
+          <input type="text" class="form-control" id="bankModal_buyer_branch" dir="ltr"
+                 placeholder="{% if ar %}أدخل اسم الفرع{% else %}Enter branch name{% endif %}"
+                 oninput="bTrans('bankModal_buyer_branch','bankModal_buyer_branch_ar','en')">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" dir="rtl">
+            {% if ar %}الفرع (EN){% else %}Branch (AR){% endif %}
+          </label>
+          <input type="text" class="form-control" id="bankModal_buyer_branch_ar" dir="rtl"
+                 placeholder="مثال: الفرع الرئيسي"
+                 oninput="bTrans('bankModal_buyer_branch_ar','bankModal_buyer_branch','ar')">
+        </div>
+        <div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="bankModal_buyer_primary">
+          <label class="form-check-label" for="bankModal_buyer_primary">
+            {% if ar %}حساب رئيسي{% else %}Primary Account{% endif %}
+          </label>
+        </div>
       </div>
-      <div class="pf-footer">
-        <button type="button" class="pf-btn secondary" data-bs-dismiss="modal"><i class="fas fa-times"></i> {% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button type="button" class="pf-btn primary" onclick="saveBuyerBankToArray()"><i class="fas fa-save"></i> {% if ar %}حفظ{% else %}Save Bank{% endif %}</button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          {% if ar %}إلغاء{% else %}Cancel{% endif %}
+        </button>
+        <button type="button" class="btn btn-primary" onclick="saveBuyerBankToArray()">
+          <i class="fas fa-save me-1"></i>
+          {% if ar %}حفظ{% else %}Save{% endif %}
+        </button>
       </div>
     </div>
   </div>
@@ -1318,56 +1347,39 @@ function renderBankTable() {
 
   if (!_banks.length) {
     wrap.innerHTML = `
-      <div class="bank-empty">
-        <i class="fas fa-university"></i>
-        <div class="bank-empty-text">${IS_AR?'لم يتم إضافة بيانات بنك بعد':'No bank accounts added yet'}</div>
+      <div class="text-center py-5 text-muted">
+        <i class="fas fa-university fa-3x mb-3 d-block opacity-50"></i>
+        <p>${IS_AR ? 'لم يتم إضافة حسابات بنكية بعد' : 'No bank accounts added yet'}</p>
       </div>`;
     return;
   }
 
-  let html = `
-    <div class="bank-table-wrap">
-      <table class="bank-table">
-        <thead><tr>
-          <th>${IS_AR?'اسم البنك':'Bank Name'}</th>
-          <th>${IS_AR?'الفرع':'Branch'}</th>
-          <th>${IS_AR?'رقم الحساب':'Account No.'}</th>
-          <th>IBAN</th>
-          <th>SWIFT</th>
-          <th style="text-align:center;">${IS_AR?'رئيسي':'Primary'}</th>
-          <th style="text-align:center;width:72px;"></th>
-        </tr></thead>
-        <tbody>`;
+  let html = `<div class="table-responsive"><table class="table table-hover table-bordered"><thead class="table-light"><tr>
+      <th>${IS_AR ? 'اسم البنك' : 'Bank Name'}</th>
+      <th>${IS_AR ? 'رقم الحساب' : 'Account Number'}</th>
+      <th>IBAN</th>
+      <th>${IS_AR ? 'رئيسي' : 'Primary'}</th>
+      <th style="width:120px;text-align:center;">${IS_AR ? 'إجراءات' : 'Actions'}</th>
+  </tr></thead><tbody>`;
 
   _banks.forEach((b, i) => {
-    html += `
-      <tr class="${b.is_primary?'is-primary':''}" style="background:${b.is_primary?'#f0fdf4':''};">
-        <td>
-          <div class="bank-name-main">${b.bank_name||'—'}</div>
-          ${b.bank_name_ar?`<div class="bank-name-sub">${b.bank_name_ar}</div>`:''}
+    html += `<tr>
+        <td><strong>${b.bank_name || '—'}</strong>${b.bank_name_ar ? `<br><small class="text-muted">${b.bank_name_ar}</small>` : ''}</td>
+        <td>${b.account_number || '—'}</td>
+        <td>${b.iban || '—'}</td>
+        <td class="text-center">${b.is_primary ? '<span class="badge bg-success">✓</span>' : ''}</td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-warning me-1" onclick="openBuyerBank(${i})" title="${IS_AR ? 'تعديل' : 'Edit'}">
+                <i class="fas fa-pencil-alt"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="deleteBankFromArray(${i})" title="${IS_AR ? 'حذف' : 'Delete'}">
+                <i class="fas fa-trash"></i>
+            </button>
         </td>
-        <td>
-          <div>${b.branch||'—'}</div>
-          ${b.branch_ar?`<div class="bank-name-sub">${b.branch_ar}</div>`:''}
-        </td>
-        <td><span class="bank-mono">${b.account_number||'—'}</span></td>
-        <td><span class="bank-mono-sm">${b.iban||'—'}</span></td>
-        <td><span class="bank-mono">${b.swift_code||'—'}</span></td>
-        <td style="text-align:center;">
-          ${b.is_primary
-            ?`<span class="bank-primary-badge"><i class="fas fa-check-circle"></i> ${IS_AR?'رئيسي':'Primary'}</span>`
-            :`<span class="bank-dash">—</span>`}
-        </td>
-        <td style="text-align:center;">
-          <div class="pl-act" style="justify-content:center;">
-            <button class="pl-btn pl-edit" onclick="openBuyerBank(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
-            <button class="pl-btn pl-del" onclick="deleteBankFromArray(${i})" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
-          </div>
-        </td>
-      </tr>`;
+    </tr>`;
   });
 
-  html += `</tbody></table></div>`;
+  html += '</tbody></table></div>';
   wrap.innerHTML = html;
 }
 

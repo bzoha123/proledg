@@ -333,13 +333,13 @@ def purchase_next_no():
 @pur_bp.route('/purchase/vendors')
 @login_required
 def vendor_list():
-    return render_template('purchase/vendor_list.html')
+    return render_template('vendor/vendor_list.html')
 
 @pur_bp.route('/purchase/vendors/<int:id>')
 @login_required
 def vendor_view(id):
     v = VendorMaster.query.get_or_404(id)
-    return render_template('purchase/vendor_view.html', vendor=v)
+    return render_template('vendor/vendor_view.html', vendor=v)
 
 @pur_bp.route('/purchase/vendors/data')
 @login_required

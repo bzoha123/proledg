@@ -1230,18 +1230,48 @@
           </div>
 
           {{ sec('bank','university','Banking Information','معلومات البنك') }}
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-                <div style="font-size:13px;font-weight:700;color:#374151;display:flex;align-items:center;gap:8px;">
-                  <i class="fas fa-university" style="color:#2563eb;"></i>{% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
-                  <span id="bankBadge_emp" class="pf-badge-blue">0</span>
-                </div>
-                <button type="button" onclick="openEmpBank()"
-                  style="padding:7px 16px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
-                  <i class="fas fa-plus"></i> {% if ar %}إضافة حساب{% else %}Add Bank{% endif %}
-                </button>
+              <!-- Bank Information — Seller-styled -->
+              <div class="card card-modern">
+                <div class="card-body">
+                  <div class="alert alert-info d-flex align-items-center mb-4">
+                <i class="fas fa-shield-alt me-2"></i>
+                <span>
+                  {% if ar %}
+                    يتم تخزين بيانات البنك بشكل آمن ومشفر.
+                  {% else %}
+                    Bank details are stored securely and encrypted.
+                  {% endif %}
+                </span>
               </div>
-              <div id="bankList_emp">
-                <div class="pf-empty"><i class="fas fa-university"></i>{% if ar %}لا توجد حسابات بنكية{% else %}No bank accounts yet{% endif %}</div>
+
+              <!-- Bank List Display -->
+              <div class="row mb-3">
+                <div class="col-12">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                      <i class="fas fa-university me-2 text-primary"></i>
+                      {% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
+                      <span id="bankBadge_emp" class="badge bg-primary ms-2" style="display:none;">0</span>
+                    </h5>
+                    <button type="button" class="btn btn-primary" onclick="openEmpBank()">
+                      <i class="fas fa-plus me-1"></i>
+                      {% if ar %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-12">
+                  <div id="bankList_emp">
+                    <div class="text-center py-5 text-muted">
+                      <i class="fas fa-university fa-3x mb-3 d-block opacity-50"></i>
+                      <p>{% if ar %}لم يتم إضافة حسابات بنكية بعد{% else %}No bank accounts added yet{% endif %}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1362,67 +1392,82 @@
   </div></div>
 </div>
 
-<div class="modal fade pf-bank-modal" id="bankModal_emp" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
+<!-- Bank Modal — Seller-styled -->
+<div class="modal fade" id="bankModal_emp" tabindex="-1">
+  <div class="modal-dialog">
     <div class="modal-content">
-      <div class="pf-hdr">
-        <h5 id="bankModal_emp_title"><i class="fas fa-university"></i> {% if ar %}حساب بنكي{% else %}Bank Account{% endif %}</h5>
+      <div class="modal-header">
+        <h5 class="modal-title" id="bankModal_emp_title">
+          <i class="fas fa-university me-2"></i>
+          {% if ar %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div style="padding:22px;background:#f8fafc;">
+      <div class="modal-body">
         <input type="hidden" id="bankModal_emp_bank_id">
-        <div class="pf-row cols-2" style="margin-bottom:14px;">
-          <div class="pf-field">
-            <div class="pf-label">{% if ar %}اسم البنك{% else %}Bank Name{% endif %} <span class="req">*</span></div>
-            <div class="pf-input-wrap">
-              <input type="text" id="bankModal_emp_name" class="pf-input" placeholder="e.g. Al Rajhi Bank"
-                     dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                     oninput="biTransPair('bankModal_emp_name','bankModal_emp_name_ar','{% if ar %}ar{% else %}en{% endif %}')">
-              <button type="button" class="pf-retrans" onclick="biTransRetrans('bankModal_emp_name','bankModal_emp_name_ar','{% if ar %}ar{% else %}en{% endif %}')"><i class="fas fa-sync-alt"></i></button>
-            </div>
-          </div>
-          <div class="pf-field">
-            <div class="pf-label" dir="rtl">{% if ar %}اسم البنك (EN){% else %}Bank Name (AR){% endif %}</div>
-            <input type="text" id="bankModal_emp_name_ar" class="pf-input" dir="{% if ar %}ltr{% else %}rtl{% endif %}">
-          </div>
+        <div class="mb-3">
+          <label class="form-label">
+            {% if ar %}اسم البنك{% else %}Bank Name{% endif %}
+            <span class="text-danger">*</span>
+          </label>
+          <input type="text" class="form-control" id="bankModal_emp_name"
+                 dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                 placeholder="{% if ar %}أدخل اسم البنك{% else %}Enter bank name{% endif %}"
+                 oninput="biTransPair('bankModal_emp_name','bankModal_emp_name_ar','{% if ar %}ar{% else %}en{% endif %}')">
         </div>
-        <div class="pf-row cols-2" style="margin-bottom:14px;">
-          <div class="pf-field">
-            <div class="pf-label">{% if ar %}رقم الحساب{% else %}Account Number{% endif %}</div>
-            <input type="text" id="bankModal_emp_account" class="pf-input" dir="ltr">
-          </div>
-          <div class="pf-field">
-            <div class="pf-label">{% if ar %}الفرع{% else %}Branch{% endif %}</div>
-            <div class="pf-input-wrap">
-              <input type="text" id="bankModal_emp_branch" class="pf-input"
-                     dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                     oninput="biTransPair('bankModal_emp_branch','bankModal_emp_branch_ar','{% if ar %}ar{% else %}en{% endif %}')">
-              <button type="button" class="pf-retrans" onclick="biTransRetrans('bankModal_emp_branch','bankModal_emp_branch_ar','{% if ar %}ar{% else %}en{% endif %}')"><i class="fas fa-sync-alt"></i></button>
-            </div>
-          </div>
+        <div class="mb-3">
+          <label class="form-label" dir="rtl">
+            {% if ar %}اسم البنك (EN){% else %}Bank Name (AR){% endif %}
+          </label>
+          <input type="text" class="form-control" id="bankModal_emp_name_ar" dir="{% if ar %}ltr{% else %}rtl{% endif %}">
         </div>
-        <div class="pf-row cols-3" style="margin-bottom:14px;">
-          <div class="pf-field">
-            <div class="pf-label" dir="rtl">{% if ar %}الفرع (EN){% else %}Branch (AR){% endif %}</div>
-            <input type="text" id="bankModal_emp_branch_ar" class="pf-input" dir="{% if ar %}ltr{% else %}rtl{% endif %}">
-          </div>
-          <div class="pf-field">
-            <div class="pf-label">SWIFT</div>
-            <input type="text" id="bankModal_emp_swift" class="pf-input" dir="ltr" style="text-transform:uppercase;">
-          </div>
-          <div class="pf-field">
-            <div class="pf-label">IBAN</div>
-            <input type="text" id="bankModal_emp_iban" class="pf-input" dir="ltr">
-          </div>
+        <div class="mb-3">
+          <label class="form-label">
+            {% if ar %}رقم الحساب{% else %}Account Number{% endif %}
+          </label>
+          <input type="text" class="form-control" id="bankModal_emp_account" dir="ltr"
+                 placeholder="{% if ar %}أدخل رقم الحساب{% else %}Enter account number{% endif %}">
         </div>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#374151;">
-          <input type="checkbox" id="bankModal_emp_primary" style="width:16px;height:16px;accent-color:#2563eb;cursor:pointer;">
-          {% if ar %}تعيين كحساب رئيسي{% else %}Set as primary account{% endif %}
-        </label>
+        <div class="mb-3">
+          <label class="form-label">IBAN</label>
+          <input type="text" class="form-control text-uppercase" id="bankModal_emp_iban" dir="ltr"
+                 placeholder="{% if ar %}أدخل رقم IBAN{% else %}Enter IBAN number{% endif %}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">SWIFT/BIC</label>
+          <input type="text" class="form-control text-uppercase" id="bankModal_emp_swift" dir="ltr"
+                 placeholder="{% if ar %}أدخل كود SWIFT{% else %}Enter SWIFT code{% endif %}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">
+            {% if ar %}الفرع{% else %}Branch{% endif %}
+          </label>
+          <input type="text" class="form-control" id="bankModal_emp_branch"
+                 dir="{% if ar %}rtl{% else %}ltr{% endif %}"
+                 placeholder="{% if ar %}أدخل اسم الفرع{% else %}Enter branch name{% endif %}"
+                 oninput="biTransPair('bankModal_emp_branch','bankModal_emp_branch_ar','{% if ar %}ar{% else %}en{% endif %}')">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" dir="rtl">
+            {% if ar %}الفرع (EN){% else %}Branch (AR){% endif %}
+          </label>
+          <input type="text" class="form-control" id="bankModal_emp_branch_ar" dir="{% if ar %}ltr{% else %}rtl{% endif %}">
+        </div>
+        <div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="bankModal_emp_primary">
+          <label class="form-check-label" for="bankModal_emp_primary">
+            {% if ar %}حساب رئيسي{% else %}Primary Account{% endif %}
+          </label>
+        </div>
       </div>
-      <div class="pf-footer">
-        <button type="button" class="pf-btn secondary" data-bs-dismiss="modal"><i class="fas fa-times"></i> {% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
-        <button type="button" class="pf-btn primary" onclick="saveEmpBank()"><i class="fas fa-save"></i> {% if ar %}حفظ{% else %}Save Bank{% endif %}</button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          {% if ar %}إلغاء{% else %}Cancel{% endif %}
+        </button>
+        <button type="button" class="btn btn-primary" onclick="saveEmpBank()">
+          <i class="fas fa-save me-1"></i>
+          {% if ar %}حفظ{% else %}Save{% endif %}
+        </button>
       </div>
     </div>
   </div>
@@ -2217,10 +2262,7 @@ function resetEmpForm() {
   if (_profCache) renderProfDDList(_profCache, '');
 
   _empPendingBanks = [];
-  const bankList = document.getElementById('bankList_emp');
-  if (bankList) bankList.innerHTML = '<div class="pf-empty"><i class="fas fa-university"></i>'+(IS_AR?'لا توجد حسابات بنكية':'No bank accounts yet')+'</div>';
-  const bankBadge = document.getElementById('bankBadge_emp');
-  if (bankBadge) bankBadge.textContent = '0';
+  if (typeof renderEmpBanks === 'function') renderEmpBanks();
 
   document.querySelectorAll('.mcq-opt').forEach(b => b.classList.remove('chosen'));
   document.getElementById('f_shift').value = 'day';   // default
@@ -2748,33 +2790,47 @@ function deleteEmpBank(key) {
 function renderEmpBanks() {
   const wrap = document.getElementById('bankList_emp');
   const badge = document.getElementById('bankBadge_emp');
-  if (badge) badge.textContent = _empPendingBanks.length;
+  if (badge) {
+    badge.textContent = _empPendingBanks.length;
+    badge.style.display = _empPendingBanks.length > 0 ? 'inline-block' : 'none';
+  }
   if (!wrap) return;
   if (!_empPendingBanks.length) {
-    wrap.innerHTML = '<div class="pf-empty"><i class="fas fa-university"></i>'+(IS_AR?'لا توجد حسابات بنكية':'No bank accounts yet')+'</div>';
+    wrap.innerHTML = `
+      <div class="text-center py-5 text-muted">
+        <i class="fas fa-university fa-3x mb-3 d-block opacity-50"></i>
+        <p>${IS_AR ? 'لم يتم إضافة حسابات بنكية بعد' : 'No bank accounts added yet'}</p>
+      </div>`;
     return;
   }
-  wrap.innerHTML = _empPendingBanks.map(b => `
-    <div class="pf-bank-card ${b.is_primary?'primary':''}">
-      <div>
-        <div class="pf-bank-card-name">
-          <i class="fas fa-university" style="color:#2563eb;font-size:14px;"></i>
-          ${b.bank_name||'—'}${b.bank_name_ar?` <span style="color:#9ca3af;font-weight:500;font-size:11px;">${b.bank_name_ar}</span>`:''}
-          ${b.is_primary?'<span class="pf-badge-primary">'+(IS_AR?'رئيسي':'PRIMARY')+'</span>':''}
-        </div>
-        <div class="pf-bank-card-meta">
-          ${b.account_number?`<span><i class="fas fa-hashtag"></i>${b.account_number}</span>`:''}
-          ${b.branch?`<span><i class="fas fa-map-marker-alt"></i>${b.branch}</span>`:''}
-          ${b.swift_code?`<span><i class="fas fa-globe"></i>${b.swift_code}</span>`:''}
-          ${b.iban?`<span><i class="fas fa-credit-card"></i>${b.iban}</span>`:''}
-        </div>
-      </div>
-      <div class="pf-bank-actions">
-        <button type="button" onclick="openEmpBank('${b._key}')" style="width:28px;height:28px;background:#fef3c7;color:#d97706;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-pencil-alt"></i></button>
-        <button type="button" onclick="deleteEmpBank('${b._key}')" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;"><i class="fas fa-trash"></i></button>
-      </div>
-    </div>
-  `).join('');
+
+  let html = `<div class="table-responsive"><table class="table table-hover table-bordered"><thead class="table-light"><tr>
+      <th>${IS_AR ? 'اسم البنك' : 'Bank Name'}</th>
+      <th>${IS_AR ? 'رقم الحساب' : 'Account Number'}</th>
+      <th>IBAN</th>
+      <th>${IS_AR ? 'رئيسي' : 'Primary'}</th>
+      <th style="width:120px;text-align:center;">${IS_AR ? 'إجراءات' : 'Actions'}</th>
+  </tr></thead><tbody>`;
+
+  _empPendingBanks.forEach((b) => {
+    html += `<tr>
+        <td><strong>${b.bank_name || '—'}</strong>${b.bank_name_ar ? `<br><small class="text-muted">${b.bank_name_ar}</small>` : ''}</td>
+        <td>${b.account_number || '—'}</td>
+        <td>${b.iban || '—'}</td>
+        <td class="text-center">${b.is_primary ? '<span class="badge bg-success">✓</span>' : ''}</td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-warning me-1" onclick="openEmpBank('${b._key}')" title="${IS_AR ? 'تعديل' : 'Edit'}">
+                <i class="fas fa-pencil-alt"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="deleteEmpBank('${b._key}')" title="${IS_AR ? 'حذف' : 'Delete'}">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    </tr>`;
+  });
+
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
 }
 
 function loadEmpBanks(empId) {

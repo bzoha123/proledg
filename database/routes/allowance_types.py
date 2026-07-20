@@ -78,7 +78,7 @@ def allowance_types_data():
 @login_required
 def list_allowance_types():
     types = AllowanceType.query.order_by(AllowanceType.allowance_code).all()
-    return render_template('lookups/allowance_types.html', types=types)
+    return render_template('employees/allowance_types.html', types=types)
 
 @lookups_bp.route('/allowance-types/add', methods=['POST'])
 @login_required

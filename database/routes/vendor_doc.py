@@ -213,7 +213,7 @@ def _get_full_file_path(doc):
 @vendor_doc_bp.route('/vendor-documents')
 @login_required
 def list_vendor_documents_page():
-    return render_template('vendor_documents/list.html')
+    return render_template('vendor/vendor_doc.html')
 
 
 @vendor_doc_bp.route('/vendor-documents/vendors-list')

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{{ title_en }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-3" data-kind="{{ kind }}">
+  <h3 class="mb-3">
+    {{ title_ar if current_locale == 'ar' else title_en }}
+  </h3>
+  {# Data is loaded via the tax_codes JSON endpoints for kind='{{ kind }}'. #}
+  <div class="table-responsive">
+    <table class="table table-striped align-middle" id="tax-table">
+      <thead>
+        <tr>
+          <th>{{ 'الرمز' if current_locale == 'ar' else 'Code' }}</th>
+          <th>{{ 'الوصف' if current_locale == 'ar' else 'Description' }}</th>
+          <th>{{ 'النسبة %' if current_locale == 'ar' else 'Rate %' }}</th>
+        </tr>
+      </thead>
+      <tbody><!-- populated client-side --></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

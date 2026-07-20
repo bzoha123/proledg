@@ -22,7 +22,7 @@ def list_allowances():
     for emp in employees:
         for a in emp.allowance_rows.order_by(EmployeeAllowance.id).all():
             rows.append({'allowance': a, 'employee': emp})
-    return render_template('lookups/allowances.html', rows=rows, employees=employees)
+    return render_template('employees/allowances.html', rows=rows, employees=employees)
 
 @lookups_bp.route('/allowances/add', methods=['POST'])
 @login_required
