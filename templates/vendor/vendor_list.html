@@ -183,6 +183,71 @@
 }
 .status-active { background:#dcfce7;color:#15803d; }
 .status-inactive { background:#f1f5f9;color:#6b7280; }
+
+/* ===== Seller-parity Bank Information styles (ported) ===== */
+.bnkp{--blue:#2563eb;--blue-100:#dbeafe;--teal:#0d9488;--navy:#1e3a5f;--green:#16a34a;--green-50:#f0fdf4;--gray-50:#f8fafc;--gray-100:#f1f5f9;--gray-200:#e2e8f0;--gray-300:#d1d5db;--gray-400:#9ca3af;--gray-600:#4b5563;--gray-700:#374151;--gray-900:#111827;--red:#ef4444;--red-50:#fef2f2;--amber:#f59e0b;--r-md:10px;--r-lg:14px;}
+.bi-group{margin-bottom:18px;} .bi-group:last-child{margin-bottom:0;}
+.bi-labels{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:5px;}
+.bi-lbl-en{font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:4px;}
+.bi-lbl-ar{font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:4px;justify-content:flex-end;direction:rtl;}
+.req{color:#ef4444;font-size:14px;line-height:1;}
+.lang-pip{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:800;letter-spacing:.4px;}
+.pip-src{background:#dcfce7;color:#15803d;} .pip-auto{background:#f1f5f9;color:#6b7280;}
+.bi-inputs{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.bi-wrap{position:relative;}
+.mono-group{margin-bottom:18px;} .mono-group:last-child{margin-bottom:0;}
+.mono-lbl{font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:4px;margin-bottom:5px;}
+.fg-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;} .fg-2:last-child{margin-bottom:0;}
+@media(max-width:680px){.fg-2,.bi-labels,.bi-inputs{grid-template-columns:1fr;}}
+.sf-inp{width:100%;padding:9px 12px;font-size:13px;color:#111827;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;outline:none;font-family:inherit;box-sizing:border-box;transition:border-color .15s,box-shadow .15s;}
+.sf-inp:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.sf-inp.secondary{background:#fafbfc;color:#4b5563;}
+.sf-inp.secondary:focus{border-color:#0d9488;box-shadow:0 0 0 3px rgba(13,148,136,.1);}
+.sf-inp.is-invalid{border-color:#ef4444;background:#fef2f2;}
+.sf-spin{position:absolute;top:50%;transform:translateY(-50%);right:10px;pointer-events:none;font-size:11px;color:#9ca3af;}
+.sf-retrans{position:absolute;top:50%;transform:translateY(-50%);right:9px;width:22px;height:22px;border:none;border-radius:5px;background:#dbeafe;color:#2563eb;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;opacity:.7;transition:opacity .15s;}
+.sf-retrans:hover{opacity:1;}
+.sf-inp.has-btn{padding-right:38px;}
+.sf-err{font-size:11px;font-weight:600;color:#ef4444;margin-top:4px;display:none;align-items:center;gap:4px;}
+.sf-err.show{display:flex;} .sf-err i{font-size:10px;}
+.bank-add-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;border:none;cursor:pointer;background:#0d9488;color:#fff;font-size:12.5px;font-weight:700;transition:all .15s;margin-bottom:16px;}
+.bank-add-btn:hover{filter:brightness(.94);transform:translateY(-1px);box-shadow:0 3px 10px rgba(13,148,136,.3);}
+.bank-tbl-wrap{border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;}
+.bank-tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
+.bank-tbl thead tr{background:#1e3a5f;}
+.bank-tbl thead th{padding:10px 12px;color:#fff;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;}
+.bank-tbl tbody tr{border-bottom:1px solid #f1f5f9;transition:background .1s;}
+.bank-tbl tbody tr:last-child{border-bottom:none;}
+.bank-tbl tbody tr:hover{background:#eff6ff;}
+.bank-tbl tbody tr.is-primary{background:#f0fdf4;}
+.bank-tbl td{padding:9px 12px;color:#374151;vertical-align:middle;}
+.bank-tbl .td-mono{font-family:monospace;font-size:12px;color:#4b5563;}
+.bank-tbl .td-acts{display:flex;gap:4px;justify-content:center;}
+.bank-empty{text-align:center;padding:22px;color:#9ca3af;font-size:12.5px;background:#fafbfc;}
+.bank-empty i{font-size:22px;display:block;margin-bottom:6px;opacity:.3;}
+.primary-check{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#15803d;}
+.primary-check i{color:#16a34a;}
+.bnk-actbtn{width:28px;height:28px;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:10px;}
+.bnk-actbtn.edit{background:#fef3c7;color:#d97706;} .bnk-actbtn.del{background:#fee2e2;color:#dc2626;}
+.sf-btn{padding:9px 22px;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px;transition:all .15s;}
+.sf-btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.15);}
+.sf-btn.save{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;}
+.sf-btn.cancel{background:#fff;color:#374151;border:1.5px solid #d1d5db;}
+.sf-btn.reset{background:#fff;color:#0d9488;border:1.5px solid #ccfbf1;}
+.bm-modal .modal-dialog{max-width:680px;}
+.bm-modal .modal-content{border:none;border-radius:14px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.28);}
+.bm-hdr{background:linear-gradient(135deg,#ea580c 0%,#f97316 100%);padding:15px 22px;display:flex;align-items:center;justify-content:space-between;}
+.bm-hdr h5{margin:0;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.bm-hdr .btn-close{filter:brightness(0) invert(1);opacity:.8;}
+.bm-body{padding:22px 22px 0;}
+.bm-footer{padding:16px 22px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;}
+.bm-hint{font-size:11px;color:#0d9488;font-style:italic;}
+.primary-toggle{display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:16px;padding:11px 14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;font-size:13px;color:#374151;}
+.primary-toggle input{width:17px;height:17px;accent-color:#16a34a;cursor:pointer;}
+.bm-section-lbl{display:flex;align-items:center;gap:7px;margin:0 0 12px;color:#9ca3af;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+.bm-section-lbl i{font-size:11px;} .bm-section-lbl::after{content:'';flex:1;height:1px;background:#e2e8f0;}
+.bm-section{margin-bottom:18px;} .bm-section:last-child{margin-bottom:0;}
+
 </style>
 {% endblock %}
 
@@ -354,42 +419,25 @@
               <i class="fas fa-chevron-down" id="ch_va3" style="color:#9ca3af;font-size:11px;"></i>
             </button>
             <div class="acc-body" id="va3">
-              <!-- Bank Information — Seller-styled -->
-              <div class="alert alert-info d-flex align-items-center mb-4">
-                <i class="fas fa-shield-alt me-2"></i>
-                <span>
-                  {% if ar %}
-                    يتم تخزين بيانات البنك بشكل آمن ومشفر.
-                  {% else %}
-                    Bank details are stored securely and encrypted.
-                  {% endif %}
-                </span>
-              </div>
-
-              <div class="row mb-3">
-                <div class="col-12">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                      <i class="fas fa-university me-2 text-primary"></i>
-                      {% if ar %}الحسابات البنكية{% else %}Bank Accounts{% endif %}
-                    </h5>
-                    <button type="button" class="btn btn-primary" onclick="openBankPopup()">
-                      <i class="fas fa-plus me-1"></i>
-                      {% if ar %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
-                    </button>
-                  </div>
+              <!-- Bank Information — ported from Seller (sellers/list.html) -->
+              <div class="bnkp">
+                <button type="button" class="bank-add-btn" onclick="openBankPopup()"><i class="fas fa-plus"></i>{% if ar %}إضافة بيانات بنك / Add Bank Details{% else %}+ Add Bank Details / إضافة بيانات بنك{% endif %}</button>
+                <div id="bankTblWrap_vnd" class="bank-tbl-wrap" style="display:none;">
+                  <table class="bank-tbl">
+                    <thead><tr>
+                      <th>{% if ar %}اسم البنك{% else %}Bank Name{% endif %}</th>
+                      <th>{% if ar %}الفرع{% else %}Branch{% endif %}</th>
+                      <th>{% if ar %}رقم الحساب{% else %}Account No.{% endif %}</th>
+                      <th>IBAN</th>
+                      <th>SWIFT</th>
+                      <th style="text-align:center;">{% if ar %}رئيسي{% else %}Primary{% endif %}</th>
+                      <th style="text-align:center;">{% if ar %}إجراءات{% else %}Actions{% endif %}</th>
+                    </tr></thead>
+                    <tbody id="bankTblBody_vnd"></tbody>
+                  </table>
                 </div>
-              </div>
-
-              <div class="row">
-                <div class="col-12">
-                  <div id="bankList">
-                    <div class="text-center py-5 text-muted">
-                      <i class="fas fa-university fa-3x mb-3 d-block opacity-50"></i>
-                      <p>{% if ar %}لم يتم إضافة حسابات بنكية بعد{% else %}No bank accounts added yet{% endif %}</p>
-                    </div>
-                  </div>
-                </div>
+                <div id="bankList" style="display:none;"></div>
+                <div id="bankEmptyMsg_vnd" class="bank-empty"><i class="fas fa-university"></i>{% if ar %}لم يتم إضافة بيانات بنك / No bank details added{% else %}No bank details added / لم يتم إضافة بيانات بنك{% endif %}</div>
               </div>
             </div>
           </div>
@@ -405,87 +453,89 @@
 </div>
 
 {# ═══ BANK POPUP MODAL — Seller-styled ═══ #}
-<div class="modal fade" id="bankModal" tabindex="-1">
-  <div class="modal-dialog">
+<!-- Bank Modal — ported from Seller (sellers/list.html) -->
+<div class="modal fade bm-modal" id="bankModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="bankModalTitle">
-          <i class="fas fa-university me-2"></i>
-          {% if ar %}إضافة حساب بنكي{% else %}Add Bank Account{% endif %}
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="bm-hdr">
+        <h5 id="bankModalTitle"><i class="fas fa-university"></i>{% if ar %}إضافة تفاصيل البنك / Add Bank Details{% else %}Add Bank Details / إضافة تفاصيل البنك{% endif %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body">
+      <div class="bm-body bnkp">
         <input type="hidden" id="bank_edit_idx" value="">
-        <div class="mb-3">
-          <label class="form-label">
-            {% if ar %}اسم البنك{% else %}Bank Name{% endif %}
-            <span class="text-danger">*</span>
+        <div class="bm-section">
+          <div class="bm-section-lbl"><i class="fas fa-user-circle"></i>{% if ar %}صاحب الحساب / Account holder{% else %}Account holder / صاحب الحساب{% endif %}</div>
+          <div class="bi-group" style="margin-bottom:0;">
+            <div class="bi-labels">
+              <div class="bi-lbl-en">{% if ar %}اسم البنك{% else %}Bank Name{% endif %}<span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span><span class="req">*</span></div>
+              <div class="bi-lbl-ar"><span class="req">*</span><span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>{% if ar %}Bank Name{% else %}اسم البنك{% endif %}</div>
+            </div>
+            <div class="bi-inputs">
+              {% if ar %}
+              <div class="bi-wrap"><input type="text" id="bank_name_ar" class="sf-inp has-btn" dir="rtl" placeholder="أدخل اسم البنك" oninput="vTrans('bank_name_ar','bank_name_en','ar');clrInvVnd(this,'err_vbm_name')"><button type="button" class="sf-retrans" onclick="doRetrans('bank_name_ar','bank_name_en','ar')" title="إعادة ترجمة"><i class="fas fa-sync-alt"></i></button></div>
+              <div class="bi-wrap"><input type="text" id="bank_name_en" class="sf-inp secondary" dir="ltr" placeholder="Enter bank name"></div>
+              {% else %}
+              <div class="bi-wrap"><input type="text" id="bank_name_en" class="sf-inp has-btn" dir="ltr" placeholder="Enter bank name" oninput="vTrans('bank_name_en','bank_name_ar','en');clrInvVnd(this,'err_vbm_name')"><button type="button" class="sf-retrans" onclick="doRetrans('bank_name_en','bank_name_ar','en')" title="Re-translate"><i class="fas fa-sync-alt"></i></button></div>
+              <div class="bi-wrap"><input type="text" id="bank_name_ar" class="sf-inp secondary" dir="rtl" placeholder="أدخل اسم البنك"></div>
+              {% endif %}
+            </div>
+            <div class="sf-err" id="err_vbm_name"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}اسم البنك مطلوب{% else %}Bank name is required{% endif %}</span></div>
+          </div>
+        </div>
+        <div class="bm-section">
+          <div class="bm-section-lbl"><i class="fas fa-code-branch"></i>{% if ar %}الفرع / Branch{% else %}Branch / الفرع{% endif %}</div>
+          <div class="bi-group" style="margin-bottom:0;">
+            <div class="bi-labels">
+              <div class="bi-lbl-en">{% if ar %}الفرع{% else %}Branch{% endif %}<span class="lang-pip pip-src">{% if ar %}AR{% else %}EN{% endif %}</span></div>
+              <div class="bi-lbl-ar"><span class="lang-pip pip-auto">{% if ar %}EN{% else %}AR{% endif %}</span>{% if ar %}Branch{% else %}الفرع{% endif %}</div>
+            </div>
+            <div class="bi-inputs">
+              {% if ar %}
+              <div class="bi-wrap"><input type="text" id="bank_branch_ar" class="sf-inp has-btn" dir="rtl" placeholder="أدخل اسم الفرع" oninput="vTrans('bank_branch_ar','bank_branch_en','ar')"><button type="button" class="sf-retrans" onclick="doRetrans('bank_branch_ar','bank_branch_en','ar')" title="إعادة ترجمة"><i class="fas fa-sync-alt"></i></button></div>
+              <div class="bi-wrap"><input type="text" id="bank_branch_en" class="sf-inp secondary" dir="ltr" placeholder="Enter branch name"></div>
+              {% else %}
+              <div class="bi-wrap"><input type="text" id="bank_branch_en" class="sf-inp has-btn" dir="ltr" placeholder="Enter branch name" oninput="vTrans('bank_branch_en','bank_branch_ar','en')"><button type="button" class="sf-retrans" onclick="doRetrans('bank_branch_en','bank_branch_ar','en')" title="Re-translate"><i class="fas fa-sync-alt"></i></button></div>
+              <div class="bi-wrap"><input type="text" id="bank_branch_ar" class="sf-inp secondary" dir="rtl" placeholder="أدخل اسم الفرع"></div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="bm-section">
+          <div class="bm-section-lbl"><i class="fas fa-exchange-alt"></i>{% if ar %}تفاصيل التحويل / Transfer details{% else %}Transfer details / تفاصيل التحويل{% endif %}</div>
+          <div class="mono-group" style="margin-bottom:12px;">
+            <div class="mono-lbl">{% if ar %}رقم الحساب / Account Number{% else %}Account Number / رقم الحساب{% endif %}<span class="req">*</span></div>
+            <input type="text" id="bank_account_number" class="sf-inp" dir="ltr" placeholder="{% if ar %}أدخل رقم الحساب{% else %}Enter account number{% endif %}" oninput="clrInvVnd(this,'err_vbm_account')">
+            <div class="sf-err" id="err_vbm_account"><i class="fas fa-exclamation-circle"></i><span>{% if ar %}مطلوب{% else %}Required{% endif %}</span></div>
+          </div>
+          <div class="fg-2" style="margin-bottom:0;">
+            <div>
+              <div class="mono-lbl">{% if ar %}رقم الآيبان / IBAN{% else %}IBAN / رقم الآيبان{% endif %}</div>
+              <input type="text" id="bank_iban" class="sf-inp" dir="ltr" style="font-family:monospace;letter-spacing:.03em;" placeholder="e.g. SA0380000000608010167519">
+            </div>
+            <div>
+              <div class="mono-lbl">{% if ar %}كود السويفت / SWIFT Code{% else %}SWIFT Code / كود السويفت{% endif %}</div>
+              <input type="text" id="bank_swift" class="sf-inp" dir="ltr" style="font-family:monospace;text-transform:uppercase;letter-spacing:.06em;" placeholder="e.g. RJHISARI">
+            </div>
+          </div>
+        </div>
+        <div class="bm-section" style="margin-bottom:16px;">
+          <label class="primary-toggle" style="margin-top:0;">
+            <input type="checkbox" id="bank_is_primary" value="1">
+            <span><i class="fas fa-star" style="color:#f59e0b;font-size:12px;"></i>{% if ar %}تعيين كبنك رئيسي / Set as Primary Bank{% else %}Set as Primary Bank / تعيين كبنك رئيسي{% endif %}</span>
           </label>
-          <input type="text" class="form-control" id="bank_name_en" dir="ltr"
-                 placeholder="{% if ar %}أدخل اسم البنك{% else %}Enter bank name{% endif %}"
-                 oninput="vTrans('bank_name_en','bank_name_ar','en')">
-        </div>
-        <div class="mb-3">
-          <label class="form-label" dir="rtl">
-            {% if ar %}اسم البنك (EN){% else %}Bank Name (AR){% endif %}
-          </label>
-          <input type="text" class="form-control" id="bank_name_ar" dir="rtl"
-                 placeholder="مثال: بنك الراجحي"
-                 oninput="vTrans('bank_name_ar','bank_name_en','ar')">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">
-            {% if ar %}رقم الحساب{% else %}Account Number{% endif %}
-          </label>
-          <input type="text" class="form-control" id="bank_account_number" dir="ltr"
-                 placeholder="{% if ar %}أدخل رقم الحساب{% else %}Enter account number{% endif %}">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">IBAN</label>
-          <input type="text" class="form-control text-uppercase" id="bank_iban" dir="ltr"
-                 placeholder="{% if ar %}أدخل رقم IBAN{% else %}Enter IBAN number{% endif %}">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">SWIFT/BIC</label>
-          <input type="text" class="form-control text-uppercase" id="bank_swift" dir="ltr"
-                 placeholder="{% if ar %}أدخل كود SWIFT{% else %}Enter SWIFT code{% endif %}">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">
-            {% if ar %}الفرع{% else %}Branch{% endif %}
-          </label>
-          <input type="text" class="form-control" id="bank_branch_en" dir="ltr"
-                 placeholder="{% if ar %}أدخل اسم الفرع{% else %}Enter branch name{% endif %}"
-                 oninput="vTrans('bank_branch_en','bank_branch_ar','en')">
-        </div>
-        <div class="mb-3">
-          <label class="form-label" dir="rtl">
-            {% if ar %}الفرع (EN){% else %}Branch (AR){% endif %}
-          </label>
-          <input type="text" class="form-control" id="bank_branch_ar" dir="rtl"
-                 placeholder="اسم الفرع"
-                 oninput="vTrans('bank_branch_ar','bank_branch_en','ar')">
-        </div>
-        <div class="mb-3 form-check">
-          <input type="checkbox" class="form-check-input" id="bank_is_primary" value="1">
-          <label class="form-check-label" for="bank_is_primary">
-            {% if ar %}حساب رئيسي{% else %}Primary Account{% endif %}
-          </label>
+          <p class="bm-hint" style="margin-top:8px;"><i class="fas fa-info-circle me-1"></i>{% if ar %}يمكن تعيين حساب بنكي واحد فقط كحساب رئيسي.{% else %}Only one bank account can be set as primary.{% endif %}</p>
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          {% if ar %}إلغاء{% else %}Cancel{% endif %}
-        </button>
-        <button type="button" class="btn btn-primary" onclick="saveBankFromPopup()">
-          <i class="fas fa-save me-1"></i>
-          {% if ar %}حفظ{% else %}Save{% endif %}
-        </button>
+      <div class="bm-footer bnkp">
+        <button type="button" class="sf-btn reset" onclick="['bank_name_en','bank_name_ar','bank_account_number','bank_branch_en','bank_branch_ar','bank_swift','bank_iban'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('bank_is_primary').checked=false;clearBmErrVnd();"><i class="fas fa-redo"></i>{% if ar %}إعادة تعيين / Reset{% else %}Reset / إعادة تعيين{% endif %}</button>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="sf-btn cancel" data-bs-dismiss="modal"><i class="fas fa-times"></i>{% if ar %}إلغاء / Cancel{% else %}Cancel / إلغاء{% endif %}</button>
+          <button type="button" class="sf-btn save" onclick="saveBankFromPopup()"><i class="fas fa-plus"></i>{% if ar %}إضافة بيانات البنك / Add Bank Detail{% else %}Add Bank Detail / إضافة بيانات البنك{% endif %}</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
+</div><!-- /bankModal -->
 
 {# ═══ DELETE CONFIRM MODAL ═══ #}
 <div class="modal fade" id="delModal" tabindex="-1">
@@ -516,107 +566,83 @@ let bankGridApi;
 // ═══════════════════════════════════════════════════════════
 // BANKS LIST — Seller-styled HTML table (replaces AG-Grid)
 // ═══════════════════════════════════════════════════════════
+function setInvVnd(el,errId){ if(el)el.classList.add('is-invalid'); const er=document.getElementById(errId); if(er)er.classList.add('show'); }
+function clrInvVnd(el,errId){ if(el)el.classList.remove('is-invalid'); const er=document.getElementById(errId); if(er)er.classList.remove('show'); }
+function clearBmErrVnd(){ ['err_vbm_name','err_vbm_account'].forEach(id=>{const er=document.getElementById(id);if(er)er.classList.remove('show');}); ['bank_name_en','bank_name_ar','bank_account_number'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('is-invalid');}); }
+
 function renderVendorBanks() {
-  const wrap = document.getElementById('bankList');
-  const countEl = document.getElementById('bankCount');
-  if (countEl) countEl.textContent = vendorBanks.length;
-  if (!wrap) return;
-
-  if (!vendorBanks.length) {
-    wrap.innerHTML = `
-      <div class="text-center py-5 text-muted">
-        <i class="fas fa-university fa-3x mb-3 d-block opacity-50"></i>
-        <p>${IS_AR ? 'لم يتم إضافة حسابات بنكية بعد' : 'No bank accounts added yet'}</p>
-      </div>`;
-    return;
-  }
-
-  let html = `<div class="table-responsive"><table class="table table-hover table-bordered"><thead class="table-light"><tr>
-      <th>${IS_AR ? 'اسم البنك' : 'Bank Name'}</th>
-      <th>${IS_AR ? 'رقم الحساب' : 'Account Number'}</th>
-      <th>IBAN</th>
-      <th>${IS_AR ? 'رئيسي' : 'Primary'}</th>
-      <th style="width:120px;text-align:center;">${IS_AR ? 'إجراءات' : 'Actions'}</th>
-  </tr></thead><tbody>`;
-
-  vendorBanks.forEach((b, i) => {
-    html += `<tr>
-        <td><strong>${b.bank_name_en || '—'}</strong>${b.bank_name_ar ? `<br><small class="text-muted">${b.bank_name_ar}</small>` : ''}</td>
-        <td>${b.account_number || '—'}</td>
-        <td>${b.iban || '—'}</td>
-        <td class="text-center">${b.is_primary ? '<span class="badge bg-success">✓</span>' : ''}</td>
-        <td class="text-center">
-            <button type="button" class="btn btn-sm btn-warning me-1" onclick="openBankPopup(${i})" title="${IS_AR ? 'تعديل' : 'Edit'}">
-                <i class="fas fa-pencil-alt"></i>
-            </button>
-            <button type="button" class="btn btn-sm btn-danger" onclick="deleteBankFromGrid(${i})" title="${IS_AR ? 'حذف' : 'Delete'}">
-                <i class="fas fa-trash"></i>
-            </button>
-        </td>
-    </tr>`;
-  });
-
-  html += '</tbody></table></div>';
-  wrap.innerHTML = html;
-}
-
-function clearBankPopup() {
-  ['bank_name_en','bank_name_ar','bank_branch_en','bank_branch_ar','bank_account_number','bank_swift','bank_iban'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.value = '';
-  });
-  document.getElementById('bank_is_primary').checked = false;
-  document.getElementById('bank_edit_idx').value = '';
+  const wrap=document.getElementById('bankTblWrap_vnd');
+  const body=document.getElementById('bankTblBody_vnd');
+  const empty=document.getElementById('bankEmptyMsg_vnd');
+  const countEl=document.getElementById('bankCount');
+  if(countEl) countEl.textContent=vendorBanks.length;
+  if(!body) return;
+  if(!vendorBanks.length){ if(wrap)wrap.style.display='none'; if(empty)empty.style.display='block'; return; }
+  if(wrap)wrap.style.display='block'; if(empty)empty.style.display='none';
+  body.innerHTML=vendorBanks.map((b,i)=>`
+    <tr class="${b.is_primary?'is-primary':''}">
+      <td><strong>${b.bank_name_en||'—'}</strong>${b.bank_name_ar?`<br><small style="color:#9ca3af;font-size:11px;">${b.bank_name_ar}</small>`:''}</td>
+      <td>${b.branch_en||'—'}${b.branch_ar?`<br><small style="color:#9ca3af;font-size:11px;">${b.branch_ar}</small>`:''}</td>
+      <td class="td-mono">${b.account_number||'—'}</td>
+      <td class="td-mono" style="font-size:11px;">${b.iban||'—'}</td>
+      <td class="td-mono">${b.swift_code||'—'}</td>
+      <td style="text-align:center;">${b.is_primary?'<span class="primary-check"><i class="fas fa-check-circle"></i>'+(IS_AR?' رئيسي':' Primary')+'</span>':'—'}</td>
+      <td><div class="td-acts">
+        <button type="button" class="bnk-actbtn edit" onclick="openBankPopup(${i})" title="${IS_AR?'تعديل':'Edit'}"><i class="fas fa-pencil-alt"></i></button>
+        <button type="button" class="bnk-actbtn del" onclick="deleteBankFromGrid(${i})" title="${IS_AR?'حذف':'Delete'}"><i class="fas fa-trash"></i></button>
+      </div></td>
+    </tr>`).join('');
 }
 
 function openBankPopup(idx) {
-  if (idx !== undefined && idx !== null && vendorBanks[idx]) {
-    const b = vendorBanks[idx];
-    document.getElementById('bank_edit_idx').value = idx;
-    document.getElementById('bankModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل حساب بنكي' : 'Edit Bank Account');
-    document.getElementById('bank_name_en').value = b.bank_name_en || '';
-    document.getElementById('bank_name_ar').value = b.bank_name_ar || '';
-    document.getElementById('bank_branch_en').value = b.branch_en || '';
-    document.getElementById('bank_branch_ar').value = b.branch_ar || '';
-    document.getElementById('bank_account_number').value = b.account_number || '';
-    document.getElementById('bank_swift').value = b.swift_code || '';
-    document.getElementById('bank_iban').value = b.iban || '';
-    document.getElementById('bank_is_primary').checked = b.is_primary || false;
-  } else {
-    clearBankPopup();
-    document.getElementById('bankModalTitle').innerHTML = '<i class="fas fa-university me-2"></i>' + (IS_AR ? 'إضافة حساب بنكي' : 'Add Bank Account');
-  }
+  const editing = (idx !== undefined && idx !== null && vendorBanks[idx]);
+  document.getElementById('bank_edit_idx').value = editing ? idx : '';
+  document.getElementById('bankModalTitle').innerHTML = editing
+    ? '<i class="fas fa-edit"></i>'+(IS_AR?'تعديل تفاصيل البنك / Edit Bank Details':'Edit Bank Details / تعديل تفاصيل البنك')
+    : '<i class="fas fa-university"></i>'+(IS_AR?'إضافة تفاصيل البنك / Add Bank Details':'Add Bank Details / إضافة تفاصيل البنك');
+  const b = editing ? vendorBanks[idx] : null;
+  document.getElementById('bank_name_en').value      = b ? (b.bank_name_en||'') : '';
+  document.getElementById('bank_name_ar').value      = b ? (b.bank_name_ar||'') : '';
+  document.getElementById('bank_account_number').value = b ? (b.account_number||'') : '';
+  document.getElementById('bank_branch_en').value    = b ? (b.branch_en||'') : '';
+  document.getElementById('bank_branch_ar').value    = b ? (b.branch_ar||'') : '';
+  document.getElementById('bank_swift').value        = b ? (b.swift_code||'') : '';
+  document.getElementById('bank_iban').value         = b ? (b.iban||'') : '';
+  document.getElementById('bank_is_primary').checked = b ? !!b.is_primary : false;
+  clearBmErrVnd();
   new bootstrap.Modal(document.getElementById('bankModal')).show();
 }
 
 function saveBankFromPopup() {
-  const name = document.getElementById('bank_name_en').value.trim();
-  if (!name) { alert(IS_AR ? 'اسم البنك مطلوب' : 'Bank name is required'); return; }
-
-  const isPrimary = document.getElementById('bank_is_primary').checked;
-  if (isPrimary) { vendorBanks.forEach(b => b.is_primary = false); }
-
-  const bankData = {
-    bank_name_en: name,
-    bank_name_ar: document.getElementById('bank_name_ar').value.trim(),
-    account_number: document.getElementById('bank_account_number').value.trim(),
-    branch_en: document.getElementById('bank_branch_en').value.trim(),
-    branch_ar: document.getElementById('bank_branch_ar').value.trim(),
-    swift_code: document.getElementById('bank_swift').value.trim(),
-    iban: document.getElementById('bank_iban').value.trim(),
+  const name_en=(document.getElementById('bank_name_en').value||'').trim();
+  const name_ar=(document.getElementById('bank_name_ar').value||'').trim();
+  const account=(document.getElementById('bank_account_number').value||'').trim();
+  let ok=true;
+  if(!name_en){setInvVnd(document.getElementById('bank_name_en'),'err_vbm_name');ok=false;}
+  if(!account){setInvVnd(document.getElementById('bank_account_number'),'err_vbm_account');ok=false;}
+  if(!ok) return;
+  const isPrimary=document.getElementById('bank_is_primary').checked;
+  if(isPrimary){ vendorBanks.forEach(b=>b.is_primary=false); }
+  const bankData={
+    bank_name_en: name_en,
+    bank_name_ar: name_ar,
+    account_number: account,
+    branch_en: (document.getElementById('bank_branch_en').value||'').trim(),
+    branch_ar: (document.getElementById('bank_branch_ar').value||'').trim(),
+    swift_code: (document.getElementById('bank_swift').value||'').trim(),
+    iban: (document.getElementById('bank_iban').value||'').trim(),
     is_primary: isPrimary,
   };
-
-  const editIdx = document.getElementById('bank_edit_idx').value;
-  if (editIdx !== '') { vendorBanks[parseInt(editIdx)] = bankData; }
+  const editIdx=document.getElementById('bank_edit_idx').value;
+  if(editIdx!=='') { vendorBanks[parseInt(editIdx)]=bankData; }
   else { vendorBanks.push(bankData); }
-
   refreshBankGrid();
-  bootstrap.Modal.getInstance(document.getElementById('bankModal')).hide();
+  bootstrap.Modal.getInstance(document.getElementById('bankModal'))?.hide();
 }
 
 function deleteBankFromGrid(idx) {
-  if (!confirm(IS_AR ? 'حذف هذا الحساب البنكي؟' : 'Delete this bank account?')) return;
-  vendorBanks.splice(idx, 1);
+  if(!confirm(IS_AR?'حذف هذا الحساب البنكي؟':'Delete this bank account?')) return;
+  vendorBanks.splice(idx,1);
   refreshBankGrid();
 }
 
