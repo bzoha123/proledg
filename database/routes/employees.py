@@ -277,11 +277,10 @@ TEXT_FIELDS = [
     'mobile', 'address', 'address_ar', 'email', 'home_city', 'home_city_ar',
     'employee_reference', 'employee_reference_ar',
     'po_number', 'salary_type', 'salary_category', 'kafalat_number',
-    'work_status',
     'hostel_name', 'hostel_name_ar', 'room_number',
     'hostel_location', 'hostel_location_ar',
     'crn', 'crn_ar', 'insurance_company', 'insurance_company_ar', 'labour_office',
-    'passport_location', 'document_type',
+    'passport_location',
 ]
 FLOAT_FIELDS = ['po_rate', 'basic_salary', 'working_hours', 'overtime_ratio']
 DATE_FIELDS  = ['arrival_date', 'birth_date', 'passport_expiry', 'iqama_expiry',
@@ -551,14 +550,13 @@ def employee_json(id):
         'overtime_ratio': float(e.overtime_ratio or 1.5),
         'overtime_rate': float(e.overtime_rate or 0),
         'joining_date': d(e.joining_date), 'end_date_work': d(e.end_date_work),
-        'work_status': g('work_status') or 'active',
         'hostel_name': g('hostel_name'), 'hostel_name_ar': g('hostel_name_ar'),
         'room_number': g('room_number'), 'hostel_location': g('hostel_location'), 'hostel_location_ar': g('hostel_location_ar'),
         'crn': g('crn'), 'crn_ar': g('crn_ar'),
         'insurance_company': g('insurance_company'), 'insurance_company_ar': g('insurance_company_ar'),
         'insurance_expiry': d(e.insurance_expiry), 'labour_office': g('labour_office'),
         'passport_location': g('passport_location') or 'IN',
-        'document_type': g('document_type'), 'buyer_id': e.buyer_id or '',
+        'buyer_id': e.buyer_id or '',
         # department/company/location come from the latest allocation (wa_* below)
         'photo_path': e.photo_path or '',
         'photo_url': _photo_url(e),

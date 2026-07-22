@@ -316,7 +316,6 @@ class Employee(db.Model):
     entry_number     = db.Column(db.String(50))
     iqama_number     = db.Column(db.String(50))
     iqama_expiry     = db.Column(db.Date)
-    document_type    = db.Column(db.String(80))
 
     # ── Dates ──
     arrival_date     = db.Column(db.Date)
@@ -335,7 +334,6 @@ class Employee(db.Model):
     # ── Employment / references ──
     employee_reference    = db.Column(db.String(120))
     employee_reference_ar = db.Column(db.String(120))
-    work_status      = db.Column(db.String(30), default='active')
 
     # ── Payroll ──
     salary_category  = db.Column(db.String(20))   # 'Salary' or 'Azad'

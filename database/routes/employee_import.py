@@ -62,7 +62,6 @@ COLUMNS = [
     ('Section', 'section'),
     ('Section Arabic', 'section_ar'),
     ('Work Month', 'work_month'),
-    ('Work Status', 'work_status'),
     ('Shift Type', 'shift_type'),
     ('Salary Type', 'salary_type'),
     ('Basic Salary', 'basic_salary'),

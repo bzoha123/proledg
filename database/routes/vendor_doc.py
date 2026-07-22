@@ -187,6 +187,28 @@ def _can_display_inline(mime_type):
     return mime_type in INLINE_MIMETYPES
 
 
+def _download_name(doc, stored_filename):
+    """
+    Build a safe download filename.
+
+    ``document_name`` is user-entered and usually has no file extension, which
+    makes the downloaded file unopenable. Always ensure the name carries the
+    real extension taken from the stored file.
+    """
+    stored_ext = os.path.splitext(stored_filename)[1]          # e.g. '.pdf'
+    name = (doc.document_name or '').strip()
+    if not name:
+        return stored_filename
+    # Strip any path separators a user may have typed.
+    name = os.path.basename(name.replace('\\', '/'))
+    if not name:
+        return stored_filename
+    # If the name already ends with the correct extension, keep it as-is.
+    if stored_ext and name.lower().endswith(stored_ext.lower()):
+        return name
+    return f'{name}{stored_ext}'
+
+
 def _get_full_file_path(doc):
     """
     Get the full file system path for a document.
@@ -361,7 +383,7 @@ def view_document(doc_id):
                 directory, 
                 filename, 
                 as_attachment=True,
-                download_name=doc.document_name or filename,
+                download_name=_download_name(doc, filename),
                 mimetype=mime_type
             )
             
@@ -395,7 +417,7 @@ def download_document(doc_id):
             directory, 
             filename, 
             as_attachment=True,
-            download_name=doc.document_name or filename,
+            download_name=_download_name(doc, filename),
             mimetype=mime_type
         )
         

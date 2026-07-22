@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, session, abort
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, session, abort, current_app
 from flask_login import login_required, current_user
 from decimal import Decimal
 from datetime import datetime, date
@@ -586,14 +586,70 @@ def vendor_doc_upload(vendor_id):
     db.session.commit()
     return jsonify({'ok': True, 'id': doc.id, 'doc': doc.to_dict()})
 
+def _vendor_doc_download_name(doc, stored_filename):
+    """
+    Build a safe download filename.
+
+    ``document_name`` is user-entered and usually has no file extension, which
+    makes the downloaded file unopenable (e.g. a PDF saved as just "CCC").
+    Always ensure the name carries the real extension from the stored file.
+    """
+    stored_ext = os.path.splitext(stored_filename)[1]
+    name = (doc.document_name or '').strip()
+    if not name:
+        return stored_filename
+    name = os.path.basename(name.replace('\\', '/'))
+    if not name:
+        return stored_filename
+    if stored_ext and name.lower().endswith(stored_ext.lower()):
+        return name
+    return f'{name}{stored_ext}'
+
+
+def _vendor_doc_dir_and_name(doc):
+    """Resolve the stored vendor document to (absolute_dir, filename)."""
+    rel = (doc.file_path or '').replace('\\', '/')
+    upload_root = current_app.config.get(
+        'UPLOAD_FOLDER', os.path.abspath('uploads')
+    )
+    full = os.path.join(upload_root, rel)
+    return os.path.dirname(full), os.path.basename(full)
+
+
+@pur_bp.route('/purchase/vendors/documents/<int:doc_id>/view')
+@login_required
+def vendor_doc_view(doc_id):
+    """Open the document inline when the browser can display it."""
+    from flask import send_from_directory
+    import mimetypes
+    doc = VendorDocument.query.get_or_404(doc_id)
+    directory, fname = _vendor_doc_dir_and_name(doc)
+    if not os.path.exists(os.path.join(directory, fname)):
+        abort(404)
+    mime = mimetypes.guess_type(fname)[0] or 'application/octet-stream'
+    inline_ok = mime == 'application/pdf' or mime.startswith('image/') or mime.startswith('text/')
+    if inline_ok:
+        return send_from_directory(directory, fname, as_attachment=False, mimetype=mime)
+    return send_from_directory(
+        directory, fname, as_attachment=True,
+        download_name=_vendor_doc_download_name(doc, fname), mimetype=mime
+    )
+
+
 @pur_bp.route('/purchase/vendors/documents/<int:doc_id>/download')
 @login_required
 def vendor_doc_download(doc_id):
     from flask import send_from_directory
-    doc    = VendorDocument.query.get_or_404(doc_id)
-    folder = os.path.join('uploads', os.path.dirname(doc.file_path))
-    fname  = os.path.basename(doc.file_path)
-    return send_from_directory(os.path.abspath(folder), fname, as_attachment=True, download_name=doc.document_name)
+    import mimetypes
+    doc = VendorDocument.query.get_or_404(doc_id)
+    directory, fname = _vendor_doc_dir_and_name(doc)
+    if not os.path.exists(os.path.join(directory, fname)):
+        abort(404)
+    mime = mimetypes.guess_type(fname)[0] or 'application/octet-stream'
+    return send_from_directory(
+        directory, fname, as_attachment=True,
+        download_name=_vendor_doc_download_name(doc, fname), mimetype=mime
+    )
 
 # ─────────────────────────────────────────────────────────────
 # PURCHASE ATTACHMENTS — view / download

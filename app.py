@@ -79,7 +79,8 @@ def create_app(config_name='default'):
     from database.routes.payroll import payroll_bp
     from database.routes import lookups_bp
     from database.routes.employee_import import emp_import_bp
-    from database.routes.tax_codes import tax_bp
+    from database.routes.purchase_tax_code import purchase_tax_bp
+    from database.routes.sales_tax_code import sales_tax_bp
     from database.routes.financial import financial_bp  # ✅ ADD THIS
     
     app.register_blueprint(emp_import_bp)
@@ -97,7 +98,8 @@ def create_app(config_name='default'):
     app.register_blueprint(vendor_doc_bp)
     app.register_blueprint(buyer_doc_bp)
     app.register_blueprint(financial_bp)  # ✅ ADD THIS
-    app.register_blueprint(tax_bp)   
+    app.register_blueprint(purchase_tax_bp)
+    app.register_blueprint(sales_tax_bp)
 
     # Error handlers
     @app.errorhandler(404)

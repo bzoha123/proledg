@@ -131,7 +131,7 @@
             </li>
 
             {# ══ PURCHASE ════════════════════════════════════ #}
-            {% set purchase_active = request.endpoint and (('vendor' in request.endpoint) or ('pr_list' in request.endpoint) or ('pq_list' in request.endpoint) or ('po_list' in request.endpoint) or ('grn' in request.endpoint) or ('pinv' in request.endpoint) or ('grr' in request.endpoint) or ('pdm' in request.endpoint) or (request.endpoint == 'tax_codes.purchase_tax_page')) %}
+            {% set purchase_active = request.endpoint and (('vendor' in request.endpoint) or ('pr_list' in request.endpoint) or ('pq_list' in request.endpoint) or ('po_list' in request.endpoint) or ('grn' in request.endpoint) or ('pinv' in request.endpoint) or ('grr' in request.endpoint) or ('pdm' in request.endpoint) or (request.endpoint == 'purchase_tax.purchase_tax_page')) %}
             <li class="nav-item">
                 <a class="nav-link nav-parent {% if purchase_active %}has-active{% endif %}" data-bs-toggle="collapse" href="#menuPurchase" role="button" aria-expanded="{{ 'true' if purchase_active else 'false' }}" aria-controls="menuPurchase">
                     <i class="fas fa-shopping-bag"></i>
@@ -196,7 +196,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ url_for('tax_codes.purchase_tax_page') }}" class="nav-link {% if request.endpoint == 'tax_codes.purchase_tax_page' %}active{% endif %}">
+                            <a href="{{ url_for('purchase_tax.purchase_tax_page') }}" class="nav-link {% if request.endpoint == 'purchase_tax.purchase_tax_page' %}active{% endif %}">
                                 <i class="fas fa-percent"></i>
                                 <span>{% if current_locale=='ar' %}رموز ضريبة الشراء{% else %}Purchase Tax Codes{% endif %}</span>
                             </a>
@@ -206,7 +206,7 @@
             </li>
 
             {# ══ SALE ════════════════════════════════════════ #}
-            {% set sale_active = request.endpoint and ((request.endpoint == 'lookups.list_buyers') or (request.endpoint == 'buyer_doc.list_buyer_documents_page') or (request.endpoint.startswith('sales.')) or (request.endpoint == 'tax_codes.sales_tax_page')) %}
+            {% set sale_active = request.endpoint and ((request.endpoint == 'lookups.list_buyers') or (request.endpoint == 'buyer_doc.list_buyer_documents_page') or (request.endpoint.startswith('sales.')) or (request.endpoint == 'sales_tax.sales_tax_page')) %}
             <li class="nav-item">
                 <a class="nav-link nav-parent {% if sale_active %}has-active{% endif %}" data-bs-toggle="collapse" href="#menuSale" role="button" aria-expanded="{{ 'true' if sale_active else 'false' }}" aria-controls="menuSale">
                     <i class="fas fa-tags"></i>
@@ -245,7 +245,7 @@
                         </li>
                         {% endfor %}
                         <li class="nav-item">
-                            <a href="{{ url_for('tax_codes.sales_tax_page') }}" class="nav-link {% if request.endpoint == 'tax_codes.sales_tax_page' %}active{% endif %}">
+                            <a href="{{ url_for('sales_tax.sales_tax_page') }}" class="nav-link {% if request.endpoint == 'sales_tax.sales_tax_page' %}active{% endif %}">
                                 <i class="fas fa-percent"></i>
                                 <span>{% if current_locale=='ar' %}رموز ضريبة البيع{% else %}Sales Tax Codes{% endif %}</span>
                             </a>
