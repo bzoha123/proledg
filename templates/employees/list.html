@@ -1234,16 +1234,16 @@
                     <div class="field-label">{{ en_lbl }}{% if ar %} (EN){% endif %}</div>
                     <div style="display:flex;gap:6px;">
                       <input type="text" name="{{ fid }}" id="f_{{ fid }}_en" class="field-input" dir="ltr" style="flex:1"
-                             oninput="biWrap(this,'f_{{ fid }}_ar','en')">
-                      {% if not ar %}<button type="button" class="bi-btn" title="Translate" onclick="biWrapRetrans(document.getElementById('f_{{ fid }}_ar').value,'f_{{ fid }}_en','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                             {% if not ar %}oninput="biTransPair('f_{{ fid }}_en','f_{{ fid }}_ar','en')"{% endif %}>
+                      {% if not ar %}<button type="button" class="bi-btn" title="Re-translate EN → AR" onclick="biTransRetrans('f_{{ fid }}_en','f_{{ fid }}_ar','en')"><i class="fas fa-sync-alt"></i></button>{% endif %}
                     </div>
                   </div>
                   <div class="field-item">
                     <div class="field-label" dir="rtl" style="text-align:right;">{{ ar_lbl }}{% if not ar %} (AR){% endif %}</div>
                     <div style="display:flex;gap:6px;" dir="rtl">
                       <input type="text" name="{{ fid }}_ar" id="f_{{ fid }}_ar" class="field-input" dir="rtl" style="flex:1"
-                             oninput="biWrap(this,'f_{{ fid }}_en','ar')">
-                      {% if ar %}<button type="button" class="bi-btn" title="ترجم" onclick="biWrapRetrans(document.getElementById('f_{{ fid }}_en').value,'f_{{ fid }}_ar','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
+                             {% if ar %}oninput="biTransPair('f_{{ fid }}_ar','f_{{ fid }}_en','ar')"{% endif %}>
+                      {% if ar %}<button type="button" class="bi-btn" title="إعادة الترجمة AR → EN" onclick="biTransRetrans('f_{{ fid }}_ar','f_{{ fid }}_en','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
                     </div>
                   </div>
                 </div>
