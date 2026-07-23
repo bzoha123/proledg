@@ -26,7 +26,7 @@ def items_list():
     taxcats = TaxCategory.query.order_by(TaxCategory.name_en).all()
     vendors = VendorMaster.query.order_by(VendorMaster.vendor_name_en).all()
     uoms    = ['unit','hour','day','month','kg','gram','meter','liter','box','piece','set','pair','dozen']
-    return render_template('item master/items.html',
+    return render_template('item_master/items.html',
         cats=cats, subcats=subcats, taxcats=taxcats, vendors=vendors, uoms=uoms)
 
 @lookups_bp.route('/items/data')

@@ -865,10 +865,7 @@ function addLiRow(d) {
     <td><input type="number" class="li-inp" name="li_freight[]"  id="plf_${idx}"  value="${d.freight||0}"   min="0" step="0.01" oninput="recalcLi(${idx})" style="width:58px;"></td>
     <td><input type="number" class="li-inp" id="plt_${idx}"  name="li_taxable_disp[]" value="${d.taxable||0}" readonly
          style="width:76px;background:#fffbeb;color:#92400e;font-weight:600;" title="Qty × Rate − Discount"></td>
-    <td><select class="li-inp" name="li_tax_code[]" id="pltc_${idx}" onchange="recalcLi(${idx})" style="width:78px;">
-      <option value="VAT15"${(d.tax_code||'VAT15')==='VAT15'?' selected':''}>VAT 15%</option>
-      <option value="VAT0"${d.tax_code==='VAT0'?' selected':''}>VAT 0%</option>
-      <option value="EXEMPT"${d.tax_code==='EXEMPT'?' selected':''}>Exempt</option>
+    <td><select class="li-inp" name="li_tax_code[]" id="pltc_${idx}" onchange="recalcLi(${idx})" style="width:78px;">${taxOptionsHtml(d.tax_code)}
     </select></td>
     <td><input type="number" class="li-inp" id="plta_${idx}" name="li_tax_amount_disp[]" value="${d.tax_amount||0}" readonly style="width:62px;background:#f3f4f6;"></td>
     <td><input type="number" class="li-inp" id="pltot_${idx}" name="li_total_disp[]" value="${d.total||0}" readonly style="width:76px;background:#f0fdf4;font-weight:700;color:#166534;"></td>
@@ -895,7 +892,7 @@ function recalcLi(idx) {
   const disc = g('pld_'+idx);
   const fr   = g('plf_'+idx);
   const tcEl = document.getElementById('pltc_'+idx);
-  const taxRate = tcEl && tcEl.value === 'VAT15' ? 15 : 0;
+  const taxRate = tcEl ? taxRateOf(tcEl.value) : 0;
   const taxable = Math.max(0, (qty * rate - disc) + fr);
   const taxAmt  = Math.round(taxable * taxRate / 100 * 100) / 100;
   const total   = taxable + taxAmt;
@@ -1447,5 +1444,57 @@ function delExistAtt(attId, btn){
   })
   .catch(() => alert("Network error"));
 }
+
+// ── Tax codes loaded from the purchase tax code master ──────────
+// TAX_CODES: [{tax_code, account_code, section}]  — rate parsed from account_code
+let TAX_CODES = [];
+const TAX_DEFAULT_CODE = 'P1';
+function taxRateOf(code) {
+  const t = TAX_CODES.find(x => x.tax_code === code);
+  if (!t) return 0;
+  // account_code holds the rate, e.g. "VAT 15%", "15%", "Exempt", "Out of Scope"
+  const m = String(t.account_code || '').match(/(\d+(?:\.\d+)?)\s*%/);
+  return m ? parseFloat(m[1]) : 0;
+}
+function taxCodeLabel(t) {
+  return t.account_code ? `${t.tax_code} — ${t.account_code}` : t.tax_code;
+}
+function taxOptionsHtml(selected) {
+  const sel = selected || TAX_DEFAULT_CODE;
+  if (!TAX_CODES.length) {
+    return `<option value="${sel}" selected>${sel}</option>`;
+  }
+  let html = TAX_CODES.map(t =>
+    `<option value="${t.tax_code}"${t.tax_code === sel ? ' selected' : ''}>${taxCodeLabel(t)}</option>`
+  ).join('');
+  // Keep a legacy/unknown saved code selectable so editing an old document
+  // never silently changes its tax code.
+  if (sel && !TAX_CODES.some(t => t.tax_code === sel)) {
+    html = `<option value="${sel}" selected>${sel}</option>` + html;
+  }
+  return html;
+}
+function loadTaxCodes() {
+  return fetch('/purchase-tax-codes/data')
+    .then(r => r.json())
+    .then(d => {
+      TAX_CODES = (d || []).filter(t => (t.status || 'Active') === 'Active');
+      // Refresh any dropdowns already on screen.
+      document.querySelectorAll('select[name="li_tax_code[]"]').forEach(sel => {
+        const cur = sel.value;
+        sel.innerHTML = taxOptionsHtml(cur);
+        sel.value = cur || TAX_DEFAULT_CODE;
+      });
+      // Recalculate every visible line with the real rates.
+      document.querySelectorAll('select[name="li_tax_code[]"]').forEach(sel => {
+        const m = (sel.id || '').match(/pltc_(\d+)/);
+        if (m && typeof recalcLi === 'function') recalcLi(parseInt(m[1]));
+      });
+      if (typeof recalcSummary === 'function') recalcSummary();
+    })
+    .catch(() => { TAX_CODES = []; });
+}
+document.addEventListener('DOMContentLoaded', loadTaxCodes);
+
 </script>
 {% endblock %}

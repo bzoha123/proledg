@@ -1276,13 +1276,13 @@ agGrid.createGrid(document.getElementById('buyerGrid'),{
   rowSelection: 'multiple',
   suppressRowClickSelection: true,
   
-  onGridReady(p) {
-    gridApi = p.api;
-    if (window.GridKit) {
-      GridKit.enhance(p, 'buyerGrid', { storageKey: 'buyers', exportName: 'Buyers' });
-    }
-    loadData();
-  },
+  // onGridReady(p) {
+  //   gridApi = p.api;
+  //   if (window.GridKit) {
+  //     GridKit.enhance(p, 'buyerGrid', { storageKey: 'buyers', exportName: 'Buyers' });
+  //   }
+  //   loadData();
+  // },
   onFilterChanged(){upd();},
   onPaginationChanged(){upd();},
   onSelectionChanged(){upd();},

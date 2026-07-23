@@ -8,6 +8,245 @@
 <li class="breadcrumb-item active">{% if ar %}المستوى الأول{% else %}Level 1{% endif %}</li>
 {% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
+<style>
+/* ═══════════════════════════════════════════════════════
+   AG Grid - Enterprise Theme with Proledg styling
+   ═══════════════════════════════════════════════════════ */
+.ag-theme-alpine {
+    --ag-font-family:'Segoe UI',system-ui,sans-serif;
+    --ag-font-size:13px;
+    --ag-header-background-color:#1e3a5f;
+    --ag-header-foreground-color:#fff;
+    --ag-border-color:#e2e8f0;
+    --ag-row-hover-color:#eff6ff;
+    --ag-selected-row-background-color:#dbeafe;
+    --ag-header-height:44px;
+    --ag-row-height:44px;
+    --ag-cell-horizontal-padding:12px;
+}
+.ag-theme-alpine .ag-header-cell-label {
+    font-weight:700;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    overflow:visible;
+}
+.ag-theme-alpine .ag-header-cell-text {
+    overflow:visible;
+    text-overflow:clip;
+    white-space:nowrap;
+}
+.ag-theme-alpine .ag-header-cell:hover {
+    background:rgba(255,255,255,.08) !important;
+}
+.ag-theme-alpine .ag-sort-ascending-icon,
+.ag-theme-alpine .ag-sort-descending-icon,
+.ag-theme-alpine .ag-sort-none-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-header-icon {
+    color:#94a3b8;
+}
+.ag-theme-alpine .ag-filter {
+    border-radius:10px !important;
+    box-shadow:0 8px 30px rgba(0,0,0,.15) !important;
+    border:1px solid #e2e8f0 !important;
+    overflow:hidden;
+    min-width:260px;
+    background:white;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input {
+    border:1.5px solid #d1d5db !important;
+    border-radius:7px !important;
+    padding:6px 10px !important;
+    font-size:12px !important;
+}
+.ag-theme-alpine .ag-simple-filter-body-wrapper .ag-input-field-input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+    box-shadow:0 0 0 2px rgba(37,99,235,.12) !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel {
+    padding:8px 10px !important;
+    background:#f8fafc !important;
+    border-top:1px solid #e2e8f0 !important;
+    display:flex !important;
+    gap:6px !important;
+    justify-content:space-between !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button {
+    padding:5px 14px !important;
+    border-radius:7px !important;
+    font-size:12px !important;
+    font-weight:600 !important;
+    border:none !important;
+    cursor:pointer !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="applyFilterButton"] {
+    background:linear-gradient(135deg,#16a34a,#15803d) !important;
+    color:white !important;
+}
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="clearFilterButton"],
+.ag-theme-alpine .ag-filter-apply-panel-button[ref="resetFilterButton"] {
+    background:white !important;
+    color:#374151 !important;
+    border:1.5px solid #d1d5db !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input {
+    border:1px solid #e2e8f0 !important;
+    border-radius:5px !important;
+    padding:3px 7px !important;
+    font-size:11px !important;
+}
+.ag-theme-alpine .ag-floating-filter-input input:focus {
+    outline:none !important;
+    border-color:#2563eb !important;
+}
+.ag-theme-alpine .ag-row-even {
+    background:white;
+}
+.ag-theme-alpine .ag-row-odd {
+    background:#fafbfc;
+}
+.ag-theme-alpine .ag-row-hover {
+    background:#eff6ff !important;
+}
+.ag-theme-alpine .ag-cell {
+    border-right:1px solid #f1f5f9 !important;
+}
+
+/* Action buttons */
+.action-btn {
+    width:28px; height:28px; border-radius:7px; border:none;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:11px; cursor:pointer; transition:all .12s;
+}
+.action-btn:hover { transform:translateY(-1px); box-shadow:0 2px 6px rgba(0,0,0,.2); }
+.action-btn-edit { background:#f59e0b; color:white; }
+.action-btn-edit:hover { background:#d97706; }
+.action-btn-delete { background:#ef4444; color:white; }
+.action-btn-delete:hover { background:#dc2626; }
+
+/* Toolbar (matching other pages) */
+.toolbar {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:14px;
+}
+.toolbar-left, .toolbar-right {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+}
+.tool-btn {
+    width:34px;
+    height:34px;
+    border-radius:7px;
+    border:1.5px solid #d1d5db;
+    background:white;
+    color:#6b7280;
+    cursor:pointer;
+    font-size:13px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    transition:all .12s;
+}
+.tool-btn:hover {
+    border-color:#2563eb;
+    color:#2563eb;
+    background:#eff6ff;
+}
+.tool-btn-green { background:#16a34a; color:white; border:none; }
+.tool-btn-green:hover { background:#15803d; }
+.tool-btn-blue { background:#2563eb; color:white; border:none; }
+.tool-btn-blue:hover { background:#1d4ed8; }
+
+.search-form { position:relative; }
+.search-icon {
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#9ca3af;
+    font-size:12px;
+    z-index:2;
+}
+.search-input {
+    padding:7px 12px 7px 32px;
+    border:1.5px solid #d1d5db;
+    border-radius:7px;
+    font-size:12px;
+    outline:none;
+}
+.search-input:focus { border-color:#2563eb; }
+
+.sel-badge {
+    font-size:11px;
+    color:#6b7280;
+    background:#f1f5f9;
+    padding:4px 10px;
+    border-radius:5px;
+    font-weight:600;
+}
+
+.proledg-pagination {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 16px;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-top:none;
+    border-radius:0 0 8px 8px;
+}
+.page-count { font-size:12px; color:#6b7280; font-weight:600; }
+
+/* Modal (matching other pages) */
+.modal-header { background:#1e3a5f; color:#fff; border-bottom:none; }
+.modal-header .btn-close { filter:brightness(0) invert(1); }
+.modal-content { border-radius:12px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+.form-label { font-size:12px; font-weight:600; color:#374151; margin-bottom:4px; }
+.form-control:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+.modal-footer {
+    border-top:2px solid #e2e8f0;
+    padding:12px 20px;
+    background:#f8fafc;
+}
+.btn-f {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:9px 20px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    border:none;
+}
+.btn-save {
+    background:linear-gradient(135deg,#16a34a,#15803d);
+    color:white;
+    box-shadow:0 2px 8px rgba(22,163,74,.3);
+}
+.btn-save:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(22,163,74,.4); }
+.btn-cancel {
+    background:white;
+    color:#374151;
+    border:1.5px solid #d1d5db;
+}
+.btn-cancel:hover { background:#f9fafb; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="proledg-page">
   <h2 class="page-heading">{% if ar %}دليل الحسابات — المستوى الأول{% else %}Chart of Accounts — Level 1{% endif %}</h2>
@@ -17,31 +256,42 @@
       {% if current_user.is_admin() %}
       <button class="tool-btn tool-btn-green" data-bs-toggle="modal" data-bs-target="#l1Modal" onclick="openAdd()"><i class="fas fa-plus"></i></button>
       {% endif %}
+      <button class="tool-btn tool-btn-blue" onclick="window.coaReload1()" title="{% if ar %}تحديث{% else %}Refresh{% endif %}"><i class="fas fa-sync-alt"></i></button>
+      <button class="tool-btn" onclick="window.__coa1Api && window.__coa1Api.exportDataAsCsv({fileName:'coa_level_1.csv'})" title="Excel/CSV"><i class="fas fa-file-export"></i></button>
+      <button class="tool-btn" onclick="window.__coa1Api && window.__coa1Api.setFilterModel(null);document.querySelector('.coa-search-input').value='';window.__coa1Api.setGridOption('quickFilterText','')" title="{% if ar %}مسح الفلاتر{% else %}Clear Filters{% endif %}"><i class="fas fa-times-circle"></i></button>
       <a href="{{ url_for('coa.level_two_list') }}" class="tool-btn" title="{% if ar %}المستوى الثاني{% else %}Level 2{% endif %}"><i class="fas fa-layer-group"></i></a>
     </div>
-    <div class="toolbar-right">
+    <div class="toolbar-right d-flex align-items-center gap-3">
+      <div class="sel-badge"><span id="selL1Text">0 {% if ar %}حسابات{% else %}accounts{% endif %}</span></div>
       <div class="search-form">
         <i class="fas fa-search search-icon"></i>
-        <input type="text" class="search-input" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" oninput="filterRows(this.value)">
+        <input type="text" class="search-input coa-search-input" style="width:200px" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" oninput="window.__coa1Api && window.__coa1Api.setGridOption('quickFilterText',this.value)">
       </div>
     </div>
   </div>
 
-  <div class="proledg-table-wrap">
+  <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;overflow:hidden;">
     <div id="coaGrid" class="ag-theme-alpine" style="width:100%;height:560px;"></div>
   </div>
+
   <div class="proledg-pagination">
-    <span class="page-count" id="coaCount"></span>
+    <span class="page-count" id="coaCount">–</span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="small text-muted">{% if ar %}صفوف:{% else %}Rows:{% endif %}</span>
+      <select class="form-select form-select-sm" style="width:72px" onchange="window.__coa1Api && window.__coa1Api.setGridOption('paginationPageSize',+this.value)">
+        <option value="10">10</option><option value="20" selected>20</option><option value="50">50</option><option value="100">100</option>
+      </select>
+    </div>
   </div>
 </div>
 
 <!-- Add / Edit Modal -->
 <div class="modal fade" id="l1Modal" tabindex="-1">
   <div class="modal-dialog modal-md">
-    <div class="modal-content proledg-modal">
-      <div class="modal-header proledg-modal-header">
+    <div class="modal-content">
+      <div class="modal-header">
         <h5 class="modal-title" id="l1ModalTitle">{% if ar %}إضافة حساب المستوى الأول{% else %}Add Level 1 Account{% endif %}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <form id="l1Form" method="POST" action="{{ url_for('coa.level_one_add') }}" onsubmit="return validateL1();">
@@ -92,11 +342,11 @@
             </div>
           </div>
       </div>
-      <div class="modal-footer proledg-modal-footer">
-        <button type="button" class="pl-footer-btn pl-btn-cancel" data-bs-dismiss="modal">
+      <div class="modal-footer">
+        <button type="button" class="btn-f btn-cancel" data-bs-dismiss="modal">
           <i class="fas fa-times me-1"></i>{% if ar %}إلغاء{% else %}Cancel{% endif %}
         </button>
-        <button type="submit" class="pl-footer-btn pl-btn-save">
+        <button type="submit" class="btn-f btn-save">
           <i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}
         </button>
       </div>
@@ -107,65 +357,260 @@
 {% endblock %}
 
 {% block extra_js %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
 <script>
-/* ── Level 1 AG-Grid (loads from /coa/level-one/data) ── */
+/* ── Level 1 AG-Grid Enterprise ── */
 (function(){
   const IS_AR_G  = {{ 'true' if ar else 'false' }};
   const CSRF_G   = '{{ csrf_token() }}';
   const IS_ADMIN = {{ 'true' if current_user.is_admin() else 'false' }};
   const DATA_URL = {{ url_for('coa.level_one_data')|tojson }};
   const DEL_BASE = {{ url_for('coa.level_one_list')|tojson }};
-  function statusBadge(v){ const a=(v||'active')==='active'; return '<span style="background:'+(a?'#dcfce7':'#fee2e2')+';color:'+(a?'#15803d':'#b91c1c')+';padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">'+(a?(IS_AR_G?'نشط':'Active'):(IS_AR_G?'غير نشط':'Inactive'))+'</span>'; }
-  function codeBadge(v){ return '<span class="code-badge">'+(v==null?'':v)+'</span>'; }
+
+  const AG_LOCALE = IS_AR_G ? {
+    filterOoo: 'تصفية...',
+    equals: 'يساوي',
+    notEqual: 'لا يساوي',
+    contains: 'يحتوي على',
+    notContains: 'لا يحتوي على',
+    startsWith: 'يبدأ بـ',
+    endsWith: 'ينتهي بـ',
+    blank: 'فارغ',
+    notBlank: 'غير فارغ',
+    lessThan: 'أقل من',
+    greaterThan: 'أكبر من',
+    applyFilter: 'تطبيق',
+    clearFilter: 'مسح',
+    resetFilter: 'إعادة تعيين',
+    addFilterCondition: '+ إضافة قاعدة',
+    matchAll: 'يطابق الكل',
+    matchAny: 'يطابق أي',
+    andCondition: 'و',
+    orCondition: 'أو',
+    noRowsToShow: 'لا توجد بيانات',
+    loadingOoo: 'جاري التحميل...',
+    searchOoo: 'بحث...',
+    sortAscending: 'تصاعدي',
+    sortDescending: 'تنازلي',
+  } : {
+    filterOoo: 'Filter...',
+    applyFilter: 'Apply',
+    clearFilter: 'Clear',
+    resetFilter: 'Reset',
+    addFilterCondition: '+ Add Rule',
+    matchAll: 'Match All',
+    matchAny: 'Match Any',
+    noRowsToShow: 'No records found',
+    searchOoo: 'Search...',
+  };
+
+  const defaultColDef = {
+    sortable: true,
+    resizable: true,
+    filter: true,
+    floatingFilter: true,
+    suppressMenu: false,
+    unSortIcon: true,
+    enableRowGroup: true,
+    enablePivot: true,
+    enableValue: true,
+    menuTabs: ['filterMenuTab', 'columnsMenuTab', 'generalMenuTab'],
+    filterParams: {
+      buttons: ['apply', 'reset', 'clear'],
+      closeOnApply: true,
+      maxNumConditions: 10
+    }
+  };
+
+  function statusBadge(v){
+    const a=(v||'active')==='active';
+    const bg = a?'#dcfce7':'#fee2e2';
+    const fg = a?'#15803d':'#b91c1c';
+    const lbl = a ? (IS_AR_G?'نشط':'Active') : (IS_AR_G?'غير نشط':'Inactive');
+    return '<span style="background:'+bg+';color:'+fg+';padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;">'+lbl+'</span>';
+  }
+  function codeBadge(v){ return '<span style="background:#eff6ff;color:#2563eb;padding:1px 6px;border-radius:4px;font-weight:600;">'+(v==null?'':v)+'</span>'; }
+
   window.coaDelete1 = function(id){
     if(!confirm(IS_AR_G?'حذف هذا الحساب؟':'Delete this account?')) return;
     const fd=new FormData(); fd.set('csrf_token',CSRF_G);
     fetch(DEL_BASE + '/' + id + '/delete',{method:'POST',body:fd})
-      .then(r=> r.ok?r:Promise.reject()).then(()=>window.coaReload1())
+      .then(r=> r.ok?r:Promise.reject())
+      .then(()=>window.coaReload1())
       .catch(()=>alert(IS_AR_G?'تعذّر الحذف (قد يملك حسابات فرعية)':'Delete failed (may have child accounts)'));
   };
+
   class L1Act{
-    init(p){ const d=p.data; this.el=document.createElement('div'); this.el.style.cssText='display:flex;gap:4px;justify-content:center;';
+    init(p){
+      const d=p.data;
+      this.el=document.createElement('div');
+      this.el.style.cssText='display:flex;gap:4px;align-items:center;height:100%;';
       this.el.innerHTML='<button type="button" class="action-btn action-btn-edit" title="'+(IS_AR_G?'تعديل':'Edit')+'"><i class="fas fa-pencil-alt"></i></button><button type="button" class="action-btn action-btn-delete" title="'+(IS_AR_G?'حذف':'Delete')+'"><i class="fas fa-trash"></i></button>';
       const b=this.el.querySelectorAll('button');
-      b[0].addEventListener('click',()=>{ if(window.openEdit) window.openEdit(d.id, d.code, d.drawers, d.description); });
+      b[0].addEventListener('click',()=>{ if(window.openEdit) window.openEdit(d.id, d.code, d.drawers, d.description, d.status); });
       b[1].addEventListener('click',()=> window.coaDelete1(d.id));
     }
     getGui(){ return this.el; }
   }
-  const _cf={ filter:'agTextColumnFilter', filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} };
-  const cols=[
-    { headerName:IS_AR_G?'الطول':'Length', field:'code_length', width:100, filter:'agNumberColumnFilter' },
-    { headerName:IS_AR_G?'الكود':'Code', field:'code', width:130, cellRenderer:p=>codeBadge(p.value), pinned:IS_AR_G?'right':'left', ..._cf },
-    { headerName:IS_AR_G?'المجموعة':'Drawers', field:'drawers', minWidth:200, flex:2, cellStyle:{fontWeight:600}, ..._cf },
-    { headerName:IS_AR_G?'الوصف':'Description', field:'description', minWidth:200, flex:1, cellStyle:{color:'#6b7280',fontSize:'12px'}, ..._cf },
-    { headerName:IS_AR_G?'الحالة':'Status', field:'status', width:120, cellRenderer:p=>statusBadge(p.value), filter:'agTextColumnFilter', filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} },
+
+  const cols = [
+    {
+      headerName: '#',
+      field: 'id',
+      width: 65,
+      filter: false,
+      floatingFilter: false,
+      suppressMenu: true,
+      checkboxSelection: true,
+      headerCheckboxSelection: true,
+      pinned: IS_AR_G ? 'right' : 'left',
+      sortable: false,
+      resizable: false,
+    },
+    {
+      headerName: IS_AR_G?'الطول':'Length',
+      field: 'code_length',
+      width: 100,
+      filter: 'agNumberColumnFilter'
+    },
+    {
+      headerName: IS_AR_G?'الكود':'Code',
+      field: 'code',
+      width: 130,
+      cellRenderer: p=>codeBadge(p.value),
+      pinned: IS_AR_G ? 'right' : 'left',
+    },
+    {
+      headerName: IS_AR_G?'المجموعة':'Drawers',
+      field: 'drawers',
+      minWidth: 200,
+      flex: 2,
+      cellStyle: {fontWeight:600}
+    },
+    {
+      headerName: IS_AR_G?'الوصف':'Description',
+      field: 'description',
+      minWidth: 200,
+      flex: 1,
+      cellStyle: {color:'#6b7280', fontSize:'12px'}
+    },
+    {
+      headerName: IS_AR_G?'الحالة':'Status',
+      field: 'status',
+      width: 120,
+      cellRenderer: p=>statusBadge(p.value),
+      filter: 'agSetColumnFilter',
+      floatingFilter: false,
+      filterParams: {
+        values: ['active', 'inactive'],
+        buttons: ['apply', 'reset', 'clear']
+      }
+    }
   ];
-  if(IS_ADMIN) cols.push({ headerName:IS_AR_G?'إجراءات':'Actions', field:'_actions', width:120, pinned:IS_AR_G?'left':'right', sortable:false, filter:false, suppressMenu:true, resizable:false, cellRenderer:L1Act, cellStyle:{overflow:'visible'} });
-  document.addEventListener('DOMContentLoaded',function(){
-    const el=document.getElementById('coaGrid'); if(!el||!window.agGrid) return;
-    const api=agGrid.createGrid(el,{
-      columnDefs:cols, rowData:[], pagination:true, paginationPageSize:25, rowSelection:'single', animateRows:true, enableRtl:IS_AR_G,
-      localeText: IS_AR_G?{noRowsToShow:'لا توجد حسابات',searchOoo:'بحث...'}:{noRowsToShow:'No accounts yet',searchOoo:'Search...'},
-      multiSortKey:'ctrl',
-      defaultColDef:{ sortable:true, resizable:true, filter:true, floatingFilter:true, unSortIcon:true, menuTabs:['filterMenuTab','generalMenuTab'], filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} },
-      onGridReady(p){ if(window.GridKit) GridKit.enhance(p,'coaGrid',{storageKey:'coa_l1',exportName:'COA_Level1'}); p.api.sizeColumnsToFit(); window.coaReload1(); },
-      onGridSizeChanged(p){ p.api.sizeColumnsToFit(); },
-      onModelUpdated(p){ const c=document.getElementById('coaCount'); if(c) c.textContent=p.api.getDisplayedRowCount()+' '+(IS_AR_G?'حساب':'account(s)'); },
+
+  if(IS_ADMIN) {
+    cols.push({
+      headerName: IS_AR_G?'إجراءات':'Actions',
+      field: '_actions',
+      width: 120,
+      pinned: IS_AR_G ? 'left' : 'right',
+      sortable: false,
+      filter: false,
+      suppressMenu: true,
+      resizable: false,
+      cellRenderer: L1Act,
+      cellStyle: {overflow:'visible', padding:'0 6px'}
     });
-    window.__coa1Api=api;
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    const el=document.getElementById('coaGrid');
+    if(!el) return;
+    const api = agGrid.createGrid(el, {
+      columnDefs: cols,
+      rowData: [],
+      pagination: true,
+      paginationPageSize: 20,
+      rowSelection: 'multiple',
+      suppressRowClickSelection: true,
+      animateRows: true,
+      enableRtl: IS_AR_G,
+      localeText: AG_LOCALE,
+      multiSortKey: 'ctrl',
+      defaultColDef: defaultColDef,
+
+      // ── ENTERPRISE FEATURES ──
+      sideBar: {
+        toolPanels: [
+          {
+            id: 'columns',
+            labelDefault: IS_AR_G ? 'الأعمدة' : 'Columns',
+            labelKey: 'columns',
+            iconKey: 'columns',
+            toolPanel: 'agColumnsToolPanel'
+          },
+          {
+            id: 'filters',
+            labelDefault: IS_AR_G ? 'الفلاتر' : 'Filters',
+            labelKey: 'filters',
+            iconKey: 'filter',
+            toolPanel: 'agFiltersToolPanel'
+          }
+        ],
+        defaultToolPanel: ''
+      },
+      rowGroupPanelShow: 'always',
+      pivotPanelShow: 'always',
+      groupDisplayType: 'groupRows',
+
+      onGridReady: function(p) {
+        window.__coa1Api = p.api;
+        p.api.sizeColumnsToFit();
+        window.coaReload1();
+      },
+      onGridSizeChanged: function(p) { p.api.sizeColumnsToFit(); },
+      onModelUpdated: function(p) { updateCount(p.api); },
+      onFilterChanged: function(p) { updateCount(p.api); },
+      onSelectionChanged: function(p) { updateCount(p.api); },
+      getRowStyle: function(p) {
+        return p.node.rowIndex % 2 === 0 ? { background: '#fff' } : { background: '#fafbfc' };
+      },
+    });
   });
-  window.coaReload1=function(){ fetch(DATA_URL).then(r=>r.json()).then(d=>{ if(window.__coa1Api) window.__coa1Api.setGridOption('rowData',d||[]); }); };
+
+  function updateCount(api) {
+    const total = api.getDisplayedRowCount();
+    const selected = api.getSelectedRows().length;
+    const el = document.getElementById('coaCount');
+    const selEl = document.getElementById('selL1Text');
+    if (el) {
+      const text = selected > 0
+        ? selected + ' ' + (IS_AR_G ? 'محدد' : 'selected')
+        : total + ' ' + (IS_AR_G ? 'حساب' : 'account(s)');
+      el.textContent = text;
+    }
+    if (selEl) {
+      selEl.textContent = total + ' ' + (IS_AR_G ? 'حسابات' : 'accounts');
+    }
+  }
+
+  window.coaReload1 = function(){
+    fetch(DATA_URL)
+      .then(r => r.json())
+      .then(d => {
+        if (window.__coa1Api) {
+          window.__coa1Api.setGridOption('rowData', d || []);
+        }
+      })
+      .catch(console.error);
+  };
 })();
 </script>
+
 <script>
 const IS_AR = {{ 'true' if ar else 'false' }};
 const ADD_URL  = '{{ url_for("coa.level_one_add") }}';
 const EDIT_URL = '{{ url_for("coa.level_one_list") }}';  // base; replaced per-id below
-
 
 /* ── Live validation: red ✗ / green ✓ ─────────────────────────── */
 let _l1EditId = null;
@@ -245,6 +690,8 @@ function openAdd() {
   document.getElementById('l1_desc').value = 'Elements of Financial Statements';
   document.getElementById('l1_st_active').checked = true;
   document.getElementById('l1_code_hint').textContent = IS_AR ? 'لا يمكن تعديله بعد الإنشاء' : 'Cannot be edited after creation';
+  // Show modal (already opened via data-bs-toggle, but we may need to ensure it opens)
+  // The button already has data-bs-toggle, so this is fine.
 }
 
 function openEdit(id, code, drawers, description, status) {
@@ -252,7 +699,6 @@ function openEdit(id, code, drawers, description, status) {
   document.getElementById('l1ModalTitle').textContent = IS_AR ? 'تعديل حساب المستوى الأول' : 'Edit Level 1 Account';
   const f = document.getElementById('l1Form');
   f.action = `/coa/level-one/${id}/edit`;
-  // Code is fixed → show but lock it.
   const code_el = document.getElementById('l1_code');
   code_el.value = code;
   code_el.readOnly = true;
@@ -261,7 +707,9 @@ function openEdit(id, code, drawers, description, status) {
   document.getElementById('l1_drawers').value = drawers;
   document.getElementById('l1_desc').value = description;
   document.getElementById(status === 'inactive' ? 'l1_st_inactive' : 'l1_st_active').checked = true;
-  new bootstrap.Modal(document.getElementById('l1Modal')).show();
+  // Show modal
+  const modal = new bootstrap.Modal(document.getElementById('l1Modal'));
+  modal.show();
 }
 
 function validateL1() {
@@ -289,11 +737,11 @@ function validateL1() {
   return true;
 }
 
-function filterRows(q) {
-  q = (q || '').toLowerCase();
-  document.querySelectorAll('.proledg-table tbody tr.data-row').forEach(tr => {
-    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
-  });
-}
+// Expose functions globally for grid action buttons
+window.openAdd = openAdd;
+window.openEdit = openEdit;
+window.validateL1 = validateL1;
+window.onCodeInput = onCodeInput;
+window.onDrawersInput = onDrawersInput;
 </script>
 {% endblock %}

@@ -1266,13 +1266,13 @@ agGrid.createGrid(document.getElementById('waGrid'),{
   rowSelection: 'multiple',
   suppressRowClickSelection: true,
   
-  onGridReady(p) {
-    gridApi = p.api;
-    if (window.GridKit) {
-      GridKit.enhance(p, 'waGrid', { storageKey: 'work_allocations', exportName: 'Work Allocations' });
-    }
-    loadData();
-  },
+  // onGridReady(p) {
+  //   gridApi = p.api;
+  //   if (window.GridKit) {
+  //     GridKit.enhance(p, 'waGrid', { storageKey: 'work_allocations', exportName: 'Work Allocations' });
+  //   }
+  //   loadData();
+  // },
   onFilterChanged(){upd();},
   onPaginationChanged(){upd();},
   onSelectionChanged(){upd();},

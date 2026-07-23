@@ -713,13 +713,13 @@ document.addEventListener('DOMContentLoaded', function() {
     pivotPanelShow: 'always',
     groupDisplayType: 'groupRows',
     
-    onGridReady: function(p) {
-      gridApi = p.api;
-      if (window.GridKit) {
-        GridKit.enhance(p, 'sdGrid', { storageKey: 'buyer_docs', exportName: 'BuyerDocuments' });
-      }
-      loadData();
-    },
+    // onGridReady: function(p) {
+    //   gridApi = p.api;
+    //   if (window.GridKit) {
+    //     GridKit.enhance(p, 'sdGrid', { storageKey: 'buyer_docs', exportName: 'BuyerDocuments' });
+    //   }
+    //   loadData();
+    // },
     onFilterChanged: updateStatus,
     onPaginationChanged: updateStatus,
     onSelectionChanged: updateStatus,
