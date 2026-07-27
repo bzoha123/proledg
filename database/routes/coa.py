@@ -28,6 +28,41 @@ from models import db, LevelOne, LevelTwo
 coa_bp = Blueprint('coa', __name__, url_prefix='/coa')
 
 
+# ── Chart-of-Accounts fixed drawer order (A,L,E,R,C,O,F,I) ────────
+# Applied everywhere codes are sorted, in grid and tree views.
+COA_ORDER = ['A', 'L', 'E', 'R', 'C', 'O', 'F', 'I']
+
+
+def coa_sort_key(code_col):
+    """
+    SQLAlchemy ORDER BY expression that sorts by the leading Level-1 letter
+    in the fixed order A,L,E,R,C,O,F,I, then by the full code naturally.
+    Unknown leading letters sort last, then alphabetically.
+    """
+    from sqlalchemy import case, func
+    lead = func.upper(func.substr(code_col, 1, 1))
+    whens = {letter: idx for idx, letter in enumerate(COA_ORDER)}
+    rank = case(whens, value=lead, else_=len(COA_ORDER))
+    return rank, code_col
+
+
+def coa_order(query, code_col):
+    """Apply the fixed COA ordering to a query."""
+    rank, col = coa_sort_key(code_col)
+    return query.order_by(rank, col)
+
+
+def coa_sort_list(rows, code_attr='code'):
+    """Sort an in-memory list of ORM rows / dicts by the fixed COA order."""
+    def key(r):
+        code = getattr(r, code_attr, None) if not isinstance(r, dict) else r.get(code_attr)
+        code = (code or '')
+        lead = code[:1].upper()
+        rank = COA_ORDER.index(lead) if lead in COA_ORDER else len(COA_ORDER)
+        return (rank, code)
+    return sorted(rows, key=key)
+
+
 # ── helpers ──────────────────────────────────────────────────────
 def _t(en, ar):
     return ar if session.get('lang') == 'ar' else en
@@ -123,7 +158,9 @@ def level_one_add():
         code_length=1,                       # always 1
         code=code,
         drawers=(form.drawers.data or '').strip(),
+        drawers_ar=(form.drawers_ar.data or '').strip() or None,
         description=(form.description.data or '').strip(),
+        description_ar=(form.description_ar.data or '').strip() or None,
         status=_status_from(request),
     )
     db.session.add(l1)
@@ -147,7 +184,9 @@ def level_one_edit(id):
 
     # NOTE: code is fixed and cannot be changed after creation.
     l1.drawers = (form.drawers.data or '').strip()
+    l1.drawers_ar = (form.drawers_ar.data or '').strip() or None
     l1.description = (form.description.data or '').strip()
+    l1.description_ar = (form.description_ar.data or '').strip() or None
     l1.code_length = 1                       # keep fixed
     l1.status = _status_from(request)
     db.session.commit()
@@ -183,7 +222,7 @@ def level_one_data():
 @login_required
 def level_two_list():
     pg, q_text, parent, sort, status = _paginate_filter_sort(LevelTwo, LevelTwo.level_one_code, request)
-    level_ones = LevelOne.query.order_by(LevelOne.code).all()
+    level_ones = coa_order(LevelOne.query, LevelOne.code).all()
     return render_template('coa/level_two.html', pg=pg, rows=pg.items,
                            level_ones=level_ones, parents=level_ones,
                            q=q_text, parent=parent, sort=sort, status=status)
@@ -211,7 +250,7 @@ def level_two_add():
     # Populate the select choices before validating.
     form.level_one_id.choices = [
         (l1.id, f'{l1.code} — {l1.drawers}')
-        for l1 in LevelOne.query.order_by(LevelOne.code).all()
+        for l1 in coa_order(LevelOne.query, LevelOne.code).all()
     ]
     if not form.validate_on_submit():
         flash(_t('Please correct the errors and try again.',
@@ -244,7 +283,9 @@ def level_two_add():
         level_one_code=l1.code,
         code=code,
         drawers=drawers,
+        drawers_ar=(form.drawers_ar.data or '').strip() or None,
         description='Heading Account',       # always
+        description_ar=(form.description_ar.data or '').strip() or None,
         status=_status_from(request),
     )
     db.session.add(l2)
@@ -279,6 +320,8 @@ def level_two_edit(id):
         return redirect(url_for('coa.level_two_list'))
 
     l2.drawers = drawers
+    l2.drawers_ar = (form.drawers_ar.data or '').strip() or None
+    l2.description_ar = (form.description_ar.data or '').strip() or None
     l2.code_length = 2                       # keep fixed
     l2.description = 'Heading Account'       # keep fixed
     l2.status = _status_from(request)
@@ -302,7 +345,7 @@ def level_two_delete(id):
 @login_required
 def level_two_data():
     return jsonify([r.to_dict() for r in
-                    LevelTwo.query.order_by(LevelTwo.level_one_code, LevelTwo.id).all()])
+                    coa_order(LevelTwo.query, LevelTwo.code).all()])
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -346,9 +389,17 @@ def _paginate_filter_sort(model, parent_code_col, request):
 
     desc = sort.startswith('-')
     field = sort[1:] if desc else sort
-    col = {'code': model.code, 'drawers': model.drawers,
-           'created_at': model.created_at}.get(field, model.code)
-    query = query.order_by(col.desc() if desc else col.asc())
+    if field == 'code':
+        # Fixed drawer order A,L,E,R,C,O,F,I
+        rank, col = coa_sort_key(model.code)
+        if desc:
+            query = query.order_by(rank.desc(), col.desc())
+        else:
+            query = query.order_by(rank, col)
+    else:
+        col = {'drawers': model.drawers,
+               'created_at': model.created_at}.get(field, model.code)
+        query = query.order_by(col.desc() if desc else col.asc())
 
     return query.paginate(page=page, per_page=PER_PAGE, error_out=False), q_text, parent, sort, status
 
@@ -358,8 +409,8 @@ def _paginate_filter_sort(model, parent_code_col, request):
 @login_required
 def level_three_list():
     pg, q_text, parent, sort, status = _paginate_filter_sort(LevelThree, LevelThree.level_two_code, request)
-    parents = LevelTwo.query.order_by(LevelTwo.code).all()
-    level_ones = LevelOne.query.order_by(LevelOne.code).all()
+    parents = coa_order(LevelTwo.query, LevelTwo.code).all()
+    level_ones = coa_order(LevelOne.query, LevelOne.code).all()
     return render_template('coa/level_three.html', pg=pg, rows=pg.items,
                            parents=parents, level_ones=level_ones,
                            q=q_text, parent=parent, sort=sort, status=status)
@@ -380,7 +431,7 @@ def level_three_add():
         return _reject_get('coa.level_three_list')
     from forms import LevelThreeForm
     form = LevelThreeForm()
-    form.level_two_id.choices = [(r.id, f'{r.code} — {r.drawers}') for r in LevelTwo.query.order_by(LevelTwo.code)]
+    form.level_two_id.choices = [(r.id, f'{r.code} — {r.drawers}') for r in coa_order(LevelTwo.query, LevelTwo.code)]
     if not form.validate_on_submit():
         flash(_t('Please correct the errors.', 'يرجى تصحيح الأخطاء.'), 'danger')
         return redirect(url_for('coa.level_three_list'))
@@ -396,7 +447,10 @@ def level_three_add():
         return redirect(url_for('coa.level_three_list'))
     db.session.add(LevelThree(code_length=5, level_two_id=parent.id, level_two_code=parent.code,
                               code=next_level_three_code(parent), drawers=drawers,
-                              description='Heading Account', status=_status_from(request)))
+                              drawers_ar=(form.drawers_ar.data or '').strip() or None,
+                              description='Heading Account',
+                              description_ar=(form.description_ar.data or '').strip() or None,
+                              status=_status_from(request)))
     db.session.commit()
     flash(_t('Level 3 account created.', 'تم إنشاء حساب المستوى الثالث.'), 'success')
     return redirect(url_for('coa.level_three_list'))
@@ -419,6 +473,8 @@ def level_three_edit(id):
         flash(_t('Duplicate drawers under the same parent.', 'اسم مكرر ضمن نفس الأب.'), 'danger')
         return redirect(url_for('coa.level_three_list'))
     row.drawers, row.code_length, row.description = drawers, 5, 'Heading Account'
+    row.drawers_ar = (form.drawers_ar.data or '').strip() or None
+    row.description_ar = (form.description_ar.data or '').strip() or None
     row.status = _status_from(request)
     db.session.commit()
     flash(_t('Level 3 account updated.', 'تم تحديث الحساب.'), 'success')
@@ -442,7 +498,7 @@ def level_three_delete(id):
 @coa_bp.route('/level-three/data')
 @login_required
 def level_three_data():
-    return jsonify([r.to_dict() for r in LevelThree.query.order_by(LevelThree.code).all()])
+    return jsonify([r.to_dict() for r in coa_order(LevelThree.query, LevelThree.code).all()])
 
 
 # ─── LEVEL FOUR ──────────────────────────────────────────────────
@@ -450,8 +506,8 @@ def level_three_data():
 @login_required
 def level_four_list():
     pg, q_text, parent, sort, status = _paginate_filter_sort(LevelFour, LevelFour.level_three_code, request)
-    parents = LevelThree.query.order_by(LevelThree.code).all()
-    level_ones = LevelOne.query.order_by(LevelOne.code).all()
+    parents = coa_order(LevelThree.query, LevelThree.code).all()
+    level_ones = coa_order(LevelOne.query, LevelOne.code).all()
     return render_template('coa/level_four.html', pg=pg, rows=pg.items,
                            parents=parents, level_ones=level_ones,
                            q=q_text, parent=parent, sort=sort, status=status)
@@ -472,7 +528,7 @@ def level_four_add():
         return _reject_get('coa.level_four_list')
     from forms import LevelFourForm
     form = LevelFourForm()
-    form.level_three_id.choices = [(r.id, f'{r.code} — {r.drawers}') for r in LevelThree.query.order_by(LevelThree.code)]
+    form.level_three_id.choices = [(r.id, f'{r.code} — {r.drawers}') for r in coa_order(LevelThree.query, LevelThree.code)]
     if not form.validate_on_submit():
         flash(_t('Please correct the errors.', 'يرجى تصحيح الأخطاء.'), 'danger')
         return redirect(url_for('coa.level_four_list'))
@@ -488,7 +544,10 @@ def level_four_add():
         return redirect(url_for('coa.level_four_list'))
     db.session.add(LevelFour(code_length=8, level_three_id=parent.id, level_three_code=parent.code,
                              code=next_level_four_code(parent), drawers=drawers,
-                             description='Heading Account', status=_status_from(request)))
+                             drawers_ar=(form.drawers_ar.data or '').strip() or None,
+                             description='Heading Account',
+                             description_ar=(form.description_ar.data or '').strip() or None,
+                             status=_status_from(request)))
     db.session.commit()
     flash(_t('Level 4 account created.', 'تم إنشاء حساب المستوى الرابع.'), 'success')
     return redirect(url_for('coa.level_four_list'))
@@ -511,6 +570,8 @@ def level_four_edit(id):
         flash(_t('Duplicate drawers under the same parent.', 'اسم مكرر ضمن نفس الأب.'), 'danger')
         return redirect(url_for('coa.level_four_list'))
     row.drawers, row.code_length, row.description = drawers, 8, 'Heading Account'
+    row.drawers_ar = (form.drawers_ar.data or '').strip() or None
+    row.description_ar = (form.description_ar.data or '').strip() or None
     row.status = _status_from(request)
     db.session.commit()
     flash(_t('Level 4 account updated.', 'تم تحديث الحساب.'), 'success')
@@ -534,7 +595,7 @@ def level_four_delete(id):
 @coa_bp.route('/level-four/data')
 @login_required
 def level_four_data():
-    return jsonify([r.to_dict() for r in LevelFour.query.order_by(LevelFour.code).all()])
+    return jsonify([r.to_dict() for r in coa_order(LevelFour.query, LevelFour.code).all()])
 
 
 # ─── LEVEL FIVE ──────────────────────────────────────────────────
@@ -542,8 +603,8 @@ def level_four_data():
 @login_required
 def level_five_list():
     pg, q_text, parent, sort, status = _paginate_filter_sort(LevelFive, LevelFive.level_four_code, request)
-    parents = LevelFour.query.order_by(LevelFour.code).all()
-    level_ones = LevelOne.query.order_by(LevelOne.code).all()
+    parents = coa_order(LevelFour.query, LevelFour.code).all()
+    level_ones = coa_order(LevelOne.query, LevelOne.code).all()
     return render_template('coa/level_five.html', pg=pg, rows=pg.items,
                            parents=parents, level_ones=level_ones,
                            q=q_text, parent=parent, sort=sort, status=status)
@@ -564,7 +625,7 @@ def level_five_add():
         return _reject_get('coa.level_five_list')
     from forms import LevelFiveForm
     form = LevelFiveForm()
-    form.level_four_id.choices = [(r.id, f'{r.code} — {r.drawers}') for r in LevelFour.query.order_by(LevelFour.code)]
+    form.level_four_id.choices = [(r.id, f'{r.code} — {r.drawers}') for r in coa_order(LevelFour.query, LevelFour.code)]
     if not form.validate_on_submit():
         flash(_t('Please correct the errors.', 'يرجى تصحيح الأخطاء.'), 'danger')
         return redirect(url_for('coa.level_five_list'))
@@ -580,7 +641,11 @@ def level_five_add():
         return redirect(url_for('coa.level_five_list'))
     db.session.add(LevelFive(code_length=12, level_four_id=parent.id, level_four_code=parent.code,
                              code=next_level_five_code(parent), drawers=drawers,
-                             description='Transactional Account', status=_status_from(request)))
+                             drawers_ar=(form.drawers_ar.data or '').strip() or None,
+                             description='Transactional Account',
+                             description_ar=(form.description_ar.data or '').strip() or None,
+                             control_account=('Yes' if (form.control_account.data or 'No')=='Yes' else 'No'),
+                             status=_status_from(request)))
     db.session.commit()
     flash(_t('Level 5 account created.', 'تم إنشاء حساب المستوى الخامس.'), 'success')
     return redirect(url_for('coa.level_five_list'))
@@ -603,6 +668,9 @@ def level_five_edit(id):
         flash(_t('Duplicate drawers under the same parent.', 'اسم مكرر ضمن نفس الأب.'), 'danger')
         return redirect(url_for('coa.level_five_list'))
     row.drawers, row.code_length, row.description = drawers, 12, 'Transactional Account'
+    row.drawers_ar = (form.drawers_ar.data or '').strip() or None
+    row.description_ar = (form.description_ar.data or '').strip() or None
+    row.control_account = 'Yes' if (form.control_account.data or 'No')=='Yes' else 'No'
     row.status = _status_from(request)
     db.session.commit()
     flash(_t('Level 5 account updated.', 'تم تحديث الحساب.'), 'success')
@@ -622,7 +690,7 @@ def level_five_delete(id):
 @coa_bp.route('/level-five/data')
 @login_required
 def level_five_data():
-    return jsonify([r.to_dict() for r in LevelFive.query.order_by(LevelFive.code).all()])
+    return jsonify([r.to_dict() for r in coa_order(LevelFive.query, LevelFive.code).all()])
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -650,9 +718,9 @@ def children_level_two():
     pid = request.args.get('level_one_id', type=int)
     if not pid:
         return jsonify([])
-    rows = (LevelTwo.query
-            .filter(LevelTwo.level_one_id == pid, LevelTwo.status == 'active')
-            .order_by(LevelTwo.code).all())
+    rows = coa_order(
+        LevelTwo.query.filter(LevelTwo.level_one_id == pid, LevelTwo.status == 'active'),
+        LevelTwo.code).all()
     return _children_payload(rows)
 
 
@@ -663,9 +731,9 @@ def children_level_three():
     pid = request.args.get('level_two_id', type=int)
     if not pid:
         return jsonify([])
-    rows = (LevelThree.query
-            .filter(LevelThree.level_two_id == pid, LevelThree.status == 'active')
-            .order_by(LevelThree.code).all())
+    rows = coa_order(
+        LevelThree.query.filter(LevelThree.level_two_id == pid, LevelThree.status == 'active'),
+        LevelThree.code).all()
     return _children_payload(rows)
 
 
@@ -676,9 +744,9 @@ def children_level_four():
     pid = request.args.get('level_three_id', type=int)
     if not pid:
         return jsonify([])
-    rows = (LevelFour.query
-            .filter(LevelFour.level_three_id == pid, LevelFour.status == 'active')
-            .order_by(LevelFour.code).all())
+    rows = coa_order(
+        LevelFour.query.filter(LevelFour.level_three_id == pid, LevelFour.status == 'active'),
+        LevelFour.code).all()
     return _children_payload(rows)
 
 
@@ -802,7 +870,7 @@ def _build_coa_maps():
     l2 = {r.id: r for r in LevelTwo.query.all()}
     l3 = {r.id: r for r in LevelThree.query.all()}
     l4 = {r.id: r for r in LevelFour.query.all()}
-    l5 = LevelFive.query.order_by(LevelFive.code).all()
+    l5 = coa_order(LevelFive.query, LevelFive.code).all()
     return l1, l2, l3, l4, l5
 
 
@@ -819,7 +887,7 @@ def coa_views_flat():
     """Flat rows: account_code + the five drawer names (Level 5 leaves)."""
     l1, l2, l3, l4, l5 = _build_coa_maps()
     out = []
-    for r5 in l5:
+    for r5 in coa_sort_list(list(l5)):
         r4 = l4.get(r5.level_four_id)
         r3 = l3.get(r4.level_three_id) if r4 else None
         r2 = l2.get(r3.level_two_id) if r3 else None
@@ -831,6 +899,14 @@ def coa_views_flat():
             'level3_drawer': r3.drawers if r3 else '',
             'level4_drawer': r4.drawers if r4 else '',
             'level5_drawer': r5.drawers,
+            'level1_drawer_ar': (r1.drawers_ar or '') if r1 else '',
+            'level2_drawer_ar': (r2.drawers_ar or '') if r2 else '',
+            'level3_drawer_ar': (r3.drawers_ar or '') if r3 else '',
+            'level4_drawer_ar': (r4.drawers_ar or '') if r4 else '',
+            'level5_drawer_ar': r5.drawers_ar or '',
+            'description': r5.description or '',
+            'description_ar': r5.description_ar or '',
+            'control_account': r5.control_account or 'No',
         })
     return jsonify(out)
 
@@ -856,21 +932,25 @@ def coa_views_tree():
     for r in l5:
         c5[r.level_four_id].append(r)
 
-    def node(code, name, children):
-        return {'code': code, 'name': name, 'children': children}
+    def node(code, name, children, name_ar='', control=None):
+        n = {'code': code, 'name': name, 'name_ar': name_ar or '', 'children': children}
+        if control is not None:
+            n['control_account'] = control
+        return n
 
     tree = []
-    for r1 in sorted(l1.values(), key=lambda x: x.code):
+    for r1 in coa_sort_list(list(l1.values())):
         n2 = []
-        for r2 in sorted(c2.get(r1.id, []), key=lambda x: x.code):
+        for r2 in coa_sort_list(c2.get(r1.id, [])):
             n3 = []
-            for r3 in sorted(c3.get(r2.id, []), key=lambda x: x.code):
+            for r3 in coa_sort_list(c3.get(r2.id, [])):
                 n4 = []
-                for r4 in sorted(c4.get(r3.id, []), key=lambda x: x.code):
-                    n5 = [node(r5.code, r5.drawers, [])
-                          for r5 in sorted(c5.get(r4.id, []), key=lambda x: x.code)]
-                    n4.append(node(r4.code, r4.drawers, n5))
-                n3.append(node(r3.code, r3.drawers, n4))
-            n2.append(node(r2.code, r2.drawers, n3))
-        tree.append(node(r1.code, r1.drawers, n2))
+                for r4 in coa_sort_list(c4.get(r3.id, [])):
+                    n5 = [node(r5.code, r5.drawers, [], r5.drawers_ar,
+                               r5.control_account or 'No')
+                          for r5 in coa_sort_list(c5.get(r4.id, []))]
+                    n4.append(node(r4.code, r4.drawers, n5, r4.drawers_ar))
+                n3.append(node(r3.code, r3.drawers, n4, r3.drawers_ar))
+            n2.append(node(r2.code, r2.drawers, n3, r2.drawers_ar))
+        tree.append(node(r1.code, r1.drawers, n2, r1.drawers_ar))
     return jsonify(tree)

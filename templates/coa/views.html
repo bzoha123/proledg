@@ -85,10 +85,17 @@ const defCol = { sortable:true, unSortIcon:true, resizable:true, filter:true, fl
 const cols = [
   {headerName:IS_AR?'كود الحساب':'Account Code', field:'account_code', width:150, cellStyle:{fontFamily:'monospace',fontWeight:'700',color:'#2563eb'}},
   {headerName:IS_AR?'المستوى 1':'Level 1 Drawer', field:'level1_drawer', width:150},
+  {headerName:IS_AR?'المستوى 1 (ع)':'Level 1 (AR)', field:'level1_drawer_ar', width:140, cellStyle:{direction:'rtl'}},
   {headerName:IS_AR?'المستوى 2':'Level 2 Drawer', field:'level2_drawer', width:160},
+  {headerName:IS_AR?'المستوى 2 (ع)':'Level 2 (AR)', field:'level2_drawer_ar', width:140, cellStyle:{direction:'rtl'}},
   {headerName:IS_AR?'المستوى 3':'Level 3 Drawer', field:'level3_drawer', width:180},
+  {headerName:IS_AR?'المستوى 3 (ع)':'Level 3 (AR)', field:'level3_drawer_ar', width:150, cellStyle:{direction:'rtl'}},
   {headerName:IS_AR?'المستوى 4':'Level 4 Drawer', field:'level4_drawer', width:180},
+  {headerName:IS_AR?'المستوى 4 (ع)':'Level 4 (AR)', field:'level4_drawer_ar', width:150, cellStyle:{direction:'rtl'}},
   {headerName:IS_AR?'المستوى 5':'Level 5 Drawer', field:'level5_drawer', width:180},
+  {headerName:IS_AR?'المستوى 5 (ع)':'Level 5 (AR)', field:'level5_drawer_ar', width:150, cellStyle:{direction:'rtl'}},
+  {headerName:IS_AR?'حساب تحكم':'Control Account', field:'control_account', width:130,
+   cellRenderer:p=>{const y=(p.value==='Yes');return `<span style="padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${y?'#dcfce7':'#f1f5f9'};color:${y?'#15803d':'#6b7280'};">${p.value||'No'}</span>`;}},
 ];
 let flatApi;
 agGrid.createGrid(document.getElementById('flatGrid'), {
@@ -121,7 +128,9 @@ function buildNode(n, level){
   node.className='tree-node';
   node.innerHTML = `<span class="tree-caret ${hasKids?'':'leaf'}">▶</span>`+
                    `<span class="tree-code">${n.code||''}</span>`+
-                   `<span class="tree-name">${n.name||''}</span>`;
+                   `<span class="tree-name">${n.name||''}</span>`+
+                   (n.name_ar?`<span class="tree-name" style="direction:rtl;color:#6b7280;margin-inline-start:8px;">${n.name_ar}</span>`:'')+
+                   (n.control_account==='Yes'?`<span style="margin-inline-start:8px;padding:1px 8px;border-radius:20px;font-size:10px;font-weight:700;background:#dcfce7;color:#15803d;">${IS_AR?'حساب تحكم':'Control'}</span>`:'');
   node.onclick=()=>{ if(hasKids){ li.classList.toggle('open'); node.querySelector('.tree-caret').classList.toggle('open'); } };
   li.appendChild(node);
   if(hasKids){

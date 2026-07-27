@@ -2258,7 +2258,9 @@ class LevelOne(db.Model):
     code_length = db.Column(db.Integer, nullable=False, default=1)          # fixed = 1
     code        = db.Column(db.String(1), nullable=False, unique=True)      # A, L, E, ...
     drawers     = db.Column(db.String(100), nullable=False)
+    drawers_ar  = db.Column(db.String(100))
     description = db.Column(db.String(255), nullable=False)
+    description_ar = db.Column(db.String(255))
     status      = db.Column(db.String(10), nullable=False, default='active')  # active | inactive
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -2277,7 +2279,9 @@ class LevelOne(db.Model):
             'code_length': self.code_length,
             'code': self.code,
             'drawers': self.drawers,
+            'drawers_ar': self.drawers_ar or '',
             'description': self.description,
+            'description_ar': self.description_ar or '',
             'status': self.status or 'active',
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
             'level_two_count': len(self.level_twos) if self.level_twos is not None else 0,
@@ -2299,7 +2303,9 @@ class LevelTwo(db.Model):
     level_one_code = db.Column(db.String(1), nullable=False)                # denormalised for fast search
     code           = db.Column(db.String(10), nullable=False, unique=True)  # A1, A2, ...
     drawers        = db.Column(db.String(150), nullable=False)
+    drawers_ar     = db.Column(db.String(150))
     description    = db.Column(db.String(255), nullable=False, default='Heading Account')
+    description_ar = db.Column(db.String(255))
     status         = db.Column(db.String(10), nullable=False, default='active')  # active | inactive
     created_at     = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -2311,7 +2317,9 @@ class LevelTwo(db.Model):
             'level_one_code': self.level_one_code,
             'code': self.code,
             'drawers': self.drawers,
+            'drawers_ar': self.drawers_ar or '',
             'description': self.description,
+            'description_ar': self.description_ar or '',
             'status': self.status or 'active',
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
         }
@@ -2406,7 +2414,9 @@ class LevelThree(db.Model):
     level_two_code = db.Column(db.String(10), nullable=False)                # denormalised for search
     code           = db.Column(db.String(20), nullable=False, unique=True)
     drawers        = db.Column(db.String(200), nullable=False)
+    drawers_ar     = db.Column(db.String(200))
     description    = db.Column(db.String(255), nullable=False, default='Heading Account')
+    description_ar = db.Column(db.String(255))
     status         = db.Column(db.String(10), nullable=False, default='active')  # active | inactive
     created_at     = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -2417,7 +2427,8 @@ class LevelThree(db.Model):
         return {
             'id': self.id, 'code_length': self.code_length,
             'level_two_id': self.level_two_id, 'level_two_code': self.level_two_code,
-            'code': self.code, 'drawers': self.drawers, 'description': self.description,
+            'code': self.code, 'drawers': self.drawers, 'drawers_ar': self.drawers_ar or '',
+            'description': self.description, 'description_ar': self.description_ar or '',
             'status': self.status or 'active',
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
             'child_count': len(self.level_fours) if self.level_fours is not None else 0,
@@ -2434,7 +2445,9 @@ class LevelFour(db.Model):
     level_three_code = db.Column(db.String(20), nullable=False)
     code             = db.Column(db.String(30), nullable=False, unique=True)
     drawers          = db.Column(db.String(200), nullable=False)
+    drawers_ar       = db.Column(db.String(200))
     description      = db.Column(db.String(255), nullable=False, default='Heading Account')
+    description_ar   = db.Column(db.String(255))
     status           = db.Column(db.String(10), nullable=False, default='active')  # active | inactive
     created_at       = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -2444,7 +2457,8 @@ class LevelFour(db.Model):
         return {
             'id': self.id, 'code_length': self.code_length,
             'level_three_id': self.level_three_id, 'level_three_code': self.level_three_code,
-            'code': self.code, 'drawers': self.drawers, 'description': self.description,
+            'code': self.code, 'drawers': self.drawers, 'drawers_ar': self.drawers_ar or '',
+            'description': self.description, 'description_ar': self.description_ar or '',
             'status': self.status or 'active',
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
             'child_count': len(self.level_fives) if self.level_fives is not None else 0,
@@ -2461,7 +2475,10 @@ class LevelFive(db.Model):
     level_four_code = db.Column(db.String(30), nullable=False)
     code            = db.Column(db.String(40), nullable=False, unique=True)
     drawers         = db.Column(db.String(250), nullable=False)
+    drawers_ar      = db.Column(db.String(250))
     description     = db.Column(db.String(255), nullable=False, default='Transactional Account')
+    description_ar  = db.Column(db.String(255))
+    control_account = db.Column(db.String(3), nullable=False, default='No')  # Yes | No
     status          = db.Column(db.String(10), nullable=False, default='active')  # active | inactive
     created_at      = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -2469,7 +2486,9 @@ class LevelFive(db.Model):
         return {
             'id': self.id, 'code_length': self.code_length,
             'level_four_id': self.level_four_id, 'level_four_code': self.level_four_code,
-            'code': self.code, 'drawers': self.drawers, 'description': self.description,
+            'code': self.code, 'drawers': self.drawers, 'drawers_ar': self.drawers_ar or '',
+            'description': self.description, 'description_ar': self.description_ar or '',
+            'control_account': self.control_account or 'No',
             'status': self.status or 'active',
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
         }
@@ -3057,3 +3076,5 @@ class EmployeeWorkAllocation(db.Model):
             'kafeel_name': self.kafeel or '',
             'iqama_number': self.iqama or '',
         }
+
+        

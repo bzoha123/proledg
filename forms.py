@@ -56,24 +56,32 @@ class LevelOneForm(FlaskForm):
                     Regexp(r'^[A-Za-z]$', message='Code must be a single letter.')],
     )
     drawers     = StringField('Drawers', validators=[DataRequired(), Length(max=100)])
+    drawers_ar  = StringField('Drawers (AR)', validators=[Optional(), Length(max=100)])
     description = StringField('Description', validators=[DataRequired(), Length(max=255)])
+    description_ar = StringField('Description (AR)', validators=[Optional(), Length(max=255)])
 
 
 class LevelOneEditForm(FlaskForm):
     """Edit a Level 1 account — code is fixed, so it is NOT part of this form."""
     drawers     = StringField('Drawers', validators=[DataRequired(), Length(max=100)])
+    drawers_ar  = StringField('Drawers (AR)', validators=[Optional(), Length(max=100)])
     description = StringField('Description', validators=[DataRequired(), Length(max=255)])
+    description_ar = StringField('Description (AR)', validators=[Optional(), Length(max=255)])
 
 
 class LevelTwoForm(FlaskForm):
     """Create a Level 2 account. code is auto-generated; description is fixed."""
     level_one_id = SelectField('Level One', coerce=int, validators=[DataRequired()])
     drawers      = StringField('Drawers', validators=[DataRequired(), Length(max=150)])
+    drawers_ar   = StringField('Drawers (AR)', validators=[Optional(), Length(max=150)])
+    description_ar = StringField('Description (AR)', validators=[Optional(), Length(max=255)])
 
 
 class LevelTwoEditForm(FlaskForm):
     """Edit a Level 2 account — only drawers is editable."""
     drawers = StringField('Drawers', validators=[DataRequired(), Length(max=150)])
+    drawers_ar = StringField('Drawers (AR)', validators=[Optional(), Length(max=150)])
+    description_ar = StringField('Description (AR)', validators=[Optional(), Length(max=255)])
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -84,25 +92,39 @@ class LevelTwoEditForm(FlaskForm):
 class LevelThreeForm(FlaskForm):
     level_two_id = SelectField('Level Two', coerce=int, validators=[DataRequired()])
     drawers      = StringField('Drawers', validators=[DataRequired(), Length(max=200)])
+    drawers_ar   = StringField('Drawers (AR)', validators=[Optional(), Length(max=200)])
+    description_ar = StringField('Description (AR)', validators=[Optional(), Length(max=255)])
 
 
 class LevelThreeEditForm(FlaskForm):
     drawers = StringField('Drawers', validators=[DataRequired(), Length(max=200)])
+    drawers_ar = StringField('Drawers (AR)', validators=[Optional(), Length(max=200)])
+    description_ar = StringField('Description (AR)', validators=[Optional(), Length(max=255)])
 
 
 class LevelFourForm(FlaskForm):
     level_three_id = SelectField('Level Three', coerce=int, validators=[DataRequired()])
     drawers        = StringField('Drawers', validators=[DataRequired(), Length(max=200)])
+    drawers_ar     = StringField('Drawers (AR)', validators=[Optional(), Length(max=200)])
+    description_ar = StringField('Description (AR)', validators=[Optional(), Length(max=255)])
 
 
 class LevelFourEditForm(FlaskForm):
     drawers = StringField('Drawers', validators=[DataRequired(), Length(max=200)])
+    drawers_ar = StringField('Drawers (AR)', validators=[Optional(), Length(max=200)])
+    description_ar = StringField('Description (AR)', validators=[Optional(), Length(max=255)])
 
 
 class LevelFiveForm(FlaskForm):
     level_four_id = SelectField('Level Four', coerce=int, validators=[DataRequired()])
     drawers       = StringField('Drawers', validators=[DataRequired(), Length(max=250)])
+    drawers_ar    = StringField('Drawers (AR)', validators=[Optional(), Length(max=250)])
+    description_ar = StringField('Description (AR)', validators=[Optional(), Length(max=255)])
+    control_account = SelectField('Control Account', choices=[('No','No'),('Yes','Yes')], default='No', validators=[Optional()])
 
 
 class LevelFiveEditForm(FlaskForm):
     drawers = StringField('Drawers', validators=[DataRequired(), Length(max=250)])
+    drawers_ar = StringField('Drawers (AR)', validators=[Optional(), Length(max=250)])
+    description_ar = StringField('Description (AR)', validators=[Optional(), Length(max=255)])
+    control_account = SelectField('Control Account', choices=[('No','No'),('Yes','Yes')], default='No', validators=[Optional()])
