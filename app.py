@@ -93,7 +93,7 @@ def create_app(config_name='default'):
     app.register_blueprint(sale_bp)
     app.register_blueprint(coa_bp)
     app.register_blueprint(journal_bp)
-    app.register_blueprint(payroll_bp)
+    app.register_blueprint(payroll_bp, url_prefix='/payroll')
     app.register_blueprint(lookups_bp)
     app.register_blueprint(vendor_doc_bp)
     app.register_blueprint(buyer_doc_bp)

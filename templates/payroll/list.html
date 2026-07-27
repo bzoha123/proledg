@@ -1,280 +1,389 @@
 {% extends "base.html" %}
+{% set ar = current_locale == 'ar' %}
 {% block title %}{% if ar %}توحيد الرواتب{% else %}Salary Consolidation{% endif %}{% endblock %}
 
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
+<li class="breadcrumb-item active">{% if ar %}توحيد الرواتب{% else %}Salary Consolidation{% endif %}</li>
+{% endblock %}
+
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
-.page-title{font-size:22px;font-weight:800;color:#1e3a5f;margin-bottom:2px;}
-.page-sub{font-size:13px;color:#9ca3af;margin-bottom:16px;}
-.gen-panel{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px 18px;margin-bottom:16px;}
-.gen-title{font-size:13px;font-weight:700;color:#1e3a5f;margin-bottom:12px;display:flex;align-items:center;gap:7px;}
-.gen-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;align-items:end;}
-.gf{display:flex;flex-direction:column;}
-.gf label{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px;}
-.gf input,.gf select{border:1.5px solid #d1d5db;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;background:#fff;}
-.gf input:focus,.gf select:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
-.gen-btn{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:9px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
-.gen-msg{font-size:12px;margin-top:10px;display:none;padding:8px 12px;border-radius:8px;}
-.gen-msg.ok{background:#dcfce7;color:#15803d;display:block;}
-.gen-msg.err{background:#fee2e2;color:#dc2626;display:block;}
-.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
-.tool-btn{width:34px;height:34px;border-radius:8px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:14px;}
-.tool-btn-blue{background:#2563eb;color:#fff;} .tool-btn-gray{background:#e5e7eb;color:#374151;}
-.grid-wrap{border-radius:10px;overflow:hidden;border:1.5px solid #e2e8f0;background:#fff;}
-#payGrid{width:100%;height:560px;}
-.ag-theme-alpine{--ag-font-family:'Segoe UI',system-ui,sans-serif;--ag-font-size:12.5px;}
-.ag-theme-alpine .ag-header{background:#e5e7eb!important;}
-.ag-theme-alpine .ag-header-cell-text{color:#1e293b!important;font-weight:700;font-size:11px;}
-.st-badge{padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;}
-.st-draft{background:#f1f5f9;color:#475569;} .st-approved{background:#dbeafe;color:#1d4ed8;}
-.st-posted{background:#dcfce7;color:#15803d;} .st-cancelled{background:#fee2e2;color:#dc2626;}
-.ag-ab{width:26px;height:26px;border-radius:6px;border:none;cursor:pointer;margin:0 2px;font-size:11px;}
-.ag-ab-edit{background:#fef3c7;color:#d97706;} .ag-ab-del{background:#fee2e2;color:#dc2626;}
-/* Edit modal */
-.pay-modal .modal-dialog{max-width:560px;}
-.pay-modal .modal-content{border:none;border-radius:12px;overflow:hidden;}
-.pay-hdr{background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:14px 20px;color:#fff;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center;}
-.pay-body{padding:18px;background:#f8fafc;max-height:70vh;overflow:auto;}
-.pay-g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
-.pf label{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;display:block;}
-.pf input,.pf select{width:100%;border:1.5px solid #d1d5db;border-radius:8px;padding:7px 10px;font-size:13px;box-sizing:border-box;}
-.pay-ftr{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;background:#f8fafc;border-top:1.5px solid #e2e8f0;}
-.btn-cancel{background:#fff;border:1.5px solid #d1d5db;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;}
-.btn-save{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;}
-@media(max-width:900px){.gen-grid{grid-template-columns:1fr 1fr;}}
+.ag-theme-alpine{--ag-font-family:'Segoe UI',system-ui,sans-serif;--ag-font-size:12.5px;--ag-header-background-color:#1e3a5f;--ag-header-foreground-color:#fff;--ag-border-color:#e2e8f0;--ag-row-hover-color:#eff6ff;--ag-selected-row-background-color:#dbeafe;--ag-header-height:42px;--ag-row-height:38px;}
+.ag-theme-alpine .ag-header-cell-label{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.3px;}
+.pay-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.pbtn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid #d1d5db;background:white;color:#374151;transition:all .12s;}
+.pbtn:hover{border-color:#2563eb;color:#2563eb;background:#eff6ff;}
+.pbtn-green{background:linear-gradient(135deg,#16a34a,#15803d);color:white;border:none;}
+.pbtn-green:hover{filter:brightness(1.08);color:white;}
+.pbtn-blue{background:linear-gradient(135deg,#1e3a5f,#2563eb);color:white;border:none;}
+.pbtn-blue:hover{filter:brightness(1.1);color:white;}
+.pbtn-amber{background:#f59e0b;color:white;border:none;}
+.pbtn-amber:hover{background:#d97706;color:white;}
+.pbtn:disabled{opacity:.5;cursor:not-allowed;}
+.pay-legend{display:flex;gap:14px;align-items:center;font-size:11.5px;color:#6b7280;margin-inline-start:auto;flex-wrap:wrap;}
+.lg-chip{display:inline-flex;align-items:center;gap:5px;}
+.lg-box{width:13px;height:13px;border-radius:3px;border:1px solid #d1d5db;}
+.flow-badge{padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;}
+.flow-Initial{background:#dbeafe;color:#1e40af;}
+.flow-Approved{background:#dcfce7;color:#15803d;}
+.flow-Post{background:#e5e7eb;color:#374151;}
+.pay-modal-hdr{background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:16px 22px;display:flex;justify-content:space-between;align-items:center;}
+.pay-modal-hdr h5{margin:0;color:white;font-weight:700;font-size:15px;}
+.modal-header .btn-close{filter:brightness(0) invert(1);}
+.modal-content{border-radius:12px;overflow:hidden;}
+.pay-fld{margin-bottom:14px;}
+.pay-fld label{font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;display:block;}
+.pay-fld input,.pay-fld select{width:100%;padding:8px 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:13px;}
+.pay-fld input:focus,.pay-fld select:focus{outline:none;border-color:#2563eb;}
+.pay-foot{display:flex;justify-content:space-between;padding:12px 20px;background:#f8fafc;border-top:2px solid #e2e8f0;}
+.grid-wrap{border:1px solid #e2e8f0;border-radius:0 0 8px 8px;overflow:hidden;}
+.pay-info{font-size:12.5px;color:#374151;font-weight:600;padding:8px 0;}
+.pay-info b{color:#1e3a5f;}
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="padding:24px;">
-  <div class="page-title">{% if ar %}توحيد الرواتب{% else %}Salary Consolidation{% endif %}</div>
-  <div class="page-sub">{% if ar %}إنشاء كشف الرواتب من بيانات الموظفين{% else %}Generate payroll from employee data{% endif %}</div>
+<div class="proledg-page">
+  <h2 class="page-heading">{% if ar %}توحيد الرواتب{% else %}Salary Consolidation{% endif %}</h2>
 
-  <!-- Add Payroll panel -->
-  <div class="gen-panel">
-    <div class="gen-title"><i class="fas fa-calculator"></i> {% if ar %}إضافة راتب{% else %}Add Payroll{% endif %}</div>
-    <div class="gen-grid">
-      <div class="gf">
-        <label>{% if ar %}من تاريخ{% else %}Month From{% endif %}</label>
-        <input type="date" id="g_from">
-      </div>
-      <div class="gf">
-        <label>{% if ar %}إلى تاريخ{% else %}Month To{% endif %}</label>
-        <input type="date" id="g_to">
-      </div>
-      <div class="gf">
-        <label>{% if ar %}الشركة{% else %}Buyer / Company{% endif %}</label>
-        <select id="g_company"><option value="">{% if ar %}الكل{% else %}All{% endif %}</option></select>
-      </div>
-      <div class="gf">
-        <label>{% if ar %}القسم{% else %}Department{% endif %}</label>
-        <select id="g_department"><option value="">{% if ar %}الكل{% else %}All{% endif %}</option></select>
-      </div>
-      <div class="gf">
-        <label>{% if ar %}الكفيل{% else %}Kafeel{% endif %}</label>
-        <select id="g_kafeel"><option value="">{% if ar %}الكل{% else %}All{% endif %}</option></select>
-      </div>
-      <div class="gf">
-        <label>{% if ar %}أمر الراتب{% else %}Salary Order{% endif %}</label>
-        <input type="text" id="g_order" readonly>
-      </div>
-      <div class="gf" style="grid-column:span 2;justify-content:end;">
-        <button class="gen-btn" onclick="generatePayroll()"><i class="fas fa-cogs me-1"></i>{% if ar %}احتساب وإنشاء{% else %}Calculate & Generate{% endif %}</button>
-      </div>
+  <div class="pay-toolbar">
+    <button class="pbtn pbtn-green" onclick="openGenerate()"><i class="fas fa-cogs"></i>{% if ar %}إنشاء كشف رواتب{% else %}Generate Payroll{% endif %}</button>
+    <button class="pbtn" id="btnAddEmp" onclick="openAddEmployee()" disabled><i class="fas fa-user-plus"></i>{% if ar %}إضافة موظف{% else %}Add Employee{% endif %}</button>
+    <button class="pbtn pbtn-blue" id="btnApprove" onclick="setFlow('Approved')" disabled><i class="fas fa-check"></i>{% if ar %}اعتماد{% else %}Approve{% endif %}</button>
+    <button class="pbtn pbtn-amber" id="btnPost" onclick="setFlow('Post')" disabled><i class="fas fa-lock"></i>{% if ar %}ترحيل{% else %}Post{% endif %}</button>
+    <button class="pbtn" onclick="loadData()"><i class="fas fa-sync-alt"></i>{% if ar %}تحديث{% else %}Refresh{% endif %}</button>
+    <button class="pbtn" onclick="exportCsv()"><i class="fas fa-file-export"></i>CSV</button>
+    <a class="pbtn" href="#" id="btnReports" onclick="openReports(event)"><i class="fas fa-chart-bar"></i>{% if ar %}التقارير{% else %}Reports{% endif %}</a>
+
+    <div class="pay-legend">
+      <span class="lg-chip"><span class="lg-box" style="background:#fff;"></span>{% if ar %}عادي{% else %}Normal{% endif %}</span>
+      <span class="lg-chip"><span class="lg-box" style="background:#fef9c3;"></span>{% if ar %}مكرر ≤30{% else %}Dup ≤30{% endif %}</span>
+      <span class="lg-chip"><span class="lg-box" style="background:#fecaca;"></span>{% if ar %}مكرر >30{% else %}Dup >30{% endif %}</span>
+      <span class="lg-chip"><span class="lg-box" style="background:#e5e7eb;"></span>{% if ar %}مرحّل{% else %}Posted{% endif %}</span>
     </div>
-    <div class="gen-msg" id="genMsg"></div>
   </div>
 
-  <div class="toolbar">
-    <button class="tool-btn tool-btn-blue" onclick="loadData()" title="Refresh"><i class="fas fa-sync-alt"></i></button>
-    <button class="tool-btn tool-btn-gray" onclick="gridApi.setFilterModel(null)" title="Clear Filters"><i class="fas fa-times"></i></button>
-    <div style="flex:1;"></div>
-    <span id="selText" style="font-size:13px;color:#6b7280;"></span>
-    <input type="text" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" style="padding:7px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;width:200px;" oninput="gridApi.setQuickFilter(this.value)">
+  <div class="pay-info" id="payInfo" style="display:none;">
+    <span>{% if ar %}رقم الكشف:{% else %}Payroll ID:{% endif %} <b id="curPid">—</b></span>
+    &nbsp;|&nbsp; <span>{% if ar %}الحالة:{% else %}Status:{% endif %} <span class="flow-badge" id="curFlow">—</span></span>
+    &nbsp;|&nbsp; <span id="curCount">0</span> {% if ar %}موظف{% else %}employees{% endif %}
+    &nbsp;|&nbsp; <a href="#" onclick="clearFilter(event)">{% if ar %}عرض الكل{% else %}Show all{% endif %}</a>
   </div>
 
-  <div class="grid-wrap ag-theme-alpine"><div id="payGrid"></div></div>
+  <div class="grid-wrap">
+    <div id="payGrid" class="ag-theme-alpine" style="width:100%;height:560px;"></div>
+  </div>
 </div>
 
-<!-- Edit modal -->
-<div class="modal fade pay-modal" id="payModal" tabindex="-1">
-  <div class="modal-dialog"><div class="modal-content">
-    <div class="pay-hdr"><span id="payTitle"><i class="fas fa-edit me-2"></i>{% if ar %}تعديل الراتب{% else %}Edit Salary Row{% endif %}</span><button class="btn-close" style="filter:brightness(0)invert(1);" data-bs-dismiss="modal"></button></div>
-    <div class="pay-body">
-      <input type="hidden" id="p_id">
-      <div class="pay-g2">
-        <div class="pf"><label>{% if ar %}الموظف{% else %}Employee{% endif %}</label><input type="text" id="p_name" readonly></div>
-        <div class="pf"><label>{% if ar %}الراتب الشهري{% else %}Monthly Salary{% endif %}</label><input type="text" id="p_monthly" readonly></div>
-        <div class="pf"><label>{% if ar %}أيام{% else %}Days{% endif %}</label><input type="number" id="p_days" readonly></div>
-        <div class="pf"><label>{% if ar %}جُمَع{% else %}Fridays{% endif %}</label><input type="number" id="p_fridays" readonly></div>
-        <div class="pf"><label>{% if ar %}عطلات{% else %}Holidays{% endif %}</label><input type="number" id="p_holidays" value="0" onchange="recalcPreview()"></div>
-        <div class="pf"><label>{% if ar %}غياب{% else %}Absent{% endif %}</label><input type="number" id="p_absent" value="0" onchange="recalcPreview()"></div>
-        <div class="pf"><label>{% if ar %}ساعات إضافية{% else %}OT Hours{% endif %}</label><input type="number" id="p_ot" value="0" step="0.5" onchange="recalcPreview()"></div>
-        <div class="pf"><label>{% if ar %}معدل الإضافي{% else %}OT Rate{% endif %}</label><input type="number" id="p_otrate" value="0" step="0.01" onchange="recalcPreview()"></div>
-        <div class="pf"><label>{% if ar %}مكافأة{% else %}Bonus{% endif %}</label><input type="number" id="p_bonus" value="0" step="0.01" onchange="recalcPreview()"></div>
-        <div class="pf"><label>{% if ar %}سلفة{% else %}Advance{% endif %}</label><input type="number" id="p_advance" value="0" step="0.01" onchange="recalcPreview()"></div>
-        <div class="pf"><label>{% if ar %}الإجمالي{% else %}Total Salary{% endif %}</label><input type="text" id="p_total" readonly></div>
-        <div class="pf"><label>{% if ar %}المستحق{% else %}Salary Payable{% endif %}</label><input type="text" id="p_payable" readonly></div>
-        <div class="pf"><label>{% if ar %}الرصيد المدفوع{% else %}Paid Balance{% endif %}</label><input type="number" id="p_paid" value="0" step="0.01"></div>
-        <div class="pf"><label>{% if ar %}الحالة{% else %}Status{% endif %}</label>
-          <select id="p_status"><option value="Draft">Draft</option><option value="Approved">Approved</option><option value="Posted">Posted</option><option value="Cancelled">Cancelled</option></select>
-        </div>
-      </div>
+{# ══ GENERATE MODAL ══ #}
+<div class="modal fade" id="genModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="pay-modal-hdr">
+      <h5><i class="fas fa-cogs me-2"></i>{% if ar %}إنشاء كشف الرواتب{% else %}Generate Payroll{% endif %}</h5>
+      <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
     </div>
-    <div class="pay-ftr"><button class="btn-cancel" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button><button class="btn-save" onclick="saveRow()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button></div>
+    <div class="modal-body" style="padding:20px;">
+      <div class="row">
+        <div class="col-md-6 pay-fld"><label>{% if ar %}من شهر{% else %}Month From{% endif %} *</label><input type="date" id="g_from" onchange="deriveMonth()"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}إلى شهر{% else %}Month To{% endif %} *</label><input type="date" id="g_to"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}الشهر{% else %}Month{% endif %}</label><input type="text" id="g_month" readonly style="background:#f8fafc;"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}الكفيل{% else %}Kafeel{% endif %}</label><select id="g_kafeel"><option value="">{% if ar %}الكل{% else %}All{% endif %}</option></select></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}المشتري / الشركة{% else %}Buyer / Company{% endif %}</label><select id="g_buyer"><option value="">{% if ar %}الكل{% else %}All{% endif %}</option></select></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}القسم{% else %}Department{% endif %}</label><select id="g_dept"><option value="">{% if ar %}الكل{% else %}All{% endif %}</option></select></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}الموقع{% else %}Location{% endif %}</label><select id="g_loc"><option value="">{% if ar %}الكل{% else %}All{% endif %}</option></select></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}أمر الراتب{% else %}Salary Order{% endif %}</label><input type="text" id="g_order" placeholder="{% if ar %}اختياري{% else %}optional{% endif %}"></div>
+      </div>
+      <div id="genMsg" style="display:none;padding:10px 12px;border-radius:8px;background:#fef3c7;color:#92400e;font-size:13px;font-weight:600;"></div>
+    </div>
+    <div class="pay-foot">
+      <button class="pbtn" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+      <button class="pbtn pbtn-green" id="genBtn" onclick="doGenerate()"><i class="fas fa-cogs"></i>{% if ar %}إنشاء{% else %}Generate{% endif %}</button>
+    </div>
+  </div></div>
+</div>
+
+{# ══ EDIT MODAL ══ #}
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="pay-modal-hdr">
+      <h5><i class="fas fa-edit me-2"></i>{% if ar %}تعديل صف الراتب{% else %}Edit Payroll Row{% endif %}</h5>
+      <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body" style="padding:20px;">
+      <input type="hidden" id="e_id">
+      <div class="pay-info" style="margin-bottom:10px;"><b id="e_name">—</b></div>
+      <div class="row">
+        <div class="col-md-6 pay-fld"><label>{% if ar %}رقم الكشف{% else %}Sheet No{% endif %}</label><input type="text" id="e_sheet_no"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}ساعات/يوم{% else %}Day Hour{% endif %}</label><input type="number" step="0.01" id="e_day_hour_salary" oninput="preview()"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}الغياب{% else %}Absent{% endif %}</label><input type="number" id="e_absent" oninput="preview()"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}العطلات{% else %}Holidays{% endif %}</label><input type="number" id="e_holidays" oninput="preview()"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}إجمالي الساعات{% else %}Total Hours{% endif %}</label><input type="number" step="0.01" id="e_total_hours" oninput="preview()"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}OT إضافي{% else %}Extra OT{% endif %}</label><input type="number" step="0.01" id="e_extra_ot_hour" oninput="preview()"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}سعر OT{% else %}OT Rate{% endif %}</label><input type="number" step="0.01" id="e_ot_rate" oninput="preview()"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}مكافأة{% else %}Bonus{% endif %}</label><input type="number" step="0.01" id="e_bonus" oninput="preview()"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}خصم{% else %}Deduction{% endif %}</label><input type="number" step="0.01" id="e_deduction" oninput="preview()"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}سلفة{% else %}Advance{% endif %}</label><input type="number" step="0.01" id="e_advance" oninput="preview()"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}دائن{% else %}Credit{% endif %}</label><input type="number" step="0.01" id="e_credit" oninput="preview()"></div>
+        <div class="col-md-6 pay-fld"><label>{% if ar %}مدفوع{% else %}Paid{% endif %}</label><input type="number" step="0.01" id="e_paid_balance" oninput="preview()"></div>
+      </div>
+      <div style="background:#f8fafc;border-radius:8px;padding:12px;font-size:13px;">
+        <div>{% if ar %}الراتب الشهري{% else %}Monthly Salary{% endif %}: <b id="pv_monthly">0</b></div>
+        <div>{% if ar %}مبلغ OT{% else %}OT Amount{% endif %}: <b id="pv_ot">0</b></div>
+        <div>{% if ar %}إجمالي الراتب{% else %}Total Salary{% endif %}: <b id="pv_total">0</b></div>
+        <div>{% if ar %}صافي المستحق{% else %}Salary Payable{% endif %}: <b id="pv_payable">0</b></div>
+        <div>{% if ar %}الرصيد{% else %}Balance{% endif %}: <b id="pv_balance">0</b></div>
+      </div>
+      <div id="editMsg" style="display:none;margin-top:10px;padding:8px 10px;border-radius:7px;font-size:12.5px;font-weight:600;"></div>
+    </div>
+    <div class="pay-foot">
+      <button class="pbtn" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+      <button class="pbtn pbtn-green" onclick="saveEdit()"><i class="fas fa-save"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button>
+    </div>
+  </div></div>
+</div>
+
+{# ══ ADD EMPLOYEE MODAL ══ #}
+<div class="modal fade" id="addEmpModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="pay-modal-hdr">
+      <h5><i class="fas fa-user-plus me-2"></i>{% if ar %}إضافة موظف للكشف{% else %}Add Employee to Payroll{% endif %}</h5>
+      <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body" style="padding:20px;">
+      <div class="pay-fld"><label>{% if ar %}الموظف{% else %}Employee{% endif %}</label>
+        <select id="ae_emp"><option value="">—</option></select>
+      </div>
+      <div style="font-size:12px;color:#6b7280;">{% if ar %}الموظفون المطابقون لمعايير هذا الكشف فقط. الموظف الموجود بالفعل يُضاف كراتب مزدوج.{% else %}Only employees matching this payroll's criteria. An already-present employee is added as a Double salary.{% endif %}</div>
+    </div>
+    <div class="pay-foot">
+      <button class="pbtn" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button>
+      <button class="pbtn pbtn-green" onclick="doAddEmployee()"><i class="fas fa-plus"></i>{% if ar %}إضافة{% else %}Add{% endif %}</button>
+    </div>
   </div></div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
 <script>
+const CSRF = '{{ csrf_token() }}';
 const IS_AR = {{ 'true' if ar else 'false' }};
-const CSRF  = '{{ csrf_token() }}';
+let gridApi, curPayrollId = '', curFlow = '';
 
-/* Load filter dropdowns + next salary order */
-function loadFilters(){
-  fetch('/payroll/filters').then(r=>r.json()).then(d=>{
-    const fill=(id,arr)=>{const s=document.getElementById(id);arr.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o);});};
-    fill('g_company',d.companies||[]); fill('g_department',d.departments||[]); fill('g_kafeel',d.kafeels||[]);
-  });
-  fetch('/payroll/next-order').then(r=>r.json()).then(d=>{document.getElementById('g_order').value=d.salary_order||'';});
-}
+const fmt = v => (v==null?'':Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}));
 
-function generatePayroll(){
-  const msg=document.getElementById('genMsg'); msg.className='gen-msg'; msg.textContent='';
-  const from=document.getElementById('g_from').value, to=document.getElementById('g_to').value;
-  if(!from||!to){ msg.className='gen-msg err'; msg.textContent=IS_AR?'اختر نطاق الشهر':'Select the month range'; return; }
-  const fd=new FormData();
-  fd.set('csrf_token',CSRF);
-  fd.set('month_from',from); fd.set('month_to',to);
-  fd.set('company',document.getElementById('g_company').value);
-  fd.set('department',document.getElementById('g_department').value);
-  fd.set('kafeel',document.getElementById('g_kafeel').value);
-  fd.set('salary_order',document.getElementById('g_order').value);
-  fetch('/payroll/generate',{method:'POST',headers:{'X-CSRFToken':CSRF},body:fd})
-   .then(r=>r.json()).then(d=>{
-     if(d.ok){ msg.className='gen-msg ok'; msg.textContent=(IS_AR?'تم إنشاء ':'Generated ')+d.created+(IS_AR?' سجل':' rows')+' ('+d.salary_order+')'; loadData(); fetch('/payroll/next-order').then(r=>r.json()).then(x=>document.getElementById('g_order').value=x.salary_order); }
-     else { msg.className='gen-msg err'; msg.textContent=d.error||'Error'; }
-   }).catch(()=>{ msg.className='gen-msg err'; msg.textContent=IS_AR?'خطأ':'Network error'; });
-}
-
-/* Edit modal */
-let curRow=null;
-function openEdit(id){
-  fetch('/payroll/'+id+'/json').then(r=>r.json()).then(d=>{
-    curRow=d;
-    document.getElementById('p_id').value=d.id;
-    document.getElementById('p_name').value=d.name;
-    document.getElementById('p_monthly').value=(d.monthly_salary||0).toFixed(2);
-    document.getElementById('p_days').value=d.days;
-    document.getElementById('p_fridays').value=d.fridays;
-    document.getElementById('p_holidays').value=d.holidays;
-    document.getElementById('p_absent').value=d.absent;
-    document.getElementById('p_ot').value=d.ot_hour;
-    document.getElementById('p_otrate').value=d.ot_rate;
-    document.getElementById('p_bonus').value=d.bonus;
-    document.getElementById('p_advance').value=d.advance;
-    document.getElementById('p_paid').value=d.paid_balance;
-    document.getElementById('p_status').value=d.status;
-    recalcPreview();
-    new bootstrap.Modal(document.getElementById('payModal')).show();
-  });
-}
-function recalcPreview(){
-  if(!curRow) return;
-  const dayRate=curRow.day_hour_salary||0;
-  const ot=(parseFloat(document.getElementById('p_ot').value)||0)*(parseFloat(document.getElementById('p_otrate').value)||0);
-  const absent=(parseFloat(document.getElementById('p_absent').value)||0)*dayRate;
-  const bonus=parseFloat(document.getElementById('p_bonus').value)||0;
-  const adv=parseFloat(document.getElementById('p_advance').value)||0;
-  const total=(curRow.monthly_salary||0)+ot+bonus-absent;
-  document.getElementById('p_total').value=total.toFixed(2);
-  document.getElementById('p_payable').value=(total-adv).toFixed(2);
-}
-function saveRow(){
-  const id=document.getElementById('p_id').value;
-  const fd=new FormData(); fd.set('csrf_token',CSRF);
-  ['holidays','absent','ot','otrate','bonus','advance','paid'].forEach(x=>{});
-  fd.set('holidays',document.getElementById('p_holidays').value);
-  fd.set('absent',document.getElementById('p_absent').value);
-  fd.set('ot_hour',document.getElementById('p_ot').value);
-  fd.set('ot_rate',document.getElementById('p_otrate').value);
-  fd.set('bonus',document.getElementById('p_bonus').value);
-  fd.set('advance',document.getElementById('p_advance').value);
-  fd.set('paid_balance',document.getElementById('p_paid').value);
-  fd.set('status',document.getElementById('p_status').value);
-  fetch('/payroll/'+id+'/edit',{method:'POST',headers:{'X-CSRFToken':CSRF},body:fd})
-   .then(r=>r.json()).then(d=>{ if(d.ok){ bootstrap.Modal.getInstance(document.getElementById('payModal'))?.hide(); loadData(); } else alert(d.error||'Error'); });
-}
-function confDel(id,name){
-  if(confirm((IS_AR?'حذف صف الراتب لـ ':'Delete salary row for ')+name+'?')){
-    fetch('/payroll/'+id+'/delete',{method:'POST',headers:{'X-CSRFToken':CSRF},body:new URLSearchParams({csrf_token:CSRF})})
-     .then(r=>r.json()).then(d=>{ if(d.ok) loadData(); else alert(d.error||'Error'); });
-  }
-}
-
-/* Grid */
-const rStatus=p=>{const s=p.value||'Draft';const c=s==='Posted'?'st-posted':s==='Approved'?'st-approved':s==='Cancelled'?'st-cancelled':'st-draft';return `<span class="st-badge ${c}">${s}</span>`;};
-const rNum=p=>p.value!=null?parseFloat(p.value).toFixed(2):'';
-class ActR{init(p){this.g=document.createElement('div');this.g.style.cssText='display:flex;gap:3px;';const d=p.data;const nm=(d.name||'').replace(/'/g,'');this.g.innerHTML=`<button class="ag-ab ag-ab-edit" onclick="openEdit(${d.id})"><i class="fas fa-pencil-alt"></i></button><button class="ag-ab ag-ab-del" onclick="confDel(${d.id},'${nm}')"><i class="fas fa-trash"></i></button>`;}getGui(){return this.g;}}
-
-const defCol={sortable:true,unSortIcon:true,resizable:true,filter:true,floatingFilter:true,enableRowGroup:true,enablePivot:true,enableValue:true,menuTabs:['filterMenuTab','columnsMenuTab','generalMenuTab'],filterParams:{buttons:['apply','reset','clear'],closeOnApply:true}};
-const cols=[
-  {headerName:IS_AR?'أمر':'Order',field:'salary_order',width:120,pinned:IS_AR?'right':'left'},
-  {headerName:IS_AR?'الاسم':'Name',field:'name',width:150,pinned:IS_AR?'right':'left'},
-  {headerName:IS_AR?'الشهر':'Month',field:'month',width:100},
-  {headerName:IS_AR?'المهنة':'Profession',field:'profession',width:130},
-  {headerName:IS_AR?'الجنسية':'Nationality',field:'nationality',width:110},
-  {headerName:IS_AR?'الإقامة':'Iqama',field:'iqama',width:120},
-  {headerName:IS_AR?'القسم':'Department',field:'department',width:120},
-  {headerName:IS_AR?'الكفيل':'Kafeel',field:'kafeel',width:130},
-  {headerName:IS_AR?'أيام':'Days',field:'days',width:80,floatingFilter:false},
-  {headerName:IS_AR?'جُمَع':'Fridays',field:'fridays',width:85,floatingFilter:false},
-  {headerName:IS_AR?'عطلات':'Holidays',field:'holidays',width:85,floatingFilter:false},
-  {headerName:IS_AR?'غياب':'Absent',field:'absent',width:80,floatingFilter:false},
-  {headerName:IS_AR?'راتب شهري':'Monthly',field:'monthly_salary',width:110,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'بدل':'Allowance',field:'allowance',width:100,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'يومي/ساعة':'Day/Hr',field:'day_hour_salary',width:100,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'ساعات عمل':'Work Hrs',field:'working_hour',width:100,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'إجمالي ساعات':'Total Hrs',field:'total_hours',width:105,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'ساعات إضافية':'OT Hrs',field:'ot_hour',width:95,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'إضافي إضافي':'Extra OT',field:'extra_ot_hour',width:95,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'معدل إضافي':'OT Rate',field:'ot_rate',width:95,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'مبلغ إضافي':'OT Amt',field:'ot_amount',width:95,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'مكافأة':'Bonus',field:'bonus',width:90,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'إجمالي':'Total',field:'total_salary',width:110,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'سلفة':'Advance',field:'advance',width:95,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'المستحق':'Payable',field:'salary_payable',width:110,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'مدفوع':'Paid Bal',field:'paid_balance',width:100,cellRenderer:rNum,floatingFilter:false},
-  {headerName:IS_AR?'انتهاء الإقامة':'Iqama Exp',field:'iqama_expiry',width:120},
-  {headerName:IS_AR?'بنك':'Bank',field:'bank_code',width:120},
-  {headerName:'IBAN',field:'iban_no',width:150},
-  {headerName:IS_AR?'الحالة':'Status',field:'status',width:105,cellRenderer:rStatus},
-  {headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:100,pinned:IS_AR?'left':'right',sortable:false,filter:false,floatingFilter:false,resizable:false,enableRowGroup:false,enablePivot:false,enableValue:false,suppressColumnsToolPanel:true,cellRenderer:ActR,cellStyle:{overflow:'visible'}},
+const COLS = [
+  {headerName:IS_AR?'رقم الكشف':'Payroll ID', field:'payroll_id', width:110, pinned:IS_AR?'right':'left'},
+  {headerName:IS_AR?'الموظف':'Employee', field:'name', width:150, pinned:IS_AR?'right':'left'},
+  {headerName:IS_AR?'المهنة':'Profession', field:'profession', width:120},
+  {headerName:IS_AR?'الإقامة':'Iqama', field:'iqama', width:110},
+  {headerName:IS_AR?'النوع':'Type', field:'salary_type', width:90},
+  {headerName:IS_AR?'أيام':'Days', field:'days', width:70},
+  {headerName:IS_AR?'جمعة':'Fri', field:'fridays', width:60},
+  {headerName:IS_AR?'عطلات':'Hol', field:'holidays', width:60},
+  {headerName:IS_AR?'غياب':'Absent', field:'absent', width:70},
+  {headerName:IS_AR?'إجمالي ساعات':'Total Hrs', field:'total_hours', width:95, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'ساعات العمل':'Work Hrs', field:'working_hour', width:90, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'ساعات OT':'OT Hrs', field:'ot_hour', width:85, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'OT إضافي':'Extra OT', field:'extra_ot_hour', width:85, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'الراتب الشهري':'Monthly', field:'monthly_salary', width:105, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'مبلغ OT':'OT Amt', field:'ot_amount', width:95, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'مكافأة':'Bonus', field:'bonus', width:85, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'خصم':'Deduct', field:'deduction', width:85, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'إجمالي الراتب':'Total Sal', field:'total_salary', width:110, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'سلفة':'Advance', field:'advance', width:90, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'دائن':'Credit', field:'credit', width:85, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'صافي مستحق':'Payable', field:'salary_payable', width:105, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'مدفوع':'Paid', field:'paid_balance', width:90, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'الرصيد':'Balance', field:'balance', width:95, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'سعر PO':'PO Rate', field:'po_rate', width:85, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'مبلغ الفاتورة':'Invoice', field:'invoice_amount', width:105, valueFormatter:p=>fmt(p.value)},
+  {headerName:IS_AR?'حالة الراتب':'Pay Status', field:'payroll_status', width:95},
+  {headerName:IS_AR?'التكرار':'Dupe', field:'dupe_total_days', width:80,
+    valueGetter:p=>p.data.is_duplicate?(IS_AR?('مكرر '+p.data.dupe_total_days+'ي'):('Dup '+p.data.dupe_total_days+'d')):''},
 ];
 
-let gridApi;
-agGrid.createGrid(document.getElementById('payGrid'),{
-  columnDefs:cols,rowData:[],pagination:true,paginationPageSize:20,multiSortKey:'ctrl',
-  alwaysShowHorizontalScroll:true,alwaysShowVerticalScroll:true,
-  sideBar:{toolPanels:[{id:'columns',labelDefault:IS_AR?'الأعمدة':'Columns',labelKey:'columns',iconKey:'columns',toolPanel:'agColumnsToolPanel'},{id:'filters',labelDefault:IS_AR?'الفلاتر':'Filters',labelKey:'filters',iconKey:'filter',toolPanel:'agFiltersToolPanel'}],defaultToolPanel:''},
-  rowGroupPanelShow:'always',pivotPanelShow:'always',groupDisplayType:'groupRows',
-  animateRows:true,enableRtl:IS_AR,defaultColDef:defCol,
-  localeText:IS_AR?{noRowsToShow:'لا توجد بيانات'}:{noRowsToShow:'No payroll rows yet'},
-  onGridReady(p){gridApi=p.api;loadData();},
-  getRowStyle(p){return p.node.rowIndex%2===0?{background:'#fff'}:{background:'#fafbfc'};}
+const rowStyle = p => {
+  const c = p.data && p.data.row_color;
+  if (c==='gray')   return {background:'#e5e7eb'};
+  if (c==='red')    return {background:'#fecaca'};
+  if (c==='yellow') return {background:'#fef9c3'};
+  return null;
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  agGrid.createGrid(document.getElementById('payGrid'), {
+    columnDefs: COLS, rowData: [],
+    defaultColDef:{sortable:true, resizable:true, filter:true},
+    enableRtl: IS_AR, pagination:true, paginationPageSize:50,
+    rowSelection:'single', getRowStyle: rowStyle,
+    onGridReady: p => { gridApi = p.api; loadData(); },
+    onRowDoubleClicked: p => openEdit(p.data),
+  });
+  loadFilters();
 });
 
 function loadData(){
-  var sf=gridApi?gridApi.getFilterModel():null;
-  fetch('/payroll/data').then(r=>r.json()).then(d=>{
-    gridApi.setGridOption('rowData',d);
-    if(sf&&Object.keys(sf).length)gridApi.setFilterModel(sf);
-    document.getElementById('selText').textContent=d.length+' '+(IS_AR?'سجل':'rows');
+  const url = curPayrollId ? '/payroll/data?payroll_id='+encodeURIComponent(curPayrollId) : '/payroll/data';
+  fetch(url).then(r=>r.json()).then(d=>{
+    gridApi.setGridOption('rowData', d);
+    updateHeader(d);
   });
 }
-loadFilters();
+
+function updateHeader(rows){
+  const info = document.getElementById('payInfo');
+  if (curPayrollId && rows.length){
+    curFlow = rows[0].payroll_flow_status || 'Initial';
+    document.getElementById('curPid').textContent = curPayrollId;
+    const fb = document.getElementById('curFlow');
+    fb.textContent = curFlow; fb.className = 'flow-badge flow-'+curFlow;
+    document.getElementById('curCount').textContent = rows.length;
+    info.style.display = 'block';
+    document.getElementById('btnAddEmp').disabled  = curFlow !== 'Initial';
+    document.getElementById('btnApprove').disabled = curFlow !== 'Initial';
+    document.getElementById('btnPost').disabled    = curFlow !== 'Approved';
+  } else {
+    info.style.display = 'none';
+    ['btnAddEmp','btnApprove','btnPost'].forEach(id=>document.getElementById(id).disabled=true);
+  }
+}
+
+function clearFilter(e){ if(e)e.preventDefault(); curPayrollId=''; loadData(); }
+
+/* ── Generate ── */
+function loadFilters(){
+  fetch('/payroll/filters').then(r=>r.json()).then(d=>{
+    const fill=(id,arr,val,txt)=>{const s=document.getElementById(id);arr.forEach(x=>{const o=document.createElement('option');if(val){o.value=x[val];o.textContent=x[txt];}else{o.value=x;o.textContent=x;}s.appendChild(o);});};
+    fill('g_kafeel', d.kafeel);
+    fill('g_dept', d.department);
+    fill('g_loc', d.location);
+    fill('g_buyer', d.buyers, 'id', 'name');
+  });
+}
+function openGenerate(){
+  document.getElementById('genMsg').style.display='none';
+  new bootstrap.Modal(document.getElementById('genModal')).show();
+}
+function deriveMonth(){
+  const v=document.getElementById('g_from').value;
+  if(v){const d=new Date(v+'T00:00');document.getElementById('g_month').value=d.toLocaleString('en',{month:'long'})+'-'+d.getFullYear();}
+}
+function doGenerate(){
+  const fd=new FormData();
+  fd.append('month_from',document.getElementById('g_from').value);
+  fd.append('month_to',document.getElementById('g_to').value);
+  fd.append('kafeel',document.getElementById('g_kafeel').value);
+  fd.append('buyer_id',document.getElementById('g_buyer').value);
+  fd.append('department',document.getElementById('g_dept').value);
+  fd.append('location',document.getElementById('g_loc').value);
+  fd.append('salary_order',document.getElementById('g_order').value);
+  const btn=document.getElementById('genBtn'); btn.disabled=true;
+  fetch('/payroll/generate',{method:'POST',headers:{'X-CSRFToken':CSRF},body:fd})
+    .then(r=>r.json().then(d=>({s:r.status,d})))
+    .then(({s,d})=>{
+      btn.disabled=false;
+      const msg=document.getElementById('genMsg');
+      if(d.ok){
+        curPayrollId=d.payroll_id;
+        bootstrap.Modal.getInstance(document.getElementById('genModal')).hide();
+        loadData();
+      } else if(d.duplicate){
+        msg.style.display='block';
+        msg.innerHTML=d.error+'<br><a href="#" onclick="openExisting(\''+d.payroll_id+'\')">'+(IS_AR?'فتح الكشف الحالي':'Open existing payroll')+'</a>';
+      } else {
+        msg.style.display='block'; msg.style.background='#fee2e2'; msg.style.color='#b91c1c'; msg.textContent=d.error||'Error';
+      }
+    });
+}
+function openExisting(pid){ curPayrollId=pid; bootstrap.Modal.getInstance(document.getElementById('genModal')).hide(); loadData(); }
+
+/* ── Edit ── */
+let editRow=null;
+const EF=['sheet_no','day_hour_salary','absent','holidays','total_hours','extra_ot_hour','ot_rate','bonus','deduction','advance','credit','paid_balance'];
+function openEdit(row){
+  if(row.row_color==='gray'){ alert(IS_AR?'الكشف المرحّل مقفل.':'Posted payroll is locked.'); return; }
+  editRow=row;
+  document.getElementById('e_id').value=row.id;
+  document.getElementById('e_name').textContent=row.name+' — '+row.payroll_id;
+  EF.forEach(f=>{const el=document.getElementById('e_'+f);if(el)el.value=row[f]!=null?row[f]:'';});
+  document.getElementById('editMsg').style.display='none';
+  preview();
+  new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+function preview(){
+  if(!editRow)return;
+  const g=id=>parseFloat(document.getElementById('e_'+id).value)||0;
+  const basic=parseFloat(editRow.basic_salary)||0, allow=parseFloat(editRow.allowance)||0;
+  const days=g('absent')!=null?parseInt(editRow.days)||0:0;
+  const D=parseInt(editRow.days)||0, F=parseInt(editRow.fridays)||0, H=g('holidays'), A=g('absent');
+  const dayHour=g('day_hour_salary'), totalHours=g('total_hours'), extraOt=g('extra_ot_hour'), otRate=g('ot_rate');
+  const bonus=g('bonus'), ded=g('deduction'), adv=g('advance'), cred=g('credit'), paid=g('paid_balance');
+  const otHour=Math.max(D-F-H-A,0)*dayHour;
+  const workHour=Math.max(totalHours-otHour,0);
+  const stype=(editRow.salary_type||'').toLowerCase();
+  let monthly = stype.includes('hour') ? basic*workHour : (D?((basic+allow)/D):0)*(D-A);
+  const otAmt=(otHour*otRate)+(extraOt*otRate);
+  const total=monthly+otAmt+bonus-ded;
+  const payable=total-adv-cred;
+  const bal=payable-paid;
+  document.getElementById('pv_monthly').textContent=fmt(monthly);
+  document.getElementById('pv_ot').textContent=fmt(otAmt);
+  document.getElementById('pv_total').textContent=fmt(total);
+  document.getElementById('pv_payable').textContent=fmt(payable);
+  document.getElementById('pv_balance').textContent=fmt(bal);
+}
+function saveEdit(){
+  const id=document.getElementById('e_id').value;
+  const fd=new FormData();
+  EF.forEach(f=>fd.append(f,document.getElementById('e_'+f).value||'0'));
+  fd.set('sheet_no',document.getElementById('e_sheet_no').value||'');
+  fetch('/payroll/'+id+'/edit',{method:'POST',headers:{'X-CSRFToken':CSRF},body:fd})
+    .then(r=>r.json().then(d=>({s:r.status,d})))
+    .then(({s,d})=>{
+      const msg=document.getElementById('editMsg');
+      if(d.ok){ bootstrap.Modal.getInstance(document.getElementById('editModal')).hide(); loadData(); }
+      else if(d.blocked){ msg.style.display='block'; msg.style.background='#fecaca'; msg.style.color='#b91c1c'; msg.textContent=d.error; }
+      else { msg.style.display='block'; msg.style.background='#fee2e2'; msg.style.color='#b91c1c'; msg.textContent=d.error||'Error'; }
+    });
+}
+
+/* ── Add employee ── */
+function openAddEmployee(){
+  if(!curPayrollId)return;
+  const sel=document.getElementById('ae_emp'); sel.innerHTML='<option value="">—</option>';
+  fetch('/payroll/'+encodeURIComponent(curPayrollId)+'/available-employees')
+    .then(r=>r.json()).then(list=>{
+      list.forEach(e=>{const o=document.createElement('option');o.value=e.employee_id;o.textContent=e.name+(e.already_in_payroll?(IS_AR?' (مزدوج)':' (Double)'):'')+(e.profession?' — '+e.profession:'');sel.appendChild(o);});
+      new bootstrap.Modal(document.getElementById('addEmpModal')).show();
+    });
+}
+function doAddEmployee(){
+  const eid=document.getElementById('ae_emp').value;
+  if(!eid)return;
+  const fd=new FormData(); fd.append('employee_id',eid);
+  fetch('/payroll/'+encodeURIComponent(curPayrollId)+'/add-employee',{method:'POST',headers:{'X-CSRFToken':CSRF},body:fd})
+    .then(r=>r.json()).then(d=>{
+      if(d.ok){ bootstrap.Modal.getInstance(document.getElementById('addEmpModal')).hide(); loadData(); }
+      else alert(d.error||'Error');
+    });
+}
+
+/* ── Workflow ── */
+function setFlow(target){
+  if(!curPayrollId)return;
+  const label = target==='Approved'?(IS_AR?'اعتماد':'approve'):(IS_AR?'ترحيل':'post');
+  if(!confirm((IS_AR?'تأكيد ':'Confirm ')+label+' — '+curPayrollId+'?'))return;
+  const fd=new FormData(); fd.append('flow',target);
+  fetch('/payroll/'+encodeURIComponent(curPayrollId)+'/set-flow',{method:'POST',headers:{'X-CSRFToken':CSRF},body:fd})
+    .then(r=>r.json()).then(d=>{ if(d.ok)loadData(); else alert(d.error||'Error'); });
+}
+
+/* ── Reports / export ── */
+function exportCsv(){ if(gridApi)gridApi.exportDataAsCsv({fileName:'payroll_'+(curPayrollId||'all')+'.csv'}); }
+function openReports(e){ e.preventDefault(); window.location.href='/payroll/reports'+(curPayrollId?('?payroll_id='+encodeURIComponent(curPayrollId)):''); }
 </script>
 {% endblock %}

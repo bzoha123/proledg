@@ -277,9 +277,15 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ url_for('payroll.payroll_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('payroll.') %}active{% endif %}">
+                            <a href="{{ url_for('payroll.payroll_list') }}" class="nav-link {% if request.endpoint == 'payroll.payroll_list' %}active{% endif %}">
                                 <i class="fas fa-money-check-alt"></i>
                                 <span>{% if current_locale=='ar' %}توحيد الرواتب{% else %}Salary Consolidation{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('payroll.payroll_reports') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('payroll.payroll_report') %}active{% endif %}">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>{% if current_locale=='ar' %}تقارير الرواتب{% else %}Payroll Reports{% endif %}</span>
                             </a>
                         </li>
                         <li class="nav-item nav-item-coming">

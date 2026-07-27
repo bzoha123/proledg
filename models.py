@@ -2886,6 +2886,20 @@ class SalaryConsolidation(db.Model):
     status           = db.Column(db.String(20), default='Draft')
     bank_code        = db.Column(db.String(60))
     iban_no          = db.Column(db.String(60))
+    # ── Payroll module extension (spec: 3-stage workflow) ─────────
+    payroll_id          = db.Column(db.String(20), index=True)   # PR-000001 (shared per batch)
+    payroll_status      = db.Column(db.String(10), default='Single')   # Single / Double
+    location            = db.Column(db.String(150))
+    buyer_name          = db.Column(db.String(200))
+    salary_category     = db.Column(db.String(30))
+    salary_type         = db.Column(db.String(20))               # Per Month / Per Hour
+    basic_salary        = db.Column(db.Numeric(12, 2), default=0)
+    deduction           = db.Column(db.Numeric(12, 2), default=0)
+    credit              = db.Column(db.Numeric(12, 2), default=0)
+    balance             = db.Column(db.Numeric(12, 2), default=0)
+    payroll_flow_status = db.Column(db.String(10), default='Initial')  # Initial / Approved / Post
+    po_rate             = db.Column(db.Numeric(12, 2), default=0)
+    invoice_amount      = db.Column(db.Numeric(14, 2), default=0)
     created_at       = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at       = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -2928,6 +2942,19 @@ class SalaryConsolidation(db.Model):
             'status': self.status or 'Draft',
             'bank_code': self.bank_code or '',
             'iban_no': self.iban_no or '',
+            'payroll_id': self.payroll_id or '',
+            'payroll_status': self.payroll_status or 'Single',
+            'location': self.location or '',
+            'buyer_name': self.buyer_name or '',
+            'salary_category': self.salary_category or '',
+            'salary_type': self.salary_type or '',
+            'basic_salary': _f(self.basic_salary),
+            'deduction': _f(self.deduction),
+            'credit': _f(self.credit),
+            'balance': _f(self.balance),
+            'payroll_flow_status': self.payroll_flow_status or 'Initial',
+            'po_rate': _f(self.po_rate),
+            'invoice_amount': _f(self.invoice_amount),
         }
 
 
@@ -2941,6 +2968,24 @@ def next_salary_order():
         except (ValueError, IndexError):
             n = (last.id or 0) + 1
     return f'SAL-{n:06d}'
+
+
+def next_payroll_id():
+    """Next shared payroll batch id in PR-000001 format.
+
+    All employee rows generated in one payroll run share this id.
+    """
+    last = (SalaryConsolidation.query
+            .filter(SalaryConsolidation.payroll_id.like('PR-%'))
+            .order_by(SalaryConsolidation.id.desc())
+            .first())
+    n = 1
+    if last and last.payroll_id and last.payroll_id.startswith('PR-'):
+        try:
+            n = int(last.payroll_id.split('-')[1]) + 1
+        except (ValueError, IndexError):
+            n = (last.id or 0) + 1
+    return f'PR-{n:06d}'
 
 # ═════════════════════════════════════════════════════════════════
 #  EMPLOYEE WORK ALLOCATION  (replaces the old work_allocations table)
