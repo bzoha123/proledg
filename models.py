@@ -377,6 +377,9 @@ class Employee(db.Model):
     buyer_id         = db.Column(db.Integer, db.ForeignKey('buyers.id'))
     document_path    = db.Column(db.String(300))
     photo_path       = db.Column(db.String(300))
+    levelfive_code       = db.Column(db.String(40))
+    levelfive_drawer_en  = db.Column(db.String(250))
+    levelfive_drawer_ar  = db.Column(db.String(250))
     created_at       = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at       = db.Column(db.DateTime, default=datetime.utcnow)
     created_by       = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -3131,3 +3134,21 @@ def next_uom_code():
         except (ValueError, IndexError):
             n = (last.id or 0) + 1
     return f'UOM-{n:04d}'
+
+
+def active_financial_year():
+    """Return the active (Open) FinancialYear, or None if none is open.
+
+    'Active' = status is not 'Closed'. If several are open, the most recent
+    year wins.
+    """
+    return (FinancialYear.query
+            .filter(FinancialYear.status != 'Closed')
+            .order_by(FinancialYear.year.desc())
+            .first())
+
+
+def active_fy_year():
+    """The numeric year of the active financial year, or None."""
+    fy = active_financial_year()
+    return fy.year if fy else None

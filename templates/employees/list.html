@@ -1343,6 +1343,31 @@
             </div>
           </div>
 
+          {{ sec('coa','sitemap','Chart Of Account','دليل الحسابات') }}
+              <div class="field-row">
+                <div class="field-item">
+                  <div class="field-label">{% if ar %}كود الحساب / Account Code{% else %}Account Code / كود الحساب{% endif %} <span class="field-req">*</span></div>
+                  <select name="levelfive_code" id="emp_l5_code" class="field-input" dir="ltr" onchange="onEmpL5CodeChange()">
+                    <option value="">{% if ar %}اختر...{% else %}Select...{% endif %}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field-item">
+                  <div class="field-label">{% if ar %}الدرج (إنجليزي) / Drawer Eng{% else %}Drawer Eng / الدرج{% endif %}</div>
+                  <input type="text" name="levelfive_drawer_en" id="emp_l5_drawer_en" class="field-input" dir="ltr" readonly style="background:#f8fafc;" placeholder="Level five.Drawer">
+                </div>
+                <div class="field-item">
+                  <div class="field-label">{% if ar %}الدرج (عربي) / Drawer Ar{% else %}Drawer Ar / الدرج{% endif %}</div>
+                  <input type="text" name="levelfive_drawer_ar" id="emp_l5_drawer_ar" class="field-input" dir="rtl" readonly style="background:#f8fafc;" placeholder="Level five.Drawer">
+                </div>
+              </div>
+              <div class="field-row one-col">
+                <p style="font-size:11.5px;color:#6b7280;margin:0;"><i class="fas fa-info-circle me-1"></i>{% if ar %}تظهر فقط الحسابات التي حساب التحكم فيها = نعم.{% else %}Only accounts with Control Account = Yes are listed.{% endif %}</p>
+              </div>
+            </div>
+          </div>
+
         </form>
       </div>
 
@@ -2264,8 +2289,39 @@ function biTransRetrans(srcId, tgtId, srcLang) {
   .catch(() => {});
 }
 
+/* ══ Chart of Account: Level-Five control accounts ══ */
+let _empL5List = null, _empL5Promise = null;
+function empL5EnsureLoaded(){
+  if(_empL5Promise) return _empL5Promise;
+  _empL5Promise = fetch('/sellers/control-accounts')
+    .then(r => r.json())
+    .then(list => {
+      _empL5List = list || [];
+      const sel = document.getElementById('emp_l5_code');
+      if(sel){
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">' + (IS_AR ? 'اختر...' : 'Select...') + '</option>' +
+          _empL5List.map(a => `<option value="${a.code}">${a.code}</option>`).join('');
+        sel.value = cur;
+      }
+      return _empL5List;
+    })
+    .catch(() => { _empL5List = []; return _empL5List; });
+  return _empL5Promise;
+}
+function onEmpL5CodeChange(){
+  const code = document.getElementById('emp_l5_code').value;
+  const a = (_empL5List || []).find(x => x.code === code);
+  document.getElementById('emp_l5_drawer_en').value = a ? (a.drawer_en || '') : '';
+  document.getElementById('emp_l5_drawer_ar').value = a ? (a.drawer_ar || '') : '';
+}
+document.addEventListener('DOMContentLoaded', empL5EnsureLoaded);
+
 function resetEmpForm() {
   document.querySelectorAll('#empForm input[type="text"], #empForm input[type="number"], #empForm input[type="date"], #empForm input[type="email"]').forEach(el => el.value = '');
+  const _l5 = document.getElementById('emp_l5_code'); if (_l5) _l5.value = '';
+  const _l5e = document.getElementById('emp_l5_drawer_en'); if (_l5e) _l5e.value = '';
+  const _l5a = document.getElementById('emp_l5_drawer_ar'); if (_l5a) _l5a.value = '';
   document.querySelectorAll('#empForm input[type="hidden"]').forEach(el => {
     if (!['csrf_token','auto_code','_emp_id'].includes(el.name)) el.value = '';
   });
@@ -2486,6 +2542,12 @@ function openEditEmp(id) {
     initNationality(d.nationality || '');
     initProfession(d.profession_ids || []);
     initBuyerAndDept(d.buyer_id || '', d.department_id || '');
+
+    empL5EnsureLoaded().then(() => {
+      const cc=document.getElementById('emp_l5_code'); if(cc) cc.value=d.levelfive_code||'';
+      const de=document.getElementById('emp_l5_drawer_en'); if(de) de.value=d.levelfive_drawer_en||'';
+      const da=document.getElementById('emp_l5_drawer_ar'); if(da) da.value=d.levelfive_drawer_ar||'';
+    });
 
     calcAge();
     setTimeout(wireHijriBadges, 50);

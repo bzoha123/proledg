@@ -97,10 +97,23 @@ def add_buyer():
         flash(_t('Buyer name is required.','اسم المشتري مطلوب.'),'danger')
         return redirect(url_for('lookups.list_buyers'))
     
-    # Generate code
-    last = BuyerMaster.query.order_by(BuyerMaster.id.desc()).first()
-    num  = (last.id + 1) if last else 1
-    code = f'BUY-{num:04d}'
+    # Generate code — BUY-<active FY year>-<n>
+    from models import active_fy_year
+    _byear = active_fy_year()
+    if not _byear:
+        flash(_t('No active (Open) financial year. Please open a financial year first.',
+                 'لا توجد سنة مالية مفتوحة. الرجاء فتح سنة مالية أولاً.'), 'danger')
+        return redirect(url_for('lookups.list_buyers'))
+    _blike = f'BUY-{_byear}-%'
+    _bmax = 0
+    for _br in BuyerMaster.query.filter(BuyerMaster.buyer_code.like(_blike)).all():
+        try:
+            _bn = int((_br.buyer_code or '').rsplit('-', 1)[1])
+            if _bn > _bmax:
+                _bmax = _bn
+        except (ValueError, IndexError):
+            continue
+    code = f'BUY-{_byear}-{_bmax + 1}'
     
     b = BuyerMaster(
         buyer_code=code,

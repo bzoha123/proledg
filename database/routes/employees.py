@@ -368,6 +368,11 @@ def bind_employee(emp, f):
     buyer_id = f.get('buyer_id')
     emp.buyer_id = int(buyer_id) if buyer_id else None
 
+    # Chart of Account link (Level Five control account).
+    emp.levelfive_code      = (f.get('levelfive_code', '') or '').strip() or None
+    emp.levelfive_drawer_en = (f.get('levelfive_drawer_en', '') or '').strip() or None
+    emp.levelfive_drawer_ar = (f.get('levelfive_drawer_ar', '') or '').strip() or None
+
     # Department/company/location now live only on employee_work_allocation.
 
     emp.overtime_rate = _calc_overtime_rate(emp)
@@ -557,6 +562,9 @@ def employee_json(id):
         'insurance_expiry': d(e.insurance_expiry), 'labour_office': g('labour_office'),
         'passport_location': g('passport_location') or 'IN',
         'buyer_id': e.buyer_id or '',
+        'levelfive_code': g('levelfive_code'),
+        'levelfive_drawer_en': g('levelfive_drawer_en'),
+        'levelfive_drawer_ar': g('levelfive_drawer_ar'),
         # department/company/location come from the latest allocation (wa_* below)
         'photo_path': e.photo_path or '',
         'photo_url': _photo_url(e),

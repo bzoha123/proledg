@@ -677,12 +677,16 @@ function validateSqDates() {
   const errEl = document.getElementById('sqDateErr');
   const vu = document.getElementById('sq_valid_until').value;
   const rd = document.getElementById('sq_req_date').value;
+  const pdt = document.getElementById('sq_posting_date').value;
   const today = new Date().toISOString().split('T')[0];
   let msg = '';
   if (vu && vu < today) msg = IS_AR ? 'يجب أن يكون "صالح حتى" بتاريخ اليوم أو بعده' : 'Valid Until must be today or later';
   else if (rd && vu && rd > vu) msg = IS_AR ? 'يجب أن يكون "التاريخ المطلوب" قبل أو يساوي "صالح حتى"' : 'Required Date must be on/before Valid Until';
+  else if (pdt && rd && pdt > rd) msg = IS_AR ? 'يجب أن يكون "تاريخ الترحيل" في أو قبل "التاريخ المطلوب"' : 'Posting Date must be on or before the Required Date';
   errEl.style.display = msg ? 'block' : 'none';
   errEl.textContent = msg;
+  const postEl = document.getElementById('sq_posting_date');
+  if (postEl && rd) postEl.max = rd;
   return !msg;
 }
 

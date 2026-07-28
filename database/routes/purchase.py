@@ -40,6 +40,18 @@ from models import (
 pur_bp = Blueprint('purchase', __name__)
 
 
+@pur_bp.errorhandler(Exception)
+def _handle_pur_errors(e):
+    # Surface a clean message when no financial year is open, instead of a 500.
+    from flask import jsonify, session
+    if e.__class__.__name__ == 'NoActiveFinancialYear':
+        msg = ('لا توجد سنة مالية مفتوحة. الرجاء فتح سنة مالية أولاً.'
+               if session.get('lang') == 'ar'
+               else 'No active (Open) financial year. Please open a financial year first.')
+        return jsonify({'ok': False, 'error': msg}), 400
+    raise e
+
+
 # ══════════════════════════════════════════════════════════════════
 # HELPER FUNCTIONS
 # ══════════════════════════════════════════════════════════════════
@@ -60,62 +72,59 @@ def _vendor_list():
     return [{'id':v.id,'name':v.vendor_name_en,'name_ar':v.vendor_name_ar or ''} 
             for v in VendorMaster.query.filter_by(is_active=True).order_by(VendorMaster.vendor_name_en).all()]
 
+class NoActiveFinancialYear(Exception):
+    """Raised when there is no Open financial year to number a document."""
+    pass
+
+
+# Logical doc type -> the new prefix embedded in the document number.
+PURCHASE_PREFIX = {
+    'PR':  'PER',   # Purchase Request
+    'PQ':  'PEQ',   # Purchase Quotation
+    'PO':  'PRO',   # Purchase Order
+    'GRN': 'GRN',   # Goods Receipt Note
+    'PINV':'PRI',   # Purchase Invoice
+    'GRR': 'GRR',   # Goods Return Request
+    'PDM': 'PDM',   # Purchase Debit Memo
+}
+
+
 def _next_doc_no(doc_type, model):
-    """Generate unique doc number per type. Format: PR-2026-0001, PQ-2026-0001, etc."""
-    year = date.today().year
-    prefix = doc_type
+    """Unique document number: <PREFIX>-<FY year>-<n>  e.g. PER-2026-1.
+
+    The year is the active (Open) financial year, not the calendar year.
+    Raises NoActiveFinancialYear if no financial year is open.
+    """
+    from models import active_fy_year
+    year = active_fy_year()
+    if not year:
+        raise NoActiveFinancialYear()
+
+    prefix = PURCHASE_PREFIX.get(doc_type, doc_type)
     like = f'{prefix}-{year}-%'
-    
-    # Determine primary key column
-    pk_name = 'id'
-    if hasattr(model, 'purchase_request_id'):
-        pk_name = 'purchase_request_id'
-    elif hasattr(model, 'purchase_quotation_id'):
-        pk_name = 'purchase_quotation_id'
-    elif hasattr(model, 'purchase_order_id'):
-        pk_name = 'purchase_order_id'
-    elif hasattr(model, 'goods_receipt_note_id'):
-        pk_name = 'goods_receipt_note_id'
-    elif hasattr(model, 'purchase_invoice_id'):
-        pk_name = 'purchase_invoice_id'
-    elif hasattr(model, 'goods_return_request_id'):
-        pk_name = 'goods_return_request_id'
-    elif hasattr(model, 'purchase_debit_memo_id'):
-        pk_name = 'purchase_debit_memo_id'
-    
-    pk_column = getattr(model, pk_name)
-    
-    # Get all records for this year
-    all_docs = db.session.query(model).filter(
-        model.doc_no.like(like)
-    ).all()
-    
+
+    # Highest existing sequence for this prefix + year.
     max_num = 0
-    for doc in all_docs:
+    for doc in db.session.query(model).filter(model.doc_no.like(like)).all():
         if doc.doc_no:
             try:
-                parts = doc.doc_no.split('-')
-                if len(parts) == 3:
-                    num = int(parts[2])
-                    if num > max_num:
-                        max_num = num
+                num = int(doc.doc_no.rsplit('-', 1)[1])
+                if num > max_num:
+                    max_num = num
             except (ValueError, IndexError):
                 continue
-    
+
     n = max_num + 1
-    doc_no = f'{prefix}-{year}-{n:04d}'
-    
-    # Safety check - ensure uniqueness
+    doc_no = f'{prefix}-{year}-{n}'
+
+    # Ensure uniqueness.
     retries = 0
     while model.query.filter_by(doc_no=doc_no).first() and retries < 100:
         n += 1
-        doc_no = f'{prefix}-{year}-{n:04d}'
+        doc_no = f'{prefix}-{year}-{n}'
         retries += 1
-    
     if retries >= 100:
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        doc_no = f'{prefix}-{year}-{timestamp}'
-    
+        doc_no = f'{prefix}-{year}-{datetime.now().strftime("%Y%m%d%H%M%S")}'
     return doc_no
 
 
@@ -256,6 +265,17 @@ def _validate_pr_pq_dates(valid_until, required_date):
     return None
 
 
+def _validate_posting_date(posting_date, required_date):
+    """Posting date rule: present, and on/before the required date.
+
+    Per spec: posting date can be the current date or less-than-or-equal to
+    the required date.
+    """
+    if posting_date and required_date and posting_date > required_date:
+        return 'Posting Date must be on or before the Required Date'
+    return None
+
+
 def _next_item_code():
     """Generate the next sequential item code. Format: ITM-0001, ITM-0002, ..."""
     prefix = 'ITM'
@@ -365,10 +385,22 @@ def vendor_json(id):
 @login_required
 def vendor_add():
     f = request.form
-    last = VendorMaster.query.order_by(VendorMaster.id.desc()).first()
-    n = (last.id + 1) if last else 1
+    from models import active_fy_year
+    _vyear = active_fy_year()
+    if not _vyear:
+        raise NoActiveFinancialYear()
+    _vlike = f'Ven-{_vyear}-%'
+    _vmax = 0
+    for _vr in VendorMaster.query.filter(VendorMaster.vendor_code.like(_vlike)).all():
+        try:
+            _vn = int((_vr.vendor_code or '').rsplit('-', 1)[1])
+            if _vn > _vmax:
+                _vmax = _vn
+        except (ValueError, IndexError):
+            continue
+    _vcode = f'Ven-{_vyear}-{_vmax + 1}'
     v = VendorMaster(
-        vendor_code=f'VND-{n:05d}',
+        vendor_code=_vcode,
         vendor_name_en=f.get('vendor_name_en','').strip(),
         vendor_name_ar=f.get('vendor_name_ar','').strip() or None,
         vat_number=f.get('vat_number','').strip() or None,
@@ -999,7 +1031,10 @@ def pr_add():
     f = request.form
     valid_until   = pd(f.get('valid_until'))
     required_date = pd(f.get('required_date'))
+    posting_date  = pd(f.get('posting_date')) or date.today()
     err = _validate_pr_pq_dates(valid_until, required_date)
+    if not err:
+        err = _validate_posting_date(posting_date, required_date)
     if err:
         return jsonify({'ok': False, 'error': err}), 400
 
@@ -1010,7 +1045,7 @@ def pr_add():
         vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
         status=f.get('status','Open'),
         kind=f.get('kind','Goods'),
-        posting_date=pd(f.get('posting_date')),
+        posting_date=posting_date,
         valid_until=valid_until,
         document_date=date.today(),
         required_date=required_date,
@@ -1032,7 +1067,10 @@ def pr_edit(id):
     f = request.form
     valid_until   = pd(f.get('valid_until'))
     required_date = pd(f.get('required_date'))
+    posting_date  = pd(f.get('posting_date')) or date.today()
     err = _validate_pr_pq_dates(valid_until, required_date)
+    if not err:
+        err = _validate_posting_date(posting_date, required_date)
     if err:
         return jsonify({'ok': False, 'error': err}), 400
 
@@ -1044,7 +1082,7 @@ def pr_edit(id):
     if not pr.requester_name:
         pr.requester_name = current_user.username
     pr.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
-    pr.posting_date  = pd(f.get('posting_date'))
+    pr.posting_date  = posting_date
     pr.valid_until    = valid_until
     pr.document_date  = date.today()
     pr.required_date  = required_date
@@ -1116,7 +1154,10 @@ def pq_add():
 
     valid_until   = pd(f.get('valid_until'))
     required_date = pd(f.get('required_date'))
+    posting_date  = pd(f.get('posting_date')) or date.today()
     err = _validate_pr_pq_dates(valid_until, required_date)
+    if not err:
+        err = _validate_posting_date(posting_date, required_date)
     if err:
         return jsonify({'ok': False, 'error': err}), 400
 
@@ -1129,7 +1170,7 @@ def pq_add():
         vendor_ref_no=f.get('vendor_ref_no','').strip(),
         status=f.get('status','Open'),
         kind=f.get('kind','Goods'),
-        posting_date=pd(f.get('posting_date')),
+        posting_date=posting_date,
         valid_until=valid_until,
         document_date=date.today(),
         required_date=required_date,
@@ -1162,7 +1203,10 @@ def pq_edit(id):
     f = request.form
     valid_until   = pd(f.get('valid_until'))
     required_date = pd(f.get('required_date'))
+    posting_date  = pd(f.get('posting_date')) or date.today()
     err = _validate_pr_pq_dates(valid_until, required_date)
+    if not err:
+        err = _validate_posting_date(posting_date, required_date)
     if err:
         return jsonify({'ok': False, 'error': err}), 400
 
@@ -1177,7 +1221,7 @@ def pq_edit(id):
     pq.purchase_request_id = int(f.get('pr_id')) if f.get('pr_id') else None
     pq.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
     pq.vendor_ref_no = f.get('vendor_ref_no','').strip()
-    pq.posting_date  = pd(f.get('posting_date'))
+    pq.posting_date  = posting_date
     pq.valid_until    = valid_until
     pq.document_date  = date.today()
     pq.required_date  = required_date
@@ -1274,7 +1318,7 @@ def po_add():
             remarks=f.get('remarks', '').strip(),
             status=f.get('status', 'Open'),
             kind=f.get('kind','Goods'),
-            posting_date=pd(f.get('posting_date')),
+            posting_date=pd(f.get('posting_date')) or date.today(),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
             created_by=current_user.id,
@@ -1313,7 +1357,7 @@ def po_edit(id):
         po.remarks = f.get('remarks', '').strip()
         po.status = f.get('status', 'Open')
         po.kind = f.get('kind','Goods')
-        po.posting_date  = pd(f.get('posting_date'))
+        po.posting_date  = pd(f.get('posting_date')) or date.today()
         po.delivery_date = pd(f.get('delivery_date'))
         po.document_date = date.today()
 
@@ -1408,7 +1452,7 @@ def grn_add():
             vendor_ref_no=f.get('vendor_ref_no','').strip(),
             status=f.get('status','Open'),
             kind=f.get('kind','Goods'),
-            posting_date=pd(f.get('posting_date')),
+            posting_date=pd(f.get('posting_date')) or date.today(),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
             created_by=current_user.id,
@@ -1436,7 +1480,7 @@ def grn_edit(id):
         doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
         doc.status=f.get('status','Open')
         doc.kind=f.get('kind','Goods')
-        doc.posting_date  = pd(f.get('posting_date'))
+        doc.posting_date  = pd(f.get('posting_date')) or date.today()
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
         tots = _save_doc_line_items(GoodsReceiptLineItem, 'goods_receipt_note_id', id, f, 'purchase')
@@ -1511,7 +1555,7 @@ def pinv_add():
             return jsonify({'ok': False, 'error': 'Selected Purchase Order is not Approved'}), 400
 
         status = f.get('status','Open')
-        posting_date = pd(f.get('posting_date'))
+        posting_date = pd(f.get('posting_date')) or date.today()
         if status != 'Open' and not posting_date:
             posting_date = date.today()
 
@@ -1558,7 +1602,7 @@ def pinv_edit(id):
         f = request.form
         
         status = f.get('status','Open')
-        posting_date = pd(f.get('posting_date'))
+        posting_date = pd(f.get('posting_date')) or date.today()
         if status != 'Open' and not posting_date:
             posting_date = date.today()
 
@@ -1698,7 +1742,7 @@ def grr_add():
             vendor_ref_no=f.get('vendor_ref_no','').strip(),
             status=f.get('status','Open'),
             kind=f.get('kind','Goods'),
-            posting_date=pd(f.get('posting_date')),
+            posting_date=pd(f.get('posting_date')) or date.today(),
             delivery_date=delivery_date,
             document_date=date.today(),
             created_by=current_user.id,
@@ -1735,7 +1779,7 @@ def grr_edit(id):
         doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
         doc.status=f.get('status','Open')
         doc.kind=f.get('kind','Goods')
-        doc.posting_date  = pd(f.get('posting_date'))
+        doc.posting_date  = pd(f.get('posting_date')) or date.today()
         doc.delivery_date = delivery_date
         doc.document_date = date.today()
         tots = _save_doc_line_items(GoodsReturnLineItem, 'goods_return_request_id', id, f, 'purchase')
@@ -1810,7 +1854,7 @@ def pdm_add():
             kind=f.get('kind','Goods'),
             payment_method=f.get('payment_method','Credit'),
             bank_account_id=int(f.get('bank_account_id')) if f.get('bank_account_id') else None,
-            posting_date=pd(f.get('posting_date')),
+            posting_date=pd(f.get('posting_date')) or date.today(),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
             created_by=current_user.id,
@@ -1843,7 +1887,7 @@ def pdm_edit(id):
         doc.kind=f.get('kind','Goods')
         doc.payment_method = f.get('payment_method','Credit')
         doc.bank_account_id = int(f.get('bank_account_id')) if f.get('bank_account_id') else None
-        doc.posting_date  = pd(f.get('posting_date'))
+        doc.posting_date  = pd(f.get('posting_date')) or date.today()
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
         tots = _save_doc_line_items(PurchaseDebitMemoLineItem, 'purchase_debit_memo_id', id, f, 'purchase')

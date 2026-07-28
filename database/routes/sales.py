@@ -22,6 +22,17 @@ from models import (
 sale_bp = Blueprint('sales', __name__)
 
 
+@sale_bp.errorhandler(Exception)
+def _handle_sale_errors(e):
+    from flask import jsonify, session
+    if e.__class__.__name__ == 'NoActiveFinancialYear':
+        msg = ('لا توجد سنة مالية مفتوحة. الرجاء فتح سنة مالية أولاً.'
+               if session.get('lang') == 'ar'
+               else 'No active (Open) financial year. Please open a financial year first.')
+        return jsonify({'ok': False, 'error': msg}), 400
+    raise e
+
+
 # ══════════════════════════════════════════════════════════════════
 # HELPERS
 # ══════════════════════════════════════════════════════════════════
@@ -60,6 +71,13 @@ def _validate_sr_sq_dates(valid_until, required_date):
     return None
 
 
+def _validate_posting_date(posting_date, required_date):
+    """Posting date can be the current date or on/before the required date."""
+    if posting_date and required_date and posting_date > required_date:
+        return 'Posting Date must be on or before the Required Date'
+    return None
+
+
 def _ensure_doc_counters_table():
     """Ensure the doc_counters table exists."""
     try:
@@ -91,119 +109,60 @@ def _ensure_doc_counters_table():
         return False
 
 
+class NoActiveFinancialYear(Exception):
+    """Raised when there is no Open financial year to number a document."""
+    pass
+
+
+# Logical doc type -> the new prefix embedded in the document number.
+SALES_PREFIX = {
+    'SR':  'SLR',   # Sales Request
+    'SQ':  'SLQ',   # Sales Quotation
+    'SO':  'SLO',   # Sales Order
+    'DN':  'SDN',   # Delivery Note
+    'SINV':'SLI',   # Sales Invoice
+    'SRR': 'SRR',   # Sales Return Request
+    'SCM': 'SCM',   # Sales Credit Memo
+}
+
+
 def _next_doc_no(doc_type, model):
-    """Generate unique doc number per type with atomic counter."""
-    year = date.today().year
-    prefix = doc_type
-    
-    _ensure_doc_counters_table()
-    
-    try:
-        db.session.execute(text("BEGIN"))
-        
-        row = db.session.execute(
-            text("SELECT counter_value FROM doc_counters WHERE doc_type = :dt"),
-            {'dt': doc_type}
-        ).fetchone()
-        
-        if row:
-            counter = row[0] + 1
-            db.session.execute(
-                text("UPDATE doc_counters SET counter_value = :val, last_updated = CURRENT_TIMESTAMP WHERE doc_type = :dt"),
-                {'val': counter, 'dt': doc_type}
-            )
-        else:
-            counter = 1
-            db.session.execute(
-                text("INSERT INTO doc_counters (doc_type, counter_value) VALUES (:dt, :val)"),
-                {'dt': doc_type, 'val': counter}
-            )
-        
-        db.session.commit()
-        
-        doc_no = f'{prefix}-{year}-{counter:04d}'
-        
-        existing = model.query.filter_by(doc_no=doc_no).first()
-        if existing:
-            db.session.execute(text("BEGIN"))
-            db.session.execute(
-                text("UPDATE doc_counters SET counter_value = counter_value + 1, last_updated = CURRENT_TIMESTAMP WHERE doc_type = :dt"),
-                {'dt': doc_type}
-            )
-            db.session.commit()
-            
-            row = db.session.execute(
-                text("SELECT counter_value FROM doc_counters WHERE doc_type = :dt"),
-                {'dt': doc_type}
-            ).fetchone()
-            
-            if row:
-                counter = row[0]
-                doc_no = f'{prefix}-{year}-{counter:04d}'
-                
-                if model.query.filter_by(doc_no=doc_no).first():
-                    timestamp = datetime.now().strftime("%H%M%S")
-                    doc_no = f'{prefix}-{year}-{counter:04d}-{timestamp}'
-        
-        return doc_no
-        
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error in atomic counter: {e}")
-        return _fallback_next_doc_no(doc_type, model)
+    """Unique document number: <PREFIX>-<FY year>-<n>  e.g. SLR-2026-1.
 
+    The year is the active (Open) financial year, not the calendar year.
+    Raises NoActiveFinancialYear if no financial year is open.
+    """
+    from models import active_fy_year
+    year = active_fy_year()
+    if not year:
+        raise NoActiveFinancialYear()
 
-def _fallback_next_doc_no(doc_type, model):
-    """Fallback method if atomic counter fails."""
-    year = date.today().year
-    prefix = doc_type
-    
-    pk_name = 'id'
-    if hasattr(model, 'sales_request_id'):
-        pk_name = 'sales_request_id'
-    elif hasattr(model, 'sales_quotation_id'):
-        pk_name = 'sales_quotation_id'
-    elif hasattr(model, 'sales_order_id'):
-        pk_name = 'sales_order_id'
-    elif hasattr(model, 'delivery_note_id'):
-        pk_name = 'delivery_note_id'
-    elif hasattr(model, 'sales_invoice_id'):
-        pk_name = 'sales_invoice_id'
-    elif hasattr(model, 'sales_return_request_id'):
-        pk_name = 'sales_return_request_id'
-    elif hasattr(model, 'sales_credit_memo_id'):
-        pk_name = 'sales_credit_memo_id'
-    
-    pk_column = getattr(model, pk_name)
+    prefix = SALES_PREFIX.get(doc_type, doc_type)
     like = f'{prefix}-{year}-%'
-    
-    last = db.session.query(model).filter(model.doc_no.like(like)).order_by(pk_column.desc()).first()
-    
-    if last and last.doc_no:
-        try:
-            parts = last.doc_no.split('-')
-            if len(parts) >= 3:
-                n = int(parts[-1]) + 1
-            else:
-                n = 1
-        except Exception:
-            n = 1
-    else:
-        n = 1
-    
-    doc_no = f'{prefix}-{year}-{n:04d}'
-    
+
+    max_num = 0
+    for doc in db.session.query(model).filter(model.doc_no.like(like)).all():
+        if doc.doc_no:
+            try:
+                num = int(doc.doc_no.rsplit('-', 1)[1])
+                if num > max_num:
+                    max_num = num
+            except (ValueError, IndexError):
+                continue
+
+    n = max_num + 1
+    doc_no = f'{prefix}-{year}-{n}'
+
     retries = 0
     while model.query.filter_by(doc_no=doc_no).first() and retries < 100:
         n += 1
-        doc_no = f'{prefix}-{year}-{n:04d}'
+        doc_no = f'{prefix}-{year}-{n}'
         retries += 1
-    
     if retries >= 100:
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        doc_no = f'{prefix}-{year}-{timestamp}'
-    
+        doc_no = f'{prefix}-{year}-{datetime.now().strftime("%Y%m%d%H%M%S")}'
     return doc_no
+
+
 
 
 def _save_attachments(doc_type, doc_id, files):
@@ -409,7 +368,10 @@ def sr_add():
     f = request.form
     valid_until   = pd(f.get('valid_until'))
     required_date = pd(f.get('required_date'))
+    posting_date  = pd(f.get('posting_date')) or date.today()
     err = _validate_sr_sq_dates(valid_until, required_date)
+    if not err:
+        err = _validate_posting_date(posting_date, required_date)
     if err:
         return jsonify({'ok': False, 'error': err}), 400
 
@@ -420,7 +382,7 @@ def sr_add():
         buyer_id=int(f.get('buyer_id')) if f.get('buyer_id') else None,
         status=f.get('status','Open'),
         kind=f.get('kind','Goods'),
-        posting_date=pd(f.get('posting_date')),
+        posting_date=pd(f.get('posting_date')) or date.today(),
         valid_until=valid_until,
         document_date=date.today(),
         required_date=required_date,
@@ -445,7 +407,10 @@ def sr_edit(id):
     f = request.form
     valid_until   = pd(f.get('valid_until'))
     required_date = pd(f.get('required_date'))
+    posting_date  = pd(f.get('posting_date')) or date.today()
     err = _validate_sr_sq_dates(valid_until, required_date)
+    if not err:
+        err = _validate_posting_date(posting_date, required_date)
     if err:
         return jsonify({'ok': False, 'error': err}), 400
 
@@ -457,7 +422,7 @@ def sr_edit(id):
     if not sr.requester_name:
         sr.requester_name = current_user.username
     sr.buyer_id = int(f.get('buyer_id')) if f.get('buyer_id') else None
-    sr.posting_date  = pd(f.get('posting_date'))
+    sr.posting_date  = pd(f.get('posting_date')) or date.today()
     sr.valid_until    = valid_until
     sr.document_date  = date.today()
     sr.required_date  = required_date
@@ -538,7 +503,10 @@ def sq_add():
 
     valid_until   = pd(f.get('valid_until'))
     required_date = pd(f.get('required_date'))
+    posting_date  = pd(f.get('posting_date')) or date.today()
     err = _validate_sr_sq_dates(valid_until, required_date)
+    if not err:
+        err = _validate_posting_date(posting_date, required_date)
     if err:
         return jsonify({'ok': False, 'error': err}), 400
 
@@ -551,7 +519,7 @@ def sq_add():
         buyer_ref_no=f.get('buyer_ref_no','').strip(),
         status=f.get('status','Open'),
         kind=f.get('kind','Goods'),
-        posting_date=pd(f.get('posting_date')),
+        posting_date=pd(f.get('posting_date')) or date.today(),
         valid_until=valid_until,
         document_date=date.today(),
         required_date=required_date,
@@ -578,7 +546,10 @@ def sq_edit(id):
     f = request.form
     valid_until   = pd(f.get('valid_until'))
     required_date = pd(f.get('required_date'))
+    posting_date  = pd(f.get('posting_date')) or date.today()
     err = _validate_sr_sq_dates(valid_until, required_date)
+    if not err:
+        err = _validate_posting_date(posting_date, required_date)
     if err:
         return jsonify({'ok': False, 'error': err}), 400
 
@@ -593,7 +564,7 @@ def sq_edit(id):
     sq.sales_request_id = int(f.get('sr_id')) if f.get('sr_id') else None
     sq.buyer_id = int(f.get('buyer_id')) if f.get('buyer_id') else None
     sq.buyer_ref_no = f.get('buyer_ref_no','').strip()
-    sq.posting_date  = pd(f.get('posting_date'))
+    sq.posting_date  = pd(f.get('posting_date')) or date.today()
     sq.valid_until    = valid_until
     sq.document_date  = date.today()
     sq.required_date  = required_date
@@ -694,7 +665,7 @@ def so_add():
             remarks=f.get('remarks', '').strip(),
             status=f.get('status', 'Open'),
             kind=f.get('kind','Goods'),
-            posting_date=pd(f.get('posting_date')),
+            posting_date=pd(f.get('posting_date')) or date.today(),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
             created_by=current_user.id,
@@ -754,7 +725,7 @@ def so_edit(id):
         so.remarks = f.get('remarks', '').strip()
         so.status = f.get('status', 'Open')
         so.kind = f.get('kind','Goods')
-        so.posting_date  = pd(f.get('posting_date'))
+        so.posting_date  = pd(f.get('posting_date')) or date.today()
         so.delivery_date = pd(f.get('delivery_date'))
         so.document_date = date.today()
 
@@ -856,7 +827,7 @@ def dn_add():
             buyer_ref_no=f.get('buyer_ref_no','').strip(),
             status=f.get('status','Open'),
             kind=f.get('kind','Goods'),
-            posting_date=pd(f.get('posting_date')),
+            posting_date=pd(f.get('posting_date')) or date.today(),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
             created_by=current_user.id,
@@ -889,7 +860,7 @@ def dn_edit(id):
         doc.buyer_ref_no=f.get('buyer_ref_no','').strip()
         doc.status=f.get('status','Open')
         doc.kind=f.get('kind','Goods')
-        doc.posting_date  = pd(f.get('posting_date'))
+        doc.posting_date  = pd(f.get('posting_date')) or date.today()
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
         tots = _save_doc_line_items(DeliveryLineItem, 'delivery_note_id', id, f, 'sales')
@@ -996,7 +967,7 @@ def sinv_add():
             return jsonify({'ok': False, 'error': 'Selected Sales Order is not Approved'}), 400
 
         status = f.get('status','Open')
-        posting_date = pd(f.get('posting_date'))
+        posting_date = pd(f.get('posting_date')) or date.today()
         if status != 'Open' and not posting_date:
             posting_date = date.today()
 
@@ -1046,7 +1017,7 @@ def sinv_edit(id):
         f = request.form
         
         status = f.get('status','Open')
-        posting_date = pd(f.get('posting_date'))
+        posting_date = pd(f.get('posting_date')) or date.today()
         if status != 'Open' and not posting_date:
             posting_date = date.today()
 
@@ -1197,7 +1168,7 @@ def srr_add():
             buyer_ref_no=f.get('buyer_ref_no','').strip(),
             status=f.get('status','Open'),
             kind=f.get('kind','Goods'),
-            posting_date=pd(f.get('posting_date')),
+            posting_date=pd(f.get('posting_date')) or date.today(),
             delivery_date=delivery_date,
             document_date=date.today(),
             created_by=current_user.id,
@@ -1240,7 +1211,7 @@ def srr_edit(id):
         doc.buyer_ref_no=f.get('buyer_ref_no','').strip()
         doc.status=f.get('status','Open')
         doc.kind=f.get('kind','Goods')
-        doc.posting_date  = pd(f.get('posting_date'))
+        doc.posting_date  = pd(f.get('posting_date')) or date.today()
         doc.delivery_date = delivery_date
         doc.document_date = date.today()
         tots = _save_doc_line_items(SalesReturnLineItem, 'sales_return_request_id', id, f, 'sales')
@@ -1325,7 +1296,7 @@ def scm_add():
             payment_method=f.get('payment_method','Credit'),
             seller_id=int(f.get('seller_id')) if f.get('seller_id') else None,
             bank_account_id=int(f.get('bank_account_id')) if f.get('bank_account_id') else None,
-            posting_date=pd(f.get('posting_date')),
+            posting_date=pd(f.get('posting_date')) or date.today(),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
             created_by=current_user.id,
@@ -1365,7 +1336,7 @@ def scm_edit(id):
         doc.payment_method = f.get('payment_method','Credit')
         doc.seller_id = int(f.get('seller_id')) if f.get('seller_id') else None
         doc.bank_account_id = int(f.get('bank_account_id')) if f.get('bank_account_id') else None
-        doc.posting_date  = pd(f.get('posting_date'))
+        doc.posting_date  = pd(f.get('posting_date')) or date.today()
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
         tots = _save_doc_line_items(SalesCreditMemoLineItem, 'sales_credit_memo_id', id, f, 'sales')

@@ -643,17 +643,23 @@ function onPrStatusChange() {
   }
 }
 
-/* ══ Date validation: valid_until >= today, required_date <= valid_until ══ */
+/* ══ Date validation: valid_until >= today, required_date <= valid_until,
+      posting_date <= required_date ══ */
 function validatePrDates() {
   const errEl = document.getElementById('prDateErr');
   const vu = document.getElementById('pr_valid_until').value;
   const rd = document.getElementById('pr_req_date').value;
+  const pdt = document.getElementById('pr_posting_date').value;
   const today = new Date().toISOString().split('T')[0];
   let msg = '';
   if (vu && vu < today) msg = IS_AR ? 'يجب أن يكون "صالح حتى" بتاريخ اليوم أو بعده' : 'Valid Until must be today or later';
   else if (rd && vu && rd > vu) msg = IS_AR ? 'يجب أن يكون "التاريخ المطلوب" قبل أو يساوي "صالح حتى"' : 'Required Date must be on/before Valid Until';
+  else if (pdt && rd && pdt > rd) msg = IS_AR ? 'يجب أن يكون "تاريخ الترحيل" في أو قبل "التاريخ المطلوب"' : 'Posting Date must be on or before the Required Date';
   errEl.style.display = msg ? 'block' : 'none';
   errEl.textContent = msg;
+  // Keep the posting-date picker capped at the required date for convenience.
+  const postEl = document.getElementById('pr_posting_date');
+  if (postEl && rd) postEl.max = rd;
   return !msg;
 }
 
