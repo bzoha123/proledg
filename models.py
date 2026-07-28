@@ -3091,3 +3091,43 @@ class EmployeeWorkAllocation(db.Model):
             'kafeel_name': self.kafeel or '',
             'iqama_number': self.iqama or '',
         }
+
+class UnitMeasurement(db.Model):
+    __tablename__ = 'unit_measurement'
+    id           = db.Column(db.Integer, primary_key=True)
+    code         = db.Column(db.String(20), unique=True, index=True)   # auto: UOM-0001
+    name_en      = db.Column(db.String(150), nullable=False)
+    name_ar      = db.Column(db.String(150))
+    pac_size_en  = db.Column(db.String(150))
+    pac_size_ar  = db.Column(db.String(150))
+    multiply     = db.Column(db.Numeric(12, 4), default=0)
+    status       = db.Column(db.String(10), default='Active')          # Active / Inactive
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at   = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'code': self.code or '',
+            'name_en': self.name_en or '',
+            'name_ar': self.name_ar or '',
+            'pac_size_en': self.pac_size_en or '',
+            'pac_size_ar': self.pac_size_ar or '',
+            'multiply': float(self.multiply) if self.multiply is not None else 0,
+            'status': self.status or 'Active',
+        }
+
+
+def next_uom_code():
+    """Next auto code in UOM-0001 format."""
+    last = (UnitMeasurement.query
+            .filter(UnitMeasurement.code.like('UOM-%'))
+            .order_by(UnitMeasurement.id.desc())
+            .first())
+    n = 1
+    if last and last.code and last.code.startswith('UOM-'):
+        try:
+            n = int(last.code.split('-')[1]) + 1
+        except (ValueError, IndexError):
+            n = (last.id or 0) + 1
+    return f'UOM-{n:04d}'
