@@ -356,7 +356,8 @@ def vendor_json(id):
                 'contact_person','street_name','street_name_ar','building_number',
                 'additional_number','postal_code','country','country_ar','city','city_ar',
                 'district','district_ar','bank_name','bank_branch','swift_code',
-                'account_number','iban','invoice_id']:
+                'account_number','iban','invoice_id',
+                'payment_term','levelfive_code','levelfive_drawer_en','levelfive_drawer_ar']:
         d[fld] = getattr(v, fld, '') or ''
     return jsonify(d)
 
@@ -388,6 +389,10 @@ def vendor_add():
         city_ar=f.get('city_ar','').strip() or None,
         district=f.get('district','').strip() or None,
         district_ar=f.get('district_ar','').strip() or None,
+        payment_term=f.get('payment_term','').strip() or None,
+        levelfive_code=f.get('levelfive_code','').strip() or None,
+        levelfive_drawer_en=f.get('levelfive_drawer_en','').strip() or None,
+        levelfive_drawer_ar=f.get('levelfive_drawer_ar','').strip() or None,
         status='active', is_active=True, created_by=current_user.id,
     )
     db.session.add(v); db.session.flush()
@@ -431,7 +436,8 @@ def vendor_edit(id):
     for fld in ['vendor_name_en','vendor_name_ar','vat_number','crn','phone','fax','email',
                 'website','contact_person','street_name','street_name_ar','building_number',
                 'additional_number','postal_code','country','country_ar','city','city_ar',
-                'district','district_ar']:
+                'district','district_ar',
+                'payment_term','levelfive_code','levelfive_drawer_en','levelfive_drawer_ar']:
         setattr(v, fld, f.get(fld,'').strip() or None)
     v.status = f.get('status','active')
     

@@ -348,13 +348,24 @@
                   </div>
                 </div>
               </div>
-              <div class="f-grid2">
+              <div class="f-grid3">
                 <div class="f-item"><div class="f-lbl">{% if ar %}الموقع الإلكتروني{% else %}Website{% endif %}</div><input type="text" id="v_website" class="f-inp" dir="ltr"></div>
                 <div class="f-item">
                   <div class="f-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div>
                   <select id="v_status" class="f-inp">
                     <option value="active" selected>{% if ar %}نشيط{% else %}Active{% endif %}</option>
                     <option value="inactive">{% if ar %}غير نشيط{% else %}Inactive{% endif %}</option>
+                  </select>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}شروط الدفع / Payment Term{% else %}Payment Term / شروط الدفع{% endif %}</div>
+                  <select id="v_payment_term" class="f-inp">
+                    <option value="">{% if ar %}اختر...{% else %}Select...{% endif %}</option>
+                    <option value="Advance">{% if ar %}دفعة مقدمة / Advance{% else %}Advance{% endif %}</option>
+                    <option value="On Delivery Basis">{% if ar %}عند التسليم / On Delivery Basis{% else %}On Delivery Basis{% endif %}</option>
+                    <option value="30 Days Credit">{% if ar %}30 يوم ائتمان / 30 Days Credit{% else %}30 Days Credit{% endif %}</option>
+                    <option value="60 Days Credit">{% if ar %}60 يوم ائتمان / 60 Days Credit{% else %}60 Days Credit{% endif %}</option>
+                    <option value="90 Days Credit">{% if ar %}90 يوم ائتمان / 90 Days Credit{% else %}90 Days Credit{% endif %}</option>
                   </select>
                 </div>
               </div>
@@ -439,6 +450,33 @@
                 <div id="bankList" style="display:none;"></div>
                 <div id="bankEmptyMsg_vnd" class="bank-empty"><i class="fas fa-university"></i>{% if ar %}لم يتم إضافة بيانات بنك / No bank details added{% else %}No bank details added / لم يتم إضافة بيانات بنك{% endif %}</div>
               </div>
+            </div>
+          </div>
+
+          {# ── Chart Of Account ── #}
+          <div class="acc-panel">
+            <button type="button" class="acc-btn" onclick="togAcc('va4')">
+              <div><i class="acc-icon fas fa-sitemap"></i>{% if ar %}دليل الحسابات{% else %}Chart Of Account{% endif %}</div>
+              <i class="fas fa-chevron-down" id="ch_va4" style="color:#9ca3af;font-size:11px;"></i>
+            </button>
+            <div class="acc-body" id="va4">
+              <div class="f-grid3">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}كود الحساب / Account Code{% else %}Account Code / كود الحساب{% endif %} <span class="f-req">*</span></div>
+                  <select id="v_l5_code" class="f-inp" dir="ltr" onchange="onVL5CodeChange()">
+                    <option value="">{% if ar %}اختر...{% else %}Select...{% endif %}</option>
+                  </select>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}الدرج (إنجليزي) / Drawer Eng{% else %}Drawer Eng / الدرج{% endif %} <span class="f-req">*</span></div>
+                  <input type="text" id="v_l5_drawer_en" class="f-inp" dir="ltr" readonly style="background:#f8fafc;" placeholder="Level five.Drawer">
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}الدرج (عربي) / Drawer Ar{% else %}Drawer Ar / الدرج{% endif %}</div>
+                  <input type="text" id="v_l5_drawer_ar" class="f-inp" dir="rtl" readonly style="background:#f8fafc;" placeholder="Level five.Drawer">
+                </div>
+              </div>
+              <p style="font-size:11.5px;color:#6b7280;margin-top:8px;"><i class="fas fa-info-circle me-1"></i>{% if ar %}تظهر فقط الحسابات التي حساب التحكم فيها = نعم.{% else %}Only accounts with Control Account = Yes are listed.{% endif %}</p>
             </div>
           </div>
 
@@ -791,6 +829,8 @@ function openAdd() {
   sv('v_edit_id', '');
   ['v_name_en','v_name_ar','v_vat','v_crn','v_contact','v_phone','v_fax','v_email','v_website','v_street_en','v_street_ar','v_bldg','v_addl','v_postal'].forEach(id => sv(id, ''));
   sv('v_status', 'active');
+  sv('v_payment_term', '');
+  ['v_l5_code','v_l5_drawer_en','v_l5_drawer_ar'].forEach(id => sv(id, ''));
   initVCountry('Saudi Arabia');
   const em = document.getElementById('v_email');
   if(em) { em.classList.remove('is-invalid'); document.getElementById('v_email_msg').classList.remove('show'); }
@@ -823,6 +863,12 @@ function openEdit(id) {
     sv('v_email', d.email);
     sv('v_website', d.website);
     sv('v_status', d.status || 'active');
+    sv('v_payment_term', d.payment_term || '');
+    vL5EnsureLoaded().then(() => {
+      sv('v_l5_code', d.levelfive_code || '');
+      sv('v_l5_drawer_en', d.levelfive_drawer_en || '');
+      sv('v_l5_drawer_ar', d.levelfive_drawer_ar || '');
+    });
     sv('v_street_en', d.street_name);
     sv('v_street_ar', d.street_name_ar);
     sv('v_bldg', d.building_number);
@@ -876,6 +922,10 @@ function saveVendor() {
   formData.append('country', gv('v_country'));
   formData.append('city', gv('v_city'));
   formData.append('district', gv('v_district'));
+  formData.append('payment_term', gv('v_payment_term'));
+  formData.append('levelfive_code', gv('v_l5_code'));
+  formData.append('levelfive_drawer_en', gv('v_l5_drawer_en'));
+  formData.append('levelfive_drawer_ar', gv('v_l5_drawer_ar'));
   
   vendorBanks.forEach(b => {
     formData.append('bank_name_en[]', b.bank_name_en);
@@ -1198,8 +1248,36 @@ function updateStatus() {
 }
 
 // ── Initialize ──
+// ── Chart of Account: Level-Five control accounts ────────────────
+let _vL5List = null, _vL5Promise = null;
+function vL5EnsureLoaded(){
+  if(_vL5Promise) return _vL5Promise;
+  _vL5Promise = fetch('/sellers/control-accounts')
+    .then(r => r.json())
+    .then(list => {
+      _vL5List = list || [];
+      const sel = document.getElementById('v_l5_code');
+      if(sel){
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">' + (IS_AR ? 'اختر...' : 'Select...') + '</option>' +
+          _vL5List.map(a => `<option value="${a.code}">${a.code}</option>`).join('');
+        sel.value = cur;
+      }
+      return _vL5List;
+    })
+    .catch(() => { _vL5List = []; return _vL5List; });
+  return _vL5Promise;
+}
+function onVL5CodeChange(){
+  const code = document.getElementById('v_l5_code').value;
+  const a = (_vL5List || []).find(x => x.code === code);
+  sv('v_l5_drawer_en', a ? (a.drawer_en || '') : '');
+  sv('v_l5_drawer_ar', a ? (a.drawer_ar || '') : '');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   renderVendorBanks();
+  vL5EnsureLoaded();
   
   const p = new URLSearchParams(window.location.search);
   const eid = p.get('edit');

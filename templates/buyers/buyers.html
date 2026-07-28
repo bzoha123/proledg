@@ -783,6 +783,34 @@
               </div>
             </div>
 
+            {# ══ 5. CHART OF ACCOUNT ══ #}
+            <button type="button" class="acc-header" onclick="togAcc('bcoa')">
+              <div class="acc-title">
+                <div class="acc-icon-wrap"><i class="fas fa-sitemap"></i></div>
+                {% if ar %}دليل الحسابات{% else %}Chart Of Account{% endif %}
+              </div>
+              <i class="fas fa-chevron-down acc-arrow" id="arr-bcoa"></i>
+            </button>
+            <div class="acc-body hidden" id="body-bcoa">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:start;">
+                <div>
+                  <div class="field-label">{% if ar %}كود الحساب / Account Code{% else %}Account Code / كود الحساب{% endif %} <span class="field-req">*</span></div>
+                  <select id="bl5_code" name="levelfive_code" class="sf-inp" dir="ltr" onchange="onBL5CodeChange()">
+                    <option value="">{% if ar %}اختر...{% else %}Select...{% endif %}</option>
+                  </select>
+                </div>
+                <div>
+                  <div class="field-label">{% if ar %}الدرج (إنجليزي) / Drawer Eng{% else %}Drawer Eng / الدرج{% endif %} <span class="field-req">*</span></div>
+                  <input type="text" id="bl5_drawer_en" name="levelfive_drawer_en" class="sf-inp" dir="ltr" readonly style="background:#f8fafc;" placeholder="Level five.Drawer">
+                </div>
+                <div>
+                  <div class="field-label">{% if ar %}الدرج (عربي) / Drawer Ar{% else %}Drawer Ar / الدرج{% endif %}</div>
+                  <input type="text" id="bl5_drawer_ar" name="levelfive_drawer_ar" class="sf-inp" dir="rtl" readonly style="background:#f8fafc;" placeholder="Level five.Drawer">
+                </div>
+              </div>
+              <p style="font-size:11.5px;color:#6b7280;margin-top:8px;"><i class="fas fa-info-circle me-1"></i>{% if ar %}تظهر فقط الحسابات التي حساب التحكم فيها = نعم.{% else %}Only accounts with Control Account = Yes are listed.{% endif %}</p>
+            </div>
+
           </div>{# /accordion wrapper #}
 
         </form>
@@ -1029,6 +1057,7 @@ function resetBuyerForm() {
   });
   document.getElementById('b_status').value='active';
   const so=document.getElementById('b_salary_order'); if(so) so.value='1';
+  ['bl5_code','bl5_drawer_en','bl5_drawer_ar'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
   document.getElementById('buyerFormId').value='';
   document.getElementById('b_country').value = 'Saudi Arabia';
   _banks = [];
@@ -1036,6 +1065,34 @@ function resetBuyerForm() {
   _depts = [];
   renderDeptTable();
 }
+
+/* ══ Chart of Account: Level-Five control accounts ══ */
+let _bL5List = null, _bL5Promise = null;
+function bL5EnsureLoaded(){
+  if(_bL5Promise) return _bL5Promise;
+  _bL5Promise = fetch('/sellers/control-accounts')
+    .then(r => r.json())
+    .then(list => {
+      _bL5List = list || [];
+      const sel = document.getElementById('bl5_code');
+      if(sel){
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">' + (IS_AR ? 'اختر...' : 'Select...') + '</option>' +
+          _bL5List.map(a => `<option value="${a.code}">${a.code}</option>`).join('');
+        sel.value = cur;
+      }
+      return _bL5List;
+    })
+    .catch(() => { _bL5List = []; return _bL5List; });
+  return _bL5Promise;
+}
+function onBL5CodeChange(){
+  const code = document.getElementById('bl5_code').value;
+  const a = (_bL5List || []).find(x => x.code === code);
+  document.getElementById('bl5_drawer_en').value = a ? (a.drawer_en || '') : '';
+  document.getElementById('bl5_drawer_ar').value = a ? (a.drawer_ar || '') : '';
+}
+document.addEventListener('DOMContentLoaded', bL5EnsureLoaded);
 
 /* ══ OPEN ADD ══ */
 function openAddBuyer() {
@@ -1078,6 +1135,11 @@ function openEditBuyer(id) {
     document.getElementById('b_city_ar').value     = d.city_ar || '';
     document.getElementById('b_district').value    = d.district || '';
     document.getElementById('b_district_ar').value = d.district_ar || '';
+    bL5EnsureLoaded().then(() => {
+      const cc=document.getElementById('bl5_code'); if(cc) cc.value=d.levelfive_code||'';
+      const de=document.getElementById('bl5_drawer_en'); if(de) de.value=d.levelfive_drawer_en||'';
+      const da=document.getElementById('bl5_drawer_ar'); if(da) da.value=d.levelfive_drawer_ar||'';
+    });
   });
 
   fetch(`/buyers/${id}/banks`).then(r=>r.json()).then(banks=>{
@@ -1276,13 +1338,13 @@ agGrid.createGrid(document.getElementById('buyerGrid'),{
   rowSelection: 'multiple',
   suppressRowClickSelection: true,
   
-  // onGridReady(p) {
-  //   gridApi = p.api;
-  //   if (window.GridKit) {
-  //     GridKit.enhance(p, 'buyerGrid', { storageKey: 'buyers', exportName: 'Buyers' });
-  //   }
-  //   loadData();
-  // },
+  onGridReady(p) {
+    gridApi = p.api;
+    if (window.GridKit) {
+      GridKit.enhance(p, 'buyerGrid', { storageKey: 'buyers', exportName: 'Buyers' });
+    }
+    loadData();
+  },
   onFilterChanged(){upd();},
   onPaginationChanged(){upd();},
   onSelectionChanged(){upd();},

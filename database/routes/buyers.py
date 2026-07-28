@@ -125,6 +125,9 @@ def add_buyer():
         city_ar=request.form.get('city_ar','').strip(),
         district=request.form.get('district','').strip(),
         district_ar=request.form.get('district_ar','').strip(),
+        levelfive_code=request.form.get('levelfive_code','').strip(),
+        levelfive_drawer_en=request.form.get('levelfive_drawer_en','').strip(),
+        levelfive_drawer_ar=request.form.get('levelfive_drawer_ar','').strip(),
         status=request.form.get('status','active').strip(),
         is_active=request.form.get('status','active')=='active',
         salary_order=int(request.form.get('salary_order', 1)),
@@ -168,6 +171,9 @@ def edit_buyer(id):
     b.city_ar        = request.form.get('city_ar','').strip()
     b.district       = request.form.get('district','').strip()
     b.district_ar    = request.form.get('district_ar','').strip()
+    b.levelfive_code       = request.form.get('levelfive_code','').strip()
+    b.levelfive_drawer_en  = request.form.get('levelfive_drawer_en','').strip()
+    b.levelfive_drawer_ar  = request.form.get('levelfive_drawer_ar','').strip()
     b.status         = request.form.get('status','active').strip()
     b.is_active      = b.status == 'active'
     b.salary_order   = int(request.form.get('salary_order', 1))
@@ -302,6 +308,9 @@ def buyer_json(id):
         'country':g('country') or 'Saudi Arabia','country_ar':g('country_ar'),
         'city':g('city'),'city_ar':g('city_ar'),
         'district':g('district'),'district_ar':g('district_ar'),
+        'levelfive_code':g('levelfive_code'),
+        'levelfive_drawer_en':g('levelfive_drawer_en'),
+        'levelfive_drawer_ar':g('levelfive_drawer_ar'),
         'status':g('status') or 'active',
         'salary_order': b.salary_order or 1,
     })
