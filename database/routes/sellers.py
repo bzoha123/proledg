@@ -7,7 +7,7 @@ def _t(en, ar):
     return ar if session.get('lang') == 'ar' else en
 
 from flask_login import login_required, current_user
-from models import db, Seller, SellerBank, SellerDocument, ActivityLog, SellerWarehouse
+from models import db, Seller, SellerBank, SellerDocument, ActivityLog, SellerWarehouse, LevelFive
 from forms import SellerForm, BankForm, SearchForm
 from functools import wraps
 
@@ -373,6 +373,10 @@ def add_seller():
         postal_code          = request.form.get('postal_code',      '').strip(),
         country              = request.form.get('country', 'Saudi Arabia').strip(),
         country_ar           = request.form.get('country_ar',       '').strip(),
+        second_language      = request.form.get('second_language', 'Arabic').strip() or 'Arabic',
+        levelfive_code       = request.form.get('levelfive_code',      '').strip(),
+        levelfive_drawer_en  = request.form.get('levelfive_drawer_en', '').strip(),
+        levelfive_drawer_ar  = request.form.get('levelfive_drawer_ar', '').strip(),
     )
 
     errors = []
@@ -458,6 +462,10 @@ def seller_json(id):
         'country':               g('country'),           
         'country_ar':           g('country_ar'),
         'status':                g('status'),
+        'second_language':       g('second_language') or 'Arabic',
+        'levelfive_code':        g('levelfive_code'),
+        'levelfive_drawer_en':   g('levelfive_drawer_en'),
+        'levelfive_drawer_ar':   g('levelfive_drawer_ar'),
         'banks':                 banks_data,
         # Direct bank fields for the form
         'bank_name':             getattr(primary_bank, 'bank_name', '') if primary_bank else '',
@@ -496,6 +504,10 @@ def edit_seller(id):
     seller.postal_code          = request.form.get('postal_code',      '').strip()
     seller.country              = request.form.get('country',          '').strip()
     seller.country_ar           = request.form.get('country_ar',       '').strip()
+    seller.second_language      = request.form.get('second_language', 'Arabic').strip() or 'Arabic'
+    seller.levelfive_code       = request.form.get('levelfive_code',      '').strip()
+    seller.levelfive_drawer_en  = request.form.get('levelfive_drawer_en', '').strip()
+    seller.levelfive_drawer_ar  = request.form.get('levelfive_drawer_ar', '').strip()
     seller.updated_at           = datetime.utcnow()
 
     logo    = request.files.get('logo')
@@ -972,6 +984,33 @@ def export_sellers():
     response.headers['Content-Disposition'] = 'attachment; filename=sellers_export.csv'
     response.headers['Content-type'] = 'text/csv'
     return response
+
+
+@sellers_bp.route('/sellers/control-accounts')
+@login_required
+def seller_control_accounts():
+    """Level Five accounts flagged as control accounts (control_account='Yes').
+
+    Feeds the seller form's Chart-of-Account picker. Sorted by the fixed COA
+    drawer order (A,L,E,R,C,O,F,I) so the list matches the rest of the app.
+    """
+    _order = ['A', 'L', 'E', 'R', 'C', 'O', 'F', 'I']
+
+    def _key(r):
+        lead = (r.code or '')[:1].upper()
+        rank = _order.index(lead) if lead in _order else len(_order)
+        return (rank, r.code or '')
+
+    rows = LevelFive.query.filter(
+        LevelFive.control_account == 'Yes',
+        LevelFive.status == 'active',
+    ).all()
+    rows = sorted(rows, key=_key)
+    return jsonify([{
+        'code': r.code,
+        'drawer_en': r.drawers or '',
+        'drawer_ar': r.drawers_ar or '',
+    } for r in rows])
 
 
 @sellers_bp.route('/translate', methods=['POST'])

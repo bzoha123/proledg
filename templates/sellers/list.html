@@ -289,6 +289,17 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
                     <input type="color" id="f_rswatch" class="c-swatch" value="#16a34a" oninput="document.getElementById('f_rcolor').value=this.value">
                   </div>
                 </div>
+                <div>
+                  <div class="mono-lbl">{% if ar %}اللغة الثانية / Second Language{% else %}Second Language / اللغة الثانية{% endif %} <span class="req">*</span></div>
+                  <select name="second_language" id="f_second_language" class="sf-inp" dir="ltr">
+                    <option value="Arabic" selected>Arabic — العربية</option>
+                    <option value="English">English</option>
+                    <option value="French">French — Français</option>
+                    <option value="Urdu">Urdu — اردو</option>
+                    <option value="Hindi">Hindi — हिन्दी</option>
+                    <option value="Bengali">Bengali — বাংলা</option>
+                  </select>
+                </div>
               </div>
               <div class="fg-2">
                 <div>
@@ -423,6 +434,40 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
               <div id="bankEmptyMsg" class="bank-empty"><i class="fas fa-university"></i>{% if ar %}لم يتم إضافة بيانات بنك / No bank details added{% else %}No bank details added / لم يتم إضافة بيانات بنك{% endif %}</div>
             </div><!-- /body-bank -->
           </div><!-- /sec-bank -->
+
+          <!-- SECTION 5: CHART OF ACCOUNT -->
+          <div class="acc-section" id="sec-coa">
+            <div class="acc-head" onclick="toggleSection('coa')">
+              <div class="acc-head-left">
+                <div class="acc-head-icon bank"><i class="fas fa-sitemap"></i></div>
+                <div class="acc-head-title">{% if ar %}دليل الحسابات{% else %}Chart Of Account{% endif %}<span class="ar-sub">{% if ar %}Chart Of Account{% else %}دليل الحسابات{% endif %}</span></div>
+              </div>
+              <i class="fas fa-chevron-down acc-chevron" id="chev-coa"></i>
+            </div>
+            <div class="acc-body" id="body-coa">
+              <div class="fg-3" style="display:grid;grid-template-columns:220px 1fr 1fr;gap:14px;align-items:start;">
+                <div>
+                  <div class="mono-lbl">{% if ar %}كود الحساب / Account Code{% else %}Account Code / كود الحساب{% endif %} <span class="req">*</span></div>
+                  <select name="levelfive_code" id="f_l5_code" class="sf-inp" dir="ltr" onchange="onL5CodeChange()">
+                    <option value="">{% if ar %}اختر...{% else %}Select...{% endif %}</option>
+                  </select>
+                </div>
+                <div>
+                  <div class="mono-lbl">{% if ar %}الدرج (إنجليزي) / Drawers (Eng){% else %}Drawers (Eng) / الدرج{% endif %} <span class="req">*</span></div>
+                  <input type="text" name="levelfive_drawer_en" id="f_l5_drawer_en" class="sf-inp" dir="ltr"
+                         readonly style="background:#f8fafc;" placeholder="Level five.Drawer">
+                </div>
+                <div>
+                  <div class="mono-lbl">{% if ar %}الدرج (عربي) / Drawers (Ar){% else %}Drawers (Ar) / الدرج{% endif %}</div>
+                  <input type="text" name="levelfive_drawer_ar" id="f_l5_drawer_ar" class="sf-inp" dir="rtl"
+                         readonly style="background:#f8fafc;" placeholder="Level five.Drawer">
+                </div>
+              </div>
+              <p style="font-size:11.5px;color:#6b7280;margin-top:8px;">
+                <i class="fas fa-info-circle me-1"></i>{% if ar %}تظهر فقط الحسابات التي حساب التحكم فيها = نعم.{% else %}Only accounts with Control Account = Yes are listed.{% endif %}
+              </p>
+            </div><!-- /body-coa -->
+          </div><!-- /sec-coa -->
 
         </form>
       </div><!-- /sf-body -->
@@ -925,11 +970,13 @@ function clearAllFields(){
   const rc=document.getElementById('f_rcolor');if(rc)rc.value='#16a34a';
   const sw=document.getElementById('f_rswatch');if(sw)sw.value='#16a34a';
   const st=document.getElementById('f_status');if(st)st.value='active';
+  const sl=document.getElementById('f_second_language');if(sl)sl.value='Arabic';
+  ['f_l5_code','f_l5_drawer_en','f_l5_drawer_ar'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['logoName','bgLogoName'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=IS_AR?'اختر ملف...':'Choose file...';});
   document.querySelectorAll('.sf-spin').forEach(e=>e.innerHTML='');
   _banks=[];_bankSeq=0;renderBankTable();
   _whs=[];renderWhTable();
-  ['basic','warehouse','address','bank'].forEach(k=>{
+  ['basic','warehouse','address','bank','coa'].forEach(k=>{
     const sec=document.getElementById('sec-'+k);
     const chev=document.getElementById('chev-'+k);
     if(k==='basic'){sec.classList.add('open');chev.className='fas acc-chevron fa-chevron-up';}
@@ -970,6 +1017,13 @@ function openEditModal(id){
     document.getElementById('f_building').value   = d.building_number||'';
     document.getElementById('f_additional').value = d.additional_number||'';
     document.getElementById('f_postal').value     = d.postal_code||'';
+    const sl=document.getElementById('f_second_language');if(sl)sl.value=d.second_language||'Arabic';
+    // Chart of Account: ensure list is loaded, then set code + drawers.
+    l5EnsureLoaded().then(()=>{
+      const cc=document.getElementById('f_l5_code'); if(cc) cc.value=d.levelfive_code||'';
+      const de=document.getElementById('f_l5_drawer_en'); if(de) de.value=d.levelfive_drawer_en||'';
+      const da=document.getElementById('f_l5_drawer_ar'); if(da) da.value=d.levelfive_drawer_ar||'';
+    });
     _banks=(d.banks||[]).map(b=>({...b,bank_name_ar:b.bank_name_ar||'',_dbId:b.id}));
     renderBankTable();
     fetch('/sellers/'+id+'/warehouses').then(r=>r.json()).then(list=>{
@@ -984,6 +1038,34 @@ function openEditModal(id){
 }
 function resetForm(){ clearAllFields(); }
 function setFName(inp,id){const e=document.getElementById(id);if(e)e.textContent=inp.files[0]?inp.files[0].name:(IS_AR?'اختر ملف...':'Choose file...');}
+
+// ── Chart of Account: Level-Five control accounts ────────────────
+let _l5List = null, _l5LoadPromise = null;
+function l5EnsureLoaded(){
+  if(_l5LoadPromise) return _l5LoadPromise;
+  _l5LoadPromise = fetch('/sellers/control-accounts')
+    .then(r=>r.json())
+    .then(list=>{
+      _l5List = list || [];
+      const sel = document.getElementById('f_l5_code');
+      if(sel){
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">'+(IS_AR?'اختر...':'Select...')+'</option>' +
+          _l5List.map(a=>`<option value="${a.code}">${a.code}</option>`).join('');
+        sel.value = cur;
+      }
+      return _l5List;
+    })
+    .catch(()=>{ _l5List=[]; return _l5List; });
+  return _l5LoadPromise;
+}
+function onL5CodeChange(){
+  const code = document.getElementById('f_l5_code').value;
+  const a = (_l5List||[]).find(x=>x.code===code);
+  document.getElementById('f_l5_drawer_en').value = a ? (a.drawer_en||'') : '';
+  document.getElementById('f_l5_drawer_ar').value = a ? (a.drawer_ar||'') : '';
+}
+document.addEventListener('DOMContentLoaded', l5EnsureLoaded);
 
 function submitSellerForm(){
   let ok = true;

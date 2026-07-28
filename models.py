@@ -57,6 +57,10 @@ class Seller(db.Model):
     city_ar             = db.Column(db.String(100))
     country_ar          = db.Column(db.String(100))
     status              = db.Column(db.String(20), default='active')
+    second_language     = db.Column(db.String(30), default='Arabic')
+    levelfive_code      = db.Column(db.String(40))
+    levelfive_drawer_en = db.Column(db.String(250))
+    levelfive_drawer_ar = db.Column(db.String(250))
     created_at          = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at          = db.Column(db.DateTime, default=datetime.utcnow)
     created_by          = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -78,6 +82,10 @@ class Seller(db.Model):
             'phone': self.phone or '', 'email': self.email or '',
             'city': self.city or '', 'status': self.status,
             'report_color': self.report_color or '#2563eb',
+            'second_language': self.second_language or 'Arabic',
+            'levelfive_code': self.levelfive_code or '',
+            'levelfive_drawer_en': self.levelfive_drawer_en or '',
+            'levelfive_drawer_ar': self.levelfive_drawer_ar or '',
         }
 
 
@@ -3076,5 +3084,3 @@ class EmployeeWorkAllocation(db.Model):
             'kafeel_name': self.kafeel or '',
             'iqama_number': self.iqama or '',
         }
-
-        
