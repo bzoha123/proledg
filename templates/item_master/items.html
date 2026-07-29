@@ -358,6 +358,37 @@ textarea.f-inp{resize:vertical;min-height:80px;}
             </div>
           </div>
 
+          <!-- ── Section 4: Chart of Account ── -->
+          <div class="isec" style="margin:0;">
+            <div class="isec-hdr" onclick="togSec(this)">
+              <div class="isec-hdr-icon"><i class="fas fa-sitemap"></i></div>
+              <div class="isec-hdr-title">{% if ar %}دليل الحسابات{% else %}Chart of Account{% endif %}</div>
+              <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
+            </div>
+            <div class="isec-body">
+              <div class="f-grid2">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}كود الحساب / Account Code{% else %}Account Code{% endif %}</div>
+                  <select id="i_levelfive_code" class="f-inp" dir="ltr" onchange="onItemL5CodeChange()">
+                    <option value="">{% if ar %}اختر...{% else %}Select...{% endif %}</option>
+                  </select>
+                </div>
+                <div class="f-item"></div>
+              </div>
+              <div class="f-grid2">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}الدرج (إنجليزي){% else %}Drawer Eng{% endif %}</div>
+                  <input type="text" id="i_levelfive_drawer_en" class="f-inp" dir="ltr" readonly style="background:#f8fafc;">
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}الدرج (عربي){% else %}Drawer Ar{% endif %}</div>
+                  <input type="text" id="i_levelfive_drawer_ar" class="f-inp" dir="rtl" readonly style="background:#f8fafc;">
+                </div>
+              </div>
+              <p style="font-size:11.5px;color:#6b7280;margin:2px 0 0;"><i class="fas fa-info-circle me-1"></i>{% if ar %}تظهر فقط الحسابات التي حساب التحكم فيها = نعم.{% else %}Only accounts with Control Account = Yes are listed.{% endif %}</p>
+            </div>
+          </div>
+
         </form>
       </div>
       <div class="item-footer">
@@ -392,6 +423,7 @@ textarea.f-inp{resize:vertical;min-height:80px;}
           <div class="isec-body">
             <div class="v-row"><div><div class="v-lbl">{% if ar %}الفئة{% else %}Category{% endif %}</div><div class="v-val" id="v_category"></div></div><div><div class="v-lbl">{% if ar %}الفئة الفرعية{% else %}Sub-Category{% endif %}</div><div class="v-val" id="v_sub_category"></div></div></div>
             <div class="v-row"><div><div class="v-lbl">{% if ar %}فئة الضريبة{% else %}Tax Category{% endif %}</div><div class="v-val" id="v_tax_category"></div></div><div><div class="v-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div><div class="v-val" id="v_vendor"></div></div></div>
+            <div class="v-row"><div><div class="v-lbl">{% if ar %}حساب دليل الحسابات{% else %}Chart of Account{% endif %}</div><div class="v-val" id="v_levelfive"></div></div><div></div></div>
            
           </div>
         </div>
@@ -570,6 +602,31 @@ textarea.f-inp{resize:vertical;min-height:80px;}
 <script>
 const IS_AR = {{ 'true' if ar else 'false' }};
 const CSRF  = '{{ csrf_token() }}';
+
+/* ══ Chart of Account: Level-Five control accounts ══ */
+let _itemL5List = null, _itemL5Promise = null;
+function itemL5EnsureLoaded(){
+  if(_itemL5Promise) return _itemL5Promise;
+  _itemL5Promise = fetch('/sellers/control-accounts').then(r=>r.json()).then(list=>{
+    _itemL5List = list || [];
+    const sel = document.getElementById('i_levelfive_code');
+    if(sel){
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">'+(IS_AR?'اختر...':'Select...')+'</option>'+
+        _itemL5List.map(a=>'<option value="'+a.code+'">'+a.code+'</option>').join('');
+      sel.value = cur;
+    }
+    return _itemL5List;
+  }).catch(()=>{ _itemL5List=[]; return _itemL5List; });
+  return _itemL5Promise;
+}
+function onItemL5CodeChange(){
+  const code = document.getElementById('i_levelfive_code').value;
+  const a = (_itemL5List||[]).find(x=>x.code===code);
+  document.getElementById('i_levelfive_drawer_en').value = a ? (a.drawer_en||'') : '';
+  document.getElementById('i_levelfive_drawer_ar').value = a ? (a.drawer_ar||'') : '';
+}
+document.addEventListener('DOMContentLoaded', itemL5EnsureLoaded);
 const TR    = '{{ url_for("lookups.item_translate") }}';
 
 /* ══ Auto-generate Item Code ══ */
@@ -684,6 +741,10 @@ function openAddItem() {
   document.getElementById('i_sub_category').disabled = true;
   document.getElementById('i_sub_category').innerHTML = '<option value="">' + (IS_AR ? '-- اختر الفئة أولاً --' : '-- Select Category first --') + '</option>';
   document.getElementById('i_is_active').value = '1';
+  itemL5EnsureLoaded();
+  document.getElementById('i_levelfive_code').value = '';
+  document.getElementById('i_levelfive_drawer_en').value = '';
+  document.getElementById('i_levelfive_drawer_ar').value = '';
   _itemUoms = []; _itemUomsOriginal = [];
   renderUomChips();
   document.querySelectorAll('.isec-body').forEach(b => b.style.display = 'block');
@@ -719,6 +780,10 @@ async function fillEditForm(d) {
   document.getElementById('i_special_rate').value       = (d.special_rate || 0).toFixed(2);
   document.getElementById('i_mrp').value                = (d.mrp || 0).toFixed(2);
   document.getElementById('i_minimum_sp').value         = (d.minimum_sp || 0).toFixed(2);
+  await itemL5EnsureLoaded();
+  document.getElementById('i_levelfive_code').value      = d.levelfive_code || '';
+  document.getElementById('i_levelfive_drawer_en').value = d.levelfive_drawer_en || '';
+  document.getElementById('i_levelfive_drawer_ar').value = d.levelfive_drawer_ar || '';
   _itemUoms = (d.uoms || []).map(u => ({ id: u.id, uom_id: u.uom_id, unit_name: u.unit_name, unit_name_ar: u.unit_name_ar || '', is_default: !!u.is_default }));
   _itemUomsOriginal = JSON.parse(JSON.stringify(_itemUoms));
   renderUomChips();
@@ -757,6 +822,7 @@ async function openViewItem(id) {
     document.getElementById('v_sub_category').textContent = d.sub_category_name || '-';
     document.getElementById('v_tax_category').textContent = d.tax_rate != null ? d.tax_rate + '%' : '-';
     document.getElementById('v_vendor').textContent       = d.vendor_name || '-';
+    document.getElementById('v_levelfive').textContent    = d.levelfive_code ? (d.levelfive_code + (d.levelfive_drawer_en ? ' — ' + d.levelfive_drawer_en : '')) : '-';
     document.getElementById('v_is_active').textContent    = d.is_active ? (IS_AR ? 'نشط' : 'Active') : (IS_AR ? 'غير نشط' : 'Inactive');
     document.getElementById('v_main_rate').textContent          = (d.main_rate || 0).toFixed(2);
     document.getElementById('v_po_rate').textContent            = (d.po_rate || 0).toFixed(2);
@@ -801,6 +867,9 @@ async function saveItem() {
   fd.set('special_rate',       document.getElementById('i_special_rate').value);
   fd.set('mrp',                document.getElementById('i_mrp').value);
   fd.set('minimum_sp',         document.getElementById('i_minimum_sp').value);
+  fd.set('levelfive_code',       document.getElementById('i_levelfive_code').value);
+  fd.set('levelfive_drawer_en',  document.getElementById('i_levelfive_drawer_en').value);
+  fd.set('levelfive_drawer_ar',  document.getElementById('i_levelfive_drawer_ar').value);
 
   if (!fd.get('item_code')) { alert(IS_AR ? 'كود البند مطلوب' : 'Item Code is required'); return; }
   if (!fd.get('name_en'))   { alert(IS_AR ? 'اسم البند مطلوب' : 'Item Name (EN) is required'); return; }

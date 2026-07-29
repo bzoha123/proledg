@@ -65,6 +65,9 @@ def item_add():
         mrp             = float(f.get('mrp','0') or 0),
         minimum_sp      = float(f.get('minimum_sp','0') or 0),
         is_active       = f.get('is_active','1') == '1',
+        levelfive_code       = (f.get('levelfive_code','') or '').strip() or None,
+        levelfive_drawer_en  = (f.get('levelfive_drawer_en','') or '').strip() or None,
+        levelfive_drawer_ar  = (f.get('levelfive_drawer_ar','') or '').strip() or None,
         created_by      = current_user.id,
     )
     db.session.add(item); db.session.commit()
@@ -96,6 +99,9 @@ def item_edit(id):
     item.mrp             = float(f.get('mrp','0') or 0)
     item.minimum_sp      = float(f.get('minimum_sp','0') or 0)
     item.is_active       = f.get('is_active','1') == '1'
+    item.levelfive_code      = (f.get('levelfive_code','') or '').strip() or None
+    item.levelfive_drawer_en = (f.get('levelfive_drawer_en','') or '').strip() or None
+    item.levelfive_drawer_ar = (f.get('levelfive_drawer_ar','') or '').strip() or None
     db.session.commit()
     return jsonify({'ok': True})
 

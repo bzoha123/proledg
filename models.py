@@ -1453,6 +1453,9 @@ class ItemMaster(db.Model):
     mrp                = db.Column(db.Numeric(14, 2), default=0)
     minimum_sp         = db.Column(db.Numeric(14, 2), default=0)
     is_active          = db.Column(db.Boolean, default=True)
+    levelfive_code       = db.Column(db.String(40))
+    levelfive_drawer_en  = db.Column(db.String(250))
+    levelfive_drawer_ar  = db.Column(db.String(250))
     created_at         = db.Column(db.DateTime, default=datetime.utcnow)
     created_by         = db.Column(db.Integer, db.ForeignKey('users.id'))
 
@@ -1486,6 +1489,9 @@ class ItemMaster(db.Model):
             'mrp':                float(self.mrp                or 0),
             'minimum_sp':         float(self.minimum_sp         or 0),
             'is_active': self.is_active,
+            'levelfive_code': self.levelfive_code or '',
+            'levelfive_drawer_en': self.levelfive_drawer_en or '',
+            'levelfive_drawer_ar': self.levelfive_drawer_ar or '',
             'uoms': [u.to_dict() for u in self.uoms] if self.uoms else [],
         }
 
