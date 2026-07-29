@@ -26,9 +26,9 @@ sale_bp = Blueprint('sales', __name__)
 def _handle_sale_errors(e):
     from flask import jsonify, session
     if e.__class__.__name__ == 'NoActiveFinancialYear':
-        msg = ('لا توجد سنة مالية مفتوحة. الرجاء فتح سنة مالية أولاً.'
+        msg = ('الرجاء تفعيل سنة مالية (بحالة مفتوحة) قبل إضافة أي سجل.'
                if session.get('lang') == 'ar'
-               else 'No active (Open) financial year. Please open a financial year first.')
+               else 'Please activate a financial year (status Open) before adding any record.')
         return jsonify({'ok': False, 'error': msg}), 400
     raise e
 

@@ -68,6 +68,13 @@ def fy_add():
     # but every subsequent year must be exactly (latest existing year + 1).
     latest = FinancialYear.query.order_by(FinancialYear.year.desc()).first()
     if latest and latest.year is not None:
+        # Previous financial year must be fully Closed before opening a new one.
+        if (latest.status or 'Open') != 'Closed':
+            return jsonify({'ok': False, 'error': _t(
+                f'Close {latest.financial_year} first (all 12 months, then the year) '
+                f'before adding a new financial year.',
+                f'أغلق {latest.financial_year} أولاً (جميع الأشهر الـ12 ثم السنة) '
+                f'قبل إضافة سنة مالية جديدة.')}), 400
         expected = latest.year + 1
         if year != expected:
             return jsonify({'ok': False, 'error': _t(
@@ -110,6 +117,16 @@ def fy_edit(id):
     if status not in ('Open', 'Closed'):
         status = fy.status
     try:
+        if status == 'Closed':
+            # A financial year can be closed only when ALL 12 months are Closed.
+            months = FinancialYearDetail.query.filter_by(financial_year_id=id).all()
+            all_closed = bool(months) and all(
+                (m.status or 'Open') == 'Closed' for m in months)
+            if not all_closed:
+                open_count = sum(1 for m in months if (m.status or 'Open') != 'Closed')
+                return jsonify({'ok': False, 'error': _t(
+                    f'Close all 12 months first — {open_count} month(s) still Open.',
+                    f'أغلق جميع الأشهر الـ12 أولاً — {open_count} شهر لا يزال مفتوحًا.')}), 400
         if status == 'Open':
             # ensure only this one is Open
             FinancialYear.query.filter(FinancialYear.id != id, FinancialYear.status == 'Open')\
@@ -146,16 +163,12 @@ def fm_edit(id):
     try:
         fm.status = status
         db.session.flush()
-        # Auto-close rule: the Financial Year is Closed only when ALL of its
-        # months are Closed; otherwise it stays Open. Status is derived here,
-        # never set manually.
+        # The year is closed MANUALLY (via fy_edit) once all months are closed.
+        # Here we only enforce the invariant in the other direction: a Closed
+        # year cannot keep an Open month, so reopening a month reopens the year.
         parent = FinancialYear.query.get(fm.financial_year_id)
-        if parent:
-            months = FinancialYearDetail.query.filter_by(
-                financial_year_id=parent.id).all()
-            all_closed = bool(months) and all(
-                (m.status or 'Open') == 'Closed' for m in months)
-            parent.status = 'Closed' if all_closed else 'Open'
+        if parent and status == 'Open' and (parent.status or 'Open') == 'Closed':
+            parent.status = 'Open'
         db.session.commit()
         return jsonify({'ok': True, 'year_status': parent.status if parent else None})
     except Exception as e:
