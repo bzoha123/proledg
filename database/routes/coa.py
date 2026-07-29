@@ -20,7 +20,7 @@ Business rules enforced server-side (never trust the client):
 import re
 from functools import wraps
 from flask import (Blueprint, render_template, request, redirect, url_for,
-                   flash, session, jsonify)
+                   flash, session, jsonify, send_file)
 from flask_login import login_required, current_user
 
 from models import db, LevelOne, LevelTwo
@@ -954,3 +954,211 @@ def coa_views_tree():
             n2.append(node(r2.code, r2.drawers, n3, r2.drawers_ar))
         tree.append(node(r1.code, r1.drawers, n2, r1.drawers_ar))
     return jsonify(tree)
+
+# ══════════════════════════════════════════════════════════════════
+#  CHART OF ACCOUNTS — IMPORT / EXPORT  (Levels 1–5)
+# ══════════════════════════════════════════════════════════════════
+import io as _io
+import csv as _csv
+
+# Column layout per level. Parent-code column lets import re-link children.
+# (header, model attribute)
+_COA_LEVELS = {
+    1: {'model': LevelOne,   'sheet': 'Level 1', 'parent': None,
+        'cols': [('Code', 'code'), ('Drawers', 'drawers'),
+                 ('Drawers (AR)', 'drawers_ar'), ('Description', 'description'),
+                 ('Description (AR)', 'description_ar'), ('Status', 'status')]},
+    2: {'model': LevelTwo,   'sheet': 'Level 2', 'parent': ('Parent Code (L1)', 'level_one_code', LevelOne, 'level_one_id'),
+        'cols': [('Parent Code (L1)', 'level_one_code'), ('Code', 'code'), ('Drawers', 'drawers'),
+                 ('Drawers (AR)', 'drawers_ar'), ('Description', 'description'),
+                 ('Description (AR)', 'description_ar'), ('Status', 'status')]},
+    3: {'model': LevelThree, 'sheet': 'Level 3', 'parent': ('Parent Code (L2)', 'level_two_code', LevelTwo, 'level_two_id'),
+        'cols': [('Parent Code (L2)', 'level_two_code'), ('Code', 'code'), ('Drawers', 'drawers'),
+                 ('Drawers (AR)', 'drawers_ar'), ('Description', 'description'),
+                 ('Description (AR)', 'description_ar'), ('Status', 'status')]},
+    4: {'model': LevelFour,  'sheet': 'Level 4', 'parent': ('Parent Code (L3)', 'level_three_code', LevelThree, 'level_three_id'),
+        'cols': [('Parent Code (L3)', 'level_three_code'), ('Code', 'code'), ('Drawers', 'drawers'),
+                 ('Drawers (AR)', 'drawers_ar'), ('Description', 'description'),
+                 ('Description (AR)', 'description_ar'), ('Status', 'status')]},
+    5: {'model': LevelFive,  'sheet': 'Level 5', 'parent': ('Parent Code (L4)', 'level_four_code', LevelFour, 'level_four_id'),
+        'cols': [('Parent Code (L4)', 'level_four_code'), ('Code', 'code'), ('Drawers', 'drawers'),
+                 ('Drawers (AR)', 'drawers_ar'), ('Description', 'description'),
+                 ('Description (AR)', 'description_ar'), ('Control Account', 'control_account'),
+                 ('Status', 'status')]},
+}
+
+
+@coa_bp.route('/export')
+@login_required
+def coa_export():
+    """Export all five levels to a single .xlsx (one sheet per level),
+    or to CSV of one level with ?fmt=csv&level=N."""
+    fmt = (request.args.get('fmt') or 'xlsx').lower()
+
+    if fmt == 'csv':
+        try:
+            level = int(request.args.get('level', 1))
+        except (TypeError, ValueError):
+            level = 1
+        spec = _COA_LEVELS.get(level)
+        if not spec:
+            return jsonify({'ok': False, 'error': 'Invalid level'}), 400
+        rows = coa_order(spec['model'].query, spec['model'].code).all()
+        buf = _io.StringIO()
+        w = _csv.writer(buf)
+        w.writerow([h for h, _ in spec['cols']])
+        for r in rows:
+            w.writerow([getattr(r, attr, '') or '' for _, attr in spec['cols']])
+        data = buf.getvalue().encode('utf-8-sig')   # BOM for Excel/Arabic
+        return send_file(_io.BytesIO(data), as_attachment=True,
+                         download_name=f'chart_of_accounts_level_{level}.csv',
+                         mimetype='text/csv')
+
+    # xlsx: one sheet per level
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    wb = Workbook()
+    wb.remove(wb.active)
+    hdr_fill = PatternFill('solid', fgColor='1E3A5F')
+    hdr_font = Font(color='FFFFFF', bold=True, size=10)
+
+    for level in (1, 2, 3, 4, 5):
+        spec = _COA_LEVELS[level]
+        ws = wb.create_sheet(title=spec['sheet'])
+        for i, (h, _) in enumerate(spec['cols'], 1):
+            c = ws.cell(row=1, column=i, value=h)
+            c.fill = hdr_fill
+            c.font = hdr_font
+            ws.column_dimensions[get_column_letter(i)].width = max(14, len(h) + 3)
+        ws.freeze_panes = 'A2'
+        rows = coa_order(spec['model'].query, spec['model'].code).all()
+        for r_i, row in enumerate(rows, 2):
+            for c_i, (_, attr) in enumerate(spec['cols'], 1):
+                ws.cell(row=r_i, column=c_i, value=getattr(row, attr, '') or '')
+
+    buf = _io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(buf, as_attachment=True,
+                     download_name='chart_of_accounts.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+def _coa_import_rows(level, rows):
+    """Insert new accounts for one level. rows = list of dicts keyed by header.
+    Add-new-only: existing codes are skipped. Returns (added, skipped, errors)."""
+    spec = _COA_LEVELS[level]
+    model = spec['model']
+    added = skipped = 0
+    errors = []
+
+    # Cache existing codes for this level.
+    existing = {r.code for r in model.query.with_entities(model.code).all()}
+
+    parent = spec['parent']
+    parent_map = {}
+    if parent:
+        _, _, pmodel, _ = parent
+        parent_map = {p.code: p.id for p in pmodel.query.with_entities(pmodel.code, pmodel.id).all()}
+
+    for idx, row in enumerate(rows, 2):
+        code = (str(row.get('Code', '')) or '').strip()
+        if not code:
+            continue   # skip blank lines silently
+        if code in existing:
+            skipped += 1
+            continue
+
+        obj = model()
+        obj.code = code
+        obj.drawers = (str(row.get('Drawers', '')) or '').strip()
+        obj.drawers_ar = (str(row.get('Drawers (AR)', '')) or '').strip() or None
+        obj.description = (str(row.get('Description', '')) or '').strip() or _default_desc(level)
+        obj.description_ar = (str(row.get('Description (AR)', '')) or '').strip() or None
+        obj.status = (str(row.get('Status', '')) or 'active').strip().lower()
+        if obj.status not in ('active', 'inactive'):
+            obj.status = 'active'
+        obj.code_length = {1: 1, 2: 2, 3: 5, 4: 8, 5: 12}[level]
+
+        if level == 5:
+            ca = (str(row.get('Control Account', '')) or 'No').strip()
+            obj.control_account = 'Yes' if ca.lower() in ('yes', 'y', '1', 'true') else 'No'
+
+        if parent:
+            phdr, pcode_attr, pmodel, pid_attr = parent
+            pcode = (str(row.get(phdr, '')) or '').strip()
+            if not pcode or pcode not in parent_map:
+                errors.append(f'Row {idx} ({code}): parent "{pcode}" not found; skipped.')
+                continue
+            setattr(obj, pcode_attr, pcode)
+            setattr(obj, pid_attr, parent_map[pcode])
+
+        db.session.add(obj)
+        existing.add(code)
+        added += 1
+
+    return added, skipped, errors
+
+
+def _default_desc(level):
+    return 'Elements of Financial Statements' if level == 1 else (
+        'Transactional Account' if level == 5 else 'Heading Account')
+
+
+@coa_bp.route('/import', methods=['POST'])
+@login_required
+def coa_import():
+    """Import accounts from an uploaded .xlsx (all 5 sheets) or .csv (one level).
+    Add-new-only: existing codes are skipped. Import runs parent-first (L1→L5)."""
+    f = request.files.get('file')
+    if not f or not f.filename:
+        return jsonify({'ok': False, 'error': 'No file uploaded.'}), 400
+
+    name = f.filename.lower()
+    total_added = total_skipped = 0
+    all_errors = []
+
+    try:
+        if name.endswith('.csv'):
+            try:
+                level = int(request.form.get('level', 0))
+            except (TypeError, ValueError):
+                level = 0
+            if level not in _COA_LEVELS:
+                return jsonify({'ok': False, 'error': 'For CSV, choose which level it belongs to.'}), 400
+            text = f.read().decode('utf-8-sig', errors='replace')
+            reader = _csv.DictReader(_io.StringIO(text))
+            rows = list(reader)
+            a, s, e = _coa_import_rows(level, rows)
+            total_added += a; total_skipped += s; all_errors += e
+
+        elif name.endswith('.xlsx') or name.endswith('.xlsm'):
+            from openpyxl import load_workbook
+            wb = load_workbook(f, data_only=True, read_only=True)
+            # Process parent-first so child parent-codes resolve.
+            for level in (1, 2, 3, 4, 5):
+                sheet = _COA_LEVELS[level]['sheet']
+                if sheet not in wb.sheetnames:
+                    continue
+                ws = wb[sheet]
+                it = ws.iter_rows(values_only=True)
+                try:
+                    headers = [str(h).strip() if h is not None else '' for h in next(it)]
+                except StopIteration:
+                    continue
+                rows = []
+                for raw in it:
+                    rows.append({headers[i]: raw[i] for i in range(min(len(headers), len(raw)))})
+                a, s, e = _coa_import_rows(level, rows)
+                total_added += a; total_skipped += s; all_errors += e
+        else:
+            return jsonify({'ok': False, 'error': 'Unsupported file type. Use .xlsx or .csv'}), 400
+
+        db.session.commit()
+        return jsonify({'ok': True, 'added': total_added, 'skipped': total_skipped,
+                        'errors': all_errors[:50]})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'ok': False, 'error': str(e)}), 500
