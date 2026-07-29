@@ -27,6 +27,8 @@ from models import (
     PurchaseInvoiceLineItem, 
     GoodsReturnLineItem, 
     PurchaseDebitMemoLineItem,
+    GRL,
+    GRLDetail,
     PurchaseTaxCode,
     SalesTaxCode,
     ItemMaster,           # ✅ Now properly imported
@@ -1498,8 +1500,92 @@ def grn_edit(id):
 def grn_delete(id):
     GoodsReceiptLineItem.query.filter_by(goods_receipt_note_id=id).delete()
     PurchaseAttachment.query.filter_by(doc_type='GRN', doc_id=id).delete()
+    GRL.query.filter_by(goods_receipt_note_id=id).delete()
     db.session.delete(GoodsReceiptNote.query.get_or_404(id)); db.session.commit()
     return jsonify({'ok':True})
+
+
+# ── GRL (Goods Receipt Ledger) attached to a GRN ────────────────
+def _grl_num(v):
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+@pur_bp.route('/purchase/grn/<int:grn_id>/grl')
+@login_required
+def grl_get(grn_id):
+    """Return the GRL (with details) for a GRN, or an empty shell."""
+    grn = GoodsReceiptNote.query.get_or_404(grn_id)
+    grl = GRL.query.filter_by(goods_receipt_note_id=grn_id).first()
+    if grl:
+        return jsonify({'ok': True, 'grl': grl.to_dict()})
+    # empty shell — origin defaults to the GRN's own doc no
+    return jsonify({'ok': True, 'grl': {
+        'id': None, 'goods_receipt_note_id': grn_id,
+        'origion': grn.doc_no or '', 'refrence': '', 'posting_date': '',
+        'due_date': '', 'document_date': '', 'narration': '', 'details': [],
+    }})
+
+
+@pur_bp.route('/purchase/grn/<int:grn_id>/grl/save', methods=['POST'])
+@login_required
+def grl_save(grn_id):
+    """Create or update the GRL for a GRN, replacing its detail lines."""
+    grn = GoodsReceiptNote.query.get_or_404(grn_id)
+    f = request.form
+
+    posting_date  = pd(f.get('posting_date')) or date.today()
+    due_date      = pd(f.get('due_date'))
+    # posting date rule: on/before due date when a due date is given
+    if due_date and posting_date and posting_date > due_date:
+        return jsonify({'ok': False,
+                        'error': 'Posting Date must be on or before the Due Date'}), 400
+
+    grl = GRL.query.filter_by(goods_receipt_note_id=grn_id).first()
+    if not grl:
+        grl = GRL(goods_receipt_note_id=grn_id)
+        db.session.add(grl)
+
+    grl.origion       = (f.get('origion', '') or grn.doc_no or '').strip()
+    grl.refrence      = (f.get('refrence', '') or '').strip()
+    grl.posting_date  = posting_date
+    grl.due_date      = due_date
+    grl.document_date = date.today()          # always today, on add & edit
+    grl.narration     = (f.get('narration', '') or '').strip()
+
+    try:
+        db.session.flush()   # get grl.id
+
+        # Replace detail lines. Lines arrive as parallel arrays.
+        codes    = request.form.getlist('d_code[]')
+        names    = request.form.getlist('d_account_name[]')
+        controls = request.form.getlist('d_control_account[]')
+        debits   = request.form.getlist('d_debit[]')
+        credits  = request.form.getlist('d_credit[]')
+        narrs    = request.form.getlist('d_narration[]')
+
+        GRLDetail.query.filter_by(grl_id=grl.id).delete()
+        for i in range(len(codes)):
+            code = (codes[i] or '').strip()
+            if not code and not (names[i] if i < len(names) else '').strip():
+                continue   # skip blank rows
+            db.session.add(GRLDetail(
+                grl_id=grl.id,
+                code=code,
+                account_name=(names[i] if i < len(names) else '').strip(),
+                control_account=(controls[i] if i < len(controls) else '').strip(),
+                debit=_grl_num(debits[i] if i < len(debits) else 0),
+                credit=_grl_num(credits[i] if i < len(credits) else 0),
+                narration=(narrs[i] if i < len(narrs) else '').strip(),
+            ))
+
+        db.session.commit()
+        return jsonify({'ok': True, 'grl': grl.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 
 # ══════════════════════════════════════════════════════════════════

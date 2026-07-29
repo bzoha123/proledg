@@ -2816,64 +2816,92 @@ def seed_tax_codes():
 #  from the selected Level 5 account.
 # ═════════════════════════════════════════════════════════════════
 class JournalEntry(db.Model):
+    """Journal Entry — master. Master-detail structure (like GRL)."""
     __tablename__ = 'journal_entries'
+    id            = db.Column(db.Integer, primary_key=True)
+    je_no         = db.Column(db.String(40))    # auto number, e.g. JEV-2026-1
+    origion       = db.Column(db.String(40))    # source doc no (e.g. GRN-2026-1)
+    origin_type   = db.Column(db.String(20))    # source kind (e.g. 'GRN', 'GRL')
+    origin_id     = db.Column(db.Integer)       # source record id (FK reference)
+    refrence      = db.Column(db.String(200))
+    posting_date  = db.Column(db.Date)
+    due_date      = db.Column(db.Date)
+    document_date = db.Column(db.Date)
+    narration     = db.Column(db.String(500))
+    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at    = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    id                 = db.Column(db.Integer, primary_key=True)
-    je_no              = db.Column(db.String(30), unique=True, nullable=False)
-    je_date            = db.Column(db.Date, nullable=False)
-    month              = db.Column(db.String(20))
-    level5_code        = db.Column(db.String(20), nullable=False)
-    level1_drawer      = db.Column(db.String(100))
-    level2_drawer      = db.Column(db.String(100))
-    level3_drawer      = db.Column(db.String(100))
-    level4_drawer      = db.Column(db.String(100))
-    level5_drawer      = db.Column(db.String(100))
-    description        = db.Column(db.Text)
-    project_client     = db.Column(db.String(150))
-    debit              = db.Column(db.Numeric(18, 2), default=0)
-    credit             = db.Column(db.Numeric(18, 2), default=0)
-    payment_ref_method = db.Column(db.String(100))
-    je_balance         = db.Column(db.Numeric(18, 2), default=0)
-    status             = db.Column(db.String(20), default='Draft')
-    created_at         = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at         = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    details = db.relationship('JournalEntryDetail', backref='journal_entry',
+                              lazy=True, cascade='all, delete-orphan')
 
     def to_dict(self):
-        def _f(v):
-            return float(v) if v is not None else 0.0
         return {
             'id': self.id,
-            'je_no': self.je_no,
-            'je_date': self.je_date.strftime('%Y-%m-%d') if self.je_date else '',
-            'month': self.month or '',
-            'level5_code': self.level5_code or '',
-            'level1_drawer': self.level1_drawer or '',
-            'level2_drawer': self.level2_drawer or '',
-            'level3_drawer': self.level3_drawer or '',
-            'level4_drawer': self.level4_drawer or '',
-            'level5_drawer': self.level5_drawer or '',
-            'description': self.description or '',
-            'project_client': self.project_client or '',
-            'debit': _f(self.debit),
-            'credit': _f(self.credit),
-            'payment_ref_method': self.payment_ref_method or '',
-            'je_balance': _f(self.je_balance),
-            'status': self.status or 'Draft',
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
-            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+            'je_no': self.je_no or '',
+            'origion': self.origion or '',
+            'origin_type': self.origin_type or '',
+            'origin_id': self.origin_id,
+            'refrence': self.refrence or '',
+            'posting_date': self.posting_date.isoformat() if self.posting_date else '',
+            'due_date': self.due_date.isoformat() if self.due_date else '',
+            'document_date': self.document_date.isoformat() if self.document_date else '',
+            'narration': self.narration or '',
+            'details': [d.to_dict() for d in self.details],
         }
 
 
+class JournalEntryDetail(db.Model):
+    __tablename__ = 'journal_entry_detail'
+    id                = db.Column(db.Integer, primary_key=True)
+    journal_entry_id  = db.Column(db.Integer,
+                                  db.ForeignKey('journal_entries.id', ondelete='CASCADE'))
+    code              = db.Column(db.String(40))
+    account_name      = db.Column(db.String(250))
+    control_account   = db.Column(db.String(40))
+    debit             = db.Column(db.Numeric(14, 2), default=0)
+    credit            = db.Column(db.Numeric(14, 2), default=0)
+    narration         = db.Column(db.String(500))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'journal_entry_id': self.journal_entry_id,
+            'code': self.code or '',
+            'account_name': self.account_name or '',
+            'control_account': self.control_account or '',
+            'debit': float(self.debit) if self.debit is not None else 0,
+            'credit': float(self.credit) if self.credit is not None else 0,
+            'narration': self.narration or '',
+        }
+
+
+class NoActiveFinancialYearError(Exception):
+    """Raised when there is no Open financial year to number a journal entry."""
+    pass
+
+
 def next_je_no():
-    """Generate the next unique JE number in the JE-000001 format."""
-    last = JournalEntry.query.order_by(JournalEntry.id.desc()).first()
-    n = 1
-    if last and last.je_no and last.je_no.startswith('JE-'):
-        try:
-            n = int(last.je_no.split('-')[1]) + 1
-        except (ValueError, IndexError):
-            n = (last.id or 0) + 1
-    return f'JE-{n:06d}'
+    """Next Journal Entry number: JEV-<active FY year>-<n>  e.g. JEV-2026-1.
+
+    The year comes from the active (Open) financial year. Raises
+    NoActiveFinancialYearError if none is open.
+    """
+    year = active_fy_year()
+    if not year:
+        raise NoActiveFinancialYearError()
+    prefix = 'JEV'
+    like = f'{prefix}-{year}-%'
+    max_num = 0
+    for je in JournalEntry.query.filter(JournalEntry.je_no.like(like)).all():
+        if je.je_no:
+            try:
+                num = int(je.je_no.rsplit('-', 1)[1])
+                if num > max_num:
+                    max_num = num
+            except (ValueError, IndexError):
+                continue
+    return f'{prefix}-{year}-{max_num + 1}'
+
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -3152,3 +3180,61 @@ def active_fy_year():
     """The numeric year of the active financial year, or None."""
     fy = active_financial_year()
     return fy.year if fy else None
+
+
+class GRL(db.Model):
+    """Goods Receipt Ledger — journal entry attached to a Goods Receipt Note."""
+    __tablename__ = 'grl'
+    id                    = db.Column(db.Integer, primary_key=True)
+    goods_receipt_note_id = db.Column(db.Integer,
+                                      db.ForeignKey('goods_receipt_notes.goods_receipt_note_id',
+                                                    ondelete='CASCADE'))
+    origion               = db.Column(db.String(40))    # origin doc no (e.g. GRN-2026-1)
+    refrence              = db.Column(db.String(200))   # reference text
+    posting_date          = db.Column(db.Date)
+    due_date              = db.Column(db.Date)
+    document_date         = db.Column(db.Date)
+    narration             = db.Column(db.String(500))
+    created_at            = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at            = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    details = db.relationship('GRLDetail', backref='grl', lazy=True,
+                              cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'goods_receipt_note_id': self.goods_receipt_note_id,
+            'origion': self.origion or '',
+            'refrence': self.refrence or '',
+            'posting_date': self.posting_date.isoformat() if self.posting_date else '',
+            'due_date': self.due_date.isoformat() if self.due_date else '',
+            'document_date': self.document_date.isoformat() if self.document_date else '',
+            'narration': self.narration or '',
+            'details': [d.to_dict() for d in self.details],
+        }
+
+
+class GRLDetail(db.Model):
+    __tablename__ = 'grl_detail'
+    id              = db.Column(db.Integer, primary_key=True)
+    grl_id          = db.Column(db.Integer,
+                                db.ForeignKey('grl.id', ondelete='CASCADE'))
+    code            = db.Column(db.String(40))
+    account_name    = db.Column(db.String(250))
+    control_account = db.Column(db.String(40))
+    debit           = db.Column(db.Numeric(14, 2), default=0)
+    credit          = db.Column(db.Numeric(14, 2), default=0)
+    narration       = db.Column(db.String(500))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'grl_id': self.grl_id,
+            'code': self.code or '',
+            'account_name': self.account_name or '',
+            'control_account': self.control_account or '',
+            'debit': float(self.debit) if self.debit is not None else 0,
+            'credit': float(self.credit) if self.credit is not None else 0,
+            'narration': self.narration or '',
+        }
