@@ -630,23 +630,28 @@ document.addEventListener('DOMContentLoaded', itemL5EnsureLoaded);
 const TR    = '{{ url_for("lookups.item_translate") }}';
 
 /* ══ Auto-generate Item Code ══ */
-async function fetchItemCode() {
+async function fetchItemCode(retry) {
   const el = document.getElementById('i_item_code');
+  el.readOnly = true;                       // always locked — never manual
+  el.style.background = '#f0fdf4';
+  el.style.color = '#15803d';
   try {
     const res = await fetch('/items/next-code');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const d = await res.json();
     if (!d.item_code) throw new Error('Empty response');
     el.value = d.item_code;
-    el.readOnly = true;
-    el.style.background = '#f0fdf4';
     el.placeholder = '';
   } catch (e) {
     console.error('Error fetching item code:', e);
     el.value = '';
-    el.readOnly = false;
-    el.style.background = '#fff7ed';
-    el.placeholder = IS_AR ? 'تعذر التوليد التلقائي — أدخل الكود يدوياً' : 'Auto-generate failed — enter manually';
+    el.placeholder = IS_AR ? 'جارٍ التوليد...' : 'Generating...';
+    // Retry a few times; the field stays locked the whole time.
+    if ((retry || 0) < 3) {
+      setTimeout(() => fetchItemCode((retry || 0) + 1), 600);
+    } else {
+      el.placeholder = IS_AR ? 'تعذر التوليد — أعد فتح النموذج' : 'Could not generate — reopen the form';
+    }
   }
 }
 
@@ -759,6 +764,7 @@ async function fillEditForm(d) {
   document.getElementById('item_id').value = d.id;
   document.getElementById('itemModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل البند' : 'Edit Item');
   document.getElementById('i_item_code').value  = d.item_code || '';
+  document.getElementById('i_item_code').readOnly = true;   // locked on edit too
   document.getElementById('i_article_no').value = d.article_no || '';
   document.getElementById('i_name_en').value    = d.name_en || '';
   document.getElementById('i_name_ar').value    = d.name_ar || '';

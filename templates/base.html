@@ -456,6 +456,29 @@
 <script src="{{ url_for('static', filename='js/window-modal.js') }}"></script>
 <script src="{{ url_for('static', filename='js/grid-kit.js') }}"></script>
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+/* Shared generic import helper for master pages (io_tools blueprint). */
+window.ioImport = function(input, key){
+  const f = input.files[0];
+  if(!f) return;
+  const fd = new FormData();
+  fd.set('file', f);
+  fd.set('csrf_token', '{{ csrf_token() }}');
+  fetch('/io/' + key + '/import', {method:'POST', headers:{'X-CSRFToken':'{{ csrf_token() }}'}, body:fd})
+    .then(r => r.json()).then(d => {
+      if(d.ok){
+        let msg = 'Added: ' + d.added + ', skipped: ' + d.skipped;
+        if(d.errors && d.errors.length) msg += '\n' + d.errors.slice(0,10).join('\n');
+        alert(msg);
+        location.reload();
+      } else {
+        alert(d.error || 'Import failed');
+      }
+    })
+    .catch(() => alert('Network error'))
+    .finally(() => { input.value = ''; });
+};
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

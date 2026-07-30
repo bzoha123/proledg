@@ -40,6 +40,18 @@
         <i class="fas fa-plus"></i>
       </button>
       {% endif %}
+      <a href="{{ url_for('coa.coa_export') }}?fmt=csv&level={{ level_no }}"
+         class="tool-btn" style="text-decoration:none;" title="{% if ar %}تصدير{% else %}Export{% endif %}">
+        <i class="fas fa-file-export"></i>
+      </a>
+      {% if current_user.is_admin() %}
+      <button type="button" class="tool-btn" title="{% if ar %}استيراد{% else %}Import{% endif %}"
+              onclick="document.getElementById('coaImp{{ level_no }}').click()">
+        <i class="fas fa-file-import"></i>
+      </button>
+      <input type="file" id="coaImp{{ level_no }}" accept=".csv,.xlsx,.xlsm" style="display:none;"
+             onchange="coaLevelImport(this, {{ level_no }})">
+      {% endif %}
     </div>
 
     <form method="GET" class="toolbar-right"
@@ -257,6 +269,31 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script>
+/* ── COA per-level import (CSV or XLSX) ─────────────── */
+function coaLevelImport(input, level){
+  const f = input.files[0];
+  if(!f) return;
+  const fd = new FormData();
+  fd.set('file', f);
+  fd.set('level', level);
+  const csrf = '{{ csrf_token() }}';
+  fd.set('csrf_token', csrf);
+  fetch('{{ url_for("coa.coa_import") }}', {method:'POST', headers:{'X-CSRFToken':csrf}, body:fd})
+    .then(r=>r.json()).then(d=>{
+      if(d.ok){
+        let msg = (({{ 'true' if ar else 'false' }})?'تمت الإضافة: ':'Added: ')+d.added+
+                  (({{ 'true' if ar else 'false' }})?'، تم التخطي: ':', skipped: ')+d.skipped;
+        if(d.errors && d.errors.length) msg += '\n' + d.errors.slice(0,10).join('\n');
+        alert(msg);
+        location.reload();
+      } else {
+        alert(d.error || 'Error');
+      }
+    }).catch(()=>alert('Network error'))
+    .finally(()=>{ input.value=''; });
+}
+</script>
 <script>
 /* ── Chart of Accounts grid (loads from /level-N/data) ─────────────── */
 (function () {

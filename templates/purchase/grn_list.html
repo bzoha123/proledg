@@ -186,7 +186,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
         <button class="pur-tab active" onclick="switchTab('tab_content',this)">
           <i class="fas fa-file-alt me-1"></i>{% if ar %}سند الاستلام{% else %}GRN{% endif %}
         </button>
-        <button class="pur-tab" onclick="switchTab('tab_grl',this); grlEnsureLoaded();">
+        <button class="pur-tab" onclick="switchTab('tab_grl',this); _grlLoaded=false; grlEnsureLoaded();">
           <i class="fas fa-book me-1"></i>GRL
         </button>
         <button class="pur-tab" onclick="switchTab('tab_attach',this)">
@@ -412,7 +412,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             </div>
             <div style="margin-bottom:6px;">
               <label class="grl-lbl">{% if ar %}البيان / Narration{% else %}Narration{% endif %}</label>
-              <input type="text" id="grl_narration" class="grl-inp" dir="ltr" readonly style="background:#f8fafc;">
+              <input type="text" id="grl_narration" class="grl-inp" dir="ltr" oninput="grlApplyNarration()" placeholder="{% if ar %}يُطبّق على جميع البنود{% else %}Applied to all lines{% endif %}">
             </div>
             <div id="grlDateErr" style="display:none;color:#dc2626;font-size:12px;font-weight:600;margin-bottom:8px;"></div>
 
@@ -1161,10 +1161,9 @@ const _grlToday = () => new Date().toISOString().split('T')[0];
 
 function grlReset(){
   _grlLoaded = false;
-  ['grl_refrence','grl_narration'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
-  document.getElementById('grl_posting_date').value = _grlToday();
-  document.getElementById('grl_due_date').value = '';
-  document.getElementById('grl_document_date').value = _grlToday();
+  ['grl_refrence','grl_narration','grl_posting_date','grl_due_date','grl_document_date'].forEach(id=>{
+    const e=document.getElementById(id); if(e) e.value='';
+  });
   document.getElementById('grlBody').innerHTML = '';
   const o=document.getElementById('grl_origion'); if(o) o.value = document.getElementById('grnDocBadge').textContent || '';
   const de=document.getElementById('grlDateErr'); if(de) de.style.display='none';
@@ -1175,26 +1174,44 @@ function grlEnsureLoaded(){
   const grnId = document.getElementById('grn_id').value;
   if(!grnId){
     document.getElementById('grlBody').innerHTML =
-      '<tr><td colspan="7" style="padding:14px;text-align:center;color:#9ca3af;">'+
-      (IS_AR?'احفظ سند الاستلام أولاً لإضافة قيود GRL':'Save the GRN first to add GRL entries')+'</td></tr>';
+      '<tr><td colspan="6" style="padding:14px;text-align:center;color:#9ca3af;">'+
+      (IS_AR?'احفظ سند الاستلام أولاً لعرض GRL':'Save the GRN first to view GRL')+'</td></tr>';
     return;
   }
   if(_grlLoaded) return;
-  fetch('/purchase/grn/'+grnId+'/grl').then(r=>r.json()).then(d=>{
+  // Header mirrors the GRN tab's current values; lines come from the GRN + Item Master.
+  const grnDoc = document.getElementById('grn_doc_no')?.value || document.getElementById('grnDocBadge').textContent || '';
+  const grnPost = document.getElementById('grn_posting_date')?.value || '';
+  const grnDeliv = document.getElementById('grn_delivery_date')?.value || '';
+  const grnDocDate = document.getElementById('grn_doc_date')?.value || '';
+  fetch('/purchase/grn/'+grnId+'/grl-build').then(r=>r.json()).then(d=>{
     if(!d.ok){ return; }
-    const g = d.grl || {};
-    document.getElementById('grl_origion').value = g.origion || (document.getElementById('grnDocBadge').textContent||'');
-    document.getElementById('grl_refrence').value = g.refrence || '';
-    document.getElementById('grl_posting_date').value = g.posting_date || _grlToday();
-    document.getElementById('grl_due_date').value = g.due_date || '';
-    document.getElementById('grl_document_date').value = g.document_date || _grlToday();
-    document.getElementById('grl_narration').value = g.narration || '';
+    // Prefer the live GRN form values; fall back to the saved values from the server.
+    document.getElementById('grl_origion').value = grnDoc || d.origion || '';
+    document.getElementById('grl_refrence').value = d.refrence || 'Good Receipt Note';
+    document.getElementById('grl_posting_date').value = grnPost || d.posting_date || '';
+    document.getElementById('grl_due_date').value = grnDeliv || d.due_date || '';
+    document.getElementById('grl_document_date').value = grnDocDate || d.document_date || '';
     document.getElementById('grlBody').innerHTML='';
-    (g.details||[]).forEach(row=>grlAddRow(row));
-    if(!(g.details||[]).length) grlAddRow();
+    (d.lines||[]).forEach(row=>grlAddRow(row));
+    if(!(d.lines||[]).length){
+      document.getElementById('grlBody').innerHTML =
+        '<tr><td colspan="6" style="padding:14px;text-align:center;color:#9ca3af;">'+
+        (IS_AR?'لا توجد بنود في سند الاستلام':'No line items in this GRN')+'</td></tr>';
+    }
     _grlLoaded = true;
+    grlApplyNarration();
     grlRecalc();
   }).catch(e=>console.error('GRL load failed:', e));
+}
+
+/* One narration applied to every line (shown in each row's Narration cell). */
+function grlApplyNarration(){
+  const val = document.getElementById('grl_narration').value || '';
+  document.querySelectorAll('#grlBody tr').forEach(tr=>{
+    const cells = tr.querySelectorAll('td');
+    if(cells.length >= 6) cells[5].textContent = val;
+  });
 }
 
 function grlAddRow(data){

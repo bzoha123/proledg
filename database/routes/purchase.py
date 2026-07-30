@@ -279,21 +279,27 @@ def _validate_posting_date(posting_date, required_date):
 
 
 def _next_item_code():
-    """Generate the next sequential item code. Format: ITM-0001, ITM-0002, ..."""
-    prefix = 'ITM'
-    like = f'{prefix}-%'
-    last = db.session.query(ItemMaster).filter(
-        ItemMaster.item_code.like(like)
-    ).order_by(ItemMaster.id.desc()).first()
+    """Generate the next sequential item code. Format: ITM-0001, ITM-0002, ...
 
-    n = 1
-    if last and last.item_code:
-        try:
-            n = int(last.item_code.split('-')[-1]) + 1
-        except (ValueError, IndexError):
-            n = ItemMaster.query.count() + 1
+    Queries ONLY the item_code column so it works even if the DB is missing
+    other (newly added) columns that the ItemMaster model defines.
+    """
+    prefix = 'ITM'
+    codes = [row[0] for row in db.session.query(ItemMaster.item_code)
+             .filter(ItemMaster.item_code.like(f'{prefix}-%')).all()]
+    max_n = 0
+    for code in codes:
+        if code:
+            try:
+                num = int(code.split('-')[-1])
+                if num > max_n:
+                    max_n = num
+            except (ValueError, IndexError):
+                continue
+    n = max_n + 1
+    existing = set(codes)
     code = f'{prefix}-{n:04d}'
-    while ItemMaster.query.filter_by(item_code=code).first():
+    while code in existing:
         n += 1
         code = f'{prefix}-{n:04d}'
     return code
@@ -1511,6 +1517,66 @@ def _grl_num(v):
         return float(v)
     except (TypeError, ValueError):
         return 0.0
+
+
+@pur_bp.route('/purchase/grn/<int:grn_id>/grl-build')
+@login_required
+def grl_build(grn_id):
+    """Assemble the GRL view for a GRN entirely from GRN data + Item Master.
+
+    Frontend-only display; nothing is saved. Mapping:
+      header.origion  = GRN doc_no          reference = 'Good Receipt Note'
+      posting_date    = GRN posting_date    due_date  = GRN delivery_date
+      document_date   = GRN document_date
+    Per GRN line (one GRL line each):
+      code            = ItemMaster.levelfive_code       (its account code)
+      account_name    = ItemMaster.levelfive_drawer_en  (its drawer)
+      control_account = LevelFive.control_account        (Yes/No, via that code)
+      debit           = GRN line total
+      credit          = 0
+    """
+    from models import LevelFive
+    grn = GoodsReceiptNote.query.get_or_404(grn_id)
+    lines = (GoodsReceiptLineItem.query
+             .filter_by(goods_receipt_note_id=grn_id)
+             .order_by(GoodsReceiptLineItem.line_number).all())
+
+    # Cache Item Master (by item_code) and LevelFive (by code) for lookups.
+    item_codes = [ln.item_code for ln in lines if ln.item_code]
+    items = {}
+    if item_codes:
+        for it in ItemMaster.query.filter(ItemMaster.item_code.in_(item_codes)).all():
+            items[it.item_code] = it
+    l5_codes = {getattr(it, 'levelfive_code', None) for it in items.values()}
+    l5_codes.discard(None)
+    l5_ctrl = {}
+    if l5_codes:
+        for row in LevelFive.query.filter(LevelFive.code.in_(list(l5_codes))).all():
+            l5_ctrl[row.code] = row.control_account or 'No'
+
+    out_lines = []
+    for ln in lines:
+        it = items.get(ln.item_code)
+        l5code = getattr(it, 'levelfive_code', '') if it else ''
+        drawer = getattr(it, 'levelfive_drawer_en', '') if it else ''
+        ctrl   = l5_ctrl.get(l5code, '') if l5code else ''
+        out_lines.append({
+            'code': l5code or '',
+            'account_name': drawer or '',
+            'control_account': ctrl or '',
+            'debit': float(ln.total or 0),
+            'credit': 0,
+        })
+
+    return jsonify({
+        'ok': True,
+        'origion': grn.doc_no or '',
+        'refrence': 'Good Receipt Note',
+        'posting_date': grn.posting_date.isoformat() if grn.posting_date else '',
+        'due_date': grn.delivery_date.isoformat() if getattr(grn, 'delivery_date', None) else '',
+        'document_date': grn.document_date.isoformat() if getattr(grn, 'document_date', None) else '',
+        'lines': out_lines,
+    })
 
 
 @pur_bp.route('/purchase/grn/<int:grn_id>/grl')

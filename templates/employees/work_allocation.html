@@ -541,7 +541,12 @@ select.f-inp {
       <button class="tool-btn tool-btn-green" onclick="openAddWA()"><i class="fas fa-plus"></i></button>
       {% endif %}
       <button class="tool-btn tool-btn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
-      <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'work_allocations.csv'})"><i class="fas fa-file-export"></i></button>
+      <a class="tool-btn" href="/io/work-allocations/export?fmt=xlsx" style="text-decoration:none;" title="{% if ar %}تصدير Excel{% else %}Export Excel{% endif %}"><i class="fas fa-file-excel"></i></a>
+      {% if current_user.is_admin() %}
+      <button class="tool-btn" title="{% if ar %}استيراد{% else %}Import{% endif %}" onclick="document.getElementById('waImp').click()"><i class="fas fa-file-import"></i></button>
+      <input type="file" id="waImp" accept=".csv,.xlsx,.xlsm" style="display:none;" onchange="ioImport(this,'work-allocations')">
+      {% endif %}
+      <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'work_allocations.csv'})" title="{% if ar %}تصدير CSV (المعروض){% else %}Export CSV (view){% endif %}"><i class="fas fa-file-export"></i></button>
       <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null);document.getElementById('qs').value='';gridApi.setGridOption('quickFilterText','')"><i class="fas fa-times-circle"></i></button>
     </div>
     <div class="toolbar-right d-flex align-items-center gap-3">
@@ -1266,13 +1271,13 @@ agGrid.createGrid(document.getElementById('waGrid'),{
   rowSelection: 'multiple',
   suppressRowClickSelection: true,
   
-  // onGridReady(p) {
-  //   gridApi = p.api;
-  //   if (window.GridKit) {
-  //     GridKit.enhance(p, 'waGrid', { storageKey: 'work_allocations', exportName: 'Work Allocations' });
-  //   }
-  //   loadData();
-  // },
+  onGridReady(p) {
+    gridApi = p.api;
+    if (window.GridKit) {
+      GridKit.enhance(p, 'waGrid', { storageKey: 'work_allocations', exportName: 'Work Allocations' });
+    }
+    loadData();
+  },
   onFilterChanged(){upd();},
   onPaginationChanged(){upd();},
   onSelectionChanged(){upd();},

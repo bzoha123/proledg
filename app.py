@@ -103,6 +103,12 @@ def create_app(config_name='default'):
     app.register_blueprint(sales_tax_bp)
     app.register_blueprint(uom_bp)
 
+    # Generic import/export for master pages (excludes purchases & sales).
+    from database.routes.io_tools import io_bp
+    from database.routes.io_registrations import register_all
+    app.register_blueprint(io_bp)
+    register_all()
+
     # Error handlers
     @app.errorhandler(404)
     def not_found(e):
@@ -139,6 +145,13 @@ def init_db(app):
                 print('Database already initialized, skipping create_all.')
             else:
                 raise
+
+        # Add any newly-introduced columns an older DB may be missing.
+        try:
+            from models import ensure_schema
+            ensure_schema()
+        except Exception as _e:
+            print(f'ensure_schema skipped: {_e}')
 
         # Create default users if they don't exist
         if not User.query.filter_by(username='admin').first():

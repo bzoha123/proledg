@@ -59,6 +59,9 @@
         <input type="text" id="uomSearch" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" oninput="onSearch()">
       </div>
       <button class="ubtn" onclick="loadData()"><i class="fas fa-sync-alt"></i>{% if ar %}تحديث{% else %}Refresh{% endif %}</button>
+      <a class="ubtn" href="/io/unit-measurement/export?fmt=xlsx" style="text-decoration:none;"><i class="fas fa-file-export"></i>{% if ar %}تصدير{% else %}Export{% endif %}</a>
+      <button class="ubtn" onclick="document.getElementById('uomImp').click()"><i class="fas fa-file-import"></i>{% if ar %}استيراد{% else %}Import{% endif %}</button>
+      <input type="file" id="uomImp" accept=".csv,.xlsx,.xlsm" style="display:none;" onchange="ioImport(this,'unit-measurement')">
       <button class="ubtn ubtn-green" onclick="openAdd()"><i class="fas fa-plus"></i>{% if ar %}إضافة{% else %}Add Unit{% endif %}</button>
     </div>
   </div>

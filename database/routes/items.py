@@ -39,12 +39,31 @@ def items_data():
 def item_json(id):
     return jsonify(ItemMaster.query.get_or_404(id).to_dict())
 
+def _gen_item_code():
+    """Server-side authoritative item code: ITM-0001, ITM-0002, ..."""
+    prefix = 'ITM'
+    last = (db.session.query(ItemMaster)
+            .filter(ItemMaster.item_code.like(f'{prefix}-%'))
+            .order_by(ItemMaster.id.desc()).first())
+    n = 1
+    if last and last.item_code:
+        try:
+            n = int(last.item_code.split('-')[-1]) + 1
+        except (ValueError, IndexError):
+            n = ItemMaster.query.count() + 1
+    code = f'{prefix}-{n:04d}'
+    while ItemMaster.query.filter_by(item_code=code).first():
+        n += 1
+        code = f'{prefix}-{n:04d}'
+    return code
+
+
 @lookups_bp.route('/items/add', methods=['POST'])
 @login_required
 def item_add():
     f = request.form
     item = ItemMaster(
-        item_code   = f.get('item_code','').strip(),
+        item_code   = _gen_item_code(),   # always auto — never from the form
         item_type   = f.get('item_type','Product'),
         article_no  = f.get('article_no','').strip(),
         name_en     = f.get('name_en','').strip(),
@@ -78,7 +97,7 @@ def item_add():
 def item_edit(id):
     item = ItemMaster.query.get_or_404(id)
     f = request.form
-    item.item_code   = f.get('item_code','').strip()
+    # item_code is auto-generated and immutable — never overwritten on edit.
     item.article_no  = f.get('article_no','').strip()
     item.name_en     = f.get('name_en','').strip()
     item.item_type   = f.get('item_type','Product')

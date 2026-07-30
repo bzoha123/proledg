@@ -3244,3 +3244,42 @@ class GRLDetail(db.Model):
             'credit': float(self.credit) if self.credit is not None else 0,
             'narration': self.narration or '',
         }
+
+
+# ══════════════════════════════════════════════════════════════════
+#  Lightweight startup schema guard (SQLite ADD COLUMN, idempotent)
+# ══════════════════════════════════════════════════════════════════
+def ensure_schema():
+    """Add any newly-introduced columns that an older database may lack.
+
+    Idempotent and safe to call on every startup: each column is added
+    only if the table exists and the column is missing. This keeps schema
+    upgrades in the model layer instead of separate migration scripts.
+    """
+    from sqlalchemy import text
+
+    # (table, column, column definition)
+    wanted = [
+        ('item_master', 'levelfive_code',      'VARCHAR(40)'),
+        ('item_master', 'levelfive_drawer_en', 'VARCHAR(250)'),
+        ('item_master', 'levelfive_drawer_ar', 'VARCHAR(250)'),
+    ]
+
+    for table, column, ddl in wanted:
+        try:
+            exists = db.session.execute(text(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name=:t"
+            ), {'t': table}).fetchone()
+            if not exists:
+                continue
+            cols = {row[1] for row in db.session.execute(
+                text(f'PRAGMA table_info({table})')).fetchall()}
+            if column in cols:
+                continue
+            db.session.execute(text(
+                f'ALTER TABLE {table} ADD COLUMN {column} {ddl}'))
+            db.session.commit()
+            print(f'ensure_schema: added {table}.{column}')
+        except Exception as e:
+            db.session.rollback()
+            print(f'ensure_schema: could not add {table}.{column}: {e}')
