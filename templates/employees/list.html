@@ -6,6 +6,14 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
+/* Colored toolbar buttons */
+.tool-btn{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:38px;padding:0 12px;border:none;border-radius:8px;font-size:14px;cursor:pointer;color:#fff;transition:filter .15s;text-decoration:none;}
+.tool-btn:hover{filter:brightness(1.1);}
+.tool-btn i{pointer-events:none;}
+.tool-btn-green{background:#16a34a;} .tool-btn-blue{background:#2563eb;}
+.tool-btn-teal{background:#0d9488;} .tool-btn-purple{background:#7c3aed;}
+.tool-btn-orange{background:#ea580c;} .tool-btn-gray{background:#64748b;}
+
 /* ═══════════════════════════════════════════════════════
    PROLEDG FORM DESIGN SYSTEM v2
    Used across: Sellers, Employees, Buyers, Vendors
@@ -669,8 +677,13 @@
       <button class="tool-btn tool-btn-green" data-bs-toggle="modal" data-bs-target="#empModal" onclick="openAddEmp()" title="{% if ar %}إضافة موظف{% else %}Add Employee{% endif %}"><i class="fas fa-plus"></i></button>
       {% endif %}
       <button class="tool-btn tool-btn-blue" onclick="loadData()" title="{% if ar %}تحديث{% else %}Refresh{% endif %}"><i class="fas fa-sync-alt"></i></button>
-      <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'employees.csv'})" title="Export"><i class="fas fa-file-export"></i></button>
-      <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null)" title="Clear Filters"><i class="fas fa-times-circle"></i></button>
+      <a class="tool-btn tool-btn-green" href="/io/bundle/employee-full/export" style="text-decoration:none;" title="{% if ar %}تصدير (الموظف + البنوك){% else %}Export (Employee + Banks){% endif %}"><i class="fas fa-file-excel"></i></a>
+      <a class="tool-btn tool-btn-purple" href="/io/bundle/employee-full/template" style="text-decoration:none;" title="{% if ar %}قالب{% else %}Template{% endif %}"><i class="fas fa-file-download"></i></a>
+      {% if current_user.is_admin() %}
+      <button class="tool-btn tool-btn-orange" title="{% if ar %}استيراد{% else %}Import{% endif %}" onclick="document.getElementById('empImp').click()"><i class="fas fa-file-import"></i></button>
+      <input type="file" id="empImp" accept=".xlsx,.xlsm" style="display:none;" onchange="ioBundleImport(this,'employee-full')">
+      {% endif %}
+      <button class="tool-btn tool-btn-gray" onclick="clearAllFilters()" title="{% if ar %}مسح الفلاتر{% else %}Clear Filters{% endif %}"><i class="fas fa-times-circle"></i></button>
       {% if current_user.is_admin() %}
       <button class="tool-btn" id="btnImportExcel" title="{% if ar %}استيراد إكسل{% else %}Import Excel{% endif %}"><i class="fas fa-file-import"></i></button>
       <a href="/employees/import/template" class="tool-btn" title="{% if ar %}تحميل القالب{% else %}Download Template{% endif %}"><i class="fas fa-file-download"></i></a>
@@ -3108,20 +3121,21 @@ class ActR {
 const cols = [
   {headerName:'',field:'id',width:46,checkboxSelection:true,headerCheckboxSelection:true,sortable:false,suppressMenu:true,resizable:false,filter:false,floatingFilter:false,pinned:IS_AR?'right':'left',enableRowGroup:false,enablePivot:false,enableValue:false,suppressColumnsToolPanel:true},
   {headerName:S.code,field:'employee_code',width:130,pinned:IS_AR?'right':'left',cellRenderer:rCode,filter:'agTextColumnFilter'},
-  {headerName:S.name,field:'name',minWidth:160,filter:'agTextColumnFilter'},
+  {headerName:S.name,field:'name',minWidth:160,filter:'agTextColumnFilter',editable:ADM},
+  {headerName:IS_AR?'الاسم بالعربي':'Name (AR)',field:'name_ar',minWidth:160,cellStyle:{direction:'rtl',textAlign:'right'},filter:'agTextColumnFilter',editable:ADM},
   {headerName:S.prof,field:'profession',width:150,filter:'agTextColumnFilter'},
   {headerName:S.kafeel,field:'kafeel_name',width:140,filter:'agTextColumnFilter'},
   {headerName:S.ref,field:'kafeel_reference',width:120,filter:'agTextColumnFilter'},
-  {headerName:S.nat,field:'nationality',width:110,filter:'agTextColumnFilter'},
+  {headerName:S.nat,field:'nationality',width:110,filter:'agTextColumnFilter',editable:ADM},
   {headerName:S.bdate,field:'birth_date',width:135,cellRenderer:rDate,filter:'agTextColumnFilter'},
   {headerName:S.age,field:'age',width:140,filter:'agTextColumnFilter'},
-  {headerName:S.iqama,field:'iqama_number',width:125,filter:'agTextColumnFilter'},
+  {headerName:S.iqama,field:'iqama_number',width:125,filter:'agTextColumnFilter',editable:ADM},
   {headerName:S.iqexp,field:'iqama_expiry',width:145,cellRenderer:rDate,filter:'agTextColumnFilter'},
-  {headerName:S.pass,field:'passport_number',width:125,filter:'agTextColumnFilter'},
+  {headerName:S.pass,field:'passport_number',width:125,filter:'agTextColumnFilter',editable:ADM},
   {headerName:S.dept,field:'department',width:125,filter:'agTextColumnFilter'},
-  {headerName:S.stype,field:'salary_type',width:115,filter:'agSetColumnFilter'},
-  {headerName:S.basic,field:'basic_salary',width:125,cellRenderer:rNum,filter:'agNumberColumnFilter'},
-  {headerName:S.net,field:'net_salary',width:120,cellRenderer:rNum,filter:'agNumberColumnFilter'},
+  {headerName:S.stype,field:'salary_type',width:115,filter:'agSetColumnFilter',editable:ADM},
+  {headerName:S.basic,field:'basic_salary',width:125,cellRenderer:rNum,filter:'agNumberColumnFilter',editable:ADM},
+  {headerName:S.net,field:'net_salary',width:120,cellRenderer:rNum,filter:'agNumberColumnFilter',editable:ADM},
   {headerName:S.status,field:'is_active',width:95,cellRenderer:rStatus},
 ];
 if (ADM) cols.push({headerName:S.actions,field:'_a',width:140,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,resizable:false,filter:false,floatingFilter:false,enableRowGroup:false,enablePivot:false,enableValue:false,suppressColumnsToolPanel:true,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 8px'}});
@@ -3150,6 +3164,7 @@ agGrid.createGrid(document.getElementById('empGrid'), {
   rowSelection: 'multiple', suppressRowClickSelection: true, animateRows: true, enableRtl: IS_AR,
   localeText: _agLocale,
   multiSortKey: 'ctrl',
+  onCellValueChanged:function(e){ if(window.ioSaveCell) ioSaveCell('employees', e); },
   // ── Enterprise: right-hand tool panels (Columns + Filters), drag-to-group
   //    bar, pivoting and aggregation. Matches the reference video's structure. ──
   sideBar: {
@@ -3165,6 +3180,7 @@ agGrid.createGrid(document.getElementById('empGrid'), {
   pivotPanelShow: 'always',
   groupDisplayType: 'groupRows',
   defaultColDef: {
+    editable: function(p){ return window.ioFieldEditable && ioFieldEditable(p.colDef.field); },
     sortable: true, resizable: true, filter: true, floatingFilter: true, suppressMenu: false,
     unSortIcon: true,
     enableRowGroup: true, enablePivot: true, enableValue: true,
@@ -3193,6 +3209,14 @@ function loadData() {
     }
     upd();
   }).catch(err => console.error('Failed to load employee data:', err));
+}
+function clearAllFilters(){
+  if(!gridApi) return;
+  gridApi.setFilterModel(null);
+  gridApi.setGridOption('quickFilterText','');
+  var gs=document.getElementById('globalSearch'); if(gs) gs.value='';
+  gridApi.onFilterChanged();
+  if(typeof upd==='function') upd();
 }
 function upd() {
   if (!gridApi) return;

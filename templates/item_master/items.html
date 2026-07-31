@@ -129,12 +129,16 @@ textarea.f-inp{resize:vertical;min-height:80px;}
   <div class="toolbar" style="margin-bottom:14px;">
     <button class="tool-btn tool-btn-green" onclick="openAddItem()" title="Add Item"><i class="fas fa-plus"></i></button>
     <button class="tool-btn tool-btn-blue"  onclick="loadData()" title="Refresh"><i class="fas fa-sync-alt"></i></button>
-    <button class="tool-btn tool-btn-gray"  onclick="gridApi.setFilterModel(null)" title="Clear Filters"><i class="fas fa-times"></i></button>
+    <a class="tool-btn tool-btn-teal" href="/io/items/export?fmt=xlsx" style="text-decoration:none;" title="{% if ar %}تصدير Excel{% else %}Export Excel{% endif %}"><i class="fas fa-file-excel"></i></a>
+    <a class="tool-btn tool-btn-purple" href="/io/items/template?fmt=xlsx" style="text-decoration:none;" title="{% if ar %}قالب{% else %}Template{% endif %}"><i class="fas fa-file-download"></i></a>
+    <button class="tool-btn tool-btn-orange" title="{% if ar %}استيراد{% else %}Import{% endif %}" onclick="document.getElementById('itmImp').click()"><i class="fas fa-file-import"></i></button>
+    <input type="file" id="itmImp" accept=".xlsx,.xlsm" style="display:none;" onchange="ioImport(this,'items')">
+    <button class="tool-btn tool-btn-gray"  onclick="itemsClearFilters()" title="Clear Filters"><i class="fas fa-times"></i></button>
     <div style="flex:1;"></div>
     <span id="selText" style="font-size:13px;color:#6b7280;"></span>
     <div style="position:relative;">
       <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:12px;"></i>
-      <input type="text" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"
+      <input type="text" id="itemSearch" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"
              style="padding:7px 12px 7px 30px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;width:200px;"
              oninput="gridApi.setQuickFilter(this.value)">
     </div>
@@ -1108,17 +1112,17 @@ class ActR {
   getGui() { return this.g; }
 }
 
-const defCol = { sortable:true, unSortIcon:true, resizable:true, filter:true, floatingFilter:true, enableRowGroup:true, enablePivot:true, enableValue:true, menuTabs:['filterMenuTab','columnsMenuTab','generalMenuTab'], filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} };
+const defCol = { sortable:true, unSortIcon:true, resizable:true, filter:true, floatingFilter:true, enableRowGroup:true, enablePivot:true, enableValue:true, editable:function(p){return window.ioFieldEditable && ioFieldEditable(p.colDef.field);}, menuTabs:['filterMenuTab','columnsMenuTab','generalMenuTab'], filterParams:{buttons:['apply','reset','clear'],closeOnApply:true} };
 const cols = [
   {headerName:'#', field:'id', width:60, floatingFilter:false, filter:false, suppressMenu:true, enableRowGroup:false, enablePivot:false, enableValue:false, suppressColumnsToolPanel:true},
   {headerName:IS_AR?'كود البند':'Item Code', field:'item_code', width:130},
-  {headerName:IS_AR?'رقم المقال':'Article No', field:'article_no', width:110},
-  {headerName:IS_AR?'الاسم':'Name', field:'name_en', minWidth:180},
-  {headerName:IS_AR?'الاسم العربي':'Name (AR)', field:'name_ar', minWidth:150},
-  {headerName:'UOM', field:'uom', width:80},
+  {headerName:IS_AR?'رقم المقال':'Article No', field:'article_no', width:110, editable:true},
+  {headerName:IS_AR?'الاسم':'Name', field:'name_en', minWidth:180, editable:true},
+  {headerName:IS_AR?'الاسم العربي':'Name (AR)', field:'name_ar', minWidth:150, editable:true},
+  {headerName:'UOM', field:'uom', width:80, editable:true},
   {headerName:IS_AR?'الفئة':'Category', field:'category_name', width:130},
   {headerName:IS_AR?'المورد':'Vendor', field:'vendor_name', width:150},
-  {headerName:IS_AR?'السعر':'Main Rate', field:'main_rate', width:110, cellRenderer:rSAR, floatingFilter:false},
+  {headerName:IS_AR?'السعر':'Main Rate', field:'main_rate', width:110, cellRenderer:rSAR, floatingFilter:false, editable:true},
   {headerName:IS_AR?'الحالة':'Status', field:'is_active', width:90, cellRenderer:rStatus, floatingFilter:false},
   {headerName:IS_AR?'إجراءات':'Actions', field:'_a', width:115, pinned:IS_AR?'left':'right', sortable:false, suppressMenu:true, floatingFilter:false, filter:false, resizable:false, enableRowGroup:false, enablePivot:false, enableValue:false, suppressColumnsToolPanel:true, cellRenderer:ActR, cellStyle:{overflow:'visible',padding:'0 6px'}},
 ];
@@ -1126,6 +1130,7 @@ const cols = [
 let gridApi;
 agGrid.createGrid(document.getElementById('itemGrid'), {
   columnDefs:cols, multiSortKey:'ctrl', rowData:[], pagination:true, paginationPageSize:15,
+  onCellValueChanged:function(e){ if(window.ioSaveCell) ioSaveCell('items', e); },
   alwaysShowHorizontalScroll:true, alwaysShowVerticalScroll:true,
   sideBar:{toolPanels:[{id:'columns',labelDefault:IS_AR?'الأعمدة':'Columns',labelKey:'columns',iconKey:'columns',toolPanel:'agColumnsToolPanel'},{id:'filters',labelDefault:IS_AR?'الفلاتر':'Filters',labelKey:'filters',iconKey:'filter',toolPanel:'agFiltersToolPanel'}],defaultToolPanel:''},
   rowGroupPanelShow:'always', pivotPanelShow:'always', groupDisplayType:'groupRows',
@@ -1147,6 +1152,13 @@ function loadData() {
       if (sf && Object.keys(sf).length) gridApi.setFilterModel(sf);
       document.getElementById('selText').textContent = d.length + ' ' + (IS_AR ? 'بند' : 'items');
     });
+}
+function itemsClearFilters(){
+  if(!gridApi) return;
+  gridApi.setFilterModel(null);
+  gridApi.setGridOption('quickFilterText','');
+  var s=document.getElementById('itemSearch'); if(s) s.value='';
+  gridApi.onFilterChanged();
 }
 
 /* ── Sub-modal stacking fix ── */

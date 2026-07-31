@@ -338,6 +338,8 @@ def buyers_data():
         'buyer_code': b.buyer_code or '',
         'en':       b.buyer_name_en,
         'ar':       b.buyer_name_ar or b.buyer_name_en,
+        'buyer_name_en': b.buyer_name_en or '',
+        'buyer_name_ar': b.buyer_name_ar or '',
         'label':    b.buyer_name_ar if lang=='ar' and b.buyer_name_ar else b.buyer_name_en,
         'vat_number': b.vat_number or '',
         'crn':      b.crn or '',
@@ -410,3 +412,6 @@ def delete_buyer_bank(bank_id):
     db.session.delete(b)
     db.session.commit()
     return jsonify({'ok':True})
+
+
+    

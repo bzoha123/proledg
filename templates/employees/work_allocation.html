@@ -542,6 +542,7 @@ select.f-inp {
       {% endif %}
       <button class="tool-btn tool-btn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
       <a class="tool-btn" href="/io/work-allocations/export?fmt=xlsx" style="text-decoration:none;" title="{% if ar %}تصدير Excel{% else %}Export Excel{% endif %}"><i class="fas fa-file-excel"></i></a>
+      <a class="tool-btn" href="/io/work-allocations/template?fmt=xlsx" style="text-decoration:none;" title="Template"><i class="fas fa-file-download"></i></a>
       {% if current_user.is_admin() %}
       <button class="tool-btn" title="{% if ar %}استيراد{% else %}Import{% endif %}" onclick="document.getElementById('waImp').click()"><i class="fas fa-file-import"></i></button>
       <input type="file" id="waImp" accept=".csv,.xlsx,.xlsm" style="display:none;" onchange="ioImport(this,'work-allocations')">

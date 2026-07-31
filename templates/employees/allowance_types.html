@@ -17,6 +17,7 @@
       <button class="tool-btn tool-btn-green" data-bs-toggle="modal" data-bs-target="#atModal" onclick="openAdd()"><i class="fas fa-plus"></i></button>
       {% endif %}
       <a class="tool-btn" href="/io/allowance-types/export?fmt=xlsx" style="text-decoration:none;" title="{% if ar %}تصدير{% else %}Export{% endif %}"><i class="fas fa-file-export"></i></a>
+      <a class="tool-btn" href="/io/allowance-types/template?fmt=xlsx" style="text-decoration:none;" title="Template"><i class="fas fa-file-download"></i></a>
       {% if current_user.is_admin() %}
       <button type="button" class="tool-btn" title="{% if ar %}استيراد{% else %}Import{% endif %}" onclick="document.getElementById('atImp').click()"><i class="fas fa-file-import"></i></button>
       <input type="file" id="atImp" accept=".csv,.xlsx,.xlsm" style="display:none;" onchange="ioImport(this,'allowance-types')">

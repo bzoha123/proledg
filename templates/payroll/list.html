@@ -22,6 +22,12 @@
 .pbtn-blue:hover{filter:brightness(1.1);color:white;}
 .pbtn-amber{background:#f59e0b;color:white;border:none;}
 .pbtn-amber:hover{background:#d97706;color:white;}
+.pbtn-teal{background:#0d9488;color:#fff;border:none;}
+.pbtn-teal:hover{filter:brightness(1.1);color:#fff;}
+.pbtn-purple{background:#7c3aed;color:#fff;border:none;}
+.pbtn-purple:hover{filter:brightness(1.1);color:#fff;}
+.pbtn-orange{background:#ea580c;color:#fff;border:none;}
+.pbtn-orange:hover{filter:brightness(1.1);color:#fff;}
 .pbtn:disabled{opacity:.5;cursor:not-allowed;}
 .pay-legend{display:flex;gap:14px;align-items:center;font-size:11.5px;color:#6b7280;margin-inline-start:auto;flex-wrap:wrap;}
 .lg-chip{display:inline-flex;align-items:center;gap:5px;}
@@ -54,8 +60,11 @@
     <button class="pbtn" id="btnAddEmp" onclick="openAddEmployee()" disabled><i class="fas fa-user-plus"></i>{% if ar %}إضافة موظف{% else %}Add Employee{% endif %}</button>
     <button class="pbtn pbtn-blue" id="btnApprove" onclick="setFlow('Approved')" disabled><i class="fas fa-check"></i>{% if ar %}اعتماد{% else %}Approve{% endif %}</button>
     <button class="pbtn pbtn-amber" id="btnPost" onclick="setFlow('Post')" disabled><i class="fas fa-lock"></i>{% if ar %}ترحيل{% else %}Post{% endif %}</button>
-    <button class="pbtn" onclick="loadData()"><i class="fas fa-sync-alt"></i>{% if ar %}تحديث{% else %}Refresh{% endif %}</button>
-    <button class="pbtn" onclick="exportCsv()"><i class="fas fa-file-export"></i>CSV</button>
+    <button class="pbtn pbtn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i>{% if ar %}تحديث{% else %}Refresh{% endif %}</button>
+    <a class="pbtn pbtn-teal" href="/io/salary-consolidation/export?fmt=xlsx" style="text-decoration:none;"><i class="fas fa-file-excel"></i>{% if ar %}تصدير{% else %}Export{% endif %}</a>
+    <a class="pbtn pbtn-purple" href="/io/salary-consolidation/template?fmt=xlsx" style="text-decoration:none;"><i class="fas fa-file-download"></i>{% if ar %}قالب{% else %}Template{% endif %}</a>
+    <button class="pbtn pbtn-orange" onclick="document.getElementById('payImp').click()"><i class="fas fa-file-import"></i>{% if ar %}استيراد{% else %}Import{% endif %}</button>
+    <input type="file" id="payImp" accept=".xlsx,.xlsm" style="display:none;" onchange="ioImport(this,'salary-consolidation')">
     <a class="pbtn" href="#" id="btnReports" onclick="openReports(event)"><i class="fas fa-chart-bar"></i>{% if ar %}التقارير{% else %}Reports{% endif %}</a>
 
     <div class="pay-legend">

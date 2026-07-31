@@ -62,6 +62,21 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/window-modal.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/grid-kit.css') }}">
     {% block extra_css %}{% endblock %}
+    <style>
+    /* Global colored toolbar buttons (tool-btn-* and ubtn-*) */
+    .tool-btn-green,.ubtn-green{background:#16a34a!important;color:#fff!important;border-color:#16a34a!important;}
+    .tool-btn-blue,.ubtn-blue{background:#2563eb!important;color:#fff!important;border-color:#2563eb!important;}
+    .tool-btn-teal,.ubtn-teal{background:#0d9488!important;color:#fff!important;border-color:#0d9488!important;}
+    .tool-btn-purple,.ubtn-purple{background:#7c3aed!important;color:#fff!important;border-color:#7c3aed!important;}
+    .tool-btn-orange,.ubtn-orange{background:#ea580c!important;color:#fff!important;border-color:#ea580c!important;}
+    .tool-btn-gray,.ubtn-gray{background:#64748b!important;color:#fff!important;border-color:#64748b!important;}
+    .tool-btn-green:hover,.tool-btn-blue:hover,.tool-btn-teal:hover,.tool-btn-purple:hover,.tool-btn-orange:hover,.tool-btn-gray:hover,
+    .ubtn-green:hover,.ubtn-blue:hover,.ubtn-teal:hover,.ubtn-purple:hover,.ubtn-orange:hover,.ubtn-gray:hover{filter:brightness(1.1);}
+    /* Inline-editable table cells */
+    .tbl-edit{display:inline-block;min-width:40px;border-bottom:1px dashed transparent;cursor:text;padding:1px 3px;border-radius:3px;transition:background .2s;}
+    .tbl-edit:hover{border-bottom-color:#94a3b8;background:#f8fafc;}
+    .tbl-edit:focus{outline:none;border-bottom-color:#2563eb;background:#eff6ff;}
+    </style>
 </head>
 <body>
 
@@ -477,6 +492,96 @@ window.ioImport = function(input, key){
     })
     .catch(() => alert('Network error'))
     .finally(() => { input.value = ''; });
+};
+
+/* Multi-sheet bundle import (parent + child sheets). */
+window.ioBundleImport = function(input, key){
+  const f = input.files[0];
+  if(!f) return;
+  const fd = new FormData();
+  fd.set('file', f);
+  fd.set('csrf_token', '{{ csrf_token() }}');
+  fetch('/io/bundle/' + key + '/import', {method:'POST', headers:{'X-CSRFToken':'{{ csrf_token() }}'}, body:fd})
+    .then(r => r.json()).then(d => {
+      if(d.ok){
+        let msg = 'Parent — added: ' + d.parent_added + ', skipped: ' + d.parent_skipped;
+        if(d.children){
+          for(const sheet in d.children){
+            msg += '\n' + sheet + ' — added: ' + d.children[sheet].added + ', skipped: ' + d.children[sheet].skipped;
+          }
+        }
+        if(d.errors && d.errors.length) msg += '\n\n' + d.errors.slice(0,10).join('\n');
+        alert(msg);
+        location.reload();
+      } else {
+        alert(d.error || 'Import failed');
+      }
+    })
+    .catch(() => alert('Network error'))
+    .finally(() => { input.value = ''; });
+};
+
+/* Inline cell edit -> save one field to the DB (AG-Grid onCellValueChanged). */
+/* Inline editing for plain HTML tables (contenteditable cells). */
+window.tblCellKey = function(ev, el){
+  if(ev.key === 'Enter'){ ev.preventDefault(); el.blur(); }
+  else if(ev.key === 'Escape'){ el.textContent = el.dataset.orig != null ? el.dataset.orig : el.textContent; el.blur(); }
+};
+window.tblCellSave = function(el){
+  var key = el.dataset.key, id = el.dataset.id, field = el.dataset.field;
+  var value = el.textContent.trim();
+  if(el.dataset.orig === undefined) el.dataset.orig = value;
+  if(value === el.dataset.orig) return;               // no change
+  fetch('/io/' + key + '/update-cell', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'},
+    body: JSON.stringify({ id: id, field: field, value: value })
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok){
+      el.dataset.orig = (d.value != null ? String(d.value) : value);
+      el.style.background = '#dcfce7';
+      setTimeout(function(){ el.style.background = ''; }, 600);
+    } else {
+      alert(d.error || 'Could not save');
+      el.textContent = el.dataset.orig || '';
+    }
+  }).catch(function(){
+    alert('Network error');
+    el.textContent = el.dataset.orig || '';
+  });
+};
+
+/* Fields never editable inline (match backend _NEVER_EDITABLE + display-only cols). */
+window.IO_PROTECTED_FIELDS = ['id','_a','_idx','_chk','_parent','actions',
+  'seller_code','buyer_code','vendor_code','employee_code','item_code',
+  'created_at','updated_at','created_by','je_no','sheet_no','year',
+  'payroll_id','age','category_name','vendor_name','label','months_count'];
+window.ioFieldEditable = function(field){
+  if(!field) return false;
+  return window.IO_PROTECTED_FIELDS.indexOf(field) === -1;
+};
+window.ioSaveCell = function(key, e){
+  if(!e || !e.colDef || e.newValue === e.oldValue) return;
+  var body = { id: e.data.id, field: e.colDef.field, value: e.newValue };
+  fetch('/io/' + key + '/update-cell', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'},
+    body: JSON.stringify(body)
+  }).then(r=>r.json()).then(d=>{
+    if(!d.ok){
+      alert(d.error || 'Could not save');
+      e.data[e.colDef.field] = e.oldValue;
+      if(e.api) e.api.refreshCells({rowNodes:[e.node], columns:[e.colDef.field], force:true});
+    } else if(e.api){
+      if(d.value !== undefined && d.value !== null) e.data[e.colDef.field] = d.value;
+      e.node.setData(e.data);
+      e.api.flashCells({rowNodes:[e.node], columns:[e.colDef.field]});
+    }
+  }).catch(()=>{
+    alert('Network error');
+    e.data[e.colDef.field] = e.oldValue;
+    if(e.api) e.api.refreshCells({rowNodes:[e.node], columns:[e.colDef.field], force:true});
+  });
 };
 </script>
 {% block extra_js %}{% endblock %}

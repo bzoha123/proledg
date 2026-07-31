@@ -22,6 +22,11 @@
 .ubtn:hover{border-color:#2563eb;color:#2563eb;background:#eff6ff;}
 .ubtn-green{background:linear-gradient(135deg,#16a34a,#15803d);color:white;border:none;}
 .ubtn-green:hover{filter:brightness(1.08);color:white;}
+.ubtn-blue{background:#2563eb;color:#fff;border:none;} .ubtn-blue:hover{filter:brightness(1.1);color:#fff;}
+.ubtn-teal{background:#0d9488;color:#fff;border:none;} .ubtn-teal:hover{filter:brightness(1.1);color:#fff;}
+.ubtn-purple{background:#7c3aed;color:#fff;border:none;} .ubtn-purple:hover{filter:brightness(1.1);color:#fff;}
+.ubtn-orange{background:#ea580c;color:#fff;border:none;} .ubtn-orange:hover{filter:brightness(1.1);color:#fff;}
+.ubtn-gray{background:#64748b;color:#fff;border:none;} .ubtn-gray:hover{filter:brightness(1.1);color:#fff;}
 .usearch{position:relative;}
 .usearch input{padding:8px 12px 8px 34px;border:1.5px solid #d1d5db;border-radius:8px;font-size:13px;width:230px;}
 .usearch input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
@@ -58,10 +63,11 @@
       <div class="usearch"><i class="fas fa-search"></i>
         <input type="text" id="uomSearch" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" oninput="onSearch()">
       </div>
-      <button class="ubtn" onclick="loadData()"><i class="fas fa-sync-alt"></i>{% if ar %}تحديث{% else %}Refresh{% endif %}</button>
-      <a class="ubtn" href="/io/unit-measurement/export?fmt=xlsx" style="text-decoration:none;"><i class="fas fa-file-export"></i>{% if ar %}تصدير{% else %}Export{% endif %}</a>
-      <button class="ubtn" onclick="document.getElementById('uomImp').click()"><i class="fas fa-file-import"></i>{% if ar %}استيراد{% else %}Import{% endif %}</button>
-      <input type="file" id="uomImp" accept=".csv,.xlsx,.xlsm" style="display:none;" onchange="ioImport(this,'unit-measurement')">
+      <button class="ubtn ubtn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i>{% if ar %}تحديث{% else %}Refresh{% endif %}</button>
+      <a class="ubtn ubtn-teal" href="/io/unit-measurement/export?fmt=xlsx" style="text-decoration:none;"><i class="fas fa-file-excel"></i>{% if ar %}تصدير{% else %}Export{% endif %}</a>
+      <a class="ubtn ubtn-purple" href="/io/unit-measurement/template?fmt=xlsx" style="text-decoration:none;" title="Template"><i class="fas fa-file-download"></i></a>
+      <button class="ubtn ubtn-orange" onclick="document.getElementById('uomImp').click()"><i class="fas fa-file-import"></i>{% if ar %}استيراد{% else %}Import{% endif %}</button>
+      <input type="file" id="uomImp" accept=".xlsx,.xlsm" style="display:none;" onchange="ioImport(this,'unit-measurement')">
       <button class="ubtn ubtn-green" onclick="openAdd()"><i class="fas fa-plus"></i>{% if ar %}إضافة{% else %}Add Unit{% endif %}</button>
     </div>
   </div>
@@ -146,19 +152,20 @@ function actions(p){
 
 const COLS = [
   {headerName:IS_AR?'الكود':'Code', field:'code', width:120, cellStyle:{fontWeight:'700',color:'#2563eb'}},
-  {headerName:IS_AR?'الاسم (إنجليزي)':'Name Eng', field:'name_en', flex:1, minWidth:150},
-  {headerName:IS_AR?'الاسم (عربي)':'Name Ar', field:'name_ar', flex:1, minWidth:150, cellStyle:{direction:'rtl'}},
-  {headerName:IS_AR?'حجم العبوة (إنجليزي)':'Pack Size Eng', field:'pac_size_en', width:150},
-  {headerName:IS_AR?'حجم العبوة (عربي)':'Pack Size Ar', field:'pac_size_ar', width:150, cellStyle:{direction:'rtl'}},
-  {headerName:IS_AR?'المضاعف':'MultiPly', field:'multiply', width:120, valueFormatter:p=>fmtMul(p.value)},
-  {headerName:IS_AR?'الحالة':'Status', field:'status', width:120, cellRenderer:statusBadge},
+  {headerName:IS_AR?'الاسم (إنجليزي)':'Name Eng', field:'name_en', flex:1, minWidth:150, editable:true},
+  {headerName:IS_AR?'الاسم (عربي)':'Name Ar', field:'name_ar', flex:1, minWidth:150, cellStyle:{direction:'rtl'}, editable:true},
+  {headerName:IS_AR?'حجم العبوة (إنجليزي)':'Pack Size Eng', field:'pac_size_en', width:150, editable:true},
+  {headerName:IS_AR?'حجم العبوة (عربي)':'Pack Size Ar', field:'pac_size_ar', width:150, cellStyle:{direction:'rtl'}, editable:true},
+  {headerName:IS_AR?'المضاعف':'MultiPly', field:'multiply', width:120, valueFormatter:p=>fmtMul(p.value), editable:true},
+  {headerName:IS_AR?'الحالة':'Status', field:'status', width:120, cellRenderer:statusBadge, editable:true},
   {headerName:IS_AR?'إجراءات':'Actions', width:110, cellRenderer:actions, sortable:false, filter:false, pinned:IS_AR?'left':'right'},
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
   agGrid.createGrid(document.getElementById('uomGrid'), {
     columnDefs: COLS, rowData: [],
-    defaultColDef:{sortable:true, resizable:true, filter:true},
+    defaultColDef:{sortable:true, resizable:true, filter:true, editable:function(p){return window.ioFieldEditable && ioFieldEditable(p.colDef.field);}},
+    onCellValueChanged:function(e){ if(window.ioSaveCell) ioSaveCell('unit-measurement', e); },
     enableRtl: IS_AR, pagination:true, paginationPageSize:25,
     onGridReady: p => { gridApi = p.api; loadData(); },
   });

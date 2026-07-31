@@ -35,6 +35,9 @@
     <button class="tool-btn" onclick="openEditFy()" title="{% if ar %}تعديل{% else %}Edit{% endif %}"><i class="fas fa-pencil-alt"></i></button>
     <button class="tool-btn" onclick="deleteFy()" title="{% if ar %}حذف{% else %}Delete{% endif %}"><i class="fas fa-trash"></i></button>
     <button class="tool-btn" onclick="loadFy()" title="{% if ar %}تحديث{% else %}Refresh{% endif %}"><i class="fas fa-sync-alt"></i></button>
+    <a class="tool-btn" href="/io/financial-year/export?fmt=xlsx" style="text-decoration:none;" title="{% if ar %}تصدير Excel{% else %}Export Excel{% endif %}"><i class="fas fa-file-excel"></i></a>
+    <button class="tool-btn" title="{% if ar %}استيراد{% else %}Import{% endif %}" onclick="document.getElementById('fyImp').click()"><i class="fas fa-file-import"></i></button>
+    <input type="file" id="fyImp" accept=".csv,.xlsx,.xlsm" style="display:none;" onchange="ioImport(this,'financial-year')">
     <button class="tool-btn" onclick="fyApi&&fyApi.exportDataAsCsv({fileName:'financial_years.csv'})" title="Excel/CSV"><i class="fas fa-file-export"></i></button>
     <div class="search-form" style="margin-inline-start:auto;"><i class="fas fa-search search-icon"></i>
       <input type="text" class="search-input" style="width:200px" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" oninput="fyApi&&fyApi.setGridOption('quickFilterText',this.value)">

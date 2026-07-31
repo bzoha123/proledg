@@ -6,6 +6,16 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
 <style>
+/* Colored toolbar buttons */
+.tool-btn{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:38px;padding:0 12px;border:none;border-radius:8px;font-size:14px;cursor:pointer;color:#fff;transition:filter .15s;}
+.tool-btn:hover{filter:brightness(1.1);}
+.tool-btn i{pointer-events:none;}
+.tool-btn-green{background:#16a34a;}
+.tool-btn-blue{background:#2563eb;}
+.tool-btn-teal{background:#0d9488;}
+.tool-btn-purple{background:#7c3aed;}
+.tool-btn-orange{background:#ea580c;}
+.tool-btn-gray{background:#64748b;}
 /* ═══════════════════════════════════════════════════════════
    SELLER MS — Accordion Form System v5
 ═══════════════════════════════════════════════════════════ */
@@ -180,8 +190,13 @@ input[type=color].c-swatch{width:40px;height:38px;padding:2px;border:1.5px solid
       <button class="tool-btn tool-btn-green" onclick="openAddModal()" title="{% if ar %}إضافة بائع{% else %}Add Seller{% endif %}"><i class="fas fa-plus"></i></button>
       {% endif %}
       <button class="tool-btn tool-btn-blue" onclick="refreshGrid()" title="{% if ar %}تحديث{% else %}Refresh{% endif %}"><i class="fas fa-sync-alt"></i></button>
-      <button class="tool-btn" onclick="exportCSV()" title="{% if ar %}تصدير{% else %}Export{% endif %}"><i class="fas fa-file-export"></i></button>
-      <button class="tool-btn" onclick="clearAllFilters()" title="{% if ar %}مسح الفلاتر{% else %}Clear Filters{% endif %}"><i class="fas fa-times-circle"></i></button>
+      <a class="tool-btn tool-btn-green" href="/io/bundle/seller-full/export" style="text-decoration:none;" title="{% if ar %}تصدير (البائع + البنوك + المستودعات){% else %}Export (Seller + Banks + Warehouses){% endif %}"><i class="fas fa-file-excel"></i></a>
+      <a class="tool-btn tool-btn-purple" href="/io/bundle/seller-full/template" style="text-decoration:none;" title="{% if ar %}قالب{% else %}Template{% endif %}"><i class="fas fa-file-download"></i></a>
+      {% if current_user.is_admin() %}
+      <button class="tool-btn tool-btn-orange" title="{% if ar %}استيراد{% else %}Import{% endif %}" onclick="document.getElementById('selImp').click()"><i class="fas fa-file-import"></i></button>
+      <input type="file" id="selImp" accept=".xlsx,.xlsm" style="display:none;" onchange="ioBundleImport(this,'seller-full')">
+      {% endif %}
+      <button class="tool-btn tool-btn-gray" onclick="clearAllFilters()" title="{% if ar %}مسح الفلاتر{% else %}Clear Filters{% endif %}"><i class="fas fa-times-circle"></i></button>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
       <span id="selText" style="font-size:12px;font-weight:600;color:var(--gray-400);">0 {% if ar %}سجل{% else %}records{% endif %}</span>
@@ -735,13 +750,14 @@ agGrid.createGrid(document.getElementById('sellerGrid'),{
   columnDefs:[
     {field:'id',width:48,checkboxSelection:true,headerCheckboxSelection:true,sortable:false,suppressMenu:true,resizable:false,filter:false,floatingFilter:false,enableRowGroup:false,enablePivot:false,enableValue:false,suppressColumnsToolPanel:true,pinned:IS_AR?'right':'left'},
     {headerName:IS_AR?'الاسم':'Name',field:'name',minWidth:180,pinned:IS_AR?'right':'left',cellRenderer:renderName,filter:'agTextColumnFilter'},
+    {headerName:IS_AR?'الاسم بالعربي':'Name (AR)',field:'name_ar',width:170,cellStyle:{direction:'rtl',textAlign:'right'},filter:'agTextColumnFilter'},
     {headerName:IS_AR?'الكود':'Code',field:'seller_code',width:125,cellRenderer:renderCode,filter:'agTextColumnFilter'},
-    {headerName:IS_AR?'الرقم الضريبي':'VAT',field:'vat_number',width:145,filter:'agTextColumnFilter'},
-    {headerName:IS_AR?'السجل التجاري':'CRN',field:'crn',width:125,filter:'agTextColumnFilter'},
-    {headerName:IS_AR?'الهاتف':'Phone',field:'phone',width:130,filter:'agTextColumnFilter'},
-    {headerName:IS_AR?'البريد':'Email',field:'email',width:185,filter:'agTextColumnFilter'},
-    {headerName:IS_AR?'المدينة':'City',field:'city',width:115,filter:'agTextColumnFilter'},
-    {headerName:IS_AR?'الدولة':'Country',field:'country',width:125,filter:'agTextColumnFilter'},
+    {headerName:IS_AR?'الرقم الضريبي':'VAT',field:'vat_number',width:145,filter:'agTextColumnFilter',editable:IS_ADMIN},
+    {headerName:IS_AR?'السجل التجاري':'CRN',field:'crn',width:125,filter:'agTextColumnFilter',editable:IS_ADMIN},
+    {headerName:IS_AR?'الهاتف':'Phone',field:'phone',width:130,filter:'agTextColumnFilter',editable:IS_ADMIN},
+    {headerName:IS_AR?'البريد':'Email',field:'email',width:185,filter:'agTextColumnFilter',editable:IS_ADMIN},
+    {headerName:IS_AR?'المدينة':'City',field:'city',width:115,filter:'agTextColumnFilter',editable:IS_ADMIN},
+    {headerName:IS_AR?'الدولة':'Country',field:'country',width:125,filter:'agTextColumnFilter',editable:IS_ADMIN},
     {headerName:IS_AR?'الحالة':'Status',field:'status',width:110,cellRenderer:renderStatus,filter:'agSetColumnFilter'},
     {headerName:IS_AR?'تاريخ':'Created',field:'created_at',width:110,filter:'agTextColumnFilter'},
     ...(IS_ADMIN?[{headerName:IS_AR?'إجراءات':'Actions',field:'_a',width:110,pinned:IS_AR?'left':'right',sortable:false,suppressMenu:true,resizable:false,filter:false,floatingFilter:false,enableRowGroup:false,enablePivot:false,enableValue:false,suppressColumnsToolPanel:true,cellRenderer:ActR,cellStyle:{overflow:'visible',padding:'0 8px'}}]:[]),
@@ -751,7 +767,7 @@ agGrid.createGrid(document.getElementById('sellerGrid'),{
   sideBar:{toolPanels:[{id:'columns',labelDefault:IS_AR?'الأعمدة':'Columns',labelKey:'columns',iconKey:'columns',toolPanel:'agColumnsToolPanel'},{id:'filters',labelDefault:IS_AR?'الفلاتر':'Filters',labelKey:'filters',iconKey:'filter',toolPanel:'agFiltersToolPanel'}],defaultToolPanel:''},
   rowGroupPanelShow:'always',pivotPanelShow:'always',groupDisplayType:'groupRows',
   rowSelection:'multiple',suppressRowClickSelection:true,animateRows:true,enableRtl:IS_AR,
-  defaultColDef:{sortable:true,unSortIcon:true,resizable:true,filter:true,floatingFilter:true,suppressMenu:false,enableRowGroup:true,enablePivot:true,enableValue:true,menuTabs:['filterMenuTab','columnsMenuTab','generalMenuTab'],filterParams:{buttons:['apply','reset','clear'],closeOnApply:true}},
+  defaultColDef:{sortable:true,unSortIcon:true,resizable:true,filter:true,floatingFilter:true,suppressMenu:false,enableRowGroup:true,enablePivot:true,enableValue:true,editable:function(p){return IS_ADMIN && window.ioFieldEditable && ioFieldEditable(p.colDef.field);},menuTabs:['filterMenuTab','columnsMenuTab','generalMenuTab'],filterParams:{buttons:['apply','reset','clear'],closeOnApply:true}},
   onGridReady(p) {
     gridApi = p.api;
     // Enterprise sidebar (Columns + Filters) + row-group/pivot panels replace
@@ -759,11 +775,26 @@ agGrid.createGrid(document.getElementById('sellerGrid'),{
     loadData();
   },
   onFilterChanged(){updateBadge();},onPaginationChanged(){updateBadge();},onSelectionChanged(){updateBadge();},
+  onCellValueChanged(e){ ioSaveCell('sellers', e); },
 });
-function loadData(){var sf=gridApi?gridApi.getFilterModel():null;fetch(DATA_URL).then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);if(sf&&Object.keys(sf).length)gridApi.setFilterModel(sf);updateBadge();});}
-function refreshGrid(){loadData();}
-function exportCSV(){gridApi.exportDataAsCsv({fileName:'sellers.csv'});}
-function clearAllFilters(){gridApi.setFilterModel(null);}
+function loadData(preserveFilter){var sf=(preserveFilter&&gridApi)?gridApi.getFilterModel():null;fetch(DATA_URL).then(r=>r.json()).then(d=>{gridApi.setGridOption('rowData',d);if(sf&&Object.keys(sf).length)gridApi.setFilterModel(sf);updateBadge();});}
+function refreshGrid(){ if(!gridApi){return;} loadData(true); }
+function exportCSV(){ if(gridApi) gridApi.exportDataAsCsv({fileName:'sellers.csv'}); }
+function clearAllFilters(){
+  if(!gridApi) return;
+  gridApi.setFilterModel(null);              // column + floating filters
+  gridApi.setGridOption('quickFilterText',''); // quick filter
+  var gs=document.getElementById('globalSearch'); if(gs) gs.value='';
+  gridApi.onFilterChanged();
+  updateBadge();
+}
+function sellerImport(input){
+  var f=input.files[0]; if(!f) return;
+  var name=(f.name||'').toLowerCase();
+  // .xlsx -> multi-sheet bundle (seller + banks + warehouses); .csv -> seller-only
+  if(name.endsWith('.xlsx')||name.endsWith('.xlsm')){ ioBundleImport(input,'seller-full'); }
+  else { ioImport(input,'sellers'); }
+}
 function updateBadge(){
   if(!gridApi)return;
   const sel=gridApi.getSelectedRows().length,disp=gridApi.getDisplayedRowCount(),total=(gridApi.getGridOption('rowData')||[]).length;
