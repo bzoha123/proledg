@@ -828,6 +828,9 @@ def item_add():
             mrp=Decimal(f.get('mrp') or '0'),
             minimum_sp=Decimal(f.get('minimum_sp') or '0'),
             is_active=f.get('is_active') == '1',
+            levelfive_code       = (f.get('levelfive_code','') or '').strip() or None,
+            levelfive_drawer_en  = (f.get('levelfive_drawer_en','') or '').strip() or None,
+            levelfive_drawer_ar  = (f.get('levelfive_drawer_ar','') or '').strip() or None,
             created_by=current_user.id,
         )
         db.session.add(item)
@@ -878,6 +881,9 @@ def item_edit(id):
         item.mrp = Decimal(f.get('mrp') or '0')
         item.minimum_sp = Decimal(f.get('minimum_sp') or '0')
         item.is_active = f.get('is_active') == '1'
+        item.levelfive_code      = (f.get('levelfive_code','') or '').strip() or None
+        item.levelfive_drawer_en = (f.get('levelfive_drawer_en','') or '').strip() or None
+        item.levelfive_drawer_ar = (f.get('levelfive_drawer_ar','') or '').strip() or None
         item.updated_at = datetime.utcnow()
         
         db.session.commit()

@@ -1023,18 +1023,18 @@
                 {{ sf('iqama_number','Iqama Number','رقم الإقامة') }}
                 {{ sf('iqama_expiry','Iqama Expiry','تاريخ انتهاء الإقامة','date') }}
               </div>
-            </div>
-          </div>
-
-          {{ sec('docs','upload','Document Upload','تحميل المستندات') }}
-              <div id="docFilesList"></div>
-              <div style="margin-top:8px;">
-                <button type="button" class="btn btn-success btn-sm" onclick="addDocRow()">
-                  <i class="fas fa-plus me-1"></i>{% if ar %}إضافة مستند{% else %}Add Document{% endif %}
-                </button>
-              </div>
-              <div style="font-size:11px;color:#9ca3af;margin-top:6px;">
-                {% if ar %}يمكنك إضافة أنواع مستندات متعددة{% else %}You can add multiple documents with different types{% endif %}
+              <div class="field-row">
+                <div class="field-item">
+                  <div class="field-label">{% if ar %}فصيلة الدم{% else %}Blood Group{% endif %}</div>
+                  <select name="blood_group" id="f_blood_group" class="field-input" dir="ltr">
+                    <option value="">{% if ar %}اختر...{% else %}Select...{% endif %}</option>
+                    <option value="A+">A+</option><option value="A-">A-</option>
+                    <option value="B+">B+</option><option value="B-">B-</option>
+                    <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                    <option value="O+">O+</option><option value="O-">O-</option>
+                  </select>
+                </div>
+                <div class="field-item"></div>
               </div>
             </div>
           </div>
@@ -1168,127 +1168,6 @@
                     <input type="number" name="total_allowances" id="f_total_allowances"
                            style="border:none;background:transparent;font-weight:700;color:#15803d;font-size:18px;text-align:right;width:120px;"
                            step="0.01" min="0" readonly placeholder="0.00">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {{ sec('work','briefcase','Work Information','معلومات العمل') }}
-
-              {# ── Group 1: Employment / Assignment ─────────────── #}
-              <div class="fs-group">
-                <div class="fs-group-title">
-                  <i class="fas fa-building"></i>
-                  <span>{% if ar %}جهة العمل{% else %}Employer &amp; Assignment{% endif %}</span>
-                </div>
-
-                {# Company: pick a buyer -> the EN/AR name fields fill (items 11 + 12) #}
-                <div class="field-row">
-                  <div class="field-item" style="flex:2;">
-                    <div class="field-label">{% if ar %}الشركة{% else %}Company{% endif %}</div>
-                    <select name="buyer_id" id="f_buyer_id" class="field-input"
-                            dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                            onchange="onCompanyChange()"></select>
-                    <small id="f_company_hint" style="display:none;font-size:11px;color:#16a34a;margin-top:3px;">
-                      <i class="fas fa-magic me-1"></i>{% if ar %}تم ملء القسم تلقائياً{% else %}Department auto-filled{% endif %}
-                    </small>
-                  </div>
-                </div>
-
-                <div class="field-row" style="margin-bottom:10px;">
-                  <div class="field-item">
-                    <div class="field-label">{% if ar %}اسم الشركة (EN){% else %}Company Name (EN){% endif %}</div>
-                    <input type="text" name="company" id="f_company_en" class="field-input" dir="ltr"
-                           readonly style="background:#f8fafc;"
-                           title="{% if ar %}يُملأ تلقائياً من الشركة المختارة{% else %}Filled from the selected company{% endif %}">
-                  </div>
-                  <div class="field-item">
-                    <div class="field-label" dir="rtl" style="text-align:right;">{% if ar %}اسم الشركة{% else %}Company Name (AR){% endif %}</div>
-                    <input type="text" name="company_ar" id="f_company_ar" class="field-input" dir="rtl"
-                           readonly style="background:#f8fafc;"
-                           title="{% if ar %}يُملأ تلقائياً من الشركة المختارة{% else %}Filled from the selected company{% endif %}">
-                  </div>
-                </div>
-
-                <div class="field-row" style="margin-bottom:10px;">
-                  <div class="field-item">
-                    <div class="field-label">
-                      {% if ar %}القسم{% else %}Department{% endif %}
-                    </div>
-                    <div style="display:flex;gap:6px;align-items:stretch;">
-                      <select name="department_id" id="f_department_id" class="field-input"
-                            dir="{% if ar %}rtl{% else %}ltr{% endif %}"
-                            onchange="onDepartmentChange()" disabled style="flex:1;">
-                        <option value="">-- {% if ar %}اختر الشركة أولاً{% else %}Select a company first{% endif %} --</option>
-                      </select>
-                      <!-- <button type="button" id="btnAddDept" onclick="openAddDept()"
-                              title="{% if ar %}إضافة قسم{% else %}Add Department{% endif %}"
-                              style="flex:0 0 auto;padding:0 12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-                        <i class="fas fa-plus"></i>
-                      </button> -->
-                    </div>
-                    <small id="f_dept_hint" style="display:none;font-size:11px;color:#94a3b8;margin-top:3px;"></small>
-                  </div>
-                  <div class="field-item">
-                    <div class="field-label" dir="rtl" style="text-align:right;">
-                      {% if ar %}القسم (AR){% else %}Department (AR){% endif %}
-                    </div>
-                    <input type="text" name="department_ar" id="f_department_ar" class="field-input"
-                           dir="rtl" readonly style="background:#f8fafc;"
-                           title="{% if ar %}يُملأ تلقائياً من القسم المختار{% else %}Filled from the selected department{% endif %}">
-                  </div>
-                </div>
-                <input type="hidden" name="department" id="f_department_en">
-
-                {% for fid, en_lbl, ar_lbl in [('location','Location','الموقع')] %}
-                <div class="field-row" style="margin-bottom:10px;">
-                  <div class="field-item">
-                    <div class="field-label">{{ en_lbl }}{% if ar %} (EN){% endif %}</div>
-                    <div style="display:flex;gap:6px;">
-                      <input type="text" name="{{ fid }}" id="f_{{ fid }}_en" class="field-input" dir="ltr" style="flex:1"
-                             {% if not ar %}oninput="biTransPair('f_{{ fid }}_en','f_{{ fid }}_ar','en')"{% endif %}>
-                      {% if not ar %}<button type="button" class="bi-btn" title="Re-translate EN → AR" onclick="biTransRetrans('f_{{ fid }}_en','f_{{ fid }}_ar','en')"><i class="fas fa-sync-alt"></i></button>{% endif %}
-                    </div>
-                  </div>
-                  <div class="field-item">
-                    <div class="field-label" dir="rtl" style="text-align:right;">{{ ar_lbl }}{% if not ar %} (AR){% endif %}</div>
-                    <div style="display:flex;gap:6px;" dir="rtl">
-                      <input type="text" name="{{ fid }}_ar" id="f_{{ fid }}_ar" class="field-input" dir="rtl" style="flex:1"
-                             {% if ar %}oninput="biTransPair('f_{{ fid }}_ar','f_{{ fid }}_en','ar')"{% endif %}>
-                      {% if ar %}<button type="button" class="bi-btn" title="إعادة الترجمة AR → EN" onclick="biTransRetrans('f_{{ fid }}_ar','f_{{ fid }}_en','ar')"><i class="fas fa-sync-alt"></i></button>{% endif %}
-                    </div>
-                  </div>
-                </div>
-                {% endfor %}
-              </div>
-
-              {# item 13: Joining Date | End Date | Month | Shift — the last row #}
-              <div class="fs-group" style="margin-bottom:0;">
-                <div class="fs-group-title">
-                  <i class="fas fa-calendar-alt"></i>
-                  <span>{% if ar %}فترة العقد والوردية{% else %}Contract Period &amp; Shift{% endif %}</span>
-                </div>
-                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
-                  <div>
-                    <div class="field-label">{% if ar %}تاريخ الانضمام{% else %}Joining Date{% endif %}</div>
-                    <input type="date" name="joining_date" id="f_joining_date" class="field-input" dir="ltr">
-                  </div>
-                  <div>
-                    <div class="field-label">{% if ar %}تاريخ الانتهاء{% else %}End Date{% endif %}</div>
-                    <input type="date" name="end_date_work" id="f_end_date_work" class="field-input" dir="ltr">
-                  </div>
-                  <div>
-                    <div class="field-label">{% if ar %}الشهر{% else %}Month{% endif %}</div>
-                    <input type="text" name="work_month" id="f_work_month" class="field-input"
-                           placeholder="{% if ar %}مثال: يناير/26{% else %}e.g. Jan/26{% endif %}">
-                  </div>
-                  <div>
-                    <div class="field-label">{% if ar %}الوردية{% else %}Shift{% endif %}</div>
-                    <select name="shift" id="f_shift" class="field-input">
-                      <option value="day" selected>{% if ar %}نهاري{% else %}Day{% endif %}</option>
-                      <option value="night">{% if ar %}ليلي{% else %}Night{% endif %}</option>
-                    </select>
                   </div>
                 </div>
               </div>
@@ -2528,6 +2407,7 @@ function openEditEmp(id) {
     const singleFields = ['mobile','email','passport_number','entry_number','iqama_number',
                            'room_number','labour_office','po_rate','po_number','basic_salary',
                            'working_hours','overtime_ratio','overtime_rate','kafalat_number',
+                           'blood_group',
                            'arrival_date','birth_date','passport_expiry','iqama_expiry',
                            'joining_date','insurance_expiry','end_date_work','work_month'];
     singleFields.forEach(f => {

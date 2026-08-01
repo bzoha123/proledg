@@ -280,7 +280,7 @@ TEXT_FIELDS = [
     'hostel_name', 'hostel_name_ar', 'room_number',
     'hostel_location', 'hostel_location_ar',
     'crn', 'crn_ar', 'insurance_company', 'insurance_company_ar', 'labour_office',
-    'passport_location',
+    'passport_location', 'blood_group',
 ]
 FLOAT_FIELDS = ['po_rate', 'basic_salary', 'working_hours', 'overtime_ratio']
 DATE_FIELDS  = ['arrival_date', 'birth_date', 'passport_expiry', 'iqama_expiry',
@@ -530,6 +530,7 @@ def employee_json(id):
     wa = latest_work_allocation(e.id)   # most recent allocation (may be None)
     return jsonify({
         'id': e.id, 'employee_code': e.employee_code, 'is_active': e.is_active, 'is_muslim': e.is_muslim,
+        'blood_group': g('blood_group'),
         'name': g('name'), 'name_ar': g('name_ar'),
         'kafeel_name': g('kafeel_name'), 'kafeel_name_ar': g('kafeel_name_ar'),
         'kafeel_reference': g('kafeel_reference'), 'kafeel_reference_ar': g('kafeel_reference_ar'),

@@ -304,6 +304,7 @@ class Employee(db.Model):
     auto_code        = db.Column(db.Boolean, default=True)
     is_active        = db.Column(db.Boolean, default=True)
     is_muslim        = db.Column(db.Boolean, default=False)
+    blood_group      = db.Column(db.String(10))
 
     # ── Identity (bilingual) ──
     name             = db.Column(db.String(200), nullable=False)
@@ -3263,6 +3264,7 @@ def ensure_schema():
         ('item_master', 'levelfive_code',      'VARCHAR(40)'),
         ('item_master', 'levelfive_drawer_en', 'VARCHAR(250)'),
         ('item_master', 'levelfive_drawer_ar', 'VARCHAR(250)'),
+        ('employees',   'blood_group',         'VARCHAR(10)'),
     ]
 
     for table, column, ddl in wanted:
