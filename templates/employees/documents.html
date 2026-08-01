@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% set ar = current_locale == 'ar' %}
+{% block title %}{% if ar %}مستندات الموظفين{% else %}Employee Documents{% endif %}{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('employees.list_employees') }}">{% if ar %}الموظفون{% else %}Employees{% endif %}</a></li>
+<li class="breadcrumb-item active">{% if ar %}المستندات{% else %}Documents{% endif %}</li>
+{% endblock %}
+{% block content %}
+<style>
+  .ed-wrap{display:grid;grid-template-columns:320px 1fr;gap:16px;max-width:1200px;}
+  .ed-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;}
+  .ed-head{padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-weight:700;font-size:13px;color:#334155;display:flex;align-items:center;gap:8px;}
+  .ed-search{padding:10px 12px;border-bottom:1px solid #f1f5f9;}
+  .ed-search input{width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;}
+  .ed-emp-list{max-height:60vh;overflow:auto;}
+  .ed-emp{padding:10px 16px;border-bottom:1px solid #f1f5f9;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;transition:background .12s;}
+  .ed-emp:hover{background:#eff6ff;}
+  .ed-emp.active{background:#dbeafe;font-weight:700;}
+  .ed-emp .code{font-size:11px;color:#64748b;}
+  .ed-body{padding:16px;}
+  .ed-upload{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:16px;padding:14px;background:#f8fafc;border-radius:10px;}
+  .ed-upload .fld{display:flex;flex-direction:column;gap:4px;}
+  .ed-upload label{font-size:11px;font-weight:600;color:#475569;}
+  .ed-upload input,.ed-upload select{border:1px solid #cbd5e1;border-radius:7px;padding:7px 10px;font-size:13px;}
+  .ed-doc-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .ed-doc-table th{text-align:{% if ar %}right{% else %}left{% endif %};padding:8px 10px;background:#f1f5f9;color:#475569;font-size:11px;text-transform:uppercase;}
+  .ed-doc-table td{padding:9px 10px;border-bottom:1px solid #f1f5f9;}
+  .ed-empty{padding:32px;text-align:center;color:#94a3b8;font-size:13px;}
+  .btn-up{background:#16a34a;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;}
+  .btn-up:hover{filter:brightness(1.08);}
+  .btn-del{background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;}
+  .btn-del:hover{background:#fecaca;}
+</style>
+
+<div style="padding:8px 4px 16px;">
+  <h2 style="font-size:18px;font-weight:800;color:#1e293b;margin-bottom:4px;">
+    {% if ar %}مستندات الموظفين{% else %}Employee Documents{% endif %}
+  </h2>
+  <p style="font-size:13px;color:#64748b;margin:0;">
+    {% if ar %}اختر موظفاً لعرض وإدارة مستنداته{% else %}Select an employee to view and manage their documents{% endif %}
+  </p>
+</div>
+
+<div class="ed-wrap">
+  <!-- Employee selector -->
+  <div class="ed-card">
+    <div class="ed-head"><i class="fas fa-users"></i>{% if ar %}الموظفون{% else %}Employees{% endif %}</div>
+    <div class="ed-search">
+      <input type="text" id="empSearch" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}" oninput="filterEmps(this.value)">
+    </div>
+    <div class="ed-emp-list" id="empList">
+      {% for e in employees %}
+      <div class="ed-emp" data-id="{{ e.id }}" data-name="{{ (e.name or '')|lower }} {{ (e.employee_code or '')|lower }}" onclick="selectEmp({{ e.id }}, this)">
+        <span>{% if ar and e.name_ar %}{{ e.name_ar }}{% else %}{{ e.name }}{% endif %}</span>
+        <span class="code">{{ e.employee_code }}</span>
+      </div>
+      {% else %}
+      <div class="ed-empty">{% if ar %}لا يوجد موظفون{% else %}No employees{% endif %}</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Documents panel -->
+  <div class="ed-card">
+    <div class="ed-head">
+      <i class="fas fa-folder-open"></i>
+      <span id="edPanelTitle">{% if ar %}المستندات{% else %}Documents{% endif %}</span>
+    </div>
+    <div class="ed-body">
+      <div id="edNoSel" class="ed-empty">
+        <i class="fas fa-hand-pointer" style="font-size:22px;display:block;margin-bottom:8px;"></i>
+        {% if ar %}اختر موظفاً من القائمة{% else %}Select an employee from the list{% endif %}
+      </div>
+
+      <div id="edPanel" style="display:none;">
+        {% if current_user.is_admin() %}
+        <div class="ed-upload">
+          <div class="fld">
+            <label>{% if ar %}نوع المستند{% else %}Document Type{% endif %}</label>
+            <select id="upType">
+              <option value="">{% if ar %}عام{% else %}General{% endif %}</option>
+              <option value="Passport">{% if ar %}جواز السفر{% else %}Passport{% endif %}</option>
+              <option value="Iqama">{% if ar %}الإقامة{% else %}Iqama{% endif %}</option>
+              <option value="Contract">{% if ar %}العقد{% else %}Contract{% endif %}</option>
+              <option value="Visa">{% if ar %}التأشيرة{% else %}Visa{% endif %}</option>
+              <option value="Certificate">{% if ar %}الشهادة{% else %}Certificate{% endif %}</option>
+              <option value="Other">{% if ar %}أخرى{% else %}Other{% endif %}</option>
+            </select>
+          </div>
+          <div class="fld" style="flex:1;min-width:200px;">
+            <label>{% if ar %}الملف{% else %}File{% endif %}</label>
+            <input type="file" id="upFile" accept=".pdf,.jpg,.jpeg,.png">
+          </div>
+          <button class="btn-up" onclick="uploadDoc()"><i class="fas fa-upload me-1"></i>{% if ar %}رفع{% else %}Upload{% endif %}</button>
+        </div>
+        {% endif %}
+
+        <table class="ed-doc-table">
+          <thead>
+            <tr>
+              <th>{% if ar %}النوع{% else %}Type{% endif %}</th>
+              <th>{% if ar %}اسم الملف{% else %}File Name{% endif %}</th>
+              <th>{% if ar %}تاريخ الرفع{% else %}Uploaded{% endif %}</th>
+              <th style="text-align:center;">{% if ar %}إجراءات{% else %}Actions{% endif %}</th>
+            </tr>
+          </thead>
+          <tbody id="docRows"></tbody>
+        </table>
+        <div id="docEmpty" class="ed-empty" style="display:none;">
+          {% if ar %}لا توجد مستندات لهذا الموظف{% else %}No documents for this employee{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const IS_AR = {{ 'true' if ar else 'false' }};
+const CSRF  = '{{ csrf_token() }}';
+const IS_ADMIN = {{ 'true' if current_user.is_admin() else 'false' }};
+let _curEmp = null;
+
+function filterEmps(q){
+  q = (q||'').toLowerCase();
+  document.querySelectorAll('#empList .ed-emp').forEach(el=>{
+    el.style.display = el.dataset.name.includes(q) ? '' : 'none';
+  });
+}
+
+function selectEmp(id, el){
+  _curEmp = id;
+  document.querySelectorAll('#empList .ed-emp').forEach(x=>x.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('edNoSel').style.display = 'none';
+  document.getElementById('edPanel').style.display = '';
+  const nameSpan = el ? el.querySelector('span').textContent : '';
+  document.getElementById('edPanelTitle').textContent = (IS_AR?'مستندات: ':'Documents: ') + nameSpan;
+  loadDocs();
+}
+
+function loadDocs(){
+  if(!_curEmp) return;
+  fetch('/employees/'+_curEmp+'/documents').then(r=>r.json()).then(rows=>{
+    const tb = document.getElementById('docRows');
+    tb.innerHTML = '';
+    if(!rows.length){
+      document.getElementById('docEmpty').style.display = '';
+      return;
+    }
+    document.getElementById('docEmpty').style.display = 'none';
+    rows.forEach(d=>{
+      const tr = document.createElement('tr');
+      const del = IS_ADMIN
+        ? `<button class="btn-del" onclick="delDoc(${d.id})"><i class="fas fa-trash"></i></button>`
+        : '';
+      tr.innerHTML =
+        `<td>${d.document_type || (IS_AR?'عام':'General')}</td>`+
+        `<td>${d.original_name || d.file_path}</td>`+
+        `<td>${d.uploaded_at || ''}</td>`+
+        `<td style="text-align:center;">`+
+          `<a href="/employees/documents/${d.id}/view" target="_blank" class="btn-del" style="background:#dbeafe;color:#2563eb;text-decoration:none;margin-${IS_AR?'left':'right'}:6px;"><i class="fas fa-eye"></i></a>`+
+          del+
+        `</td>`;
+      tb.appendChild(tr);
+    });
+  });
+}
+
+function uploadDoc(){
+  if(!_curEmp){ alert(IS_AR?'اختر موظفاً':'Select an employee'); return; }
+  const fileEl = document.getElementById('upFile');
+  if(!fileEl.files.length){ alert(IS_AR?'اختر ملفاً':'Choose a file'); return; }
+  const fd = new FormData();
+  fd.set('csrf_token', CSRF);
+  fd.set('document_type', document.getElementById('upType').value);
+  fd.set('document', fileEl.files[0]);
+  fetch('/employees/'+_curEmp+'/documents/upload', {method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd})
+    .then(r=>r.json()).then(d=>{
+      if(d.ok){ fileEl.value=''; loadDocs(); }
+      else alert(d.error || 'Upload failed');
+    }).catch(()=>alert('Network error'));
+}
+
+function delDoc(id){
+  if(!confirm(IS_AR?'حذف هذا المستند؟':'Delete this document?')) return;
+  fetch('/employees/documents/'+id+'/delete', {method:'POST', headers:{'X-CSRFToken':CSRF}})
+    .then(r=>r.json()).then(d=>{ if(d.ok) loadDocs(); else alert('Delete failed'); });
+}
+</script>
+{% endblock %}

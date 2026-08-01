@@ -56,6 +56,11 @@ def wa_employees():
         # department now lives on employee_work_allocation (latest entry)
         'department': (_last_wa(e.id).buyer_department if _last_wa(e.id) else ''),
         'department_ar': (_last_wa(e.id).buyer_department_ar if _last_wa(e.id) else ''),
+        # previous-record info: does this employee already have an allocation?
+        'has_history': _last_wa(e.id) is not None,
+        'last_wa_id': (_last_wa(e.id).id if _last_wa(e.id) else None),
+        'last_end_date': (_last_wa(e.id).end_date.strftime('%Y-%m-%d')
+                          if _last_wa(e.id) and _last_wa(e.id).end_date else ''),
         'label': f"{e.employee_code} — {e.name_ar if lang=='ar' and e.name_ar else e.name}",
     } for e in emps])
 
@@ -77,6 +82,39 @@ def add_wa():
     from models import BuyerMaster
     _bid = f.get('buyer_id', type=int)
     _buyer = BuyerMaster.query.get(_bid) if _bid else None
+
+    new_joining = parse_date(f.get('joining_date'))
+    mode = (f.get('wa_mode') or 'new').strip().lower()
+
+    with_history = [eid for eid in employee_ids if _last_wa(eid) is not None]
+
+    if mode == 'old':
+        # Old mode: exactly ONE employee, and it must already have history.
+        if len(employee_ids) != 1:
+            flash(_t('Old Employee mode: add one employee at a time.',
+                     'وضع الموظف القديم: أضف موظفاً واحداً في كل مرة.'), 'danger')
+            return redirect(url_for('work_allocations.list_wa'))
+        if not with_history:
+            flash(_t('Selected employee has no previous record for Old Employee mode.',
+                     'الموظف المحدد ليس له سجل سابق.'), 'danger')
+            return redirect(url_for('work_allocations.list_wa'))
+        prev_end = parse_date(f.get('prev_end_date'))
+        prev_wa_id = f.get('prev_wa_id', type=int)
+        if prev_end and new_joining and prev_end > new_joining:
+            flash(_t('Previous record end date cannot be later than the new joining date.',
+                     'لا يمكن أن يكون تاريخ انتهاء السجل السابق بعد تاريخ الانضمام الجديد.'), 'danger')
+            return redirect(url_for('work_allocations.list_wa'))
+        prev = (WorkAllocation.query.get(prev_wa_id) if prev_wa_id
+                else _last_wa(employee_ids[0]))
+        if prev and prev_end:
+            prev.end_date = prev_end
+    else:
+        # New mode: every selected employee must be new (no history).
+        if with_history:
+            flash(_t('New Employee mode: those employees already have a work allocation.',
+                     'وضع الموظف الجديد: هؤلاء الموظفون لديهم توزيع عمل بالفعل.'), 'danger')
+            return redirect(url_for('work_allocations.list_wa'))
+
     added = 0
     for emp_id in employee_ids:
         emp = Employee.query.get(emp_id)
@@ -86,8 +124,7 @@ def add_wa():
         wa = WorkAllocation(
             employee_id=emp_id,
             buyer_id=f.get('buyer_id', type=int),
-            status=f.get('status','active'),
-            month=f.get('month','').strip(),
+            status='active',
             # company -> buyer_name, section -> location, shift_type -> shift
             buyer_name=(f.get('company','').strip() or (_buyer.buyer_name_en if _buyer else '')),
             buyer_name_ar=(f.get('company_ar','').strip() or ((_buyer.buyer_name_ar or '') if _buyer else '')),
@@ -96,9 +133,8 @@ def add_wa():
             location=f.get('section','').strip() or f.get('location','').strip(),
             location_ar=f.get('section_ar','').strip() or f.get('location_ar','').strip(),
             shift=shift,
-            joining_date=parse_date(f.get('joining_date')),
-            end_date=parse_date(f.get('end_date')),
-            # snapshot the employee details, as the employee form does
+            joining_date=new_joining,
+            end_date=None,  # new record always stays active
             name=emp.name if emp else '',
             nationality=emp.nationality if emp else '',
             profession=(', '.join([p.name_en for p in emp.professions.all()]) if emp else ''),
@@ -123,7 +159,6 @@ def edit_wa(id):
         try: return datetime.strptime(val, '%Y-%m-%d').date()
         except: return None
     wa.status              = f.get('status', wa.status)
-    wa.month               = f.get('month', wa.month or '').strip()
     wa.buyer_name          = f.get('company', wa.buyer_name or '').strip()
     wa.buyer_name_ar       = f.get('company_ar', wa.buyer_name_ar or '').strip()
     wa.buyer_department    = f.get('department', wa.buyer_department or '').strip()
@@ -143,7 +178,7 @@ def edit_wa(id):
         extra = WorkAllocation(
             employee_id=eid,
             buyer_id=buyer_id,
-            status=wa.status, month=wa.month,
+            status=wa.status,
             buyer_name=wa.buyer_name, buyer_name_ar=wa.buyer_name_ar,
             buyer_department=wa.buyer_department,
             buyer_department_ar=wa.buyer_department_ar,

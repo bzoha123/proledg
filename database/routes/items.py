@@ -73,7 +73,6 @@ def item_add():
         item_desc   = f.get('item_desc','').strip(),
         category_id     = int(f['category_id'])     if f.get('category_id')     else None,
         sub_category_id = int(f['sub_category_id']) if f.get('sub_category_id') else None,
-        tax_category_id = int(f['tax_category_id']) if f.get('tax_category_id') else None,
         vendor_id       = int(f['vendor_id'])        if f.get('vendor_id')       else None,
         main_rate       = float(f.get('main_rate','0') or 0),
         po_rate         = float(f.get('po_rate','0') or 0),
@@ -107,7 +106,6 @@ def item_edit(id):
     item.item_desc   = f.get('item_desc','').strip()
     item.category_id     = int(f['category_id'])     if f.get('category_id')     else None
     item.sub_category_id = int(f['sub_category_id']) if f.get('sub_category_id') else None
-    item.tax_category_id = int(f['tax_category_id']) if f.get('tax_category_id') else None
     item.vendor_id       = int(f['vendor_id'])        if f.get('vendor_id')       else None
     item.main_rate       = float(f.get('main_rate','0') or 0)
     item.po_rate         = float(f.get('po_rate','0') or 0)

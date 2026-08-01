@@ -310,18 +310,6 @@ textarea.f-inp{resize:vertical;min-height:80px;}
               </div>
               <div class="f-grid2">
                 <div class="f-item">
-                  <div class="f-lbl">{% if ar %}فئة الضريبة{% else %}Tax Category{% endif %}</div>
-                  <div class="f-select-row">
-                    <select id="i_tax_category" class="f-inp">
-                      <option value="">{% if ar %}-- اختر فئة الضريبة --{% else %}-- Select Tax Category --{% endif %}</option>
-                      {% for t in taxcats %}
-                      <option value="{{ t.id }}">{{ t.name_en }}{% if t.rate %} ({{ t.rate }}%){% endif %}</option>
-                      {% endfor %}
-                    </select>
-                    <button type="button" class="f-add-btn" title="{% if ar %}إضافة فئة ضريبية{% else %}Add Tax Category{% endif %}" onclick="openQaTaxCategory()"><i class="fas fa-plus"></i></button>
-                  </div>
-                </div>
-                <div class="f-item">
                   <div class="f-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div>
                   <select id="i_vendor" class="f-inp">
                     <option value="">{% if ar %}-- اختر المورد --{% else %}-- Select Vendor --{% endif %}</option>
@@ -426,7 +414,7 @@ textarea.f-inp{resize:vertical;min-height:80px;}
           <div class="isec-hdr"><div class="isec-hdr-icon"><i class="fas fa-tags"></i></div><div class="isec-hdr-title">{% if ar %}التصنيف{% else %}Classification{% endif %}</div></div>
           <div class="isec-body">
             <div class="v-row"><div><div class="v-lbl">{% if ar %}الفئة{% else %}Category{% endif %}</div><div class="v-val" id="v_category"></div></div><div><div class="v-lbl">{% if ar %}الفئة الفرعية{% else %}Sub-Category{% endif %}</div><div class="v-val" id="v_sub_category"></div></div></div>
-            <div class="v-row"><div><div class="v-lbl">{% if ar %}فئة الضريبة{% else %}Tax Category{% endif %}</div><div class="v-val" id="v_tax_category"></div></div><div><div class="v-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div><div class="v-val" id="v_vendor"></div></div></div>
+            <div class="v-row"><div><div class="v-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div><div class="v-val" id="v_vendor"></div></div><div></div></div>
             <div class="v-row"><div><div class="v-lbl">{% if ar %}حساب دليل الحسابات{% else %}Chart of Account{% endif %}</div><div class="v-val" id="v_levelfive"></div></div><div></div></div>
            
           </div>
@@ -522,41 +510,6 @@ textarea.f-inp{resize:vertical;min-height:80px;}
 </div>
 
 <!-- ══ QUICK-ADD: TAX CATEGORY ══ -->
-<div class="modal fade qa-modal" id="qaTaxCategoryModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content">
-    <div class="qa-hdr"><h6><i class="fas fa-plus-circle me-2"></i>{% if ar %}إضافة فئة ضريبية{% else %}Add Tax Category{% endif %}</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-    <div class="qa-body">
-      <div class="qa-err" id="qaTaxCategoryErr"></div>
-      <div class="f-grid1">
-        <div class="f-item">
-          <div class="f-lbl">{% if ar %}اسم الفئة الضريبية (EN){% else %}Tax Category Name (EN){% endif %} <span class="f-lbl-req">*</span></div>
-          <div class="field-wrap" dir="ltr">
-            <input type="text" id="qa_tax_name_en" class="f-inp" dir="ltr" placeholder="e.g. Standard VAT"
-                   oninput="vTrans('qa_tax_name_en','qa_tax_name_ar','en')">
-            {% if not ar %}
-            <button type="button" class="retrans-btn" title="Re-translate to Arabic" onclick="doRetrans('qa_tax_name_en','qa_tax_name_ar','en')"><i class="fas fa-sync-alt"></i></button>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-      <div class="f-grid1">
-        <div class="f-item">
-          <div class="f-lbl" style="text-align:right;">{% if ar %}اسم الفئة الضريبية (AR){% else %}Tax Category Name (AR){% endif %}</div>
-          <div class="field-wrap" dir="rtl">
-            <input type="text" id="qa_tax_name_ar" class="f-inp" dir="rtl" placeholder="مثال: ضريبة القيمة المضافة"
-                   oninput="vTrans('qa_tax_name_ar','qa_tax_name_en','ar')">
-            {% if ar %}
-            <button type="button" class="retrans-btn" title="إعادة الترجمة للإنجليزية" onclick="doRetrans('qa_tax_name_ar','qa_tax_name_en','ar')"><i class="fas fa-sync-alt"></i></button>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-      <div class="f-grid1"><div class="f-item"><div class="f-lbl">{% if ar %}نسبة الضريبة (%){% else %}Tax Percentage (%){% endif %} <span class="f-lbl-req">*</span></div><input type="number" id="qa_tax_rate" class="f-inp" value="0.00" min="0" max="100" step="0.01"></div></div>
-    </div>
-    <div class="qa-footer"><button class="btn-cancel" data-bs-dismiss="modal">{% if ar %}إلغاء{% else %}Cancel{% endif %}</button><button class="btn-save" onclick="saveQaTaxCategory()"><i class="fas fa-save me-1"></i>{% if ar %}حفظ{% else %}Save{% endif %}</button></div>
-  </div></div>
-</div>
-
 <!-- ══ QUICK-ADD: UNIT OF MEASURE ══ -->
 <div class="modal fade qa-modal" id="qaUomModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content">
@@ -779,7 +732,6 @@ async function fillEditForm(d) {
   document.getElementById('i_category').value   = d.category_id || '';
   if (d.category_id) await loadSubCats(d.sub_category_id);
   document.getElementById('i_sub_category').value = d.sub_category_id || '';
-  document.getElementById('i_tax_category').value = d.tax_category_id || '';
   document.getElementById('i_vendor').value        = d.vendor_id || '';
   document.getElementById('i_is_active').value     = d.is_active ? '1' : '0';
   document.getElementById('i_main_rate').value          = (d.main_rate || 0).toFixed(2);
@@ -830,7 +782,6 @@ async function openViewItem(id) {
     document.getElementById('v_item_desc').textContent    = d.item_desc || '-';
     document.getElementById('v_category').textContent     = d.category_name || '-';
     document.getElementById('v_sub_category').textContent = d.sub_category_name || '-';
-    document.getElementById('v_tax_category').textContent = d.tax_rate != null ? d.tax_rate + '%' : '-';
     document.getElementById('v_vendor').textContent       = d.vendor_name || '-';
     document.getElementById('v_levelfive').textContent    = d.levelfive_code ? (d.levelfive_code + (d.levelfive_drawer_en ? ' — ' + d.levelfive_drawer_en : '')) : '-';
     document.getElementById('v_is_active').textContent    = d.is_active ? (IS_AR ? 'نشط' : 'Active') : (IS_AR ? 'غير نشط' : 'Inactive');
@@ -866,7 +817,6 @@ async function saveItem() {
   fd.set('item_type',          document.getElementById('i_item_type').value);
   fd.set('category_id',        document.getElementById('i_category').value);
   fd.set('sub_category_id',    document.getElementById('i_sub_category').value);
-  fd.set('tax_category_id',    document.getElementById('i_tax_category').value);
   fd.set('vendor_id',          document.getElementById('i_vendor').value);
   fd.set('is_active',          document.getElementById('i_is_active').value);
   fd.set('main_rate',          document.getElementById('i_main_rate').value);
@@ -1074,28 +1024,6 @@ async function saveQaSubCategory() {
   } else { errEl.textContent = data.error || 'Error'; errEl.style.display = 'block'; }
 }
 
-function openQaTaxCategory() {
-  document.getElementById('qa_tax_name_en').value = '';
-  document.getElementById('qa_tax_name_ar').value = '';
-  document.getElementById('qa_tax_rate').value = '0.00';
-  document.getElementById('qaTaxCategoryErr').style.display = 'none';
-  new bootstrap.Modal(document.getElementById('qaTaxCategoryModal')).show();
-}
-async function saveQaTaxCategory() {
-  const errEl = document.getElementById('qaTaxCategoryErr'); errEl.style.display = 'none';
-  const nameEn = document.getElementById('qa_tax_name_en').value.trim();
-  if (!nameEn) { errEl.textContent = IS_AR ? 'اسم الفئة الضريبية مطلوب' : 'Tax category name is required'; errEl.style.display = 'block'; return; }
-  const fd = new FormData(); fd.set('csrf_token', CSRF); fd.set('name_en', nameEn); fd.set('name_ar', document.getElementById('qa_tax_name_ar').value.trim()); fd.set('rate', document.getElementById('qa_tax_rate').value || '0');
-  const res = await fetch('/items/tax-categories/add', { method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd });
-  const data = await res.json();
-  if (data.ok) {
-    const sel = document.getElementById('i_tax_category');
-    const o = document.createElement('option'); o.value = data.tax_category.id; o.textContent = data.tax_category.name_en + (data.tax_category.rate ? ' (' + data.tax_category.rate + '%)' : '');
-    sel.appendChild(o); sel.value = data.tax_category.id;
-    bootstrap.Modal.getInstance(document.getElementById('qaTaxCategoryModal'))?.hide();
-  } else { errEl.textContent = data.error || 'Error'; errEl.style.display = 'block'; }
-}
-
 /* ══ AG-Grid ══ */
 const rStatus = p => {
   const active = p.value;
@@ -1163,7 +1091,7 @@ function itemsClearFilters(){
 
 /* ── Sub-modal stacking fix ── */
 (function () {
-  var CHILD_IDS = ['qaCategoryModal','qaSubCategoryModal','qaTaxCategoryModal','qaUomModal','delModal'];
+  var CHILD_IDS = ['qaCategoryModal','qaSubCategoryModal','qaUomModal','delModal'];
   var parentBackdrop = null;
   
   document.addEventListener('show.bs.modal', function (e) {

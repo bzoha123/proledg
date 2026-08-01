@@ -867,6 +867,48 @@ def delete_employee_document(doc_id):
     return jsonify({'ok': True})
 
 
+@employees_bp.route('/employee-documents')
+@login_required
+def employee_documents_page():
+    """Standalone page to manage employee documents (separate from the form)."""
+    emps = Employee.query.order_by(Employee.name).all()
+    return render_template('employees/documents.html', employees=emps)
+
+
+@employees_bp.route('/employees/<int:emp_id>/documents/upload', methods=['POST'])
+@login_required
+@admin_required
+def upload_employee_document(emp_id):
+    """Upload one document for an employee from the standalone page."""
+    Employee.query.get_or_404(emp_id)
+    f = request.files.get('document')
+    if not f or not f.filename:
+        return jsonify({'ok': False, 'error': 'No file selected.'}), 400
+    path = save_upload(f, emp_id)
+    if not path:
+        return jsonify({'ok': False, 'error': 'Could not save file.'}), 400
+    doc = EmployeeDocument(
+        employee_id=emp_id,
+        document_type=(request.form.get('document_type', '') or '').strip(),
+        file_path=path,
+        original_name=f.filename,
+    )
+    db.session.add(doc)
+    db.session.commit()
+    return jsonify({'ok': True, 'document': doc.to_dict()})
+
+
+@employees_bp.route('/employees/documents/<int:doc_id>/view')
+@login_required
+def view_employee_document(doc_id):
+    """Serve an employee document file for viewing/download."""
+    from flask import send_from_directory
+    d = EmployeeDocument.query.get_or_404(doc_id)
+    parts = d.file_path.replace('\\', '/').split('/')
+    folder = os.path.join(current_app.config['UPLOAD_FOLDER'], *parts[:-1])
+    return send_from_directory(folder, parts[-1], as_attachment=False)
+
+
 @employees_bp.route('/employees/export')
 @login_required
 def export_employees():

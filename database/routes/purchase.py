@@ -818,7 +818,6 @@ def item_add():
             item_desc=f.get('item_desc','').strip() or None,
             category_id=int(f.get('category_id')) if f.get('category_id') else None,
             sub_category_id=int(f.get('sub_category_id')) if f.get('sub_category_id') else None,
-            tax_category_id=int(f.get('tax_category_id')) if f.get('tax_category_id') else None,
             vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
             main_rate=Decimal(f.get('main_rate') or '0'),
             po_rate=Decimal(f.get('po_rate') or '0'),
@@ -871,7 +870,6 @@ def item_edit(id):
         item.item_desc = f.get('item_desc','').strip() or None
         item.category_id = int(f.get('category_id')) if f.get('category_id') else None
         item.sub_category_id = int(f.get('sub_category_id')) if f.get('sub_category_id') else None
-        item.tax_category_id = int(f.get('tax_category_id')) if f.get('tax_category_id') else None
         item.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
         item.main_rate = Decimal(f.get('main_rate') or '0')
         item.po_rate = Decimal(f.get('po_rate') or '0')

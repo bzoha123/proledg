@@ -677,7 +677,7 @@
       <button class="tool-btn tool-btn-green" data-bs-toggle="modal" data-bs-target="#empModal" onclick="openAddEmp()" title="{% if ar %}إضافة موظف{% else %}Add Employee{% endif %}"><i class="fas fa-plus"></i></button>
       {% endif %}
       <button class="tool-btn tool-btn-blue" onclick="loadData()" title="{% if ar %}تحديث{% else %}Refresh{% endif %}"><i class="fas fa-sync-alt"></i></button>
-      <a class="tool-btn tool-btn-green" href="/io/bundle/employee-full/export" style="text-decoration:none;" title="{% if ar %}تصدير (الموظف + البنوك){% else %}Export (Employee + Banks){% endif %}"><i class="fas fa-file-excel"></i></a>
+      <a class="tool-btn tool-btn-green" href="/io/bundle/employee-full/export" style="text-decoration:none;" title="{% if ar %}تصدير (الموظف + البنوك + المهن + البدلات + أنواع البدلات){% else %}Export (Employee + Banks + Professions + Allowances + Allowance Types){% endif %}"><i class="fas fa-file-excel"></i></a>
       <a class="tool-btn tool-btn-purple" href="/io/bundle/employee-full/template" style="text-decoration:none;" title="{% if ar %}قالب{% else %}Template{% endif %}"><i class="fas fa-file-download"></i></a>
       {% if current_user.is_admin() %}
       <button class="tool-btn tool-btn-orange" title="{% if ar %}استيراد{% else %}Import{% endif %}" onclick="document.getElementById('empImp').click()"><i class="fas fa-file-import"></i></button>
@@ -2250,7 +2250,7 @@ function resetEmpForm() {
   if (typeof renderEmpBanks === 'function') renderEmpBanks();
 
   document.querySelectorAll('.mcq-opt').forEach(b => b.classList.remove('chosen'));
-  document.getElementById('f_shift').value = 'day';   // default
+  { const sh=document.getElementById('f_shift'); if(sh) sh.value='day'; }   // default (field removed)
   setMCQ('passLocGrp', 'IN',      'f_passport_location');
   document.getElementById('f_salary_category').value = 'salary';   // default
   document.getElementById('f_salary_type').value     = 'month';    // default
@@ -2422,7 +2422,7 @@ function openEditEmp(id) {
 
     document.getElementById('f_salary_category').value = d.salary_category || 'salary';
     document.getElementById('f_salary_type').value     = d.salary_type || 'month';
-    document.getElementById('f_shift').value = d.wa_shift || 'day';
+    { const sh=document.getElementById('f_shift'); if(sh) sh.value = d.wa_shift || 'day'; }
     // Location from the last allocation; the department cascade overwrites it
     // once the dropdown loads, so this is the fallback for an unchanged dept.
     const _le = document.getElementById('f_location_en');

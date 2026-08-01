@@ -1443,7 +1443,6 @@ class ItemMaster(db.Model):
     item_desc          = db.Column(db.Text)
     category_id        = db.Column(db.Integer, db.ForeignKey('item_categories.id'))
     sub_category_id    = db.Column(db.Integer, db.ForeignKey('item_sub_categories.id'))
-    tax_category_id    = db.Column(db.Integer, db.ForeignKey('tax_categories.id'))
     vendor_id          = db.Column(db.Integer, db.ForeignKey('vendors.id'))
     main_rate          = db.Column(db.Numeric(14, 2), default=0)
     po_rate            = db.Column(db.Numeric(14, 2), default=0)
@@ -1462,7 +1461,6 @@ class ItemMaster(db.Model):
 
     category     = db.relationship('ItemCategory',    backref=db.backref('items', lazy=True))
     sub_category = db.relationship('ItemSubCategory', backref=db.backref('items', lazy=True))
-    tax_category = db.relationship('TaxCategory',     backref=db.backref('items', lazy=True))
     vendor       = db.relationship('VendorMaster',    backref=db.backref('items',  lazy=True))
 
     def to_dict(self):
@@ -1477,8 +1475,7 @@ class ItemMaster(db.Model):
             'category_name': self.category.name_en if self.category else '',
             'sub_category_id': self.sub_category_id,
             'sub_category_name': self.sub_category.name_en if self.sub_category else '',
-            'tax_category_id': self.tax_category_id,
-            'tax_rate': float(self.tax_category.rate) if self.tax_category else 15,
+            'tax_rate': 15,
             'vendor_id': self.vendor_id,
             'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'main_rate':          float(self.main_rate          or 0),

@@ -538,17 +538,17 @@ select.f-inp {
   <div class="toolbar">
     <div class="toolbar-left">
       {% if current_user.is_admin() %}
-      <button class="tool-btn tool-btn-green" onclick="openAddWA()"><i class="fas fa-plus"></i></button>
+      <button class="tool-btn tool-btn-green" onclick="openAddWA('new')" title="{% if ar %}إضافة موظف جديد{% else %}Add New Employee{% endif %}"><i class="fas fa-user-plus"></i> {% if ar %}موظف جديد{% else %}New Employee{% endif %}</button>
+      <button class="tool-btn tool-btn-orange" onclick="openAddWA('old')" title="{% if ar %}إضافة موظف قديم{% else %}Add Old Employee{% endif %}"><i class="fas fa-user-clock"></i> {% if ar %}موظف قديم{% else %}Old Employee{% endif %}</button>
       {% endif %}
       <button class="tool-btn tool-btn-blue" onclick="loadData()"><i class="fas fa-sync-alt"></i></button>
-      <a class="tool-btn" href="/io/work-allocations/export?fmt=xlsx" style="text-decoration:none;" title="{% if ar %}تصدير Excel{% else %}Export Excel{% endif %}"><i class="fas fa-file-excel"></i></a>
-      <a class="tool-btn" href="/io/work-allocations/template?fmt=xlsx" style="text-decoration:none;" title="Template"><i class="fas fa-file-download"></i></a>
+      <a class="tool-btn tool-btn-teal" href="/io/work-allocations/export?fmt=xlsx" style="text-decoration:none;" title="{% if ar %}تصدير Excel{% else %}Export Excel{% endif %}"><i class="fas fa-file-excel"></i></a>
+      <a class="tool-btn tool-btn-purple" href="/io/work-allocations/template?fmt=xlsx" style="text-decoration:none;" title="Template"><i class="fas fa-file-download"></i></a>
       {% if current_user.is_admin() %}
-      <button class="tool-btn" title="{% if ar %}استيراد{% else %}Import{% endif %}" onclick="document.getElementById('waImp').click()"><i class="fas fa-file-import"></i></button>
-      <input type="file" id="waImp" accept=".csv,.xlsx,.xlsm" style="display:none;" onchange="ioImport(this,'work-allocations')">
+      <button class="tool-btn tool-btn-orange" title="{% if ar %}استيراد{% else %}Import{% endif %}" onclick="document.getElementById('waImp').click()"><i class="fas fa-file-import"></i></button>
+      <input type="file" id="waImp" accept=".xlsx,.xlsm" style="display:none;" onchange="ioImport(this,'work-allocations')">
       {% endif %}
-      <button class="tool-btn" onclick="gridApi&&gridApi.exportDataAsCsv({fileName:'work_allocations.csv'})" title="{% if ar %}تصدير CSV (المعروض){% else %}Export CSV (view){% endif %}"><i class="fas fa-file-export"></i></button>
-      <button class="tool-btn" onclick="gridApi&&gridApi.setFilterModel(null);document.getElementById('qs').value='';gridApi.setGridOption('quickFilterText','')"><i class="fas fa-times-circle"></i></button>
+      <button class="tool-btn tool-btn-gray" onclick="gridApi&&gridApi.setFilterModel(null);document.getElementById('qs').value='';gridApi.setGridOption('quickFilterText','')"><i class="fas fa-times-circle"></i></button>
     </div>
     <div class="toolbar-right d-flex align-items-center gap-3">
       <div class="sel-badge"><span id="selText">0 {% if ar %}سجل{% else %}records{% endif %}</span></div>
@@ -658,13 +658,14 @@ select.f-inp {
 
                 <div class="f-row3">
                   <div class="f-item">
-                    <div class="f-lbl">{% if ar %}الشهر{% else %}Month{% endif %} <span class="f-req">*</span></div>
-                    <input type="month" name="month_raw" id="wa_month_raw" class="f-inp" dir="ltr" required onchange="syncMonth()">
-                    <input type="hidden" name="month" id="wa_month">
+                    <div class="f-lbl">{% if ar %}تاريخ انتهاء السجل السابق{% else %}Previous Record End Date{% endif %}</div>
+                    <input type="date" name="prev_end_date" id="wa_prev_end" class="f-inp" dir="ltr">
+                    <input type="hidden" name="prev_wa_id" id="wa_prev_id">
+                    <div id="wa_prev_hint" style="font-size:10px;color:#94a3b8;margin-top:2px;"></div>
                   </div>
                   <div class="f-item">
                     <div class="f-lbl">{% if ar %}تاريخ الانضمام{% else %}Joining Date{% endif %}</div>
-                    <input type="date" name="joining_date" id="wa_joining" class="f-inp" dir="ltr">
+                    <input type="date" name="joining_date" id="wa_joining" class="f-inp" dir="ltr" onchange="checkPrevEnd()">
                   </div>
                   <div class="f-item">
                     <div class="f-lbl">{% if ar %}تاريخ الانتهاء{% else %}End Date{% endif %}</div>
@@ -823,15 +824,24 @@ function pickMCQ(grpId,el,hidId,val) {
   document.getElementById(hidId).value=val;
 }
 
-/* ══ Month ══ */
-function syncMonth() {
-  const raw=document.getElementById('wa_month_raw').value;
-  const hid=document.getElementById('wa_month');
-  if (!raw){hid.value='';return;}
-  const [y,m]=raw.split('-');
-  const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  hid.value=`${mn[parseInt(m)-1]}/${y.slice(2)}`;
+/* ══ Previous-record end date ══ */
+function checkPrevEnd() {
+  const prev = document.getElementById('wa_prev_end');
+  const join = document.getElementById('wa_joining');
+  const hint = document.getElementById('wa_prev_hint');
+  if (!prev || !join) return;
+  if (prev.value && join.value && prev.value > join.value) {
+    prev.style.borderColor = '#dc2626';
+    if (hint) { hint.style.color = '#dc2626';
+      hint.textContent = IS_AR ? 'لا يمكن أن يكون بعد تاريخ الانضمام' : 'Cannot be later than joining date'; }
+    return false;
+  }
+  prev.style.borderColor = '';
+  if (hint) { hint.style.color = '#94a3b8';
+    hint.textContent = _prevHintDefault || ''; }
+  return true;
 }
+let _prevHintDefault = '';
 
 /* ══ Translation ══ */
 const _tTimers={};
@@ -873,6 +883,48 @@ function renderChips() {
     chip.innerHTML=`${e.employee_code}<button type="button" class="emp-chip-remove" onclick="removeChip(${id});event.stopPropagation();"><i class="fas fa-times" style="font-size:8px;"></i></button>`;
     wrap.appendChild(chip);
   });
+  syncPrevEndState();
+}
+
+/* Prev-end field state, governed by mode. End date stays disabled always. */
+function syncPrevEndState() {
+  const prev = document.getElementById('wa_prev_end');
+  const prevId = document.getElementById('wa_prev_id');
+  const hint = document.getElementById('wa_prev_hint');
+  const endEl = document.getElementById('wa_end');
+  if (endEl) endEl.disabled = true;   // new record always active
+  if (!prev) return;
+  const emps = Array.from(_selEmps.values());
+
+  // NEW mode: previous end date is never applicable.
+  if (_waMode === 'new') {
+    prev.value=''; prev.disabled=true; prev.style.borderColor='';
+    if (prevId) prevId.value='';
+    if (hint) { hint.style.color='#94a3b8';
+      hint.textContent = emps.length ? (IS_AR?'موظف جديد — لا يوجد سجل سابق':'New employee — no previous record') : ''; }
+    _prevHintDefault='';
+    return;
+  }
+
+  // OLD mode: single employee, editable prev-end pre-filled from last record.
+  prev.disabled = false;
+  if (emps.length === 1) {
+    const e = emps[0];
+    prev.value = e.last_end_date || '';
+    if (prevId) prevId.value = e.last_wa_id || '';
+    _prevHintDefault = e.last_end_date
+      ? (IS_AR?'تاريخ انتهاء السجل السابق':'Previous record end date')
+      : (IS_AR?'السجل السابق بدون تاريخ انتهاء — يمكنك إضافته':'Previous record has no end date — you can set it');
+    if (hint) { hint.style.color='#94a3b8'; hint.textContent=_prevHintDefault; }
+  } else if (emps.length === 0) {
+    prev.value=''; if (prevId) prevId.value='';
+    if (hint) { hint.style.color='#94a3b8'; hint.textContent=''; }
+  } else {
+    // more than one in old mode (shouldn't happen with single-select) -> warn
+    if (prevId) prevId.value='';
+    if (hint) { hint.style.color='#dc2626';
+      hint.textContent = IS_AR?'اختر موظفاً واحداً فقط':'Select only one employee'; }
+  }
 }
 function removeChip(id) {
   _selEmps.delete(id);
@@ -888,10 +940,11 @@ function clearAllEmps() {
 let pickerGridApi = null;
 
 function openPickerModal() {
-  loadEmps(emps=>{
+  loadEmps(all=>{
+    // Filter by mode: 'new' -> no history; 'old' -> has history.
+    const emps = all.filter(e => _waMode === 'old' ? e.has_history : !e.has_history);
     if (pickerGridApi) {
       pickerGridApi.setGridOption('rowData', emps);
-      // Re-select already selected
       setTimeout(()=>{
         pickerGridApi.forEachNode(node=>{
           if (_selEmps.has(node.data.id)) node.setSelected(true,false);
@@ -900,6 +953,10 @@ function openPickerModal() {
       },100);
     } else {
       initPickerGrid(emps);
+    }
+    // In 'old' mode only one employee may be picked -> single row selection.
+    if (pickerGridApi) {
+      pickerGridApi.setGridOption('rowSelection', _waMode === 'old' ? 'single' : 'multiple');
     }
   });
   new bootstrap.Modal(document.getElementById('pickerModal')).show();
@@ -1033,9 +1090,10 @@ function waDeptChange() {
 /* ══ Reset WA form ══ */
 function resetWAForm() {
   _selEmps.clear(); renderChips();
-  ['wa_month_raw','wa_joining','wa_end','wa_department_en','wa_department_ar',
+  ['wa_prev_end','wa_prev_id','wa_joining','wa_end','wa_department_en','wa_department_ar',
    'wa_location_en','wa_location_ar'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('wa_month').value='';
+  const ph=document.getElementById('wa_prev_hint'); if(ph) ph.textContent='';
+  const pe=document.getElementById('wa_prev_end'); if(pe){ pe.disabled=false; pe.style.borderColor=''; }
   document.getElementById('wa_buyer').value='';
   const ds=document.getElementById('wa_department_id');
   if(ds){ ds.innerHTML='<option value="">-- '+(IS_AR?'اختر الشركة أولاً':'Select a company first')+' --</option>'; ds.disabled=true; }
@@ -1045,15 +1103,37 @@ function resetWAForm() {
 }
 
 /* ══ Open Add ══ */
-function openAddWA() {
+let _waMode = 'new';   // 'new' = employees without history; 'old' = with history
+function openAddWA(mode) {
+  _waMode = (mode === 'old') ? 'old' : 'new';
   _isEdit=false; _editId=null;
-  document.getElementById('waModalTitle').innerHTML='<i class="fas fa-plus-circle me-2"></i>'+(IS_AR?'إضافة تخصيص عمل' :'Add Work Allocation');
+  _empCache = null;   // force reload so the filtered picker is fresh
+  const titleTxt = _waMode === 'old'
+    ? (IS_AR?'إضافة موظف قديم':'Add Old Employee')
+    : (IS_AR?'إضافة موظف جديد':'Add New Employee');
+  document.getElementById('waModalTitle').innerHTML='<i class="fas fa-plus-circle me-2"></i>'+titleTxt;
   document.getElementById('waForm').action=ADD_URL;
   resetWAForm();
   fillBuyerDropdown(null);
+  applyModeFieldStates();
   // Open Employee section, close Work section
   document.getElementById('sec_work').classList.remove('show');
   new bootstrap.Modal(document.getElementById('waModal')).show();
+}
+
+/* Field states per mode. End Date is ALWAYS disabled (new record stays active).
+   Previous End Date is editable only in 'old' mode. */
+function applyModeFieldStates() {
+  const endEl  = document.getElementById('wa_end');
+  const prevEl = document.getElementById('wa_prev_end');
+  const hint   = document.getElementById('wa_prev_hint');
+  if (endEl) { endEl.value=''; endEl.disabled=true; endEl.title = IS_AR?'يبقى السجل الجديد نشطاً':'New record stays active'; }
+  if (_waMode === 'old') {
+    if (prevEl) prevEl.disabled = false;   // will be pre-filled on employee select
+  } else {
+    if (prevEl) { prevEl.value=''; prevEl.disabled = true; }
+    if (hint) hint.textContent = IS_AR?'موظف جديد — لا يوجد سجل سابق':'New employee — no previous record';
+  }
 }
 
 /* ══ Open Edit ══ */
@@ -1080,12 +1160,6 @@ function openEditWA(id) {
     });
     document.getElementById('wa_joining').value=d.joining_date||'';
     document.getElementById('wa_end').value=d.end_date||'';
-    if(d.month){
-      const mn={Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
-      const p=d.month.split('/');
-      if(p.length===2&&mn[p[0]]) document.getElementById('wa_month_raw').value=`20${p[1]}-${mn[p[0]]}`;
-      document.getElementById('wa_month').value=d.month;
-    }
     document.getElementById('wa_status').value = d.status || 'active';
     const _sh = (d.shift_type === 'night') ? 'night' : 'day';   // rotating is gone
     document.getElementById('wa_shift').value = _sh;
@@ -1118,20 +1192,35 @@ function submitWA() {
   buyer.style.borderColor='';
   buyer.style.boxShadow='';
 
-  // Validate month
-  const monthRaw = document.getElementById('wa_month_raw');
-  if (!monthRaw.value) {
-    monthRaw.style.borderColor='#dc2626';
-    monthRaw.style.boxShadow='0 0 0 3px rgba(220,38,38,.1)';
-    document.getElementById('sec_work').classList.add('show');
-    monthRaw.scrollIntoView({behavior:'smooth', block:'center'});
-    monthRaw.focus();
-    return;
-  }
-  monthRaw.style.borderColor='';
-  monthRaw.style.boxShadow='';
+  const emps = Array.from(_selEmps.values());
+  const joinEl = document.getElementById('wa_joining');
 
-  syncMonth();
+  if (_waMode === 'old') {
+    // Old mode: exactly one employee, prev-end must be <= joining date.
+    if (emps.length !== 1) {
+      alert(IS_AR?'وضع الموظف القديم: اختر موظفاً واحداً فقط.':'Old Employee mode: pick exactly one employee.');
+      return;
+    }
+    const prevEnd = document.getElementById('wa_prev_end');
+    if (prevEnd && prevEnd.value && joinEl && joinEl.value && prevEnd.value > joinEl.value) {
+      prevEnd.style.borderColor='#dc2626';
+      prevEnd.scrollIntoView({behavior:'smooth', block:'center'});
+      alert(IS_AR
+        ? 'تاريخ انتهاء السجل السابق لا يمكن أن يكون بعد تاريخ الانضمام الجديد.'
+        : 'Previous record end date cannot be later than the new joining date.');
+      return;
+    }
+    if (prevEnd) prevEnd.style.borderColor='';
+  }
+
+  // Send the mode so the server enforces the same rules.
+  let modeInp = document.getElementById('wa_mode_input');
+  if (!modeInp) {
+    modeInp = document.createElement('input');
+    modeInp.type='hidden'; modeInp.name='wa_mode'; modeInp.id='wa_mode_input';
+    document.getElementById('waForm').appendChild(modeInp);
+  }
+  modeInp.value = _waMode;
 
   // Write employee IDs as hidden inputs
   document.getElementById('selectedEmpInputs').innerHTML='';
@@ -1163,7 +1252,6 @@ function openViewWA(id) {
       <div class="vw-sec"><i class="fas fa-tasks me-1"></i>${IS_AR?'تفاصيل التوزيع':'Allocation Details'}</div>
       <div class="vw-grid">
         <div class="vw-item"><div class="vw-label">${IS_AR?'الحالة':'Status'}</div><div class="vw-value">${statLabel}</div></div>
-        <div class="vw-item"><div class="vw-label">${IS_AR?'الشهر':'Month'}</div><div class="vw-value">${v(d.month)}</div></div>
         <div class="vw-item"><div class="vw-label">${IS_AR?'تاريخ الانضمام':'Joining Date'}</div><div class="vw-value">${v(d.joining_date)}</div></div>
         <div class="vw-item"><div class="vw-label">${IS_AR?'تاريخ الانتهاء':'End Date'}</div><div class="vw-value">${v(d.end_date)}</div></div>
         <div class="vw-item"><div class="vw-label">${IS_AR?'المشتري':'Buyer/HR'}</div><div class="vw-value">${v(d.buyer_name)}</div></div>
@@ -1205,7 +1293,6 @@ const mainCols=[
   {headerName:'#',field:'_idx',width:55,sortable:false,suppressMenu:true,floatingFilter:false,valueGetter:p=>p.node.rowIndex+1,cellStyle:{color:'#6b7280',fontSize:'12px'}},
   {headerName:IS_AR?'كود الموظف':'Emp Code',field:'employee_code',width:130,cellRenderer:rCode,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'الحالة':'Status',field:'status',width:100,cellRenderer:rStatus,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'الشهر':'Month',field:'month',width:90,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'الكفيل':'Kafeel',field:'kafeel_name',width:140,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'الاسم':'Name',field:'name',minWidth:200,valueGetter:p=>IS_AR&&p.data.name_ar?p.data.name_ar:p.data.name,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'الجنسية':'Nationality',field:'nationality',width:110,filter:'agTextColumnFilter'},

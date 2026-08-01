@@ -338,7 +338,7 @@ _BUNDLES = {}
 
 
 def register_bundle(key, parent_model, parent_unique, parent_columns,
-                    children, label=None):
+                    children, label=None, parent_coerce=None):
     """Register a parent-with-children bundle for multi-sheet import/export.
 
     key            : url id, e.g. 'seller-full'
@@ -360,7 +360,7 @@ def register_bundle(key, parent_model, parent_unique, parent_columns,
     _BUNDLES[key] = {
         'parent_model': parent_model, 'parent_unique': parent_unique,
         'parent_columns': parent_columns, 'children': children,
-        'label': label or key,
+        'label': label or key, 'parent_coerce': parent_coerce or {},
     }
 
 
@@ -423,6 +423,15 @@ def bundle_export(key):
     # ── Child sheets (always created) ──
     for child in spec['children']:
         cws = wb.create_sheet(title=child['sheet'][:31])
+        if child.get('standalone'):
+            # Not linked to the parent: export all rows of its own columns.
+            headers = [h for h, _ in child['columns']]
+            c_attrs = [a for _, a in child['columns']]
+            c_rows, c_err = safe_rows(child['model'], c_attrs)
+            values = [list(row) for row in c_rows]
+            write_sheet(cws, headers, values,
+                        note=(f'Could not read {child["sheet"]}: {c_err}' if c_err else None))
+            continue
         headers = [child['parent_ref']] + [h for h, _ in child['columns']]
         c_attrs = [child['fk']] + [a for _, a in child['columns']]
         c_rows, c_err = safe_rows(child['model'], c_attrs)
@@ -463,7 +472,10 @@ def bundle_template(key):
     build(ws, [h for h, _ in spec['parent_columns']])
     for child in spec['children']:
         cws = wb.create_sheet(title=child['sheet'][:31])
-        build(cws, [child['parent_ref']] + [h for h, _ in child['columns']])
+        if child.get('standalone'):
+            build(cws, [h for h, _ in child['columns']])
+        else:
+            build(cws, [child['parent_ref']] + [h for h, _ in child['columns']])
     out = _io.BytesIO(); wb.save(out); out.seek(0)
     return send_file(out, as_attachment=True, download_name=f'{key}_template.xlsx',
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -523,9 +535,16 @@ def bundle_import(key):
             result['parent_skipped'] += 1
             continue
         obj = pmodel()
+        pcoerce = spec.get('parent_coerce', {})
         for header, attr in pcols:
             if header in row:
-                setattr(obj, attr, (str(row[header]).strip() if row[header] is not None else None) or None)
+                fn = pcoerce.get(attr)
+                if fn:
+                    try: val = fn(row[header])
+                    except Exception: val = None
+                else:
+                    val = (str(row[header]).strip() if row[header] is not None else None) or None
+                setattr(obj, attr, val)
         db.session.add(obj)
         existing_parent.add(uval)
         result['parent_added'] += 1
@@ -545,6 +564,46 @@ def bundle_import(key):
             continue
         cmodel = child['model']
         coerce = child.get('coerce', {})
+
+        # Standalone sheet: independent master, not linked to the parent.
+        if child.get('standalone'):
+            uattr = child.get('unique')
+            existing = set()
+            if uattr and hasattr(cmodel, uattr):
+                existing = {getattr(r, uattr) for r in
+                            cmodel.query.with_entities(getattr(cmodel, uattr)).all()}
+            uheader = None
+            for h, a in child['columns']:
+                if a == uattr:
+                    uheader = h; break
+            for idx, row in enumerate(sheet_rows(wb[sheet]), 2):
+                if _is_note_row(row):
+                    continue
+                uval = str(row.get(uheader, '')).strip() if uheader else ''
+                if uattr and not uval:
+                    continue
+                if uattr and uval in existing:
+                    skipped += 1
+                    continue
+                obj = cmodel()
+                for header, attr in child['columns']:
+                    if header not in row:
+                        continue
+                    raw = row[header]
+                    fn = coerce.get(attr)
+                    if fn:
+                        try: val = fn(raw)
+                        except Exception: val = None
+                    else:
+                        val = (str(raw).strip() if raw is not None else None) or None
+                    setattr(obj, attr, val)
+                db.session.add(obj)
+                if uattr:
+                    existing.add(uval)
+                added += 1
+            result['children'][sheet] = {'added': added, 'skipped': skipped}
+            continue
+
         for idx, row in enumerate(sheet_rows(wb[sheet]), 2):
             if _is_note_row(row):
                 continue
@@ -571,6 +630,17 @@ def bundle_import(key):
                 else:
                     val = (str(raw).strip() if raw is not None else None) or None
                 setattr(obj, attr, val)
+            resolver = child.get('resolve')
+            if resolver:
+                try:
+                    ok = resolver(obj, row, pid)
+                    if ok is False:
+                        skipped += 1
+                        continue
+                except Exception as e:
+                    result['errors'].append(f"{sheet} row {idx}: {e}")
+                    skipped += 1
+                    continue
             db.session.add(obj)
             added += 1
         result['children'][sheet] = {'added': added, 'skipped': skipped}

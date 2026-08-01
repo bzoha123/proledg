@@ -216,17 +216,70 @@ def register_all():
         label='Vendors',
     )
 
-    # ── Employee + Banks ──
+    # ── Employee + Banks + Professions + Allowances + Allowance Types ──
+    from models import (EmployeeAllowance, EmployeeProfession, AllowanceType,
+                        ProfessionMaster)
+
+    def _resolve_profession(obj, row, pid):
+        """Find or create the ProfessionMaster and set profession_id."""
+        from models import db, ProfessionMaster
+        nm = (obj.profession_name or '').strip()
+        if not nm:
+            return False
+        pm = ProfessionMaster.query.filter_by(name_en=nm).first()
+        if not pm:
+            pm = ProfessionMaster(name_en=nm,
+                                  name_ar=(obj.profession_name_ar or None),
+                                  is_active=True)
+            db.session.add(pm); db.session.flush()
+        obj.profession_id = pm.id
+        return True
+
+    def _resolve_allowance(obj, row, pid):
+        """Find or create the AllowanceType by code and set allowance_type_id."""
+        from models import db, AllowanceType
+        code = (obj.allowance_code or '').strip()
+        if not code:
+            return True   # amount-only allowance is allowed
+        at = AllowanceType.query.filter_by(allowance_code=code).first()
+        if not at:
+            at = AllowanceType(allowance_code=code,
+                               allowance_name_en=(obj.name or code),
+                               allowance_name_ar=(obj.name_ar or None),
+                               is_active=True)
+            db.session.add(at); db.session.flush()
+        obj.allowance_type_id = at.id
+        return True
+
     register_bundle(
         'employee-full', Employee, 'employee_code',
         parent_columns=[('Code', 'employee_code'), ('Name', 'name'), ('Name (AR)', 'name_ar'),
                         ('Nationality', 'nationality'), ('Iqama Number', 'iqama_number'),
                         ('Mobile', 'mobile'), ('Email', 'email'), ('Active', 'is_active'),
-                        ('Account Code', 'levelfive_code')],
+                        ('Blood Group', 'blood_group'), ('Account Code', 'levelfive_code')],
+        parent_coerce={'is_active': _to_bool},
         children=[
             {'sheet': 'Banks', 'model': EmployeeBank, 'fk': 'employee_id',
              'parent_ref': 'Employee Code', 'columns': _bank_cols,
              'coerce': {'is_primary': _to_bool}},
+            {'sheet': 'Professions', 'model': EmployeeProfession, 'fk': 'employee_id',
+             'parent_ref': 'Employee Code',
+             'columns': [('Profession (EN)', 'profession_name'),
+                         ('Profession (AR)', 'profession_name_ar')],
+             'resolve': _resolve_profession},
+            {'sheet': 'Allowances', 'model': EmployeeAllowance, 'fk': 'employee_id',
+             'parent_ref': 'Employee Code',
+             'columns': [('Allowance Code', 'allowance_code'), ('Name', 'name'),
+                         ('Name (AR)', 'name_ar'), ('Amount', 'amount')],
+             'coerce': {'amount': _to_dec},
+             'resolve': _resolve_allowance},
+            {'sheet': 'Allowance Types', 'model': AllowanceType, 'standalone': True,
+             'unique': 'allowance_code',
+             'columns': [('Allowance Code', 'allowance_code'),
+                         ('Allowance Name (EN)', 'allowance_name_en'),
+                         ('Allowance Name (AR)', 'allowance_name_ar'),
+                         ('Active', 'is_active')],
+             'coerce': {'is_active': _to_bool}},
         ],
         label='Employees',
     )
