@@ -802,6 +802,37 @@ def item_json(id):
     item = ItemMaster.query.get_or_404(id)
     return jsonify(item.to_dict())
 
+def _sync_store_row(item, f):
+    """Create a store-table row for the item based on its selected store.
+    One row per (store, item); updates the existing row if present."""
+    from models import (FixedAssetStore, ConsumableStore, NonConsumableStore)
+    from datetime import date as _date
+    store = (item.store or '').strip()
+    store_map = {
+        'Fixed Asset Store': FixedAssetStore,
+        'Consumable Store': ConsumableStore,
+        'Non-Consumable Store': NonConsumableStore,
+        'Non Consumable Store': NonConsumableStore,   # tolerate both spellings
+    }
+    model = store_map.get(store)
+    if not model:
+        return
+    row = model.query.filter_by(item_id=item.id).first()
+    if not row:
+        row = model(item_id=item.id)
+        db.session.add(row)
+    row.item_name_eng = item.name_en
+    row.item_name_ar = item.name_ar
+    if not row.date:
+        row.date = _date.today()
+    try:
+        qv = f.get('store_quantity') or f.get('quantity')
+        if qv not in (None, ''):
+            row.quantity = Decimal(str(qv))
+    except Exception:
+        pass
+
+
 @pur_bp.route('/items/add', methods=['POST'])
 @login_required
 def item_add():
@@ -830,10 +861,14 @@ def item_add():
             levelfive_code       = (f.get('levelfive_code','') or '').strip() or None,
             levelfive_drawer_en  = (f.get('levelfive_drawer_en','') or '').strip() or None,
             levelfive_drawer_ar  = (f.get('levelfive_drawer_ar','') or '').strip() or None,
+            store                = (f.get('store','') or '').strip() or None,
             created_by=current_user.id,
         )
         db.session.add(item)
         db.session.flush()
+
+        # If a store is selected, create a matching store-table row.
+        _sync_store_row(item, f)
         
         # Handle UOMs if provided
         uom_ids = f.getlist('uom_ids[]')
@@ -882,8 +917,11 @@ def item_edit(id):
         item.levelfive_code      = (f.get('levelfive_code','') or '').strip() or None
         item.levelfive_drawer_en = (f.get('levelfive_drawer_en','') or '').strip() or None
         item.levelfive_drawer_ar = (f.get('levelfive_drawer_ar','') or '').strip() or None
+        item.store               = (f.get('store','') or '').strip() or None
         item.updated_at = datetime.utcnow()
-        
+        db.session.flush()
+        _sync_store_row(item, f)
+
         db.session.commit()
         return jsonify({'ok': True})
     except Exception as e:

@@ -154,7 +154,7 @@ textarea.f-inp{resize:vertical;min-height:80px;}
   <div class="modal-dialog modal-dialog-scrollable">
     <div class="modal-content">
       <div class="item-hdr">
-        <h5 id="itemModalTitle"><i class="fas fa-plus-circle me-2"></i>{% if ar %}إضافة بند{% else %}Add Line Item{% endif %}</h5>
+        <h5 id="itemModalTitle"><i class="fas fa-plus-circle me-2"></i>{% if ar %}بند البضاعة{% else %}Item Master{% endif %}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="item-body">
@@ -316,6 +316,15 @@ textarea.f-inp{resize:vertical;min-height:80px;}
                     {% for v in vendors %}
                     <option value="{{ v.id }}">{{ v.vendor_name_en }}</option>
                     {% endfor %}
+                  </select>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}المخزن{% else %}Store{% endif %}</div>
+                  <select id="i_store" class="f-inp">
+                    <option value="">{% if ar %}-- اختر المخزن --{% else %}-- Select Store --{% endif %}</option>
+                    <option value="Fixed Asset Store">{% if ar %}مخزن الأصول الثابتة{% else %}Fixed Asset Store{% endif %}</option>
+                    <option value="Consumable Store">{% if ar %}المخزن الاستهلاكي{% else %}Consumable Store{% endif %}</option>
+                    <option value="Non-Consumable Store">{% if ar %}المخزن غير الاستهلاكي{% else %}Non-Consumable Store{% endif %}</option>
                   </select>
                 </div>
               </div>
@@ -693,7 +702,7 @@ let _uomMasterList = [];
 /* ══ Open Add ══ */
 function openAddItem() {
   document.getElementById('item_id').value = '';
-  document.getElementById('itemModalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة بند' : 'Add Line Item');
+  document.getElementById('itemModalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'بند البضاعة' : 'Item Master');
   document.getElementById('itemForm').reset();
   document.getElementById('i_item_code').value = '';
   fetchItemCode();
@@ -733,6 +742,7 @@ async function fillEditForm(d) {
   if (d.category_id) await loadSubCats(d.sub_category_id);
   document.getElementById('i_sub_category').value = d.sub_category_id || '';
   document.getElementById('i_vendor').value        = d.vendor_id || '';
+  document.getElementById('i_store').value         = d.store || '';
   document.getElementById('i_is_active').value     = d.is_active ? '1' : '0';
   document.getElementById('i_main_rate').value          = (d.main_rate || 0).toFixed(2);
   document.getElementById('i_po_rate').value            = (d.po_rate || 0).toFixed(2);
@@ -818,6 +828,7 @@ async function saveItem() {
   fd.set('category_id',        document.getElementById('i_category').value);
   fd.set('sub_category_id',    document.getElementById('i_sub_category').value);
   fd.set('vendor_id',          document.getElementById('i_vendor').value);
+  fd.set('store',              document.getElementById('i_store').value);
   fd.set('is_active',          document.getElementById('i_is_active').value);
   fd.set('main_rate',          document.getElementById('i_main_rate').value);
   fd.set('po_rate',            document.getElementById('i_po_rate').value);

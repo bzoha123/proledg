@@ -1444,6 +1444,7 @@ class ItemMaster(db.Model):
     category_id        = db.Column(db.Integer, db.ForeignKey('item_categories.id'))
     sub_category_id    = db.Column(db.Integer, db.ForeignKey('item_sub_categories.id'))
     vendor_id          = db.Column(db.Integer, db.ForeignKey('vendors.id'))
+    store              = db.Column(db.String(40))   # Fixed Asset / Consumable / Non-Consumable Store
     main_rate          = db.Column(db.Numeric(14, 2), default=0)
     po_rate            = db.Column(db.Numeric(14, 2), default=0)
     last_purchase_rate = db.Column(db.Numeric(14, 2), default=0)
@@ -1490,8 +1491,51 @@ class ItemMaster(db.Model):
             'levelfive_code': self.levelfive_code or '',
             'levelfive_drawer_en': self.levelfive_drawer_en or '',
             'levelfive_drawer_ar': self.levelfive_drawer_ar or '',
+            'store': self.store or '',
             'uoms': [u.to_dict() for u in self.uoms] if self.uoms else [],
         }
+
+
+# ─────────────────────────────────────────────────────────────────
+# STORES — Fixed Asset / Consumable / Non-Consumable
+# One row per item placed into a store (via Item Master's Store field).
+# ─────────────────────────────────────────────────────────────────
+class _StoreMixin:
+    id            = db.Column(db.Integer, primary_key=True)
+    item_id       = db.Column(db.Integer, db.ForeignKey('item_master.id'))
+    item_name_eng = db.Column(db.String(250))
+    item_name_ar  = db.Column(db.String(250))
+    date          = db.Column(db.Date)
+    quantity      = db.Column(db.Numeric(14, 2), default=0)
+    consume       = db.Column(db.Numeric(14, 2), default=0)
+    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'item_id': self.item_id,
+            'item_name_eng': self.item_name_eng or '',
+            'item_name_ar': self.item_name_ar or '',
+            'date': self.date.strftime('%Y-%m-%d') if self.date else '',
+            'quantity': float(self.quantity or 0),
+            'consume': float(self.consume or 0),
+            'balance': float((self.quantity or 0) - (self.consume or 0)),
+        }
+
+
+class FixedAssetStore(_StoreMixin, db.Model):
+    __tablename__ = 'fixed_asset_store'
+    item = db.relationship('ItemMaster', foreign_keys='FixedAssetStore.item_id')
+
+
+class ConsumableStore(_StoreMixin, db.Model):
+    __tablename__ = 'consumable_store'
+    item = db.relationship('ItemMaster', foreign_keys='ConsumableStore.item_id')
+
+
+class NonConsumableStore(_StoreMixin, db.Model):
+    __tablename__ = 'non_consumable_store'
+    item = db.relationship('ItemMaster', foreign_keys='NonConsumableStore.item_id')
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -2980,7 +3024,6 @@ class SalaryConsolidation(db.Model):
             'salary_order': self.salary_order or '',
             'month_from': self.month_from.strftime('%Y-%m-%d') if self.month_from else '',
             'month_to': self.month_to.strftime('%Y-%m-%d') if self.month_to else '',
-            'month': self.month or '',
             'buyer_id': self.buyer_id,
             'department': self.department or '',
             'kafeel': self.kafeel or '',
@@ -3072,7 +3115,6 @@ class EmployeeWorkAllocation(db.Model):
     nationality       = db.Column(db.String(100))
     profession        = db.Column(db.String(150))
     iqama             = db.Column(db.String(50))
-    month             = db.Column(db.String(20))
     joining_date      = db.Column(db.Date)
     end_date          = db.Column(db.Date)
     buyer_id            = db.Column(db.Integer, db.ForeignKey('buyers.id'))
@@ -3099,7 +3141,6 @@ class EmployeeWorkAllocation(db.Model):
             'nationality': self.nationality or '',
             'profession': self.profession or '',
             'iqama': self.iqama or '',
-            'month': self.month or '',
             'joining_date': self.joining_date.strftime('%Y-%m-%d') if self.joining_date else '',
             'end_date': self.end_date.strftime('%Y-%m-%d') if self.end_date else '',
             'buyer_id': self.buyer_id,
@@ -3262,6 +3303,7 @@ def ensure_schema():
         ('item_master', 'levelfive_drawer_en', 'VARCHAR(250)'),
         ('item_master', 'levelfive_drawer_ar', 'VARCHAR(250)'),
         ('employees',   'blood_group',         'VARCHAR(10)'),
+        ('item_master', 'store',               'VARCHAR(40)'),
     ]
 
     for table, column, ddl in wanted:

@@ -109,6 +109,9 @@ def create_app(config_name='default'):
     app.register_blueprint(io_bp)
     register_all()
 
+    from database.routes.stores import stores_bp
+    app.register_blueprint(stores_bp)
+
     # Error handlers
     @app.errorhandler(404)
     def not_found(e):

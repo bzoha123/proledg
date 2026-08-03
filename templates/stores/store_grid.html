@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% set ar = current_locale == 'ar' %}
+{% block title %}{% if ar %}{{ title_ar }}{% else %}{{ title_en }}{% endif %}{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
+{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">{% if ar %}الرئيسية{% else %}Home{% endif %}</a></li>
+<li class="breadcrumb-item active">{% if ar %}{{ title_ar }}{% else %}{{ title_en }}{% endif %}</li>
+{% endblock %}
+{% block content %}
+<div style="padding:8px 4px 16px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <h2 style="font-size:18px;font-weight:800;color:#1e293b;margin:0;">
+      <i class="fas fa-store" style="color:#2563eb;margin-{% if ar %}left{% else %}right{% endif %}:8px;"></i>
+      {% if ar %}{{ title_ar }}{% else %}{{ title_en }}{% endif %}
+    </h2>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="storeSearch" placeholder="{% if ar %}بحث...{% else %}Search...{% endif %}"
+             oninput="applyQuick(this.value)"
+             style="border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;font-size:13px;min-width:200px;">
+      <button class="tool-btn tool-btn-blue" onclick="loadData()" title="{% if ar %}تحديث{% else %}Refresh{% endif %}"><i class="fas fa-sync-alt"></i></button>
+    </div>
+  </div>
+  <p style="font-size:12px;color:#94a3b8;margin:6px 0 0;">
+    {% if ar %}عرض فقط — تُضاف السجلات من حقل المخزن في بطاقة الصنف{% else %}View only — records are added from the Store field in Item Master{% endif %}
+  </p>
+</div>
+
+<div id="storeGrid" class="ag-theme-alpine" style="width:100%;height:calc(100vh - 220px);min-height:420px;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<script>
+const IS_AR = {{ 'true' if ar else 'false' }};
+const STORE_KEY = '{{ store_key }}';
+const DATA_URL = '/stores/{{ store_key }}/data';
+let gridApi = null;
+
+const columnDefs = [
+  {headerName:'#', valueGetter:p=>p.node.rowIndex+1, width:60, filter:false, sortable:false},
+  {headerName: IS_AR?'الصنف (إنجليزي)':'Item Name (EN)', field:'item_name_eng', flex:1, minWidth:180, filter:'agTextColumnFilter'},
+  {headerName: IS_AR?'الصنف (عربي)':'Item Name (AR)', field:'item_name_ar', flex:1, minWidth:160, cellStyle:{direction:'rtl'}, filter:'agTextColumnFilter'},
+  {headerName: IS_AR?'التاريخ':'Date', field:'date', width:130, filter:'agTextColumnFilter'},
+  {headerName: IS_AR?'الكمية':'Quantity', field:'quantity', width:120, type:'numericColumn', filter:'agNumberColumnFilter'},
+  {headerName: IS_AR?'المستهلك':'Consume', field:'consume', width:120, type:'numericColumn', filter:'agNumberColumnFilter'},
+  {headerName: IS_AR?'الرصيد':'Balance', field:'balance', width:120, type:'numericColumn',
+   cellStyle:p=> (p.value<0?{color:'#dc2626',fontWeight:'700'}:{color:'#16a34a',fontWeight:'600'})},
+];
+
+function loadData(){
+  fetch(DATA_URL).then(r=>r.json()).then(rows=>{
+    if(gridApi) gridApi.setGridOption('rowData', rows);
+  });
+}
+function applyQuick(v){ if(gridApi) gridApi.setGridOption('quickFilterText', v); }
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  gridApi = agGrid.createGrid(document.getElementById('storeGrid'), {
+    columnDefs,
+    rowData: [],
+    pagination: true,
+    paginationPageSize: 20,
+    enableRtl: IS_AR,
+    defaultColDef: {sortable:true, resizable:true, filter:true, floatingFilter:true},
+    localeText: (typeof AG_LOCALE!=='undefined') ? AG_LOCALE : undefined,
+    overlayNoRowsTemplate: '<span style="color:#94a3b8;">'+(IS_AR?'لا توجد سجلات':'No records')+'</span>',
+  });
+  loadData();
+});
+</script>
+{% endblock %}

@@ -151,6 +151,37 @@
                 </div>
             </li>
 
+            {# ══ STORE ═══════════════════════════════════════ #}
+            {% set store_active = request.endpoint and request.endpoint.startswith('stores.') %}
+            <li class="nav-item">
+                <a class="nav-link nav-parent {% if store_active %}has-active{% endif %}" data-bs-toggle="collapse" href="#menuStore" role="button" aria-expanded="{{ 'true' if store_active else 'false' }}" aria-controls="menuStore">
+                    <i class="fas fa-store"></i>
+                    <span>{% if current_locale=='ar' %}المخازن{% else %}Store{% endif %}</span>
+                </a>
+                <div class="collapse {% if store_active %}show{% endif %}" id="menuStore">
+                    <ul class="nav flex-column sub-menu">
+                        <li class="nav-item">
+                            <a href="{{ url_for('stores.store_page', key='fixed-asset') }}" class="nav-link {% if request.endpoint=='stores.store_page' and request.view_args and request.view_args.get('key')=='fixed-asset' %}active{% endif %}">
+                                <i class="fas fa-warehouse"></i>
+                                <span>{% if current_locale=='ar' %}مخزن الأصول الثابتة{% else %}Fixed Asset Store{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('stores.store_page', key='consumable') }}" class="nav-link {% if request.endpoint=='stores.store_page' and request.view_args and request.view_args.get('key')=='consumable' %}active{% endif %}">
+                                <i class="fas fa-box-open"></i>
+                                <span>{% if current_locale=='ar' %}المخزن الاستهلاكي{% else %}Consumable Store{% endif %}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('stores.store_page', key='non-consumable') }}" class="nav-link {% if request.endpoint=='stores.store_page' and request.view_args and request.view_args.get('key')=='non-consumable' %}active{% endif %}">
+                                <i class="fas fa-boxes"></i>
+                                <span>{% if current_locale=='ar' %}المخزن غير الاستهلاكي{% else %}Non-Consumable Store{% endif %}</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
             {# ══ PURCHASE ════════════════════════════════════ #}
             {% set purchase_active = request.endpoint and (('vendor' in request.endpoint) or ('pr_list' in request.endpoint) or ('pq_list' in request.endpoint) or ('po_list' in request.endpoint) or ('grn' in request.endpoint) or ('pinv' in request.endpoint) or ('grr' in request.endpoint) or ('pdm' in request.endpoint) or (request.endpoint == 'purchase_tax.purchase_tax_page')) %}
             <li class="nav-item">
