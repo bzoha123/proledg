@@ -375,6 +375,14 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             </button>
             <div class="pur-section-body open">
               <div class="f-item" style="margin-bottom:12px;max-width:260px;">
+                <div class="f-lbl">{% if ar %}نوع الشراء{% else %}Purchase Type{% endif %}</div>
+                <select id="pq_ptype" class="f-inp">
+                  <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
+                  <option value="Assets">{% if ar %}أصول{% else %}Assets{% endif %}</option>
+                  <option value="Expense">{% if ar %}مصروف{% else %}Expense{% endif %}</option>
+                </select>
+              </div>
+              <div class="f-item" style="margin-bottom:12px;max-width:260px;">
                 <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
                 <select id="pq_kind" class="f-inp">
                   <option value="Goods">Goods / بضائع</option>
@@ -990,6 +998,7 @@ async function openAddPQ() {
   document.getElementById('pqDateErr').style.display = 'none';
   document.getElementById('pq_status').value = 'Open';
   document.getElementById('pq_kind').value = 'Goods';
+  document.getElementById('pq_ptype').value = '';
   document.getElementById('pq_vendor').value = '';
   document.getElementById('pq_pr_id').value = '';
   
@@ -1041,6 +1050,7 @@ function openEditPQ(id) {
       document.getElementById('pqDocBadge').textContent = d.doc_no || '';
       document.getElementById('pq_status').value = d.status || 'Open';
       document.getElementById('pq_kind').value = d.kind || 'Goods';
+      document.getElementById('pq_ptype').value = d.purchase_type || '';
       document.getElementById('pq_vendor').value = d.vendor_id || '';
       document.getElementById('pq_pr_id').value = d.purchase_request_id || '';
       document.getElementById('pq_requester').value = d.requester || CURRENT_USERNAME;
@@ -1126,6 +1136,7 @@ async function savePQ() {
     fd.set('csrf_token', CSRF);
     fd.set('status',         document.getElementById('pq_status').value);
     fd.set('kind', document.getElementById('pq_kind').value);
+    fd.set('purchase_type',  document.getElementById('pq_ptype').value);
     fd.set('pr_id', document.getElementById('pq_pr_id')?.value || '');
     fd.set('vendor_id',      document.getElementById('pq_vendor').value);
     fd.set('vendor_ref_no',  document.getElementById('pq_vendor_ref').value);

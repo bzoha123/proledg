@@ -615,7 +615,6 @@ class VendorDocument(db.Model):
         return {
             'id': self.id,
             'vendor_id': self.vendor_id,
-            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'vendor_code': self.vendor.vendor_code if self.vendor else '',
             'document_type': self.document_type or '',
             'document_name': self.document_name or '',
@@ -679,10 +678,10 @@ class PurchaseRequest(db.Model):
     __tablename__ = 'purchase_requests'
     purchase_request_id   = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    purchase_type         = db.Column(db.String(20))   # Assets / Expense
     kind                  = db.Column(db.String(20), default='Goods')
     requester             = db.Column(db.String(150))
     requester_name        = db.Column(db.String(200))
-    vendor_id             = db.Column(db.Integer, db.ForeignKey('vendors.id'))
     status                = db.Column(db.String(20), default='Open')
     posting_date          = db.Column(db.Date)
     valid_until           = db.Column(db.Date)
@@ -699,16 +698,15 @@ class PurchaseRequest(db.Model):
     created_at            = db.Column(db.DateTime, default=datetime.utcnow)
     created_by            = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    vendor = db.relationship('VendorMaster', backref=db.backref('purchase_requests', lazy=True))
 
     def to_dict(self):
         return {
+            'purchase_type': self.purchase_type or '',
             'kind': self.kind or 'Goods',
             'id': self.purchase_request_id,
             'purchase_request_id': self.purchase_request_id,
             'doc_no': self.doc_no or '', 'requester': self.requester or '',
-            'requester_name': self.requester_name or '', 'vendor_id': self.vendor_id,
-            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
+            'requester_name': self.requester_name or '',
             'status': self.status,
             'posting_date':  str(self.posting_date)  if self.posting_date  else '',
             'valid_until':   str(self.valid_until)   if self.valid_until   else '',
@@ -775,6 +773,7 @@ class PurchaseQuotation(db.Model):
     __tablename__ = 'purchase_quotations'
     purchase_quotation_id = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    purchase_type         = db.Column(db.String(20))   # Assets / Expense
     kind                  = db.Column(db.String(20), default='Goods')
     purchase_request_id   = db.Column(db.Integer, db.ForeignKey('purchase_requests.purchase_request_id'))
     requester             = db.Column(db.String(150))
@@ -802,6 +801,7 @@ class PurchaseQuotation(db.Model):
 
     def to_dict(self):
         return {
+            'purchase_type': self.purchase_type or '',
             'kind': self.kind or 'Goods',
             'id': self.purchase_quotation_id,
             'purchase_quotation_id': self.purchase_quotation_id,
@@ -811,7 +811,6 @@ class PurchaseQuotation(db.Model):
             'requester': self.requester or '',
             'requester_name': self.requester_name or '',
             'vendor_id': self.vendor_id,
-            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'vendor_ref_no': self.vendor_ref_no or '',
             'status': self.status,
             'posting_date':  str(self.posting_date)  if self.posting_date  else '',
@@ -879,6 +878,7 @@ class PurchaseOrder(db.Model):
     __tablename__ = 'purchase_orders'
     purchase_order_id     = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    purchase_type         = db.Column(db.String(20))   # Assets / Expense
     kind                  = db.Column(db.String(20), default='Goods')
     purchase_quotation_id = db.Column(db.Integer, db.ForeignKey('purchase_quotations.purchase_quotation_id'))
     vendor_id             = db.Column(db.Integer, db.ForeignKey('vendors.id'))
@@ -902,6 +902,7 @@ class PurchaseOrder(db.Model):
 
     def to_dict(self):
         return {
+            'purchase_type': self.purchase_type or '',
             'kind': self.kind or 'Goods',
             'id': self.purchase_order_id,
             'purchase_order_id': self.purchase_order_id,
@@ -909,7 +910,6 @@ class PurchaseOrder(db.Model):
             'purchase_quotation_id': self.purchase_quotation_id,
             'pq_id': self.purchase_quotation_id,
             'vendor_id': self.vendor_id,
-            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'vendor_ref_no': self.vendor_ref_no or '',
             'remarks': self.remarks or '',
             'status': self.status,
@@ -977,6 +977,7 @@ class GoodsReceiptNote(db.Model):
     __tablename__ = 'goods_receipt_notes'
     goods_receipt_note_id = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    purchase_type         = db.Column(db.String(20))   # Assets / Expense
     kind                  = db.Column(db.String(20), default='Goods')
     purchase_order_id     = db.Column(db.Integer, db.ForeignKey('purchase_orders.purchase_order_id'))
     vendor_id             = db.Column(db.Integer, db.ForeignKey('vendors.id'))
@@ -1000,6 +1001,7 @@ class GoodsReceiptNote(db.Model):
 
     def to_dict(self):
         return {
+            'purchase_type': self.purchase_type or '',
             'kind': self.kind or 'Goods',
             'id': self.goods_receipt_note_id,
             'goods_receipt_note_id': self.goods_receipt_note_id,
@@ -1007,7 +1009,6 @@ class GoodsReceiptNote(db.Model):
             'purchase_order_id': self.purchase_order_id,
             'po_no': self.purchase_order.doc_no if self.purchase_order else '',
             'vendor_id': self.vendor_id,
-            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'vendor_ref_no': self.vendor_ref_no or '',
             'contact_person': self.contact_person or '', 'status': self.status,
             'posting_date':  str(self.posting_date)  if self.posting_date  else '',
@@ -1074,6 +1075,7 @@ class PurchaseInvoice(db.Model):
     __tablename__ = 'purchase_invoices'
     purchase_invoice_id   = db.Column(db.Integer, primary_key=True)
     doc_no                = db.Column(db.String(20), unique=True)
+    purchase_type         = db.Column(db.String(20))   # Assets / Expense
     kind                  = db.Column(db.String(20), default='Goods')
     payment_method        = db.Column(db.String(20), default='Credit')
     bank_account_id       = db.Column(db.Integer)
@@ -1100,6 +1102,7 @@ class PurchaseInvoice(db.Model):
 
     def to_dict(self):
         return {
+            'purchase_type': self.purchase_type or '',
             'kind': self.kind or 'Goods',
             'payment_method': self.payment_method or 'Credit',
             'bank_account_id': self.bank_account_id,
@@ -1111,7 +1114,6 @@ class PurchaseInvoice(db.Model):
             'goods_receipt_note_id': self.goods_receipt_note_id,
             'grn_no': self.goods_receipt_note.doc_no if self.goods_receipt_note else '',
             'vendor_id': self.vendor_id,
-            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'vendor_ref_no': self.vendor_ref_no or '', 'status': self.status,
             'posting_date':  str(self.posting_date)  if self.posting_date  else '',
             'delivery_date': str(self.delivery_date) if self.delivery_date else '',
@@ -1176,6 +1178,7 @@ class GoodsReturnRequest(db.Model):
     __tablename__ = 'goods_return_requests'
     goods_return_request_id = db.Column(db.Integer, primary_key=True)
     doc_no                  = db.Column(db.String(20), unique=True)
+    purchase_type         = db.Column(db.String(20))   # Assets / Expense
     kind                  = db.Column(db.String(20), default='Goods')
     purchase_invoice_id     = db.Column(db.Integer, db.ForeignKey('purchase_invoices.purchase_invoice_id'))
     vendor_id               = db.Column(db.Integer, db.ForeignKey('vendors.id'))
@@ -1199,6 +1202,7 @@ class GoodsReturnRequest(db.Model):
 
     def to_dict(self):
         return {
+            'purchase_type': self.purchase_type or '',
             'kind': self.kind or 'Goods',
             'id': self.goods_return_request_id,
             'goods_return_request_id': self.goods_return_request_id,
@@ -1206,7 +1210,6 @@ class GoodsReturnRequest(db.Model):
             'purchase_invoice_id': self.purchase_invoice_id,
             'pi_no': self.purchase_invoice.doc_no if self.purchase_invoice else '',
             'vendor_id': self.vendor_id,
-            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'vendor_ref_no': self.vendor_ref_no or '',
             'contact_person': self.contact_person or '', 'status': self.status,
             'posting_date':  str(self.posting_date)  if self.posting_date  else '',
@@ -1273,6 +1276,7 @@ class PurchaseDebitMemo(db.Model):
     __tablename__ = 'purchase_debit_memos'
     purchase_debit_memo_id  = db.Column(db.Integer, primary_key=True)
     doc_no                  = db.Column(db.String(20), unique=True)
+    purchase_type         = db.Column(db.String(20))   # Assets / Expense
     kind                  = db.Column(db.String(20), default='Goods')
     payment_method        = db.Column(db.String(20), default='Credit')
     bank_account_id       = db.Column(db.Integer)
@@ -1299,6 +1303,7 @@ class PurchaseDebitMemo(db.Model):
 
     def to_dict(self):
         return {
+            'purchase_type': self.purchase_type or '',
             'kind': self.kind or 'Goods',
             'payment_method': self.payment_method or 'Credit',
             'bank_account_id': self.bank_account_id,
@@ -1309,7 +1314,6 @@ class PurchaseDebitMemo(db.Model):
             'grr_no': self.goods_return_request.doc_no if self.goods_return_request else '',
             'purchase_invoice_id': self.purchase_invoice_id,
             'vendor_id': self.vendor_id,
-            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'vendor_ref_no': self.vendor_ref_no or '',
             'contact_person': self.contact_person or '', 'status': self.status,
             'posting_date':  str(self.posting_date)  if self.posting_date  else '',
@@ -1445,6 +1449,7 @@ class ItemMaster(db.Model):
     sub_category_id    = db.Column(db.Integer, db.ForeignKey('item_sub_categories.id'))
     vendor_id          = db.Column(db.Integer, db.ForeignKey('vendors.id'))
     store              = db.Column(db.String(40))   # Fixed Asset / Consumable / Non-Consumable Store
+    expense_type       = db.Column(db.String(20))   # Assets / Expense
     main_rate          = db.Column(db.Numeric(14, 2), default=0)
     po_rate            = db.Column(db.Numeric(14, 2), default=0)
     last_purchase_rate = db.Column(db.Numeric(14, 2), default=0)
@@ -1478,7 +1483,6 @@ class ItemMaster(db.Model):
             'sub_category_name': self.sub_category.name_en if self.sub_category else '',
             'tax_rate': 15,
             'vendor_id': self.vendor_id,
-            'vendor_name': self.vendor.vendor_name_en if self.vendor else '',
             'main_rate':          float(self.main_rate          or 0),
             'po_rate':            float(self.po_rate            or 0),
             'last_purchase_rate': float(self.last_purchase_rate or 0),
@@ -1492,6 +1496,7 @@ class ItemMaster(db.Model):
             'levelfive_drawer_en': self.levelfive_drawer_en or '',
             'levelfive_drawer_ar': self.levelfive_drawer_ar or '',
             'store': self.store or '',
+            'expense_type': self.expense_type or '',
             'uoms': [u.to_dict() for u in self.uoms] if self.uoms else [],
         }
 
@@ -3235,7 +3240,7 @@ class GRL(db.Model):
                                       db.ForeignKey('goods_receipt_notes.goods_receipt_note_id',
                                                     ondelete='CASCADE'))
     origion               = db.Column(db.String(40))    # origin doc no (e.g. GRN-2026-1)
-    refrence              = db.Column(db.String(200))   # reference text
+    grl_no                = db.Column(db.String(40))     # auto: GRL-<FY>-<n>
     posting_date          = db.Column(db.Date)
     due_date              = db.Column(db.Date)
     document_date         = db.Column(db.Date)
@@ -3251,7 +3256,7 @@ class GRL(db.Model):
             'id': self.id,
             'goods_receipt_note_id': self.goods_receipt_note_id,
             'origion': self.origion or '',
-            'refrence': self.refrence or '',
+            'grl_no': self.grl_no or '',
             'posting_date': self.posting_date.isoformat() if self.posting_date else '',
             'due_date': self.due_date.isoformat() if self.due_date else '',
             'document_date': self.document_date.isoformat() if self.document_date else '',
@@ -3267,6 +3272,7 @@ class GRLDetail(db.Model):
                                 db.ForeignKey('grl.id', ondelete='CASCADE'))
     code            = db.Column(db.String(40))
     account_name    = db.Column(db.String(250))
+    account_name_ar = db.Column(db.String(250))
     control_account = db.Column(db.String(40))
     debit           = db.Column(db.Numeric(14, 2), default=0)
     credit          = db.Column(db.Numeric(14, 2), default=0)
@@ -3278,6 +3284,7 @@ class GRLDetail(db.Model):
             'grl_id': self.grl_id,
             'code': self.code or '',
             'account_name': self.account_name or '',
+            'account_name_ar': self.account_name_ar or '',
             'control_account': self.control_account or '',
             'debit': float(self.debit) if self.debit is not None else 0,
             'credit': float(self.credit) if self.credit is not None else 0,
@@ -3304,6 +3311,16 @@ def ensure_schema():
         ('item_master', 'levelfive_drawer_ar', 'VARCHAR(250)'),
         ('employees',   'blood_group',         'VARCHAR(10)'),
         ('item_master', 'store',               'VARCHAR(40)'),
+        ('item_master', 'expense_type',        'VARCHAR(20)'),
+        ('purchase_requests',     'purchase_type', 'VARCHAR(20)'),
+        ('purchase_quotations',   'purchase_type', 'VARCHAR(20)'),
+        ('purchase_orders',       'purchase_type', 'VARCHAR(20)'),
+        ('goods_receipt_notes',   'purchase_type', 'VARCHAR(20)'),
+        ('purchase_invoices',     'purchase_type', 'VARCHAR(20)'),
+        ('goods_return_requests', 'purchase_type', 'VARCHAR(20)'),
+        ('purchase_debit_memos',  'purchase_type', 'VARCHAR(20)'),
+        ('grl',        'grl_no',               'VARCHAR(40)'),
+        ('grl_detail', 'account_name_ar',      'VARCHAR(250)'),
     ]
 
     for table, column, ddl in wanted:

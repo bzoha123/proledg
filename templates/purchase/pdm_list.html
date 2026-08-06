@@ -377,7 +377,15 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 
               {# ── Kind / Payment / Vendor Bank ── #}
               <div class="f-grid3" style="margin-bottom:14px;">
-                <div class="f-item">
+                                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}نوع الشراء{% else %}Purchase Type{% endif %}</div>
+                  <select id="pdm_ptype" class="f-inp">
+                    <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
+                    <option value="Assets">{% if ar %}أصول{% else %}Assets{% endif %}</option>
+                    <option value="Expense">{% if ar %}مصروف{% else %}Expense{% endif %}</option>
+                  </select>
+                </div>
+<div class="f-item">
                   <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
                   <select id="pdm_kind" class="f-inp">
                     <option value="Goods">Goods / بضائع</option>
@@ -950,6 +958,7 @@ async function openAddPDM() {
   document.getElementById('pdm_doc_date').value = today;
   document.getElementById('pdm_status').value = 'Open';
   document.getElementById('pdm_kind').value = 'Goods';
+  document.getElementById('pdm_ptype').value = '';
   document.getElementById('pdm_payment').value = 'Credit';
   loadPdmVendorBanks('');
   document.getElementById('pdm_vendor').value = '';
@@ -997,6 +1006,7 @@ function openEditPDM(id) {
     document.getElementById('pdmDocBadge').textContent = d.doc_no || '';
     document.getElementById('pdm_status').value = d.status || 'Open';
     document.getElementById('pdm_kind').value = d.kind || 'Goods';
+      document.getElementById('pdm_ptype').value = d.purchase_type || '';
     document.getElementById('pdm_payment').value = d.payment_method || 'Credit';
     document.getElementById('pdm_vendor').value = d.vendor_id || '';
     loadPdmVendorBanks(d.vendor_id || '', d.bank_account_id || '');
@@ -1072,6 +1082,7 @@ async function savePDM() {
   fd.set('csrf_token', CSRF);
   fd.set('status',        document.getElementById('pdm_status').value);
   fd.set('kind', document.getElementById('pdm_kind').value);
+    fd.set('purchase_type',  document.getElementById('pdm_ptype').value);
   fd.set('payment_method', document.getElementById('pdm_payment').value);
   fd.set('bank_account_id', document.getElementById('pdm_bank_account').value || '');
   fd.set('vendor_id',     document.getElementById('pdm_vendor').value);

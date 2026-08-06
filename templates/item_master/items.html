@@ -236,6 +236,27 @@ textarea.f-inp{resize:vertical;min-height:80px;}
                 </div>
               </div>
 
+              <!-- Store + Expense Type (after Print Name) -->
+              <div class="f-grid2">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}المخزن{% else %}Store{% endif %}</div>
+                  <select id="i_store" class="f-inp">
+                    <option value="">{% if ar %}-- اختر المخزن --{% else %}-- Select Store --{% endif %}</option>
+                    <option value="Fixed Asset Store">{% if ar %}مخزن الأصول الثابتة{% else %}Fixed Assets Store{% endif %}</option>
+                    <option value="Consumable Store">{% if ar %}المخزن الاستهلاكي{% else %}Consumable Store{% endif %}</option>
+                    <option value="Non-Consumable Store">{% if ar %}المخزن غير الاستهلاكي{% else %}Non-Consumable Store{% endif %}</option>
+                  </select>
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}نوع المصروف{% else %}Expense Type{% endif %}</div>
+                  <select id="i_expense_type" class="f-inp">
+                    <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
+                    <option value="Assets">{% if ar %}أصول{% else %}Assets{% endif %}</option>
+                    <option value="Expense">{% if ar %}مصروف{% else %}Expense{% endif %}</option>
+                  </select>
+                </div>
+              </div>
+
               <!-- UOM (multi) -->
               <div class="f-grid1">
                 <div class="f-item">
@@ -318,15 +339,7 @@ textarea.f-inp{resize:vertical;min-height:80px;}
                     {% endfor %}
                   </select>
                 </div>
-                <div class="f-item">
-                  <div class="f-lbl">{% if ar %}المخزن{% else %}Store{% endif %}</div>
-                  <select id="i_store" class="f-inp">
-                    <option value="">{% if ar %}-- اختر المخزن --{% else %}-- Select Store --{% endif %}</option>
-                    <option value="Fixed Asset Store">{% if ar %}مخزن الأصول الثابتة{% else %}Fixed Asset Store{% endif %}</option>
-                    <option value="Consumable Store">{% if ar %}المخزن الاستهلاكي{% else %}Consumable Store{% endif %}</option>
-                    <option value="Non-Consumable Store">{% if ar %}المخزن غير الاستهلاكي{% else %}Non-Consumable Store{% endif %}</option>
-                  </select>
-                </div>
+                <div class="f-item"></div>
               </div>
             </div>
           </div>
@@ -423,7 +436,8 @@ textarea.f-inp{resize:vertical;min-height:80px;}
           <div class="isec-hdr"><div class="isec-hdr-icon"><i class="fas fa-tags"></i></div><div class="isec-hdr-title">{% if ar %}التصنيف{% else %}Classification{% endif %}</div></div>
           <div class="isec-body">
             <div class="v-row"><div><div class="v-lbl">{% if ar %}الفئة{% else %}Category{% endif %}</div><div class="v-val" id="v_category"></div></div><div><div class="v-lbl">{% if ar %}الفئة الفرعية{% else %}Sub-Category{% endif %}</div><div class="v-val" id="v_sub_category"></div></div></div>
-            <div class="v-row"><div><div class="v-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div><div class="v-val" id="v_vendor"></div></div><div></div></div>
+            <div class="v-row"><div><div class="v-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div><div class="v-val" id="v_vendor"></div></div><div><div class="v-lbl">{% if ar %}المخزن{% else %}Store{% endif %}</div><div class="v-val" id="v_store"></div></div></div>
+            <div class="v-row"><div><div class="v-lbl">{% if ar %}نوع المصروف{% else %}Expense Type{% endif %}</div><div class="v-val" id="v_expense_type"></div></div><div></div></div>
             <div class="v-row"><div><div class="v-lbl">{% if ar %}حساب دليل الحسابات{% else %}Chart of Account{% endif %}</div><div class="v-val" id="v_levelfive"></div></div><div></div></div>
            
           </div>
@@ -743,6 +757,7 @@ async function fillEditForm(d) {
   document.getElementById('i_sub_category').value = d.sub_category_id || '';
   document.getElementById('i_vendor').value        = d.vendor_id || '';
   document.getElementById('i_store').value         = d.store || '';
+  document.getElementById('i_expense_type').value  = d.expense_type || '';
   document.getElementById('i_is_active').value     = d.is_active ? '1' : '0';
   document.getElementById('i_main_rate').value          = (d.main_rate || 0).toFixed(2);
   document.getElementById('i_po_rate').value            = (d.po_rate || 0).toFixed(2);
@@ -793,6 +808,8 @@ async function openViewItem(id) {
     document.getElementById('v_category').textContent     = d.category_name || '-';
     document.getElementById('v_sub_category').textContent = d.sub_category_name || '-';
     document.getElementById('v_vendor').textContent       = d.vendor_name || '-';
+    document.getElementById('v_store').textContent        = d.store || '-';
+    document.getElementById('v_expense_type').textContent = d.expense_type || '-';
     document.getElementById('v_levelfive').textContent    = d.levelfive_code ? (d.levelfive_code + (d.levelfive_drawer_en ? ' — ' + d.levelfive_drawer_en : '')) : '-';
     document.getElementById('v_is_active').textContent    = d.is_active ? (IS_AR ? 'نشط' : 'Active') : (IS_AR ? 'غير نشط' : 'Inactive');
     document.getElementById('v_main_rate').textContent          = (d.main_rate || 0).toFixed(2);
@@ -829,6 +846,7 @@ async function saveItem() {
   fd.set('sub_category_id',    document.getElementById('i_sub_category').value);
   fd.set('vendor_id',          document.getElementById('i_vendor').value);
   fd.set('store',              document.getElementById('i_store').value);
+  fd.set('expense_type',       document.getElementById('i_expense_type').value);
   fd.set('is_active',          document.getElementById('i_is_active').value);
   fd.set('main_rate',          document.getElementById('i_main_rate').value);
   fd.set('po_rate',            document.getElementById('i_po_rate').value);

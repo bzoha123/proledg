@@ -186,9 +186,6 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
         <button class="pur-tab active" onclick="switchTab('tab_content',this)">
           <i class="fas fa-file-alt me-1"></i>{% if ar %}سند الاستلام{% else %}GRN{% endif %}
         </button>
-        <button class="pur-tab" onclick="switchTab('tab_grl',this); _grlLoaded=false; grlEnsureLoaded();">
-          <i class="fas fa-book me-1"></i>GRL
-        </button>
         <button class="pur-tab" onclick="switchTab('tab_attach',this)">
           <i class="fas fa-paperclip me-1"></i>{% if ar %}المرفقات{% else %}Attachments{% endif %}
           <span id="attBadge" style="background:#eff6ff;color:#2563eb;padding:1px 7px;border-radius:8px;font-size:11px;font-weight:700;margin-left:4px;">0</span>
@@ -212,6 +209,14 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
               <i class="fas fa-chevron-up" style="color:#2563eb;font-size:11px;"></i>
             </button>
             <div class="pur-section-body open">
+              <div class="f-item" style="margin-bottom:12px;max-width:260px;">
+                <div class="f-lbl">{% if ar %}نوع الشراء{% else %}Purchase Type{% endif %}</div>
+                <select id="grn_ptype" class="f-inp">
+                  <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
+                  <option value="Assets">{% if ar %}أصول{% else %}Assets{% endif %}</option>
+                  <option value="Expense">{% if ar %}مصروف{% else %}Expense{% endif %}</option>
+                </select>
+              </div>
               <div class="f-item" style="margin-bottom:12px;max-width:260px;">
                 <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
                 <select id="grn_kind" class="f-inp">
@@ -381,62 +386,65 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             </div>
           </div>
 
-        </div>{# end tab_content #}
-
-        {# ══ TAB 2: GRL (Goods Receipt Ledger) ══ #}
-        <div class="pur-tab-pane" id="tab_grl">
-          <div style="padding:16px 18px;">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px;">
-              <div>
-                <label class="grl-lbl">{% if ar %}المصدر / Origion{% else %}Origion{% endif %}</label>
-                <input type="text" id="grl_origion" class="grl-inp" dir="ltr" readonly style="background:#f8fafc;">
-              </div>
-              <div>
-                <label class="grl-lbl">{% if ar %}المرجع / Reference{% else %}Reference{% endif %}</label>
-                <input type="text" id="grl_refrence" class="grl-inp" dir="ltr" readonly style="background:#f8fafc;">
-              </div>
+          {# ── Section 4: General Receipt Ledger (GRL) ── #}
+          <div class="pur-section" style="margin:14px 18px 18px;">
+            <div class="pur-section-hd" style="background:#1e3a5f;color:#fff;padding:10px 14px;border-radius:8px 8px 0 0;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:space-between;">
+              <span><i class="fas fa-book me-1"></i>{% if ar %}دفتر الاستلام العام (GRL){% else %}General Receipt Ledger (GRL){% endif %}</span>
+              <button type="button" onclick="grlPost()" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:6px 16px;font-size:12px;font-weight:700;cursor:pointer;">
+                <i class="fas fa-check me-1"></i>{% if ar %}ترحيل{% else %}Post{% endif %}
+              </button>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:12px;">
-              <div>
-                <label class="grl-lbl">{% if ar %}تاريخ الترحيل / Posting Date{% else %}Posting Date{% endif %}</label>
-                <input type="date" id="grl_posting_date" class="grl-inp" dir="ltr" readonly style="background:#f8fafc;">
+            <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:14px;background:#fff;">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+                <div>
+                  <label class="grl-lbl">{% if ar %}رقم GRL{% else %}GRL No{% endif %}</label>
+                  <input type="text" id="grl_no" class="grl-inp" readonly style="background:#f0fdf4;color:#15803d;font-weight:700;" placeholder="{% if ar %}يُنشأ تلقائياً{% else %}Auto-generated{% endif %}">
+                </div>
+                <div>
+                  <label class="grl-lbl">{% if ar %}المصدر / Origin{% else %}Origin{% endif %}</label>
+                  <input type="text" id="grl_origion" class="grl-inp" readonly style="background:#f8fafc;">
+                </div>
+                <div>
+                  <label class="grl-lbl">{% if ar %}تاريخ الترحيل{% else %}Posting Date{% endif %}</label>
+                  <input type="date" id="grl_posting_date" class="grl-inp" readonly style="background:#f8fafc;">
+                </div>
+                <div>
+                  <label class="grl-lbl">{% if ar %}تاريخ الاستحقاق{% else %}Due Date{% endif %}</label>
+                  <input type="date" id="grl_due_date" class="grl-inp" readonly style="background:#f8fafc;">
+                </div>
+                <div>
+                  <label class="grl-lbl">{% if ar %}تاريخ المستند{% else %}Document Date{% endif %}</label>
+                  <input type="date" id="grl_document_date" class="grl-inp" readonly style="background:#f8fafc;">
+                </div>
+                <div>
+                  <label class="grl-lbl">{% if ar %}البيان{% else %}Narration{% endif %}</label>
+                  <input type="text" id="grl_narration" name="grl_narration" class="grl-inp" placeholder="{% if ar %}بيان اختياري{% else %}Optional narration{% endif %}">
+                </div>
               </div>
-              <div>
-                <label class="grl-lbl">{% if ar %}تاريخ الاستحقاق / Due Date{% else %}Due Date{% endif %}</label>
-                <input type="date" id="grl_due_date" class="grl-inp" dir="ltr" readonly style="background:#f8fafc;">
+              <div style="overflow-x:auto;">
+                <table class="grl-table">
+                  <thead>
+                    <tr>
+                      <th>{% if ar %}الرمز{% else %}Code{% endif %}</th>
+                      <th>{% if ar %}اسم الحساب (EN){% else %}Account Name (EN){% endif %}</th>
+                      <th>{% if ar %}اسم الحساب (AR){% else %}Account Name (AR){% endif %}</th>
+                      <th style="text-align:right;">{% if ar %}مدين{% else %}Debit{% endif %}</th>
+                      <th style="text-align:right;">{% if ar %}دائن{% else %}Credit{% endif %}</th>
+                      <th>{% if ar %}بيان التفصيل{% else %}Narration Detail{% endif %}</th>
+                    </tr>
+                  </thead>
+                  <tbody id="grlDetailBody">
+                    <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:14px;">{% if ar %}تُنشأ السطور تلقائياً من بنود الاستلام عند الحفظ{% else %}Rows are generated automatically from the receipt line items on save{% endif %}</td></tr>
+                  </tbody>
+                </table>
               </div>
-              <div>
-                <label class="grl-lbl">{% if ar %}تاريخ المستند / Document Date{% else %}Document Date{% endif %}</label>
-                <input type="date" id="grl_document_date" class="grl-inp" dir="ltr" readonly style="background:#f8fafc;">
-              </div>
-            </div>
-            <div style="margin-bottom:6px;">
-              <label class="grl-lbl">{% if ar %}البيان / Narration{% else %}Narration{% endif %}</label>
-              <input type="text" id="grl_narration" class="grl-inp" dir="ltr" oninput="grlApplyNarration()" placeholder="{% if ar %}يُطبّق على جميع البنود{% else %}Applied to all lines{% endif %}">
-            </div>
-            <div id="grlDateErr" style="display:none;color:#dc2626;font-size:12px;font-weight:600;margin-bottom:8px;"></div>
-
-            <div style="overflow-x:auto;margin-top:10px;">
-              <table class="grl-table">
-                <thead><tr>
-                  <th style="min-width:130px;">{% if ar %}الكود{% else %}Code{% endif %}</th>
-                  <th style="min-width:180px;">{% if ar %}اسم الحساب{% else %}Account Name{% endif %}</th>
-                  <th style="min-width:150px;">{% if ar %}حساب التحكم{% else %}Control Account{% endif %}</th>
-                  <th style="min-width:110px;">{% if ar %}مدين{% else %}Debit{% endif %}</th>
-                  <th style="min-width:110px;">{% if ar %}دائن{% else %}Credit{% endif %}</th>
-                  <th style="min-width:150px;">{% if ar %}البيان{% else %}Narration{% endif %}</th>
-                </tr></thead>
-                <tbody id="grlBody"></tbody>
-                <tfoot><tr style="background:#f1f5f9;font-weight:700;">
-                  <td colspan="3" style="text-align:right;padding:6px 8px;">{% if ar %}الإجمالي{% else %}Total{% endif %}</td>
-                  <td style="padding:6px 8px;"><span id="grlTotDebit">0.00</span></td>
-                  <td style="padding:6px 8px;"><span id="grlTotCredit">0.00</span></td>
-                  <td></td>
-                </tr></tfoot>
-              </table>
+              <p style="font-size:11px;color:#94a3b8;margin:8px 0 0;">
+                {% if ar %}اضغط ترحيل لإنشاء سطور المدين والدائن من بنود الاستلام. الدائن قابل للتعديل.{% else %}Click Post to build the debit and credit rows from the receipt line items. Credit is editable.{% endif %}
+              </p>
             </div>
           </div>
-        </div>{# end tab_grl #}
+
+        </div>{# end tab_content #}
 
         {# ══ TAB 3: ATTACHMENTS ══ #}
         <div class="pur-tab-pane" id="tab_attach">
@@ -704,6 +712,7 @@ async function openAddGRN() {
   _liIdx = 0; _attachments = [];
   document.getElementById('grn_id').value = '';
   if(typeof grlReset==='function') grlReset();
+  if(typeof grlSyncMaster==='function') grlSyncMaster();
   document.getElementById('grnTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>' + (IS_AR ? 'إضافة إيصال استلام بضاعة' : 'Add Goods Receipt Note');
   
   ['grn_contact','grn_vendor_ref','grn_remarks','grn_vendor_name'].forEach(id => {
@@ -718,6 +727,7 @@ async function openAddGRN() {
   
   document.getElementById('grn_status').value = 'Open';
   document.getElementById('grn_kind').value = 'Goods';
+  document.getElementById('grn_ptype').value = '';
   document.getElementById('grn_vendor').value = '';
   document.getElementById('grn_po_id').value = '';
   document.getElementById('grn_doc_no').value = '';
@@ -763,12 +773,13 @@ function openEditGRN(id) {
     .then(d => {
       _liIdx = 0; _attachments = [];
       document.getElementById('grn_id').value = id;
-      _grlLoaded = false;   // GRL will reload for this GRN when its tab is opened
+      grlLoad(id);   // load the saved GRL for this GRN into the section
       document.getElementById('grnTitle').innerHTML = '<i class="fas fa-edit me-2"></i>' + (IS_AR ? 'تعديل إيصال الاستلام' : 'Edit Goods Receipt Note');
       document.getElementById('grn_doc_no').value = d.doc_no || '';
       document.getElementById('grnDocBadge').textContent = d.doc_no || '';
       document.getElementById('grn_status').value = d.status || 'Open';
       document.getElementById('grn_kind').value = d.kind || 'Goods';
+      document.getElementById('grn_ptype').value = d.purchase_type || '';
       document.getElementById('grn_vendor').value = d.vendor_id || '';
       document.getElementById('grn_vendor_name').value = d.vendor_name || '';
       document.getElementById('grn_contact').value = d.contact_person || '';
@@ -847,6 +858,7 @@ async function saveGRN() {
   fd.set('csrf_token', CSRF);
   fd.set('status', document.getElementById('grn_status').value);
   fd.set('kind', document.getElementById('grn_kind').value);
+    fd.set('purchase_type',  document.getElementById('grn_ptype').value);
   fd.set('vendor_id', document.getElementById('grn_vendor').value);
   fd.set('po_id', document.getElementById('grn_po_id')?.value || '');
   fd.set('contact_person', document.getElementById('grn_contact')?.value || '');
@@ -1156,91 +1168,111 @@ function delExistAtt(attId, btn){
 /* ══════════════════════════════════════════════════════════════
    GRL (Goods Receipt Ledger) tab
    ══════════════════════════════════════════════════════════════ */
-let _grlLoaded = false;
+/* ══ GRL section (auto-generated preview) ══ */
 const _grlToday = () => new Date().toISOString().split('T')[0];
 
 function grlReset(){
-  _grlLoaded = false;
-  ['grl_refrence','grl_narration','grl_posting_date','grl_due_date','grl_document_date'].forEach(id=>{
+  ['grl_no','grl_origion','grl_posting_date','grl_due_date','grl_document_date','grl_narration'].forEach(id=>{
     const e=document.getElementById(id); if(e) e.value='';
   });
-  document.getElementById('grlBody').innerHTML = '';
-  const o=document.getElementById('grl_origion'); if(o) o.value = document.getElementById('grnDocBadge').textContent || '';
-  const de=document.getElementById('grlDateErr'); if(de) de.style.display='none';
-  grlRecalc();
+  const body=document.getElementById('grlDetailBody');
+  if(body) body.innerHTML='<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:14px;">'+
+    (IS_AR?'تُنشأ السطور تلقائياً عند الحفظ':'Rows are generated automatically on save')+'</td></tr>';
 }
 
-function grlEnsureLoaded(){
-  const grnId = document.getElementById('grn_id').value;
-  if(!grnId){
-    document.getElementById('grlBody').innerHTML =
-      '<tr><td colspan="6" style="padding:14px;text-align:center;color:#9ca3af;">'+
-      (IS_AR?'احفظ سند الاستلام أولاً لعرض GRL':'Save the GRN first to view GRL')+'</td></tr>';
+/* Fill the read-only master fields from the current GRN form values. */
+function grlSyncMaster(){
+  const g=id=>document.getElementById(id);
+  const origin = g('grn_doc_no')?.value || g('grnDocBadge')?.textContent || '';
+  if(g('grl_origion')) g('grl_origion').value = origin;
+  if(g('grl_posting_date')) g('grl_posting_date').value = _grlToday();
+  if(g('grl_due_date')) g('grl_due_date').value = g('grn_delivery_date')?.value || '';
+  if(g('grl_document_date')) g('grl_document_date').value = _grlToday();
+}
+
+/* Render GRL detail: TWO rows per line item (debit row + credit row).
+   Credit is an editable input on the credit row. */
+function grlRenderRows(lines){
+  const body=document.getElementById('grlDetailBody');
+  if(!body) return;
+  const esc=s=>String(s==null?'':s).replace(/</g,'&lt;');
+  if(!lines || !lines.length){
+    body.innerHTML='<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:14px;">'+
+      (IS_AR?'لا توجد بنود':'No line items')+'</td></tr>';
     return;
   }
-  if(_grlLoaded) return;
-  // Header mirrors the GRN tab's current values; lines come from the GRN + Item Master.
-  const grnDoc = document.getElementById('grn_doc_no')?.value || document.getElementById('grnDocBadge').textContent || '';
-  const grnPost = document.getElementById('grn_posting_date')?.value || '';
-  const grnDeliv = document.getElementById('grn_delivery_date')?.value || '';
-  const grnDocDate = document.getElementById('grn_doc_date')?.value || '';
+  let html='';
+  lines.forEach((r,i)=>{
+    const debit  = Number(r.debit||0);
+    const credit = Number(r.credit||0);
+    // Debit row — account from item master, Debit = line total, Credit 0
+    html+='<tr data-grl-idx="'+i+'" data-grl-side="debit">'+
+      '<td>'+esc(r.code)+'</td>'+
+      '<td>'+esc(r.account_name)+'</td>'+
+      '<td style="direction:rtl;">'+esc(r.account_name_ar)+'</td>'+
+      '<td style="text-align:right;">'+debit.toFixed(2)+'</td>'+
+      '<td style="text-align:right;color:#94a3b8;">0.00</td>'+
+      '<td><input type="text" class="grl-dnarr" data-idx="'+i+'" data-side="debit" style="width:100%;border:1px solid #e2e8f0;border-radius:5px;padding:5px 7px;font-size:12px;" placeholder="'+(IS_AR?'بيان':'Narration')+'"></td>'+
+      '</tr>';
+    // Credit row — offsetting entry, Debit 0, Credit editable
+    html+='<tr data-grl-idx="'+i+'" data-grl-side="credit" style="background:#fafbff;">'+
+      '<td>'+esc(r.code)+'</td>'+
+      '<td>'+esc(r.account_name)+'</td>'+
+      '<td style="direction:rtl;">'+esc(r.account_name_ar)+'</td>'+
+      '<td style="text-align:right;color:#94a3b8;">0.00</td>'+
+      '<td style="text-align:right;"><input type="number" step="0.01" class="grl-credit" data-idx="'+i+'" value="'+(credit?credit.toFixed(2):(debit?debit.toFixed(2):'0.00'))+'" style="width:100px;border:1px solid #cbd5e1;border-radius:5px;padding:5px 7px;font-size:12px;text-align:right;"></td>'+
+      '<td><input type="text" class="grl-dnarr" data-idx="'+i+'" data-side="credit" style="width:100%;border:1px solid #e2e8f0;border-radius:5px;padding:5px 7px;font-size:12px;" placeholder="'+(IS_AR?'بيان':'Narration')+'"></td>'+
+      '</tr>';
+  });
+  body.innerHTML=html;
+}
+
+/* Post: build the debit/credit rows from the current GRN's line items. */
+function grlPost(){
+  const grnId=document.getElementById('grn_id').value;
+  if(!grnId){
+    alert(IS_AR?'احفظ سند الاستلام أولاً':'Save the Goods Receipt Note first');
+    return;
+  }
   fetch('/purchase/grn/'+grnId+'/grl-build').then(r=>r.json()).then(d=>{
-    if(!d.ok){ return; }
-    // Prefer the live GRN form values; fall back to the saved values from the server.
-    document.getElementById('grl_origion').value = grnDoc || d.origion || '';
-    document.getElementById('grl_refrence').value = d.refrence || 'Good Receipt Note';
-    document.getElementById('grl_posting_date').value = grnPost || d.posting_date || '';
-    document.getElementById('grl_due_date').value = grnDeliv || d.due_date || '';
-    document.getElementById('grl_document_date').value = grnDocDate || d.document_date || '';
-    document.getElementById('grlBody').innerHTML='';
-    (d.lines||[]).forEach(row=>grlAddRow(row));
-    if(!(d.lines||[]).length){
-      document.getElementById('grlBody').innerHTML =
-        '<tr><td colspan="6" style="padding:14px;text-align:center;color:#9ca3af;">'+
-        (IS_AR?'لا توجد بنود في سند الاستلام':'No line items in this GRN')+'</td></tr>';
+    if(!d.ok){ alert(IS_AR?'تعذر البناء':'Could not build GRL'); return; }
+    grlRenderRows(d.lines||[]);
+  }).catch(e=>{ console.error('GRL post failed:', e); });
+}
+
+/* Load the saved GRL master (+ detail if already posted) for an existing GRN. */
+function grlLoad(grnId){
+  if(!grnId){ grlReset(); grlSyncMaster(); return; }
+  fetch('/purchase/grn/'+grnId+'/grl').then(r=>r.json()).then(d=>{
+    if(!d.ok || !d.grl){ grlReset(); grlSyncMaster(); return; }
+    const m=d.grl, g=id=>document.getElementById(id);
+    if(g('grl_no')) g('grl_no').value = m.grl_no || '';
+    if(g('grl_origion')) g('grl_origion').value = m.origion || '';
+    if(g('grl_posting_date')) g('grl_posting_date').value = m.posting_date || '';
+    if(g('grl_due_date')) g('grl_due_date').value = m.due_date || '';
+    if(g('grl_document_date')) g('grl_document_date').value = m.document_date || '';
+    if(g('grl_narration')) g('grl_narration').value = m.narration || '';
+    // details render only if already posted; otherwise show the hint
+    const rows=m.details||[];
+    if(rows.length){
+      // group is unknown here; render saved rows as-is (one per stored record)
+      const body=g('grlDetailBody'); const esc=s=>String(s==null?'':s).replace(/</g,'&lt;');
+      body.innerHTML = rows.map(r=>
+        '<tr>'+
+        '<td>'+esc(r.code)+'</td>'+
+        '<td>'+esc(r.account_name)+'</td>'+
+        '<td style="direction:rtl;">'+esc(r.account_name_ar)+'</td>'+
+        '<td style="text-align:right;">'+(r.debit?Number(r.debit).toFixed(2):'0.00')+'</td>'+
+        '<td style="text-align:right;">'+(r.credit?Number(r.credit).toFixed(2):'0.00')+'</td>'+
+        '<td>'+esc(r.narration)+'</td>'+
+        '</tr>').join('');
+    } else {
+      grlReset(); grlSyncMaster();
+      // restore master fields that grlReset cleared
+      if(g('grl_no')) g('grl_no').value = m.grl_no || '';
+      if(g('grl_narration')) g('grl_narration').value = m.narration || '';
     }
-    _grlLoaded = true;
-    grlApplyNarration();
-    grlRecalc();
   }).catch(e=>console.error('GRL load failed:', e));
-}
-
-/* One narration applied to every line (shown in each row's Narration cell). */
-function grlApplyNarration(){
-  const val = document.getElementById('grl_narration').value || '';
-  document.querySelectorAll('#grlBody tr').forEach(tr=>{
-    const cells = tr.querySelectorAll('td');
-    if(cells.length >= 6) cells[5].textContent = val;
-  });
-}
-
-function grlAddRow(data){
-  data = data || {};
-  const tb = document.getElementById('grlBody');
-  if(tb.querySelector('td[colspan]')) tb.innerHTML='';
-  const tr = document.createElement('tr');
-  const esc = s => String(s==null?'':s).replace(/</g,'&lt;');
-  tr.innerHTML =
-    '<td>'+esc(data.code)+'</td>'+
-    '<td>'+esc(data.account_name)+'</td>'+
-    '<td>'+esc(data.control_account)+'</td>'+
-    '<td style="text-align:right;">'+(data.debit?Number(data.debit).toFixed(2):'')+'</td>'+
-    '<td style="text-align:right;">'+(data.credit?Number(data.credit).toFixed(2):'')+'</td>'+
-    '<td>'+esc(data.narration)+'</td>';
-  tb.appendChild(tr);
-}
-
-function grlRecalc(){
-  let td=0, tc=0;
-  document.querySelectorAll('#grlBody tr').forEach(tr=>{
-    const cells=tr.querySelectorAll('td');
-    if(cells.length>=5){
-      td += parseFloat(cells[3].textContent)||0;
-      tc += parseFloat(cells[4].textContent)||0;
-    }
-  });
-  document.getElementById('grlTotDebit').textContent = td.toFixed(2);
-  document.getElementById('grlTotCredit').textContent = tc.toFixed(2);
 }
 </script>
 {% endblock %}

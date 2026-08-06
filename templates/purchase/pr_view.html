@@ -56,7 +56,6 @@
       <h3><i class="fas fa-file-alt me-2"></i>{{ pr.doc_no }}</h3>
       <div>
         <span class="pur-vbadge {{ pr.status }}">{{ pr.status }}</span>
-        {% if pr.vendor %}<span class="pur-vbadge"><i class="fas fa-store" style="font-size:9px;"></i>{{ pr.vendor.vendor_name_en }}</span>{% endif %}
       </div>
     </div>
     <div style="text-align:right;">
@@ -83,7 +82,6 @@
           <div class="d-row"><div class="d-lbl">{% if ar %}التاريخ المطلوب{% else %}Required Date{% endif %}</div><div class="d-val">{{ pr.required_date.strftime('%d %b %Y') if pr.required_date else '—' }}</div></div>
         </div>
         <div>
-          <div class="d-row"><div class="d-lbl">{% if ar %}المورد{% else %}Vendor{% endif %}</div><div class="d-val">{{ pr.vendor.vendor_name_en if pr.vendor else '—' }}</div></div>
           <div class="d-row"><div class="d-lbl">{% if ar %}الحالة{% else %}Status{% endif %}</div><div class="d-val">{{ pr.status }}</div></div>
           <div class="d-row"><div class="d-lbl">{% if ar %}ملاحظات{% else %}Remarks{% endif %}</div><div class="d-val">{{ pr.remarks or '—' }}</div></div>
         </div>
@@ -191,4 +189,4 @@ function delAttachment(attId, name){
   .catch(() => alert(IS_AR_ATT ? 'خطأ في الشبكة' : 'Network error'));
 }
 </script>
-{% endblock %}
+{% endblock %} 

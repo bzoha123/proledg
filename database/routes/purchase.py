@@ -862,6 +862,7 @@ def item_add():
             levelfive_drawer_en  = (f.get('levelfive_drawer_en','') or '').strip() or None,
             levelfive_drawer_ar  = (f.get('levelfive_drawer_ar','') or '').strip() or None,
             store                = (f.get('store','') or '').strip() or None,
+            expense_type         = (f.get('expense_type','') or '').strip() or None,
             created_by=current_user.id,
         )
         db.session.add(item)
@@ -918,6 +919,7 @@ def item_edit(id):
         item.levelfive_drawer_en = (f.get('levelfive_drawer_en','') or '').strip() or None
         item.levelfive_drawer_ar = (f.get('levelfive_drawer_ar','') or '').strip() or None
         item.store               = (f.get('store','') or '').strip() or None
+        item.expense_type        = (f.get('expense_type','') or '').strip() or None
         item.updated_at = datetime.utcnow()
         db.session.flush()
         _sync_store_row(item, f)
@@ -1092,9 +1094,9 @@ def pr_add():
         doc_no=_next_doc_no('PR', PurchaseRequest),
         requester=current_user.username,
         requester_name=current_user.username,
-        vendor_id=int(f.get('vendor_id')) if f.get('vendor_id') else None,
         status=f.get('status','Open'),
         kind=f.get('kind','Goods'),
+        purchase_type=f.get('purchase_type') or None,
         posting_date=posting_date,
         valid_until=valid_until,
         document_date=date.today(),
@@ -1127,11 +1129,11 @@ def pr_edit(id):
     for fld in ['status','remarks','approved_by']:
         setattr(pr, fld, f.get(fld,'').strip())
     pr.kind = f.get('kind','Goods')
+    pr.purchase_type = f.get('purchase_type') or None
     if not pr.requester:
         pr.requester = current_user.username
     if not pr.requester_name:
         pr.requester_name = current_user.username
-    pr.vendor_id = int(f.get('vendor_id')) if f.get('vendor_id') else None
     pr.posting_date  = posting_date
     pr.valid_until    = valid_until
     pr.document_date  = date.today()
@@ -1220,6 +1222,7 @@ def pq_add():
         vendor_ref_no=f.get('vendor_ref_no','').strip(),
         status=f.get('status','Open'),
         kind=f.get('kind','Goods'),
+        purchase_type=f.get('purchase_type') or None,
         posting_date=posting_date,
         valid_until=valid_until,
         document_date=date.today(),
@@ -1263,6 +1266,7 @@ def pq_edit(id):
     for fld in ['status','remarks','approved_by']:
         setattr(pq, fld, f.get(fld,'').strip())
     pq.kind = f.get('kind','Goods')
+    pq.purchase_type = f.get('purchase_type') or None
     if not pq.requester:
         pq.requester = current_user.username
     if not pq.requester_name:
@@ -1368,6 +1372,7 @@ def po_add():
             remarks=f.get('remarks', '').strip(),
             status=f.get('status', 'Open'),
             kind=f.get('kind','Goods'),
+            purchase_type=f.get('purchase_type') or None,
             posting_date=pd(f.get('posting_date')) or date.today(),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
@@ -1407,6 +1412,7 @@ def po_edit(id):
         po.remarks = f.get('remarks', '').strip()
         po.status = f.get('status', 'Open')
         po.kind = f.get('kind','Goods')
+        po.purchase_type = f.get('purchase_type') or None
         po.posting_date  = pd(f.get('posting_date')) or date.today()
         po.delivery_date = pd(f.get('delivery_date'))
         po.document_date = date.today()
@@ -1484,6 +1490,56 @@ def grn_summary(id):
                   .order_by(GoodsReceiptLineItem.line_number).all()]
     return jsonify(d)
 
+def _next_grl_no():
+    """Auto GRL number: GRL-<FY year>-<n>."""
+    from models import active_fy_year
+    year = active_fy_year() or date.today().year
+    like = f'GRL-{year}-%'
+    max_num = 0
+    for g in db.session.query(GRL).filter(GRL.grl_no.like(like)).all():
+        if g.grl_no:
+            try:
+                num = int(g.grl_no.rsplit('-', 1)[1])
+                if num > max_num:
+                    max_num = num
+            except (ValueError, IndexError):
+                continue
+    n = max_num + 1
+    grl_no = f'GRL-{year}-{n}'
+    retries = 0
+    while GRL.query.filter_by(grl_no=grl_no).first() and retries < 100:
+        n += 1
+        grl_no = f'GRL-{year}-{n}'
+        retries += 1
+    return grl_no
+
+
+def _generate_grl_for_grn(grn, narration='', detail_narrations=None):
+    """Create or refresh the GRL MASTER for a GRN (saved together with the GRN).
+
+    - Master: auto GRL number (by FY), origin = GRN doc_no, posting date = today,
+      due date = GRN delivery date, document date = GRN document date.
+    GRL detail rows are posted separately (via the GRL section's Post action) —
+    not generated here. Caller commits.
+    """
+    grl = GRL.query.filter_by(goods_receipt_note_id=grn.goods_receipt_note_id).first()
+    if not grl:
+        grl = GRL(goods_receipt_note_id=grn.goods_receipt_note_id,
+                  grl_no=_next_grl_no())
+        db.session.add(grl)
+    elif not grl.grl_no:
+        grl.grl_no = _next_grl_no()
+
+    grl.origion       = grn.doc_no or ''
+    grl.posting_date  = date.today()
+    grl.due_date      = getattr(grn, 'delivery_date', None)
+    grl.document_date = getattr(grn, 'document_date', None)
+    if narration:
+        grl.narration = narration
+    db.session.flush()
+    return grl
+
+
 @pur_bp.route('/purchase/grn/add', methods=['POST'])
 @login_required
 def grn_add():
@@ -1502,6 +1558,7 @@ def grn_add():
             vendor_ref_no=f.get('vendor_ref_no','').strip(),
             status=f.get('status','Open'),
             kind=f.get('kind','Goods'),
+            purchase_type=f.get('purchase_type') or None,
             posting_date=pd(f.get('posting_date')) or date.today(),
             delivery_date=pd(f.get('delivery_date')),
             document_date=date.today(),
@@ -1511,6 +1568,8 @@ def grn_add():
         tots = _save_doc_line_items(GoodsReceiptLineItem, 'goods_receipt_note_id', doc.goods_receipt_note_id, f, 'purchase')
         for k,v in tots.items(): setattr(doc, k, v)
         _save_attachments('GRN', doc.goods_receipt_note_id, request.files.getlist('attachments'))
+        # Auto-generate the GRL master + detail from this GRN.
+        _generate_grl_for_grn(doc, narration=f.get('grl_narration','').strip())
         db.session.commit()
         return jsonify({'ok':True,'id':doc.goods_receipt_note_id,'doc_no':doc.doc_no})
     except Exception as e:
@@ -1530,12 +1589,14 @@ def grn_edit(id):
         doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
         doc.status=f.get('status','Open')
         doc.kind=f.get('kind','Goods')
+        doc.purchase_type = f.get('purchase_type') or None
         doc.posting_date  = pd(f.get('posting_date')) or date.today()
         doc.delivery_date = pd(f.get('delivery_date'))
         doc.document_date = date.today()
         tots = _save_doc_line_items(GoodsReceiptLineItem, 'goods_receipt_note_id', id, f, 'purchase')
         for k,v in tots.items(): setattr(doc, k, v)
         _save_attachments('GRN', id, request.files.getlist('attachments'))
+        _generate_grl_for_grn(doc, narration=f.get('grl_narration','').strip())
         db.session.commit(); return jsonify({'ok':True})
     except Exception as e:
         db.session.rollback()
@@ -1601,10 +1662,12 @@ def grl_build(grn_id):
         it = items.get(ln.item_code)
         l5code = getattr(it, 'levelfive_code', '') if it else ''
         drawer = getattr(it, 'levelfive_drawer_en', '') if it else ''
+        drawer_ar = getattr(it, 'levelfive_drawer_ar', '') if it else ''
         ctrl   = l5_ctrl.get(l5code, '') if l5code else ''
         out_lines.append({
             'code': l5code or '',
             'account_name': drawer or '',
+            'account_name_ar': drawer_ar or '',
             'control_account': ctrl or '',
             'debit': float(ln.total or 0),
             'credit': 0,
@@ -1613,7 +1676,6 @@ def grl_build(grn_id):
     return jsonify({
         'ok': True,
         'origion': grn.doc_no or '',
-        'refrence': 'Good Receipt Note',
         'posting_date': grn.posting_date.isoformat() if grn.posting_date else '',
         'due_date': grn.delivery_date.isoformat() if getattr(grn, 'delivery_date', None) else '',
         'document_date': grn.document_date.isoformat() if getattr(grn, 'document_date', None) else '',
@@ -1632,7 +1694,7 @@ def grl_get(grn_id):
     # empty shell — origin defaults to the GRN's own doc no
     return jsonify({'ok': True, 'grl': {
         'id': None, 'goods_receipt_note_id': grn_id,
-        'origion': grn.doc_no or '', 'refrence': '', 'posting_date': '',
+        'origion': grn.doc_no or '', 'grl_no': '', 'posting_date': '',
         'due_date': '', 'document_date': '', 'narration': '', 'details': [],
     }})
 
@@ -1657,7 +1719,6 @@ def grl_save(grn_id):
         db.session.add(grl)
 
     grl.origion       = (f.get('origion', '') or grn.doc_no or '').strip()
-    grl.refrence      = (f.get('refrence', '') or '').strip()
     grl.posting_date  = posting_date
     grl.due_date      = due_date
     grl.document_date = date.today()          # always today, on add & edit
@@ -1761,6 +1822,7 @@ def pinv_add():
             vendor_ref_no=f.get('vendor_ref_no','').strip(),
             status=status,
             kind=f.get('kind','Goods'),
+            purchase_type=f.get('purchase_type') or None,
             payment_method=f.get('payment_method','Credit'),
             bank_account_id=int(f.get('bank_account_id')) if f.get('bank_account_id') else None,
             posting_date=posting_date,
@@ -1806,6 +1868,7 @@ def pinv_edit(id):
         doc.vendor_ref_no = f.get('vendor_ref_no','').strip()
         doc.status = status
         doc.kind = f.get('kind','Goods')
+        doc.purchase_type = f.get('purchase_type') or None
         doc.payment_method = f.get('payment_method','Credit')
         doc.bank_account_id = int(f.get('bank_account_id')) if f.get('bank_account_id') else None
         doc.posting_date  = posting_date
@@ -1936,6 +1999,7 @@ def grr_add():
             vendor_ref_no=f.get('vendor_ref_no','').strip(),
             status=f.get('status','Open'),
             kind=f.get('kind','Goods'),
+            purchase_type=f.get('purchase_type') or None,
             posting_date=pd(f.get('posting_date')) or date.today(),
             delivery_date=delivery_date,
             document_date=date.today(),
@@ -1973,6 +2037,7 @@ def grr_edit(id):
         doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
         doc.status=f.get('status','Open')
         doc.kind=f.get('kind','Goods')
+        doc.purchase_type = f.get('purchase_type') or None
         doc.posting_date  = pd(f.get('posting_date')) or date.today()
         doc.delivery_date = delivery_date
         doc.document_date = date.today()
@@ -2046,6 +2111,7 @@ def pdm_add():
             vendor_ref_no=f.get('vendor_ref_no','').strip(),
             status=f.get('status','Open'),
             kind=f.get('kind','Goods'),
+            purchase_type=f.get('purchase_type') or None,
             payment_method=f.get('payment_method','Credit'),
             bank_account_id=int(f.get('bank_account_id')) if f.get('bank_account_id') else None,
             posting_date=pd(f.get('posting_date')) or date.today(),
@@ -2079,6 +2145,7 @@ def pdm_edit(id):
         doc.vendor_ref_no=f.get('vendor_ref_no','').strip()
         doc.status=f.get('status','Open')
         doc.kind=f.get('kind','Goods')
+        doc.purchase_type = f.get('purchase_type') or None
         doc.payment_method = f.get('payment_method','Credit')
         doc.bank_account_id = int(f.get('bank_account_id')) if f.get('bank_account_id') else None
         doc.posting_date  = pd(f.get('posting_date')) or date.today()

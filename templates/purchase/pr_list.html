@@ -375,7 +375,15 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
             </button>
             <div class="pur-section-body open">
               <div class="f-grid4">
-                <div class="f-item">
+                                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}نوع الشراء{% else %}Purchase Type{% endif %}</div>
+                  <select id="pr_ptype" class="f-inp">
+                    <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
+                    <option value="Assets">{% if ar %}أصول{% else %}Assets{% endif %}</option>
+                    <option value="Expense">{% if ar %}مصروف{% else %}Expense{% endif %}</option>
+                  </select>
+                </div>
+<div class="f-item">
                   <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
                   <select id="pr_kind" class="f-inp">
                     <option value="Goods">{% if ar %}بضائع / Goods{% else %}Goods / بضائع{% endif %}</option>
@@ -398,13 +406,7 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                     <option value="Cancelled">Cancelled</option>
                   </select>
                 </div>
-                <div class="f-item">
-                  <div class="f-lbl">{% if ar %}المورد{% else %}Vendor Name{% endif %}</div>
-                  <select id="pr_vendor" class="f-inp">
-                    <option value="">-- {% if ar %}اختر المورد{% else %}Select Vendor{% endif %} --</option>
-                    {% for v in vendors %}<option value="{{ v.id }}">{{ v.name }}</option>{% endfor %}
-                  </select>
-                </div>
+                <div class="f-item"></div>
               </div>
               <div class="f-grid3">
                 <div class="f-item">
@@ -911,7 +913,7 @@ async function openAdd() {
   document.getElementById('prDateErr').style.display = 'none';
   document.getElementById('pr_status').value = 'Open';
   document.getElementById('pr_kind').value = 'Goods';
-  document.getElementById('pr_vendor').value = '';
+  document.getElementById('pr_ptype').value = '';
   document.getElementById('pr_doc_no').value = '';
   document.getElementById('prDocBadge').textContent = 'NEW';
   document.getElementById('liBody').innerHTML = '';
@@ -955,8 +957,8 @@ function openEdit(id) {
       document.getElementById('pr_doc_no').value = d.doc_no || '';
       document.getElementById('prDocBadge').textContent = d.doc_no || '';
       document.getElementById('pr_kind').value = d.kind || 'Goods';
+      document.getElementById('pr_ptype').value = d.purchase_type || '';
       document.getElementById('pr_status').value = d.status || 'Open';
-      document.getElementById('pr_vendor').value = d.vendor_id || '';
       document.getElementById('pr_requester').value = d.requester || CURRENT_USERNAME;
       document.getElementById('pr_req_name').value = d.requester_name || CURRENT_USERNAME;
       document.getElementById('pr_approved_by').value = d.approved_by || '';
@@ -1016,8 +1018,8 @@ async function savePR() {
     const fd  = new FormData();
     fd.set('csrf_token', CSRF);
     fd.set('kind',           document.getElementById('pr_kind').value);
+    fd.set('purchase_type',  document.getElementById('pr_ptype').value);
     fd.set('status',         document.getElementById('pr_status').value);
-    fd.set('vendor_id',      document.getElementById('pr_vendor').value);
     fd.set('requester',      document.getElementById('pr_requester').value);
     fd.set('requester_name', document.getElementById('pr_req_name').value);
     fd.set('approved_by',    document.getElementById('pr_approved_by').value);
@@ -1197,7 +1199,6 @@ const cols = [
   {headerName:IS_AR?'رقم المستند':'Doc No',field:'doc_no',width:125,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'المستخدم':'Requester',field:'requester',width:120,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'اسم مقدم الطلب':'Requester Name',field:'requester_name',minWidth:160,filter:'agTextColumnFilter'},
-  {headerName:IS_AR?'المورد':'Vendor',field:'vendor_name',minWidth:180,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'الحالة':'Status',field:'status',width:105,cellRenderer:rStatus,floatingFilter:false,filter:'agSetColumnFilter',filterParams:{values:['Open','Pending','Approved','Closed','Cancelled'],buttons:['apply','reset','clear']}},
   {headerName:IS_AR?'تاريخ الترحيل':'Posting Date',field:'posting_date',width:125,filter:'agTextColumnFilter'},
   {headerName:IS_AR?'صالح حتى':'Valid Until',field:'valid_until',width:115,filter:'agTextColumnFilter'},

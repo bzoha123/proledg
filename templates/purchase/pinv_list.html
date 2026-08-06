@@ -375,7 +375,15 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
 
               {# ── Kind / Payment / Vendor Bank ── #}
               <div class="f-grid3" style="margin-bottom:14px;">
-                <div class="f-item">
+                                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}نوع الشراء{% else %}Purchase Type{% endif %}</div>
+                  <select id="pinv_ptype" class="f-inp">
+                    <option value="">{% if ar %}-- اختر --{% else %}-- Select --{% endif %}</option>
+                    <option value="Assets">{% if ar %}أصول{% else %}Assets{% endif %}</option>
+                    <option value="Expense">{% if ar %}مصروف{% else %}Expense{% endif %}</option>
+                  </select>
+                </div>
+<div class="f-item">
                   <div class="f-lbl">{% if ar %}النوع{% else %}Kind{% endif %}<span class="f-req">*</span></div>
                   <select id="pinv_kind" class="f-inp">
                     <option value="Goods">Goods / بضائع</option>
@@ -955,6 +963,7 @@ async function openAddPINV() {
   
   document.getElementById('pinv_status').value = 'Open';
   document.getElementById('pinv_kind').value = 'Goods';
+  document.getElementById('pinv_ptype').value = '';
   document.getElementById('pinv_payment').value = 'Credit';
   loadPinvVendorBanks('');
   const today = new Date().toISOString().split('T')[0];
@@ -1017,6 +1026,7 @@ function openEditPINV(id) {
       document.getElementById('pinvDocBadge').textContent = d.doc_no || '';
       document.getElementById('pinv_status').value = d.status || 'Open';
       document.getElementById('pinv_kind').value = d.kind || 'Goods';
+      document.getElementById('pinv_ptype').value = d.purchase_type || '';
       document.getElementById('pinv_payment').value = d.payment_method || 'Credit';
       document.getElementById('pinv_vendor').value = d.vendor_id || '';
       document.getElementById('pinv_vendor_name').value = d.vendor_name || '';
@@ -1106,6 +1116,7 @@ async function savePINV() {
   fd.append('grn_id', document.getElementById('pinv_grn_id')?.value || '');
   fd.append('status', document.getElementById('pinv_status').value);
   fd.append('kind', document.getElementById('pinv_kind').value);
+  fd.append('purchase_type', document.getElementById('pinv_ptype').value);
   fd.append('payment_method', document.getElementById('pinv_payment').value);
   fd.append('bank_account_id', document.getElementById('pinv_bank_account').value || '');
   fd.append('vendor_id', document.getElementById('pinv_vendor').value || '');
