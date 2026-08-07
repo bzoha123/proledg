@@ -861,6 +861,9 @@ def item_add():
             levelfive_code       = (f.get('levelfive_code','') or '').strip() or None,
             levelfive_drawer_en  = (f.get('levelfive_drawer_en','') or '').strip() or None,
             levelfive_drawer_ar  = (f.get('levelfive_drawer_ar','') or '').strip() or None,
+            levelfive_code1      = (f.get('levelfive_code1','') or '').strip() or None,
+            levelfive_drawer_en1 = (f.get('levelfive_drawer_en1','') or '').strip() or None,
+            levelfive_drawer_ar1 = (f.get('levelfive_drawer_ar1','') or '').strip() or None,
             store                = (f.get('store','') or '').strip() or None,
             expense_type         = (f.get('expense_type','') or '').strip() or None,
             created_by=current_user.id,
@@ -918,6 +921,9 @@ def item_edit(id):
         item.levelfive_code      = (f.get('levelfive_code','') or '').strip() or None
         item.levelfive_drawer_en = (f.get('levelfive_drawer_en','') or '').strip() or None
         item.levelfive_drawer_ar = (f.get('levelfive_drawer_ar','') or '').strip() or None
+        item.levelfive_code1      = (f.get('levelfive_code1','') or '').strip() or None
+        item.levelfive_drawer_en1 = (f.get('levelfive_drawer_en1','') or '').strip() or None
+        item.levelfive_drawer_ar1 = (f.get('levelfive_drawer_ar1','') or '').strip() or None
         item.store               = (f.get('store','') or '').strip() or None
         item.expense_type        = (f.get('expense_type','') or '').strip() or None
         item.updated_at = datetime.utcnow()
@@ -1663,11 +1669,17 @@ def grl_build(grn_id):
         l5code = getattr(it, 'levelfive_code', '') if it else ''
         drawer = getattr(it, 'levelfive_drawer_en', '') if it else ''
         drawer_ar = getattr(it, 'levelfive_drawer_ar', '') if it else ''
+        l5code1 = getattr(it, 'levelfive_code1', '') if it else ''
+        drawer1 = getattr(it, 'levelfive_drawer_en1', '') if it else ''
+        drawer_ar1 = getattr(it, 'levelfive_drawer_ar1', '') if it else ''
         ctrl   = l5_ctrl.get(l5code, '') if l5code else ''
         out_lines.append({
             'code': l5code or '',
             'account_name': drawer or '',
             'account_name_ar': drawer_ar or '',
+            'code1': l5code1 or '',
+            'account_name1': drawer1 or '',
+            'account_name_ar1': drawer_ar1 or '',
             'control_account': ctrl or '',
             'debit': float(ln.total or 0),
             'credit': 0,
@@ -1730,10 +1742,25 @@ def grl_save(grn_id):
         # Replace detail lines. Lines arrive as parallel arrays.
         codes    = request.form.getlist('d_code[]')
         names    = request.form.getlist('d_account_name[]')
+        names_ar = request.form.getlist('d_account_name_ar[]')
         controls = request.form.getlist('d_control_account[]')
         debits   = request.form.getlist('d_debit[]')
         credits  = request.form.getlist('d_credit[]')
         narrs    = request.form.getlist('d_narration[]')
+
+        # Only two GRL detail records are allowed.
+        non_blank = [i for i in range(len(codes))
+                     if (codes[i] or '').strip() or (i < len(names) and (names[i] or '').strip())]
+        if len(non_blank) > 2:
+            return jsonify({'ok': False,
+                            'error': 'Only two GRL detail records are allowed.'}), 400
+
+        # Server-side balance check: total debit must equal total credit.
+        tot_d = sum(float(_grl_num(debits[i] if i < len(debits) else 0)) for i in range(len(codes)))
+        tot_c = sum(float(_grl_num(credits[i] if i < len(credits) else 0)) for i in range(len(codes)))
+        if codes and abs(tot_d - tot_c) > 0.005:
+            return jsonify({'ok': False,
+                            'error': 'Total Debit must equal Total Credit.'}), 400
 
         GRLDetail.query.filter_by(grl_id=grl.id).delete()
         for i in range(len(codes)):
@@ -1744,6 +1771,7 @@ def grl_save(grn_id):
                 grl_id=grl.id,
                 code=code,
                 account_name=(names[i] if i < len(names) else '').strip(),
+                account_name_ar=(names_ar[i] if i < len(names_ar) else '').strip(),
                 control_account=(controls[i] if i < len(controls) else '').strip(),
                 debit=_grl_num(debits[i] if i < len(debits) else 0),
                 credit=_grl_num(credits[i] if i < len(credits) else 0),

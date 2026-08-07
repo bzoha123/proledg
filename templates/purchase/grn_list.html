@@ -421,25 +421,40 @@ select.li-inp{appearance:none;padding-right:16px;background-image:url("data:imag
                   <input type="text" id="grl_narration" name="grl_narration" class="grl-inp" placeholder="{% if ar %}بيان اختياري{% else %}Optional narration{% endif %}">
                 </div>
               </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-weight:700;font-size:12px;color:#334155;">{% if ar %}تفاصيل القيد{% else %}GRL Detail{% endif %}</div>
+                <button type="button" onclick="grlAddRow()" style="background:#2563eb;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">
+                  <i class="fas fa-plus me-1"></i>{% if ar %}إضافة سجل{% else %}Add Record{% endif %}
+                </button>
+              </div>
               <div style="overflow-x:auto;">
-                <table class="grl-table">
+                <table class="grl-table" id="grlDetailTable">
                   <thead>
                     <tr>
-                      <th>{% if ar %}الرمز{% else %}Code{% endif %}</th>
+                      <th style="min-width:120px;">{% if ar %}الرمز{% else %}Code{% endif %}</th>
                       <th>{% if ar %}اسم الحساب (EN){% else %}Account Name (EN){% endif %}</th>
                       <th>{% if ar %}اسم الحساب (AR){% else %}Account Name (AR){% endif %}</th>
-                      <th style="text-align:right;">{% if ar %}مدين{% else %}Debit{% endif %}</th>
-                      <th style="text-align:right;">{% if ar %}دائن{% else %}Credit{% endif %}</th>
-                      <th>{% if ar %}بيان التفصيل{% else %}Narration Detail{% endif %}</th>
+                      <th style="text-align:right;min-width:100px;">{% if ar %}مدين{% else %}Debit{% endif %}</th>
+                      <th style="text-align:right;min-width:100px;">{% if ar %}دائن{% else %}Credit{% endif %}</th>
+                      <th style="min-width:140px;">{% if ar %}البيان{% else %}Narration{% endif %}</th>
+                      <th style="width:40px;"></th>
                     </tr>
                   </thead>
                   <tbody id="grlDetailBody">
-                    <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:14px;">{% if ar %}تُنشأ السطور تلقائياً من بنود الاستلام عند الحفظ{% else %}Rows are generated automatically from the receipt line items on save{% endif %}</td></tr>
+                    <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:14px;">{% if ar %}اضغط ترحيل أو إضافة سجل{% else %}Click Post or Add Record{% endif %}</td></tr>
                   </tbody>
+                  <tfoot>
+                    <tr style="font-weight:700;background:#f8fafc;">
+                      <td colspan="3" style="text-align:right;">{% if ar %}الإجمالي{% else %}Total{% endif %}</td>
+                      <td style="text-align:right;" id="grlTotDebit">0.00</td>
+                      <td style="text-align:right;" id="grlTotCredit">0.00</td>
+                      <td colspan="2" id="grlBalance"></td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
               <p style="font-size:11px;color:#94a3b8;margin:8px 0 0;">
-                {% if ar %}اضغط ترحيل لإنشاء سطور المدين والدائن من بنود الاستلام. الدائن قابل للتعديل.{% else %}Click Post to build the debit and credit rows from the receipt line items. Credit is editable.{% endif %}
+                {% if ar %}سجلان فقط. اضغط ترحيل لتوليدهما من بند الاستلام وحفظهما. يجب أن يتساوى المدين والدائن.{% else %}Only two records. Click Post to generate them from the receipt line item and save. Total Debit must equal Total Credit.{% endif %}
               </p>
             </div>
           </div>
@@ -1190,54 +1205,197 @@ function grlSyncMaster(){
   if(g('grl_document_date')) g('grl_document_date').value = _grlToday();
 }
 
-/* Render GRL detail: TWO rows per line item (debit row + credit row).
-   Credit is an editable input on the credit row. */
-function grlRenderRows(lines){
-  const body=document.getElementById('grlDetailBody');
-  if(!body) return;
-  const esc=s=>String(s==null?'':s).replace(/</g,'&lt;');
-  if(!lines || !lines.length){
-    body.innerHTML='<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:14px;">'+
-      (IS_AR?'لا توجد بنود':'No line items')+'</td></tr>';
-    return;
-  }
-  let html='';
-  lines.forEach((r,i)=>{
-    const debit  = Number(r.debit||0);
-    const credit = Number(r.credit||0);
-    // Debit row — account from item master, Debit = line total, Credit 0
-    html+='<tr data-grl-idx="'+i+'" data-grl-side="debit">'+
-      '<td>'+esc(r.code)+'</td>'+
-      '<td>'+esc(r.account_name)+'</td>'+
-      '<td style="direction:rtl;">'+esc(r.account_name_ar)+'</td>'+
-      '<td style="text-align:right;">'+debit.toFixed(2)+'</td>'+
-      '<td style="text-align:right;color:#94a3b8;">0.00</td>'+
-      '<td><input type="text" class="grl-dnarr" data-idx="'+i+'" data-side="debit" style="width:100%;border:1px solid #e2e8f0;border-radius:5px;padding:5px 7px;font-size:12px;" placeholder="'+(IS_AR?'بيان':'Narration')+'"></td>'+
-      '</tr>';
-    // Credit row — offsetting entry, Debit 0, Credit editable
-    html+='<tr data-grl-idx="'+i+'" data-grl-side="credit" style="background:#fafbff;">'+
-      '<td>'+esc(r.code)+'</td>'+
-      '<td>'+esc(r.account_name)+'</td>'+
-      '<td style="direction:rtl;">'+esc(r.account_name_ar)+'</td>'+
-      '<td style="text-align:right;color:#94a3b8;">0.00</td>'+
-      '<td style="text-align:right;"><input type="number" step="0.01" class="grl-credit" data-idx="'+i+'" value="'+(credit?credit.toFixed(2):(debit?debit.toFixed(2):'0.00'))+'" style="width:100px;border:1px solid #cbd5e1;border-radius:5px;padding:5px 7px;font-size:12px;text-align:right;"></td>'+
-      '<td><input type="text" class="grl-dnarr" data-idx="'+i+'" data-side="credit" style="width:100%;border:1px solid #e2e8f0;border-radius:5px;padding:5px 7px;font-size:12px;" placeholder="'+(IS_AR?'بيان':'Narration')+'"></td>'+
-      '</tr>';
+/* ══ Editable GRL detail grid (max 2 records) ══ */
+/* Allowed accounts come from the GRN item's Chart-of-Account mapping
+   (item_master levelfive_code / levelfive_code1), NOT the main COA.
+   _grlAllowed[0] = accounts for record 1, _grlAllowed[1] = for record 2. */
+let _grlAllowed = [[], []];
+
+function grlEnsureAccounts(){ return Promise.resolve(_grlAccounts||[]); }
+let _grlAccounts = [];   // kept for compatibility; unused for options now
+
+/* Build <option>s from a specific allowed-account list for one record. */
+function grlAccountOptions(list, sel){
+  const opts = ['<option value="">'+(IS_AR?'اختر...':'Select...')+'</option>'];
+  (list||[]).forEach(a=>{
+    if(!a.code) return;
+    opts.push('<option value="'+a.code+'"'+(a.code===sel?' selected':'')+'>'+a.code+'</option>');
   });
-  body.innerHTML=html;
+  return opts.join('');
 }
 
-/* Post: build the debit/credit rows from the current GRN's line items. */
+const _grlPlaceholder = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:14px;">'+
+  (IS_AR?'اضغط ترحيل أو إضافة سجل':'Click Post or Add Record')+'</td></tr>';
+
+function grlRowCount(){
+  return document.querySelectorAll('#grlDetailBody tr[data-grl-row]').length;
+}
+
+/* r = row data; recIndex = 0 for record 1, 1 for record 2 (picks the allowed list). */
+function grlMakeRow(r, recIndex){
+  r = r || {};
+  const allowed = _grlAllowed[recIndex] || [];
+  const esc=s=>String(s==null?'':s).replace(/"/g,'&quot;');
+  const tr=document.createElement('tr');
+  tr.setAttribute('data-grl-row','1');
+  tr.setAttribute('data-grl-rec', recIndex);
+  tr.innerHTML =
+    '<td><select class="grl-code f-inp" onchange="grlOnCodeChange(this)" style="min-width:110px;padding:5px 7px;font-size:12px;">'+grlAccountOptions(allowed, r.code||'')+'</select></td>'+
+    '<td><input type="text" class="grl-en" readonly value="'+esc(r.account_name||'')+'" style="width:100%;border:1px solid #eef2f7;background:#f8fafc;border-radius:5px;padding:5px 7px;font-size:12px;"></td>'+
+    '<td><input type="text" class="grl-ar" readonly dir="rtl" value="'+esc(r.account_name_ar||'')+'" style="width:100%;border:1px solid #eef2f7;background:#f8fafc;border-radius:5px;padding:5px 7px;font-size:12px;"></td>'+
+    '<td><input type="number" step="0.01" class="grl-debit" value="'+(Number(r.debit||0)).toFixed(2)+'" oninput="grlRecalc()" style="width:100px;border:1px solid #cbd5e1;border-radius:5px;padding:5px 7px;font-size:12px;text-align:right;"></td>'+
+    '<td><input type="number" step="0.01" class="grl-credit" value="'+(Number(r.credit||0)).toFixed(2)+'" oninput="grlRecalc()" style="width:100px;border:1px solid #cbd5e1;border-radius:5px;padding:5px 7px;font-size:12px;text-align:right;"></td>'+
+    '<td><input type="text" class="grl-narr" value="'+esc(r.narration||'')+'" style="width:100%;border:1px solid #e2e8f0;border-radius:5px;padding:5px 7px;font-size:12px;" placeholder="'+(IS_AR?'بيان':'Narration')+'"></td>'+
+    '<td style="text-align:center;"><button type="button" onclick="grlDeleteRow(this)" title="'+(IS_AR?'حذف':'Delete')+'" style="background:#fee2e2;color:#dc2626;border:none;border-radius:5px;padding:5px 8px;cursor:pointer;"><i class="fas fa-trash" style="font-size:11px;"></i></button></td>';
+  return tr;
+}
+
+async function grlEnsureAllowed(){
+  if((_grlAllowed[0]&&_grlAllowed[0].length) || (_grlAllowed[1]&&_grlAllowed[1].length)) return;
+  const grnId=document.getElementById('grn_id').value;
+  if(!grnId) return;
+  try{
+    const bd=await fetch('/purchase/grn/'+grnId+'/grl-build').then(r=>r.json());
+    const ln=(bd.ok && bd.lines && bd.lines.length)? bd.lines[0] : {};
+    _grlAllowed=[
+      [{code:ln.code,  drawer_en:ln.account_name,  drawer_ar:ln.account_name_ar}],
+      [{code:ln.code1, drawer_en:ln.account_name1, drawer_ar:ln.account_name_ar1}],
+    ];
+  }catch(e){ /* leave empty */ }
+}
+
+async function grlAddRow(data){
+  if(grlRowCount() >= 2){
+    alert(IS_AR?'يُسمح بسجلين فقط في تفاصيل GRL.':'Only two GRL detail records are allowed.');
+    return;
+  }
+  await grlEnsureAllowed();
+  const body=document.getElementById('grlDetailBody');
+  const ph=body.querySelector('td[colspan]'); if(ph) body.innerHTML='';
+  const recIndex = grlRowCount();   // 0 for first row, 1 for second
+  const tr=grlMakeRow(data, recIndex);
+  body.appendChild(tr);
+  // if the row has a preselected code but no names, fill them from its allowed list
+  const selCode = tr.querySelector('.grl-code');
+  if(selCode && selCode.value && !(data&&data.account_name)) grlOnCodeChange(selCode);
+  grlRecalc();
+}
+
+function grlDeleteRow(btn){
+  const tr=btn.closest('tr'); if(tr) tr.remove();
+  const body=document.getElementById('grlDetailBody');
+  if(grlRowCount()===0) body.innerHTML=_grlPlaceholder;
+  grlRecalc();
+}
+
+function grlOnCodeChange(sel){
+  const tr=sel.closest('tr');
+  const recIndex = parseInt(tr.getAttribute('data-grl-rec')||'0',10);
+  const a=(_grlAllowed[recIndex]||[]).find(x=>x.code===sel.value);
+  tr.querySelector('.grl-en').value = a ? (a.drawer_en||'') : '';
+  tr.querySelector('.grl-ar').value = a ? (a.drawer_ar||'') : '';
+}
+
+function grlRecalc(){
+  let td=0, tc=0;
+  document.querySelectorAll('#grlDetailBody tr[data-grl-row]').forEach(tr=>{
+    td += parseFloat(tr.querySelector('.grl-debit')?.value)||0;
+    tc += parseFloat(tr.querySelector('.grl-credit')?.value)||0;
+  });
+  const g=id=>document.getElementById(id);
+  if(g('grlTotDebit')) g('grlTotDebit').textContent = td.toFixed(2);
+  if(g('grlTotCredit')) g('grlTotCredit').textContent = tc.toFixed(2);
+  const bal=g('grlBalance');
+  if(bal){
+    if(grlRowCount()===0){ bal.textContent=''; }
+    else if(Math.abs(td-tc)<0.005){
+      bal.innerHTML='<span style="color:#16a34a;font-weight:700;"><i class="fas fa-check-circle me-1"></i>'+(IS_AR?'متوازن':'Balanced')+'</span>';
+    } else {
+      bal.innerHTML='<span style="color:#dc2626;font-weight:700;"><i class="fas fa-exclamation-circle me-1"></i>'+(IS_AR?'غير متوازن':'Not balanced')+'</span>';
+    }
+  }
+  return Math.abs(td-tc)<0.005;
+}
+
+/* Validate before save/post: exactly balanced, codes chosen. */
+function grlValidate(){
+  const rows=[...document.querySelectorAll('#grlDetailBody tr[data-grl-row]')];
+  if(rows.length===0) return true;   // nothing entered yet
+  for(const tr of rows){
+    if(!tr.querySelector('.grl-code').value){
+      alert(IS_AR?'اختر رمز الحساب لكل سجل.':'Select an account code for each record.');
+      return false;
+    }
+  }
+  if(!grlRecalc()){
+    alert(IS_AR?'يجب أن يتساوى إجمالي المدين مع إجمالي الدائن.':'Total Debit must equal Total Credit.');
+    return false;
+  }
+  return true;
+}
+
+/* Post: build exactly TWO records from the GRN's line item, then save. */
 function grlPost(){
   const grnId=document.getElementById('grn_id').value;
   if(!grnId){
     alert(IS_AR?'احفظ سند الاستلام أولاً':'Save the Goods Receipt Note first');
     return;
   }
-  fetch('/purchase/grn/'+grnId+'/grl-build').then(r=>r.json()).then(d=>{
-    if(!d.ok){ alert(IS_AR?'تعذر البناء':'Could not build GRL'); return; }
-    grlRenderRows(d.lines||[]);
-  }).catch(e=>{ console.error('GRL post failed:', e); });
+  grlEnsureAccounts().then(()=>{
+    fetch('/purchase/grn/'+grnId+'/grl-build').then(r=>r.json()).then(async d=>{
+      if(!d.ok){ alert(IS_AR?'تعذر البناء':'Could not build GRL'); return; }
+      const lines=d.lines||[];
+      if(!lines.length){ alert(IS_AR?'لا يوجد بند استلام':'No receipt line item'); return; }
+      const ln=lines[0];   // exactly two records, from the line item
+      if(!ln.code || !ln.code1){
+        alert(IS_AR?'تعيين حساب المستوى الخامس مفقود للصنف المحدد.':'Level 5 account mapping is missing for the selected item.');
+        return;
+      }
+      const total=Number(ln.debit||0);
+      // Constrain each record's dropdown to the item's own mapped account.
+      _grlAllowed = [
+        [{code:ln.code,  drawer_en:ln.account_name,  drawer_ar:ln.account_name_ar}],
+        [{code:ln.code1, drawer_en:ln.account_name1, drawer_ar:ln.account_name_ar1}],
+      ];
+      const body=document.getElementById('grlDetailBody'); body.innerHTML='';
+      // Record 1: Debit = total, Credit 0 (levelfive_code)
+      await grlAddRow({code:ln.code,  account_name:ln.account_name,  account_name_ar:ln.account_name_ar,  debit:total, credit:0});
+      // Record 2: Debit 0, Credit = total (levelfive_code1)
+      await grlAddRow({code:ln.code1, account_name:ln.account_name1, account_name_ar:ln.account_name_ar1, debit:0, credit:total});
+      grlRecalc();
+      grlSaveDetail(grnId);   // persist immediately on Post
+    }).catch(e=>{ console.error('GRL post failed:', e); });
+  });
+}
+
+/* Gather the grid rows and POST them to grl/save. */
+function grlSaveDetail(grnId){
+  grnId = grnId || document.getElementById('grn_id').value;
+  if(!grnId){ alert(IS_AR?'احفظ سند الاستلام أولاً':'Save the Goods Receipt Note first'); return; }
+  if(!grlValidate()) return;
+  const fd=new FormData();
+  fd.set('csrf_token', CSRF);
+  fd.set('origion', document.getElementById('grl_origion')?.value || '');
+  fd.set('posting_date', document.getElementById('grl_posting_date')?.value || '');
+  fd.set('due_date', document.getElementById('grl_due_date')?.value || '');
+  fd.set('narration', document.getElementById('grl_narration')?.value || '');
+  document.querySelectorAll('#grlDetailBody tr[data-grl-row]').forEach(tr=>{
+    fd.append('d_code[]', tr.querySelector('.grl-code')?.value || '');
+    fd.append('d_account_name[]', tr.querySelector('.grl-en')?.value || '');
+    fd.append('d_account_name_ar[]', tr.querySelector('.grl-ar')?.value || '');
+    fd.append('d_debit[]', tr.querySelector('.grl-debit')?.value || '0');
+    fd.append('d_credit[]', tr.querySelector('.grl-credit')?.value || '0');
+    fd.append('d_narration[]', tr.querySelector('.grl-narr')?.value || '');
+  });
+  fetch('/purchase/grn/'+grnId+'/grl/save', {method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd})
+    .then(r=>r.json()).then(d=>{
+      if(d.ok){
+        if(d.grl && d.grl.grl_no){ const g=document.getElementById('grl_no'); if(g) g.value=d.grl.grl_no; }
+        alert(IS_AR?'تم حفظ GRL':'GRL saved');
+      } else {
+        alert(d.error || (IS_AR?'فشل الحفظ':'Save failed'));
+      }
+    }).catch(e=>{ console.error('GRL save failed:', e); alert(IS_AR?'خطأ في الشبكة':'Network error'); });
 }
 
 /* Load the saved GRL master (+ detail if already posted) for an existing GRN. */
@@ -1252,20 +1410,23 @@ function grlLoad(grnId){
     if(g('grl_due_date')) g('grl_due_date').value = m.due_date || '';
     if(g('grl_document_date')) g('grl_document_date').value = m.document_date || '';
     if(g('grl_narration')) g('grl_narration').value = m.narration || '';
-    // details render only if already posted; otherwise show the hint
+    // details render into the editable grid (via grlAddRow)
     const rows=m.details||[];
     if(rows.length){
-      // group is unknown here; render saved rows as-is (one per stored record)
-      const body=g('grlDetailBody'); const esc=s=>String(s==null?'':s).replace(/</g,'&lt;');
-      body.innerHTML = rows.map(r=>
-        '<tr>'+
-        '<td>'+esc(r.code)+'</td>'+
-        '<td>'+esc(r.account_name)+'</td>'+
-        '<td style="direction:rtl;">'+esc(r.account_name_ar)+'</td>'+
-        '<td style="text-align:right;">'+(r.debit?Number(r.debit).toFixed(2):'0.00')+'</td>'+
-        '<td style="text-align:right;">'+(r.credit?Number(r.credit).toFixed(2):'0.00')+'</td>'+
-        '<td>'+esc(r.narration)+'</td>'+
-        '</tr>').join('');
+      // Fetch the item's mapped accounts so each row's dropdown is constrained.
+      fetch('/purchase/grn/'+grnId+'/grl-build').then(r=>r.json()).then(async bd=>{
+        const ln=(bd.ok && bd.lines && bd.lines.length)? bd.lines[0] : {};
+        _grlAllowed = [
+          [{code:ln.code,  drawer_en:ln.account_name,  drawer_ar:ln.account_name_ar}],
+          [{code:ln.code1, drawer_en:ln.account_name1, drawer_ar:ln.account_name_ar1}],
+        ];
+        const body=g('grlDetailBody'); if(body) body.innerHTML='';
+        for(const r of rows){
+          await grlAddRow({code:r.code, account_name:r.account_name, account_name_ar:r.account_name_ar,
+                           debit:r.debit, credit:r.credit, narration:r.narration});
+        }
+        grlRecalc();
+      }).catch(e=>console.error('GRL allowed-accounts load failed:', e));
     } else {
       grlReset(); grlSyncMaster();
       // restore master fields that grlReset cleared

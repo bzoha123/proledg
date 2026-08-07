@@ -1462,6 +1462,9 @@ class ItemMaster(db.Model):
     levelfive_code       = db.Column(db.String(40))
     levelfive_drawer_en  = db.Column(db.String(250))
     levelfive_drawer_ar  = db.Column(db.String(250))
+    levelfive_code1      = db.Column(db.String(40))
+    levelfive_drawer_en1 = db.Column(db.String(250))
+    levelfive_drawer_ar1 = db.Column(db.String(250))
     created_at         = db.Column(db.DateTime, default=datetime.utcnow)
     created_by         = db.Column(db.Integer, db.ForeignKey('users.id'))
 
@@ -1495,6 +1498,9 @@ class ItemMaster(db.Model):
             'levelfive_code': self.levelfive_code or '',
             'levelfive_drawer_en': self.levelfive_drawer_en or '',
             'levelfive_drawer_ar': self.levelfive_drawer_ar or '',
+            'levelfive_code1': self.levelfive_code1 or '',
+            'levelfive_drawer_en1': self.levelfive_drawer_en1 or '',
+            'levelfive_drawer_ar1': self.levelfive_drawer_ar1 or '',
             'store': self.store or '',
             'expense_type': self.expense_type or '',
             'uoms': [u.to_dict() for u in self.uoms] if self.uoms else [],
@@ -3309,6 +3315,9 @@ def ensure_schema():
         ('item_master', 'levelfive_code',      'VARCHAR(40)'),
         ('item_master', 'levelfive_drawer_en', 'VARCHAR(250)'),
         ('item_master', 'levelfive_drawer_ar', 'VARCHAR(250)'),
+        ('item_master', 'levelfive_code1',      'VARCHAR(40)'),
+        ('item_master', 'levelfive_drawer_en1', 'VARCHAR(250)'),
+        ('item_master', 'levelfive_drawer_ar1', 'VARCHAR(250)'),
         ('employees',   'blood_group',         'VARCHAR(10)'),
         ('item_master', 'store',               'VARCHAR(40)'),
         ('item_master', 'expense_type',        'VARCHAR(20)'),

@@ -399,6 +399,25 @@ textarea.f-inp{resize:vertical;min-height:80px;}
                   <input type="text" id="i_levelfive_drawer_ar" class="f-inp" dir="rtl" readonly style="background:#f8fafc;">
                 </div>
               </div>
+              <div class="f-grid2">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}كود الحساب 2 / Account Code 2{% else %}Account Code 2{% endif %}</div>
+                  <select id="i_levelfive_code1" class="f-inp" dir="ltr" onchange="onItemL5Code1Change()">
+                    <option value="">{% if ar %}اختر...{% else %}Select...{% endif %}</option>
+                  </select>
+                </div>
+                <div class="f-item"></div>
+              </div>
+              <div class="f-grid2">
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}الدرج 2 (إنجليزي){% else %}Drawer Eng 2{% endif %}</div>
+                  <input type="text" id="i_levelfive_drawer_en1" class="f-inp" dir="ltr" readonly style="background:#f8fafc;">
+                </div>
+                <div class="f-item">
+                  <div class="f-lbl">{% if ar %}الدرج 2 (عربي){% else %}Drawer Ar 2{% endif %}</div>
+                  <input type="text" id="i_levelfive_drawer_ar1" class="f-inp" dir="rtl" readonly style="background:#f8fafc;">
+                </div>
+              </div>
               <p style="font-size:11.5px;color:#6b7280;margin:2px 0 0;"><i class="fas fa-info-circle me-1"></i>{% if ar %}تظهر فقط الحسابات التي حساب التحكم فيها = نعم.{% else %}Only accounts with Control Account = Yes are listed.{% endif %}</p>
             </div>
           </div>
@@ -596,6 +615,13 @@ function itemL5EnsureLoaded(){
         _itemL5List.map(a=>'<option value="'+a.code+'">'+a.code+'</option>').join('');
       sel.value = cur;
     }
+    const sel1 = document.getElementById('i_levelfive_code1');
+    if(sel1){
+      const cur1 = sel1.value;
+      sel1.innerHTML = '<option value="">'+(IS_AR?'اختر...':'Select...')+'</option>'+
+        _itemL5List.map(a=>'<option value="'+a.code+'">'+a.code+'</option>').join('');
+      sel1.value = cur1;
+    }
     return _itemL5List;
   }).catch(()=>{ _itemL5List=[]; return _itemL5List; });
   return _itemL5Promise;
@@ -605,6 +631,12 @@ function onItemL5CodeChange(){
   const a = (_itemL5List||[]).find(x=>x.code===code);
   document.getElementById('i_levelfive_drawer_en').value = a ? (a.drawer_en||'') : '';
   document.getElementById('i_levelfive_drawer_ar').value = a ? (a.drawer_ar||'') : '';
+}
+function onItemL5Code1Change(){
+  const code = document.getElementById('i_levelfive_code1').value;
+  const a = (_itemL5List||[]).find(x=>x.code===code);
+  document.getElementById('i_levelfive_drawer_en1').value = a ? (a.drawer_en||'') : '';
+  document.getElementById('i_levelfive_drawer_ar1').value = a ? (a.drawer_ar||'') : '';
 }
 document.addEventListener('DOMContentLoaded', itemL5EnsureLoaded);
 const TR    = '{{ url_for("lookups.item_translate") }}';
@@ -771,6 +803,9 @@ async function fillEditForm(d) {
   document.getElementById('i_levelfive_code').value      = d.levelfive_code || '';
   document.getElementById('i_levelfive_drawer_en').value = d.levelfive_drawer_en || '';
   document.getElementById('i_levelfive_drawer_ar').value = d.levelfive_drawer_ar || '';
+  document.getElementById('i_levelfive_code1').value      = d.levelfive_code1 || '';
+  document.getElementById('i_levelfive_drawer_en1').value = d.levelfive_drawer_en1 || '';
+  document.getElementById('i_levelfive_drawer_ar1').value = d.levelfive_drawer_ar1 || '';
   _itemUoms = (d.uoms || []).map(u => ({ id: u.id, uom_id: u.uom_id, unit_name: u.unit_name, unit_name_ar: u.unit_name_ar || '', is_default: !!u.is_default }));
   _itemUomsOriginal = JSON.parse(JSON.stringify(_itemUoms));
   renderUomChips();
@@ -859,6 +894,9 @@ async function saveItem() {
   fd.set('levelfive_code',       document.getElementById('i_levelfive_code').value);
   fd.set('levelfive_drawer_en',  document.getElementById('i_levelfive_drawer_en').value);
   fd.set('levelfive_drawer_ar',  document.getElementById('i_levelfive_drawer_ar').value);
+  fd.set('levelfive_code1',      document.getElementById('i_levelfive_code1').value);
+  fd.set('levelfive_drawer_en1', document.getElementById('i_levelfive_drawer_en1').value);
+  fd.set('levelfive_drawer_ar1', document.getElementById('i_levelfive_drawer_ar1').value);
 
   if (!fd.get('item_code')) { alert(IS_AR ? 'كود البند مطلوب' : 'Item Code is required'); return; }
   if (!fd.get('name_en'))   { alert(IS_AR ? 'اسم البند مطلوب' : 'Item Name (EN) is required'); return; }
